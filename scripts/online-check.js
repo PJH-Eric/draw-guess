@@ -59,7 +59,12 @@ class Client {
     this.closed = null;
     this.rooms = null;
     this.syncCount = 0;
-    this.socket = io(BASE, { transports: ['websocket'], reconnection: false, timeout: 8000 });
+    this.socket = io(BASE, {
+      transports: ['websocket'],
+      reconnection: false,
+      timeout: 8000,
+      autoConnect: false
+    });
 
     this.socket.on('room:sync', (v) => { this.view = v; this.syncCount += 1; });
     this.socket.on('room:stroke', (p) => { this.strokes.push(p); });
@@ -73,14 +78,20 @@ class Client {
 
   connect() {
     return new Promise((resolve, reject) => {
-      const t = setTimeout(() => reject(new Error(this.label + ' 連線逾時')), 10000);
-      this.socket.on('connect', () => {
-        this.socket.emit('hello', { clientId: this.clientId, name: this.name }, () => {
-          clearTimeout(t);
-          resolve();
-        });
+      let done = false;
+      const finish = (error) => {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        if (error) reject(error);
+        else resolve();
+      };
+      const timer = setTimeout(() => finish(new Error(this.label + ' 連線逾時')), 10000);
+      this.socket.once('connect', () => {
+        this.socket.emit('hello', { clientId: this.clientId, name: this.name }, () => finish());
       });
-      this.socket.on('connect_error', (e) => { clearTimeout(t); reject(e); });
+      this.socket.once('connect_error', (error) => finish(error));
+      this.socket.connect();
     });
   }
 
