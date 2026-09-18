@@ -1,0 +1,762 @@
+/* ===== 你畫我猜 — 可愛風主題 =====
+ * 版面策略：內容驅動的斷點 + 流動尺寸 + 安全區。
+ * 各尺寸都以「畫布最大」為優先；操作摘要與猜題紀錄都放在左側，
+ * 寬版是常駐的左欄（上 Summary、下猜題紀錄），窄版收成左下的可收合浮層。
+ */
+:root{
+  --ink:#4A3B55;
+  --ink-soft:#7A6A88;
+  --paper:#FFFDF8;
+  --grape:#C9B6F5;  --grape-d:#A48FDB;  --grape-t:#6E4FBF;
+  --mint:#A9E7D2;   --mint-d:#79C6AC;
+  --peach:#FFC2B4;  --peach-d:#E89C8B;
+  --sky:#AED9F5;    --sky-d:#7FB4DA;
+  --lemon:#FFE3A0;  --lemon-d:#E7C263;
+  --rose:#FFB8CF;   --rose-d:#E88CAA;
+  --cream:#FFF0DE;  --cream-d:#E6D2B4;
+  --danger:#D2444F; --danger-bg:#FFE6E8;
+  --ok:#2F8F6B;
+  --line:#DED3EA;
+  --radius:22px;
+  --d:8px;
+  --aside-w:min(86vw,320px);
+  --safe-t:env(safe-area-inset-top);
+  --safe-r:env(safe-area-inset-right);
+  --safe-b:env(safe-area-inset-bottom);
+  --safe-l:env(safe-area-inset-left);
+  font-size:16px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;min-height:100%;margin:0;padding:0}
+body{
+  font-family:"Yuanti TC","圓體-繁","PingFang TC","蘋方-繁","Microsoft JhengHei","Noto Sans TC","Segoe UI",system-ui,sans-serif;
+  color:var(--ink);
+  background:linear-gradient(165deg,#F4EEFF 0%,#FFF7EC 48%,#E9F9F2 100%);
+  overflow:hidden;touch-action:manipulation;user-select:none;-webkit-user-select:none;
+}
+#bgdeco{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+#bgdeco span{position:absolute;display:block;border-radius:34%;opacity:.35;animation:float linear infinite}
+@keyframes float{0%{transform:translateY(0) rotate(0)}50%{transform:translateY(-24px) rotate(10deg)}100%{transform:translateY(0) rotate(0)}}
+
+#app{position:relative;z-index:1;height:100%;min-height:100dvh}
+.screen{
+  position:absolute;inset:0;display:none;overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  padding:var(--safe-t) var(--safe-r) var(--safe-b) var(--safe-l);
+}
+.screen.active{display:block}
+.screen.flexcenter.active{display:flex;align-items:center;justify-content:center}
+.screen#s-game.active{display:block;overflow:hidden}
+[hidden]{display:none!important}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#F1EBFA;border-radius:6px;padding:1px 5px;font-size:.9em}
+.ico{display:inline-flex;align-items:center;justify-content:center;width:1.25em;height:1.25em;flex:0 0 auto}
+.ico svg{width:100%;height:100%;display:block}
+
+/* ---------- 立體 SVG 按鈕 ---------- */
+.btn3d{
+  position:relative;border:0;background:none;padding:13px 22px calc(13px + var(--d));
+  font:inherit;font-weight:800;font-size:1.02rem;color:var(--ink);cursor:pointer;
+  letter-spacing:.03em;line-height:1.15;min-height:52px;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.btn3d .b3-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.btn3d .b3-face{transition:transform .07s ease}
+.btn3d .b3-lbl{position:relative;z-index:2;display:inline-flex;align-items:center;gap:.4em;transition:transform .07s ease;text-shadow:0 1px 0 rgba(255,255,255,.65)}
+.btn3d.press .b3-face,.btn3d.press .b3-lbl{transform:translateY(calc(var(--d) - 2px))}
+.btn3d[disabled]{opacity:.42;cursor:default}
+.btn3d:focus-visible{outline:3px solid var(--sky-d);outline-offset:3px;border-radius:18px}
+.btn3d.big{font-size:1.2rem;padding:16px 28px calc(16px + var(--d));min-height:66px;--d:10px}
+.btn3d.small{font-size:.9rem;padding:9px 14px calc(9px + var(--d));min-height:48px;--d:6px}
+.btn3d.icononly{padding:10px 12px calc(10px + var(--d));min-width:52px;min-height:52px;font-size:1.2rem;--d:6px}
+
+/* 右上角設定入口：固定在安全區內，不遮住遊戲控制 */
+.settings-fab{
+  position:fixed;z-index:70;
+  top:calc(10px + var(--safe-t));
+  right:calc(12px + var(--safe-r));
+  --d:6px;
+}
+.settings-fab .b3-lbl{font-size:1.2rem}
+
+/* 回遊戲大廳：跟同一組遊戲共用的入口，固定在左上安全區內 */
+.lobby-home-link{
+  position:fixed;z-index:65;top:calc(10px + var(--safe-t));left:calc(12px + var(--safe-l));
+  display:inline-flex;align-items:center;min-height:44px;padding:9px 14px;
+  border:3px solid var(--ink);border-radius:14px;background:var(--cream);color:var(--ink);
+  font-size:.8rem;font-weight:900;text-decoration:none;box-shadow:0 4px 0 var(--cream-d);
+  transition:transform .15s,box-shadow .15s,background .15s;
+}
+.lobby-home-link:hover{background:#FFF6E8;transform:translateY(-2px)}
+.lobby-home-link:active{transform:translateY(3px);box-shadow:0 1px 0 var(--cream-d)}
+.lobby-home-link:focus-visible{outline:3px solid var(--sky-d);outline-offset:3px}
+@media (max-width:600px){
+  #s-home .home-wrap{padding-top:max(66px,8vh)}
+  .lobby-home-link{top:calc(8px + var(--safe-t));left:calc(8px + var(--safe-l));padding:8px 10px;font-size:.74rem}
+}
+
+/* ---------- 通用面板 ---------- */
+.panel{width:min(100%,880px);margin:0 auto;padding:18px 18px 28px;min-height:100%}
+.panel-head{display:flex;align-items:center;gap:12px;margin:6px 0 14px;padding-right:60px}
+.panel-head h2{flex:1;margin:0;text-align:center;font-size:1.5rem;letter-spacing:.05em}
+.panel-head .spacer{flex:0 0 52px}
+.lbl{margin:18px 4px 8px;font-size:1.05rem;color:var(--grape-t);letter-spacing:.04em}
+.hint-note{margin:8px 4px 0;font-size:.82rem;color:var(--ink-soft);line-height:1.6}
+.panel-foot{display:flex;justify-content:center;gap:12px;margin-top:22px;flex-wrap:wrap}
+
+/* ---------- 主選單 ---------- */
+.home-wrap{text-align:center;padding:22px 18px;width:100%;max-width:640px}
+.logo{margin:0 auto 18px;max-width:520px}
+.logo svg{width:100%;height:auto;display:block}
+.home-btns{display:flex;flex-direction:column;gap:12px;align-items:stretch;max-width:430px;margin:0 auto}
+.home-row{display:flex;gap:12px}
+.home-row .btn3d{flex:1}
+.home-note{margin:18px auto 0;max-width:480px;font-size:.88rem;color:var(--ink-soft);line-height:1.75}
+
+/* ---------- 選項卡 ---------- */
+.diff-row{display:flex;gap:12px;flex-wrap:wrap}
+.optcard{
+  flex:1 1 220px;min-width:200px;text-align:left;
+  display:flex;flex-direction:column;gap:3px;
+  border:3px solid var(--line);border-radius:20px;background:#fff;color:var(--ink);
+  font:inherit;cursor:pointer;padding:12px 14px;min-height:110px;
+  box-shadow:0 5px 0 rgba(74,59,85,.08);
+}
+.optcard b{font-size:1.1rem}
+.optcard .s{font-size:.8rem;color:var(--grape-t);font-weight:800}
+.optcard .t{font-size:.78rem;color:var(--ink-soft);font-weight:700;line-height:1.55}
+.optcard[aria-checked=true]{border-color:var(--grape-d);background:#F7F2FF;box-shadow:0 5px 0 var(--grape-d)}
+.optcard:focus-visible{outline:3px solid var(--sky-d);outline-offset:3px}
+
+.chiprow{display:flex;gap:8px;flex-wrap:wrap}
+.pillbtn{
+  min-height:48px;min-width:56px;padding:10px 16px;font:inherit;font-weight:800;font-size:.95rem;
+  border:3px solid var(--line);border-radius:16px;background:#fff;color:var(--ink);cursor:pointer;
+  box-shadow:0 4px 0 rgba(74,59,85,.08);
+}
+.pillbtn[aria-checked=true]{border-color:var(--grape-d);background:var(--grape);box-shadow:0 4px 0 var(--grape-d)}
+.pillbtn:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
+
+/* ---------- 教學 ---------- */
+.tut-progress{margin:4px 4px 10px;font-size:.85rem;font-weight:800;color:var(--grape-t)}
+.tut-box{
+  border:3px solid var(--line);border-radius:22px;background:#fff;padding:16px 18px;
+  min-height:240px;line-height:1.85;font-size:.98rem;
+  user-select:text;-webkit-user-select:text;
+}
+.tut-box:focus-visible{outline:3px solid var(--sky-d);outline-offset:3px}
+.tut-box h3{margin:0 0 10px;color:var(--grape-t);font-size:1.15rem}
+.tut-box p{margin:0 0 10px}
+.tut-box ul{margin:0 0 10px;padding-left:1.3em}
+.tut-box li{margin-bottom:6px}
+.tut-box .key{display:inline-block;border:2px solid var(--ink);border-radius:8px;padding:0 7px;background:var(--cream);font-weight:900;font-size:.86em}
+.tut-nav{display:flex;gap:10px;justify-content:space-between;margin-top:14px;flex-wrap:wrap}
+.tut-nav .btn3d{flex:1 1 auto}
+
+/* ---------- 戰績 ---------- */
+.statgrid{display:flex;gap:14px;flex-wrap:wrap}
+.statcard{flex:1 1 260px;border:3px solid var(--line);border-radius:22px;background:#fff;padding:14px 16px;box-shadow:0 5px 0 rgba(74,59,85,.08)}
+.statcard h3{margin:0 0 10px;color:var(--grape-t);font-size:1.1rem}
+.statrow{display:flex;justify-content:space-between;padding:5px 2px;font-weight:800;border-bottom:2px dashed var(--line)}
+.statrow:last-child{border-bottom:0}
+.statrow b{font-variant-numeric:tabular-nums}
+
+/* ---------- 大廳 ---------- */
+.lobby-off{text-align:center;padding:20px 10px}
+.state-face{font-size:3rem;margin-bottom:6px}
+.lobby-off h3{margin:0 0 8px;font-size:1.2rem}
+.lobby-off p{margin:0 auto 12px;max-width:520px;color:var(--ink-soft);font-size:.9rem;line-height:1.7}
+.lobby-help{max-width:660px;margin:0 auto 16px;text-align:left;border:3px solid var(--line);border-radius:18px;background:#fff;padding:10px 14px}
+.lobby-help summary{cursor:pointer;font-weight:800;color:var(--grape-t);min-height:36px;display:flex;align-items:center}
+.lobby-help p{margin:8px 0;text-align:left;font-size:.85rem;line-height:1.75;color:var(--ink)}
+.invitebox-land{border-color:var(--grape-d);background:#F8F4FF}
+.invitebox-land strong{color:var(--grape-t)}
+.state-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+
+.lobby-me{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px}
+.lobby-nick{flex:1 1 260px;display:flex;flex-direction:row;align-items:center;gap:10px;font-weight:800;font-size:.88rem}
+.lobby-nick>span{flex:0 0 auto;white-space:nowrap}
+.lobby-me-btns{display:flex;gap:10px;flex:0 1 auto}
+.lobby-join{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.lobby-nick input,.lobby-join input{
+  flex:1 1 180px;min-width:0;font:inherit;font-weight:800;
+  border:3px solid var(--ink);border-radius:16px;padding:11px 14px;background:#fff;color:var(--ink);
+  outline:none;min-height:52px;user-select:text;-webkit-user-select:text;
+}
+.lobby-join input{letter-spacing:.12em;text-transform:uppercase}
+.lobby-nick input:focus,.lobby-join input:focus{border-color:var(--grape-d);box-shadow:0 0 0 3px rgba(164,143,219,.28)}
+.lobby-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px}
+.lobby-bar .lbl{margin:0}
+.lobby-state{margin:8px 4px;font-size:.85rem;font-weight:800;color:var(--ink-soft)}
+.roomlist{display:flex;flex-direction:column;gap:10px}
+.roomcard{
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  border:3px solid var(--line);border-radius:20px;background:#fff;padding:11px 14px;
+  box-shadow:0 4px 0 rgba(74,59,85,.08)
+}
+.roomcard .rc-code{font-weight:900;font-size:1.15rem;letter-spacing:.14em;color:var(--grape-t);min-width:64px}
+.roomcard .rc-main{flex:1 1 200px;min-width:0}
+.roomcard .rc-name{font-weight:800;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.roomcard .rc-sub{font-size:.78rem;color:var(--ink-soft);font-weight:700}
+.roomcard .rc-btns{display:flex;gap:8px;flex-wrap:wrap}
+.rc-badge{display:inline-block;border:2px solid var(--ink-soft);border-radius:999px;padding:1px 9px;font-size:.72rem;font-weight:900;margin-right:6px}
+.rc-badge[data-p=waiting]{border-color:var(--mint-d);background:var(--mint)}
+.rc-badge[data-p=playing]{border-color:var(--lemon-d);background:var(--lemon)}
+.rc-badge[data-p=finished]{border-color:var(--ink-soft);background:#EAE4F0}
+
+/* ================================================================
+   對戰畫面
+   ================================================================ */
+.game{display:flex;height:100%;min-height:0;overflow:hidden}
+.game-main{
+  position:relative;flex:1 1 auto;min-width:0;min-height:0;
+  display:flex;flex-direction:column;
+  padding:calc(4px + var(--safe-t)) calc(8px + var(--safe-r)) calc(4px + var(--safe-b)) calc(8px + var(--safe-l));
+}
+
+/* 上排：離開、階段／題號／倒數、摘要與對局設定。
+   右邊只留給固定在安全區的系統設定鈕，其餘都走正常排版，不會互相疊到。 */
+.game-top{display:flex;align-items:center;gap:4px;flex:0 0 auto;padding-right:calc(74px + var(--safe-r))}
+.statusbar{flex:1 1 auto;min-width:0;display:flex;gap:5px;align-items:center;justify-content:center;flex-wrap:wrap}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;
+  border:3px solid var(--ink);border-radius:999px;background:#fff;
+  padding:4px 13px;font-weight:900;font-size:.84rem;box-shadow:0 3px 0 rgba(74,59,85,.14)
+}
+.chip-phase{background:var(--grape);color:#3A2C46}
+.chip-phase[data-p=drawing]{background:var(--mint)}
+.chip-phase[data-p=picking]{background:var(--lemon)}
+.chip-phase[data-p=reveal]{background:var(--sky)}
+.chip-phase[data-p=over]{background:#EAE4F0;color:var(--ink-soft)}
+.chip-timer{background:var(--lemon)}
+.chip-timer[data-urgent=true]{background:var(--danger-bg);border-color:var(--danger);color:var(--danger)}
+.game-top-actions{display:flex;align-items:center;gap:2px;flex:0 0 auto}
+.game-top-actions .btn3d{flex:0 0 auto}
+
+/* 題目提示列 */
+.wordbar{
+  flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;
+  margin:5px 0 3px;padding:5px 12px;
+  border:3px solid var(--line);border-radius:16px;background:rgba(255,253,248,.9);
+}
+.wordbar[data-mine=true]{border-color:var(--grape-d);background:#F8F4FF}
+.wordbar-label{font-size:.76rem;font-weight:800;color:var(--ink-soft);white-space:nowrap}
+.wordbar-mask{font-size:1.3rem;font-weight:900;letter-spacing:.28em;color:var(--grape-t);word-break:break-all}
+.wordbar-meta{font-size:.76rem;font-weight:800;color:var(--ink-soft)}
+
+/* 玩家列 */
+.playerstrip{
+  flex:0 0 auto;display:flex;gap:6px;align-items:stretch;
+  overflow-x:auto;overflow-y:hidden;padding:2px 0 4px;scrollbar-width:thin;
+}
+.pcard{
+  flex:0 0 auto;min-width:92px;max-width:150px;
+  display:flex;align-items:center;gap:6px;
+  border:2px solid var(--ink);border-radius:13px;background:#fff;padding:3px 7px;
+  box-shadow:0 3px 0 rgba(74,59,85,.14)
+}
+.pcard.drawer{border-color:var(--grape-t);box-shadow:0 4px 0 var(--grape-d);background:#F8F4FF}
+.pcard.guessed{background:#E4F6EC}
+.pcard.me .pname{color:var(--grape-t)}
+.pcard.off{opacity:.55}
+.pface{flex:0 0 auto;width:30px;height:30px}
+.pface svg{width:100%;height:100%;display:block}
+.pinfo{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px}
+.pname{font-size:.74rem;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pstate{font-size:.64rem;font-weight:800;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pscore{flex:0 0 auto;font-size:.9rem;font-weight:900;font-variant-numeric:tabular-nums;color:var(--grape-t)}
+
+/* 遊戲主區：畫布 + 操作列。
+   畫布是正方形，邊長 = 可用空間的較短邊，所以「把高度讓出來」比什麼都有效。
+   直向：操作列在畫布下方（寬度夠、高度貴）。
+   橫向／寬螢幕：操作列移到畫布右側（寬度有剩、高度貴），畫布可以吃滿整個高度。 */
+.playarea{flex:1 1 auto;min-height:0;min-width:0;display:flex;flex-direction:column;gap:4px}
+.playbar{flex:0 0 auto;min-width:0;min-height:0;display:flex;flex-direction:column;gap:4px}
+
+/* 畫布 */
+.stage{position:relative;flex:1 1 auto;min-height:0;min-width:0;display:flex;align-items:center;justify-content:center;padding:3px 0}
+.stage-canvas{position:relative;flex:0 0 auto;display:block;width:300px;height:300px}
+#board{
+  display:block;width:100%;height:100%;
+  border:3px solid var(--ink);border-radius:18px;
+  box-shadow:0 6px 0 rgba(74,59,85,.16);background:#FFFDF8;
+  touch-action:none;-webkit-touch-callout:none;cursor:default;
+}
+#board.drawable{cursor:crosshair}
+
+/* 疊在畫布上的卡片：選題、等待、結算、房間結束 */
+.stage-overlay{
+  position:absolute;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;
+  padding:10px;background:rgba(74,59,85,.34);backdrop-filter:blur(2px);
+}
+.overlay-card{
+  width:min(100%,560px);max-height:100%;overflow-y:auto;overscroll-behavior:contain;
+  border:3px solid var(--ink);border-radius:22px;background:var(--paper);
+  padding:14px 16px;box-shadow:0 10px 0 rgba(74,59,85,.2);
+}
+.overlay-card:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
+.overlay-card h3{margin:0 0 8px;font-size:1.25rem;text-align:center;color:var(--grape-t)}
+.overlay-card p{margin:0 0 10px;font-size:.88rem;line-height:1.65;text-align:center;color:var(--ink-soft)}
+.overlay-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+.wordchoices{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:6px 0}
+.wordchoice{
+  flex:1 1 150px;min-width:140px;min-height:92px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  border:3px solid var(--line);border-radius:18px;background:#fff;color:var(--ink);
+  font:inherit;cursor:pointer;padding:10px;box-shadow:0 5px 0 rgba(74,59,85,.08)
+}
+.wordchoice b{font-size:1.3rem;letter-spacing:.08em}
+.wordchoice .s{font-size:.74rem;font-weight:800;color:var(--ink-soft)}
+.wordchoice:hover{border-color:var(--grape-d);background:#F8F4FF}
+.wordchoice:focus-visible{outline:3px solid var(--sky-d);outline-offset:3px}
+.revealword{text-align:center;font-size:1.6rem;font-weight:900;color:var(--grape-t);letter-spacing:.1em;margin:4px 0 8px}
+.resultlist{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-direction:column;gap:5px}
+.resultlist li{display:flex;align-items:center;gap:8px;border:2px solid var(--line);border-radius:12px;background:#fff;padding:5px 9px;font-size:.84rem;font-weight:800}
+.resultlist li .rface{width:26px;height:26px;flex:0 0 auto}
+.resultlist li .rface svg{width:100%;height:100%}
+.resultlist li .rname{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.resultlist li .rpts{flex:0 0 auto;color:var(--ok);font-variant-numeric:tabular-nums}
+.resultlist li.win{border-color:var(--lemon-d);background:#FFF8E4}
+.seatlist{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 10px;justify-content:center}
+.seatchip{display:inline-flex;align-items:center;gap:6px;border:2px solid var(--line);border-radius:999px;background:#fff;padding:3px 10px;font-size:.8rem;font-weight:800}
+.seatchip .sface{width:24px;height:24px}
+.seatchip .sface svg{width:100%;height:100%}
+.seatchip.ready{border-color:var(--mint-d);background:#E4F6EC}
+.seatchip.ai{border-color:var(--sky-d);background:#EAF4FC}
+.roomcode{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:0 0 10px;padding:8px;border:3px dashed var(--grape-d);border-radius:16px;background:#F8F4FF}
+.roomcode b{font-size:1.5rem;letter-spacing:.2em;color:var(--grape-t)}
+
+/* ---------- 猜題列 ---------- */
+.guessbar{flex:0 0 auto;display:flex;gap:8px;align-items:center;padding:6px 2px 2px}
+.guessbar input{
+  flex:1 1 auto;min-width:0;font:inherit;font-size:1.05rem;font-weight:800;
+  border:3px solid var(--ink);border-radius:18px;padding:12px 16px;background:#fff;color:var(--ink);
+  outline:none;min-height:60px;user-select:text;-webkit-user-select:text;
+}
+.guessbar input:focus{border-color:var(--grape-d);box-shadow:0 0 0 3px rgba(164,143,219,.28)}
+.guessbar input:disabled{background:#F2EEF7;color:var(--ink-soft)}
+.guessbar .btn3d{flex:0 0 auto;min-width:112px}
+
+/* ---------- 小畫家工具列 ---------- */
+.toolbar{flex:0 0 auto;padding:5px 2px 2px;display:flex;flex-direction:column;gap:5px}
+.toolrow{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+/* 畫布工具的按鈕刻意比一般按鈕小：它們數量多、又要一直佔著畫面，
+   做成 48px 會把畫布擠掉一大塊。這裡取「看得清楚」與「畫布夠大」的平衡，
+   需要更大命中區的人可以在設定裡打開「放大工具列」。 */
+.toolbtn{
+  flex:0 0 auto;width:44px;height:44px;padding:5px;
+  display:inline-flex;align-items:center;justify-content:center;
+  border:3px solid var(--line);border-radius:14px;background:#fff;color:var(--ink);
+  font:inherit;cursor:pointer;box-shadow:0 3px 0 rgba(74,59,85,.1)
+}
+.toolbtn .ico{width:100%;height:100%}
+.toolbtn[aria-checked=true]{border-color:var(--grape-d);background:var(--grape);box-shadow:0 3px 0 var(--grape-d)}
+.toolbtn:disabled{opacity:.4;cursor:default}
+.toolbtn:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
+.toolbtn.danger[aria-checked=true],.toolbtn.danger:hover{border-color:var(--danger);background:var(--danger-bg)}
+
+.colorbtn{
+  flex:0 0 auto;width:40px;height:40px;padding:0;
+  border:3px solid var(--line);border-radius:50%;cursor:pointer;
+  box-shadow:0 3px 0 rgba(74,59,85,.12);position:relative
+}
+.colorbtn[aria-checked=true]{border-color:var(--ink);transform:scale(1.12);box-shadow:0 3px 0 var(--ink)}
+.colorbtn:focus-visible{outline:3px solid var(--sky-d);outline-offset:3px}
+.toolrow-colors{gap:7px}
+
+.widthgroup{display:flex;gap:5px;align-items:center}
+.widthbtn{
+  flex:0 0 auto;width:44px;height:44px;padding:0;
+  display:inline-flex;align-items:center;justify-content:center;
+  border:3px solid var(--line);border-radius:14px;background:#fff;cursor:pointer
+}
+.widthbtn i{display:block;border-radius:999px;background:var(--ink)}
+.widthbtn[aria-checked=true]{border-color:var(--grape-d);background:var(--grape)}
+.widthbtn:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
+
+.fillbox{
+  display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:5px 10px;
+  border:3px solid var(--line);border-radius:14px;background:#fff;font-weight:800;font-size:.84rem;cursor:pointer
+}
+.fillbox input{width:22px;height:22px;accent-color:var(--grape-d);cursor:pointer}
+.fillbox.on{border-color:var(--grape-d);background:#F8F4FF}
+.toolrow-misc{align-items:center}
+.toolscroll{flex:1 1 auto;min-width:0;display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.tool-done{flex:0 0 auto;margin-left:auto}
+.tool-hint{margin:0 2px;font-size:.76rem;font-weight:700;color:var(--ink-soft);line-height:1.4;min-height:1.1em}
+.tool-hint[data-kind=error]{color:var(--danger)}
+.tool-hint[data-kind=ok]{color:var(--ok)}
+
+/* 放大工具列（設定裡的選項，給手指用） */
+body.big-tools .toolbtn,body.big-tools .widthbtn{width:56px;height:56px}
+body.big-tools .colorbtn{width:52px;height:52px}
+body.big-tools .fillbox{min-height:56px}
+
+/* ================================================================
+   橫向／寬螢幕：操作列移到畫布右側
+   高度是正方形畫布的瓶頸，把工具列從下方搬到旁邊，畫布邊長可以多出
+   一整個工具列的高度（實測手機橫向 140 → 287、平板橫向 430 → 620）。
+   ================================================================ */
+@media (orientation:landscape) and (min-width:560px){
+  .playarea{flex-direction:row;gap:6px}
+  .playbar{
+    flex:0 0 auto;width:clamp(150px,24vw,196px);
+    padding:0 2px 0 0;
+    /* 很矮的橫向手機放不下整條工具列，讓側欄自己捲，
+       不要把「畫完了」之類的按鈕裁掉。寬一點的螢幕根本不會捲到。 */
+    overflow-y:auto;overscroll-behavior:contain;
+    scrollbar-width:thin;scrollbar-color:var(--grape-d) transparent;
+  }
+  .playbar::-webkit-scrollbar{width:8px}
+  .playbar::-webkit-scrollbar-thumb{background:var(--grape);border-radius:999px}
+  body.big-tools .playbar{width:clamp(168px,28vw,228px)}
+
+  .toolbar{flex:0 0 auto;padding:0;gap:4px}
+  .toolrow{gap:4px}
+  .toolrow-colors{align-content:flex-start}
+  .toolrow-misc{flex-wrap:wrap;gap:4px}
+  .widthgroup{gap:4px}
+  .toolscroll{margin-left:0;gap:4px;width:100%;flex-wrap:wrap}
+  .tool-done{margin-left:0;width:100%}
+  .fillbox{flex:1 1 auto;justify-content:center}
+  .tool-hint{display:none}
+
+  /* 猜題框在側欄裡改成上下堆疊，答案通常只有 2–4 個字，寬度夠用 */
+  .guessbar{flex-direction:column;align-items:stretch;gap:5px;padding:0}
+  .guessbar input{min-height:52px;font-size:1rem;padding:10px 12px;text-align:center}
+  .guessbar .btn3d{width:100%;min-width:0}
+}
+
+/* ================================================================
+   左側資訊欄：上方操作摘要、下方猜題紀錄
+   ================================================================ */
+.game-aside{
+  position:fixed;top:0;left:0;bottom:0;z-index:80;
+  width:var(--aside-w);min-height:0;
+  display:flex;flex-direction:column;
+  border-right:3px solid var(--line);background:rgba(255,253,248,.95);
+  padding-top:var(--safe-t);padding-left:var(--safe-l);padding-bottom:var(--safe-b);
+  box-shadow:8px 0 0 rgba(74,59,85,.14);
+  transform:translateX(-102%);transition:transform .22s ease;
+}
+.game-aside.open{transform:translateX(0)}
+.aside-head{display:flex;align-items:center;gap:8px;padding:10px 12px 8px;border-bottom:3px solid var(--line);flex:0 0 auto}
+.aside-head h3{flex:1;margin:0;font-size:1.02rem;color:var(--grape-t)}
+.aside-close{width:48px;height:48px;flex:0 0 auto;border:3px solid var(--ink);border-radius:50%;background:var(--rose);color:var(--ink);font:inherit;font-weight:900;cursor:pointer}
+.aside-close:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
+.aside-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:8px 9px 12px}
+.aside-chat-slot{flex:0 0 auto;padding:0 8px 8px}
+.aside-chat-slot:empty{display:none}
+
+.sumcard{border:3px solid var(--line);border-radius:16px;background:#fff;padding:7px 10px}
+.sum-line{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:2px dashed var(--line);font-size:.78rem}
+.sum-line:last-child{border-bottom:0}
+.sum-line span{flex:0 0 auto;color:var(--ink-soft);font-weight:800}
+.sum-line b{flex:1 1 auto;text-align:right;font-weight:900;overflow-wrap:anywhere}
+.sum-h{margin:10px 2px 5px;font-size:.84rem;color:var(--grape-t)}
+.scorelist{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:5px}
+.scorelist li{display:flex;align-items:center;gap:7px;border:2px solid var(--line);border-radius:12px;background:#fff;padding:4px 8px;font-size:.78rem;font-weight:800}
+.scorelist li .sface{width:24px;height:24px;flex:0 0 auto}
+.scorelist li .sface svg{width:100%;height:100%}
+.scorelist li .sname{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.scorelist li .spts{flex:0 0 auto;font-variant-numeric:tabular-nums;color:var(--grape-t)}
+.scorelist li.drawer{border-color:var(--grape-d);background:#F8F4FF}
+.scorelist li.me .sname{color:var(--grape-t)}
+.sum-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.sum-list li{border:2px solid var(--line);border-radius:12px;background:#fff;padding:6px 9px;font-size:.73rem;line-height:1.45;font-weight:700;color:var(--ink-soft)}
+.sum-list li[data-k=correct]{border-left:7px solid var(--mint-d);color:var(--ink)}
+.sum-list li[data-k=reveal]{border-left:7px solid var(--sky-d);color:var(--ink)}
+.sum-list li[data-k=turn]{border-left:7px solid var(--grape-d);color:var(--ink)}
+.sum-list li[data-k=hint]{border-left:7px solid var(--lemon-d)}
+.sum-list li[data-k=closed]{border-left:7px solid var(--danger);color:var(--danger)}
+.sum-empty{margin:8px 2px;font-size:.79rem;color:var(--ink-soft)}
+
+/* ---------- 猜題紀錄（唯讀，沒有自由發言） ---------- */
+.chatdock{position:absolute;left:4px;bottom:4px;z-index:45;display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.game.aside-open .chatdock{left:calc(var(--aside-w) + 8px)}
+.chat-pill{position:relative;--d:5px}
+.chat-unread{
+  display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 5px;
+  border:2px solid var(--ink);border-radius:999px;background:var(--danger);color:#fff;font-size:.7rem;font-weight:900
+}
+.chat-panel{
+  order:-1;width:min(80vw,320px);height:min(42vh,300px);
+  display:flex;flex-direction:column;
+  border:3px solid var(--ink);border-radius:18px;background:var(--paper);
+  box-shadow:0 8px 0 rgba(74,59,85,.2);overflow:hidden
+}
+.chat-head{display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:3px solid var(--line);background:#F6EEFF;flex:0 0 auto}
+.chat-head b{font-size:.88rem;white-space:nowrap}
+.chat-scope{flex:1;font-size:.7rem;font-weight:800;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chat-close{width:48px;height:48px;flex:0 0 auto;border:2px solid var(--ink);border-radius:50%;background:var(--rose);color:var(--ink);font:inherit;font-weight:900;cursor:pointer}
+.chat-close:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
+.chat-list{
+  flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:7px;
+  display:flex;flex-direction:column;gap:5px;font-size:.81rem;
+  user-select:text;-webkit-user-select:text
+}
+.chat-msg{border-radius:12px;padding:4px 8px;background:#F4EFFA;line-height:1.5;word-break:break-word}
+.chat-msg .who{font-weight:900;font-size:.75rem;color:var(--grape-t);margin-right:5px}
+.chat-msg[data-role=system]{background:#FFF6E0;color:var(--ink-soft);font-weight:700;font-size:.75rem;text-align:center}
+.chat-msg[data-role=ai]{background:#EAF4FC}
+.chat-msg[data-mine=true]{background:#DFF3E9}
+.chat-empty{margin:auto;font-size:.78rem;color:var(--ink-soft);text-align:center}
+.chat-form{display:flex;gap:6px;padding:6px;border-top:3px solid var(--line);background:#FBF7FF;flex:0 0 auto}
+.chat-form input{
+  flex:1 1 auto;min-width:0;font:inherit;font-size:.86rem;
+  border:3px solid var(--line);border-radius:12px;padding:7px 10px;background:#fff;color:var(--ink);
+  outline:none;min-height:48px;user-select:text;-webkit-user-select:text
+}
+.chat-form input:focus{border-color:var(--grape-d)}
+.chat-form .btn3d{min-height:48px;--d:5px;padding:7px 12px calc(7px + var(--d))}
+.chat-state{margin:0;padding:0 8px 5px;font-size:.71rem;font-weight:800;color:var(--ink-soft);min-height:1.1em;flex:0 0 auto}
+.chat-state[data-kind=error]{color:var(--danger)}
+.chat-state[data-kind=ok]{color:var(--ok)}
+
+/* 猜題紀錄放進左欄時，靠左下並吃滿寬度 */
+.aside-chat-slot .chat-panel{width:100%;height:min(34vh,280px);box-shadow:0 4px 0 rgba(74,59,85,.14)}
+
+/* ---------- 對局設定彈窗裡的房間區塊 ---------- */
+.roomcode-pill{flex:0 0 auto;border:3px solid var(--grape-d);border-radius:999px;background:#F8F4FF;color:var(--grape-t);padding:3px 14px;font-size:1rem;font-weight:900;letter-spacing:.18em}
+.inviterow{display:flex;gap:8px;flex-wrap:wrap;padding:4px}
+.inviterow input{
+  flex:1 1 200px;min-width:0;font:inherit;font-size:.78rem;font-weight:700;
+  border:3px solid var(--line);border-radius:12px;padding:8px 10px;background:#FAF7FF;color:var(--ink);
+  user-select:text;-webkit-user-select:text;outline:none;min-height:46px
+}
+.inviterow input:focus{border-color:var(--grape-d)}
+.aiseats{display:flex;flex-direction:column;gap:6px;padding:4px}
+.aiseat{display:flex;align-items:center;gap:8px;border:2px solid var(--line);border-radius:14px;background:#fff;padding:5px 9px}
+.aiseat .an{flex:1 1 auto;min-width:0;font-weight:800;font-size:.84rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aiseat select{font:inherit;font-size:.8rem;font-weight:800;border:2px solid var(--line);border-radius:10px;padding:6px 8px;min-height:44px;background:#fff;color:var(--ink)}
+.aiseat button{min-width:44px;min-height:44px;border:2px solid var(--line);border-radius:10px;background:var(--peach);color:var(--ink);font:inherit;font-weight:900;cursor:pointer}
+
+/* ---------- 提示 toast ---------- */
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%);
+  bottom:calc(18px + var(--safe-b));z-index:120;
+  max-width:min(92vw,520px);
+  border:3px solid var(--ink);border-radius:16px;background:var(--paper);
+  padding:10px 16px;font-weight:800;font-size:.88rem;line-height:1.5;
+  box-shadow:0 6px 0 rgba(74,59,85,.2);text-align:center
+}
+.toast[data-kind=error]{background:var(--danger-bg);border-color:var(--danger);color:var(--danger)}
+.toast[data-kind=ok]{background:#E4F6EC;border-color:var(--mint-d)}
+
+/* ================================================================
+   設定彈窗
+   ================================================================ */
+.settings-modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
+.settings-modal.open{display:flex}
+.settings-backdrop{position:absolute;inset:0;background:rgba(74,59,85,.36);backdrop-filter:blur(3px)}
+.settings-panel{
+  position:relative;display:flex;flex-direction:column;
+  width:min(94vw,470px);max-height:min(88dvh,700px);overflow:hidden;
+  background:var(--paper);border:3px solid var(--ink);border-radius:26px;
+  box-shadow:0 12px 0 rgba(74,59,85,.2);outline:none;
+}
+.room-create-panel{width:min(94vw,620px)}
+.settings-head{
+  flex:0 0 auto;display:flex;align-items:center;gap:10px;
+  padding:12px 14px 10px;background:linear-gradient(180deg,#F6EEFF 0%,var(--paper) 100%);
+  border-bottom:3px solid var(--line);border-radius:23px 23px 0 0;
+}
+.settings-badge{
+  flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:38px;height:38px;
+  border:3px solid var(--ink);border-radius:50%;background:var(--lemon);
+  box-shadow:0 3px 0 var(--lemon-d);font-size:1.1rem;
+}
+.settings-badge .ico{width:22px;height:22px}
+.settings-head h2{flex:1;margin:0;text-align:center;font-size:1.3rem;letter-spacing:.05em}
+.settings-close{flex:0 0 auto;width:48px;height:48px;border:3px solid var(--ink);border-radius:50%;background:var(--rose);color:var(--ink);font:inherit;font-size:1.1rem;font-weight:900;cursor:pointer;box-shadow:0 4px 0 var(--rose-d)}
+.settings-close:active{transform:translateY(3px);box-shadow:0 1px 0 var(--rose-d)}
+
+.settings-body{
+  flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;
+  overscroll-behavior:contain;scrollbar-gutter:stable;
+  padding:10px 12px 12px;outline:none;
+  scrollbar-width:thin;scrollbar-color:var(--grape-d) transparent;
+  -webkit-overflow-scrolling:touch;
+}
+.settings-body:focus-visible{outline:3px solid var(--sky-d);outline-offset:-3px;border-radius:12px}
+.settings-group{background:#FFFFFF;border:3px solid var(--line);border-radius:20px;padding:8px 10px 6px;margin-bottom:10px}
+.settings-group:last-child{margin-bottom:0}
+.settings-group h3{display:flex;align-items:center;gap:7px;margin:2px 2px 6px;color:var(--grape-t);font-size:1rem;letter-spacing:.03em}
+.settings-group .gico{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;flex:0 0 auto;border:2px solid var(--ink);border-radius:9px;background:var(--cream);font-size:.9rem}
+.settings-group .gico .ico{width:16px;height:16px}
+.settings-note{margin:6px 4px 4px;font-size:.76rem;color:var(--ink-soft);line-height:1.55}
+.setting-toggle,.setting-range,.setting-text{display:flex;align-items:center;justify-content:space-between;gap:12px;border-radius:14px;padding:8px;min-height:54px;cursor:pointer}
+.setting-toggle:hover,.setting-range:hover,.setting-text:hover{background:#FAF5FF}
+.setting-static{display:flex;align-items:center;justify-content:space-between;gap:12px;border-radius:14px;padding:8px;min-height:54px}
+.setting-static>span:first-child,.setting-text>span:first-child{display:flex;flex-direction:column;gap:2px;font-weight:800;min-width:0}
+.setting-static small,.setting-text small{color:var(--ink-soft);font-size:.73rem;font-weight:700;line-height:1.35;overflow-wrap:anywhere}
+.setting-text input[type=text],.setting-text select{
+  flex:0 1 46%;min-width:0;font:inherit;font-weight:800;
+  border:3px solid var(--ink);border-radius:14px;padding:8px 12px;background:#fff;color:var(--ink);
+  outline:none;min-height:46px;user-select:text;-webkit-user-select:text;
+}
+.setting-text select{cursor:pointer}
+.setting-text input[type=text]:focus,.setting-text select:focus{border-color:var(--grape-d);box-shadow:0 0 0 3px rgba(164,143,219,.28)}
+.setting-btns{display:flex;gap:8px;flex-wrap:wrap;padding:4px}
+.setting-btns .btn3d{flex:1 1 auto}
+.create-choice{display:flex;align-items:center;justify-content:space-between;gap:12px;border-radius:14px;padding:7px 8px}
+.create-choice:hover{background:#FAF5FF}
+.create-choice>span{display:flex;flex-direction:column;gap:2px;min-width:140px;font-weight:800}
+.create-choice small{color:var(--ink-soft);font-size:.73rem;font-weight:700;line-height:1.35}
+.create-choice .chiprow{justify-content:flex-end}
+.room-create-invite-note{margin:0 4px;padding:9px 10px;border:2px dashed var(--grape-d);border-radius:14px;background:#F8F4FF;color:var(--grape-t)}
+.server-pill{flex:0 0 auto;border:3px solid var(--ink-soft);border-radius:999px;background:#EAE4F0;color:var(--ink);padding:3px 12px;font-size:.76rem;font-weight:900;white-space:nowrap}
+.server-pill[data-state=ok]{border-color:var(--mint-d);background:var(--mint)}
+.server-pill[data-state=fail],.server-pill[data-state=invalid]{border-color:#E39AA6;background:#FFE1E6}
+.server-pill[data-state=checking]{border-color:var(--grape-d);background:var(--grape)}
+.setting-toggle>span,.setting-range>span{display:flex;flex-direction:column;gap:2px;font-weight:800;min-width:0}
+.setting-toggle small{color:var(--ink-soft);font-size:.73rem;font-weight:700;line-height:1.35}
+.setting-toggle input[type=checkbox]{appearance:none;-webkit-appearance:none;position:relative;flex:0 0 auto;width:54px;height:31px;margin:0;border:3px solid var(--ink-soft);border-radius:999px;background:#EAE4F0;cursor:pointer;transition:background .15s,border-color .15s}
+.setting-toggle input[type=checkbox]::after{content:"";position:absolute;top:2px;left:2px;width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 2px 0 rgba(74,59,85,.2);transition:transform .15s}
+.setting-toggle input[type=checkbox]:checked{border-color:var(--mint-d);background:var(--mint)}
+.setting-toggle input[type=checkbox]:checked::after{transform:translateX(21px)}
+.setting-toggle input:focus-visible,.setting-range input:focus-visible,.setting-text input:focus-visible,
+.setting-text select:focus-visible,.settings-close:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
+.setting-range>span{flex-direction:row;align-items:center;gap:6px;min-width:118px}
+.setting-range output{min-width:3.2em;text-align:right;color:var(--grape-t);font-weight:900}
+.setting-range input[type=range]{width:min(52%,220px);accent-color:var(--grape-d);cursor:pointer;min-height:32px}
+.settings-foot{
+  flex:0 0 auto;display:flex;justify-content:center;gap:10px;
+  padding:10px 14px calc(10px + var(--safe-b));
+  background:linear-gradient(0deg,#F6EEFF 0%,var(--paper) 100%);
+  border-top:3px solid var(--line);border-radius:0 0 23px 23px;
+}
+.settings-foot .btn3d{min-height:48px}
+.settings-done{flex:0 1 auto;min-width:120px}
+
+/* 減少動態 */
+.reduced-motion *,.reduced-motion *::before,.reduced-motion *::after{
+  animation-duration:.01ms!important;animation-iteration-count:1!important;
+  transition-duration:.01ms!important;scroll-behavior:auto!important;
+}
+.reduced-motion #bgdeco{display:none}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+
+/* ================================================================
+   RWD：內容驅動的斷點
+   ================================================================ */
+
+/* 寬版（桌機、平板橫向）：左側資訊欄常駐，上 Summary、下猜題紀錄，
+   畫布是正方形，所以多出來的寬度本來就用不到，給資訊欄剛剛好。 */
+@media (min-width:1100px){
+  .game-aside{
+    position:relative;transform:none;order:-1;flex:0 0 320px;width:320px;
+    box-shadow:none;border-right:3px solid var(--line);
+  }
+  .game-aside.collapsed{display:none}
+  .aside-toggle{right:calc(126px + var(--safe-r))}
+  .game.aside-open .chatdock{left:4px}
+}
+
+/* 中等寬度（平板直向）：資訊欄維持浮層，畫布吃滿 */
+@media (max-width:1099px){
+  .game-aside{width:var(--aside-w)}
+}
+
+/* 手機直向：工具列壓縮成三段，把高度還給畫布 */
+@media (max-width:620px){
+  .panel{padding:14px 12px 24px}
+  .panel-head h2{font-size:1.25rem}
+  .home-row{flex-direction:column}
+  /* 窄版的頂列要在一行內放下：返回、狀態、倒數、兩顆切換鈕，
+     右邊還要留給固定的系統設定鈕。所以按鈕縮到 46（仍符合命中區下限），
+     chip 用小一點的字，時鐘圖示收起來，題號改掛到題目提示列上。 */
+  .game-top{padding-right:calc(66px + var(--safe-r));gap:3px}
+  .game-top-actions{gap:1px}
+  .game-top .btn3d.icononly{min-width:46px;min-height:46px;padding:7px 7px calc(7px + var(--d))}
+  .statusbar{gap:3px}
+  .chip{padding:3px 9px;font-size:.74rem;border-width:2px;gap:3px}
+  .chip-timer .ico{display:none}
+  .chip-round{display:none}
+  .wordbar{gap:6px;padding:3px 9px;margin:3px 0 2px}
+  .playerstrip{padding:1px 0 2px}
+  .toolbar{gap:4px;padding:4px 2px 2px}
+  .toolrow{gap:4px}
+  .toolbtn,.widthbtn{width:40px;height:40px;border-radius:11px;padding:4px}
+  .colorbtn{width:36px;height:36px;border-width:3px}
+  .toolrow-colors{gap:4px}
+  .fillbox{min-height:40px;padding:4px 8px;font-size:.78rem}
+  .toolscroll{gap:4px}
+
+  /* 窄螢幕沒有空間讓工具列換行成四、五排 —— 那會把畫布壓到只剩一小塊。
+     改成三條可以橫向撥動的帶子：命中區維持 46px，畫布拿回一倍高度。
+     「畫完了」釘在右邊不會被撥走。 */
+  .toolrow-tools,.toolrow-colors,.toolscroll{
+    flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;
+    scrollbar-width:none;-webkit-overflow-scrolling:touch;
+  }
+  .toolrow-tools::-webkit-scrollbar,
+  .toolrow-colors::-webkit-scrollbar,
+  .toolscroll::-webkit-scrollbar{display:none}
+  .toolbtn,.widthbtn,.colorbtn,.fillbox,.widthgroup{flex:0 0 auto}
+  /* 工具提示在小螢幕上不值得那一行高度，工具本身有 title 與 aria-label */
+  .tool-hint{display:none}
+  .wordbar-mask{font-size:1.15rem;letter-spacing:.22em}
+  .chip{font-size:.78rem;padding:3px 10px}
+  .pcard{min-width:82px;padding:2px 5px;gap:4px}
+  .pface{width:26px;height:26px}
+  .guessbar .btn3d{min-width:84px}
+  .guessbar input{font-size:1rem;min-height:56px}
+  .chat-panel{width:min(88vw,320px);height:min(36vh,260px)}
+  .toolacts{margin-left:0}
+  /* 手機直向沒有空間同時顯示兩個浮層；摘要開啟時先收起猜題紀錄 */
+  .game.aside-open .chatdock{left:4px;visibility:hidden;pointer-events:none}
+  .create-choice{align-items:stretch;flex-direction:column;gap:6px}
+  .create-choice .chiprow{justify-content:flex-start}
+}
+
+/* 橫向且高度很矮（手機橫向）：把裝飾與留白壓到最低，先保住畫布與操作 */
+@media (orientation:landscape) and (max-height:560px){
+  .game-main{padding-top:calc(2px + var(--safe-t));padding-bottom:calc(2px + var(--safe-b))}
+  .wordbar{margin:1px 0 0;padding:1px 8px;border-width:2px}
+  .wordbar-mask{font-size:1rem;letter-spacing:.2em}
+  .wordbar-label,.wordbar-meta{font-size:.7rem}
+  .chip-round{display:none}
+  .playerstrip{padding:1px 0}
+  .pcard{min-width:70px;padding:1px 5px;gap:4px;border-radius:11px}
+  .pface{width:22px;height:22px}
+  .pname{font-size:.7rem}
+  .pstate{display:none}
+  .chip{padding:2px 10px;font-size:.76rem}
+  .toolbtn,.widthbtn{width:40px;height:40px;border-radius:11px;padding:4px}
+  .colorbtn{width:36px;height:36px}
+  .fillbox{min-height:40px;padding:4px 8px;font-size:.78rem}
+  .guessbar input{min-height:48px;font-size:.95rem;padding:8px 12px}
+  .guessbar .btn3d{min-height:48px;min-width:84px;font-size:1rem}
+  .tool-hint{display:none}
+  .chat-panel{height:min(58vh,220px)}
+  .settings-fab{--d:5px;min-width:46px;min-height:46px}
+}
+
+/* 很矮的橫向手機：顏色收成兩排、只留最關鍵的控制 */
+@media (orientation:landscape) and (max-height:430px){
+  .wordbar-label,.wordbar-meta{display:none}
+  .chip-round{display:none}
+  .toolrow-colors{max-width:none}
+  .toolbtn,.widthbtn{width:38px;height:38px;padding:3px}
+  .colorbtn{width:34px;height:34px}
+  .home-wrap{padding:14px}
+  .logo{max-width:360px}
+}
+
+/* ================================================================
+ * 手機軟體鍵盤修正（js/keyboard.js 量測後寫入 --app-h／--kb）
+ * 鍵盤彈出時把滿版高度改成「真正看得到的高度」，猜題框
+ * 才不會被鍵盤蓋住；沒有鍵盤時兩個變數都不生效，版面與原本完全一樣。
+ * ================================================================ */
+#app{height:var(--app-h,100%);min-height:var(--app-h,100dvh)}
+input,textarea,select{user-select:text;-webkit-user-select:text}
+
+/* iOS 對 font-size < 16px 的欄位聚焦時會自動放大整頁，放大後輸入框常被推出畫面 */
+@media (pointer:coarse){
+  .chat-form input,#guess-input,#lobby-nick,#lobby-code{font-size:16px}
+}
+body.kb-open .game-aside{bottom:var(--kb,0px)}
+body.kb-open .chat-panel{height:min(40vh,300px,calc(var(--app-h,100dvh) - 150px))}

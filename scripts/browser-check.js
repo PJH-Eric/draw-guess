@@ -1,0 +1,857 @@
+/*
+ * scripts/browser-check.js — 用無頭 Chrome 實際跑一遍遊戲並檢查版面
+ * 執行：node scripts/browser-check.js      （會自己啟動 server.js）
+ *
+ * 零外部套件：直接用 Node 內建的 fetch 與 WebSocket 講 Chrome DevTools Protocol。
+ *
+ * 檢查項目
+ *   A. 七種尺寸／方向（手機窄版、手機直橫、平板直橫、桌機寬版）下的每個主要畫面：
+ *      不可水平溢出、右上角設定按鈕在安全區內且夠大、設定鈕不遮住可操作元素、
+ *      觸控命中區足夠、畫布是正方形而且沒有超出可用範圍。
+ *   B. 主控台不可以有未處理的錯誤。
+ *   C. 設定彈窗：開啟、焦點鎖定、Escape 關閉、焦點歸位、靜音設定重新載入後仍保留。
+ *   D. 小畫家工具列：鉛筆／直線／矩形／橢圓／橡皮擦／油漆桶都真的畫得出筆畫，
+ *      復原、重做、全部清除都有作用，而且非畫家時工具列不會出現。
+ *   E. 單機完整一局：選題 → 作畫 → 猜題 → 電腦回合 → 結算 → 再玩一局。
+ *   F. 左側操作摘要可以展開收合，猜題紀錄不遮住畫布。
+ *   G. 線上 UI：同一個瀏覽器開三個分頁（房主、玩家、觀戰），走完
+ *      邀請連結 →（停在大廳改暱稱）→ 加入 → 準備 → 開打，
+ *      並確認觀戰者的工具列與猜題框確實不存在。
+ *
+ * 螢幕截圖會存到 screenshots/。
+ */
+'use strict';
+
+const { spawn } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+
+const ROOT = path.resolve(__dirname, '..');
+const PORT = Number(process.env.CHECK_PORT || 3132);
+const BASE = 'http://127.0.0.1:' + PORT + '/';
+const DEBUG_PORT = Number(process.env.CDP_PORT || 9345);
+const PROFILE = path.join(ROOT, '.chrome-rwd-test');
+const SHOTS = path.join(ROOT, 'screenshots');
+
+const VIEWPORTS = [
+  { name: '手機窄版直向', width: 360, height: 640, mobile: true, dsf: 2 },
+  { name: '手機直向', width: 390, height: 844, mobile: true, dsf: 3 },
+  { name: '手機橫向', width: 844, height: 390, mobile: true, dsf: 3 },
+  { name: '小手機橫向', width: 667, height: 375, mobile: true, dsf: 2 },
+  { name: '平板直向', width: 768, height: 1024, mobile: true, dsf: 2 },
+  { name: '平板橫向', width: 1024, height: 768, mobile: true, dsf: 2 },
+  { name: '桌機寬版', width: 1440, height: 900, mobile: false, dsf: 1 }
+];
+
+const failures = [];
+function check(label, condition, detail) {
+  if (condition) console.log('  ✓ ' + label);
+  else {
+    console.log('  ✗ ' + label + (detail ? ' — ' + detail : ''));
+    failures.push(label + (detail ? ' — ' + detail : ''));
+  }
+}
+
+function findChrome() {
+  const candidates = [
+    process.env.CHROME_PATH,
+    'C:/Program Files/Google/Chrome/Application/chrome.exe',
+    'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
+    'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
+    'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
+    '/usr/bin/google-chrome',
+    '/usr/bin/chromium'
+  ].filter(Boolean);
+  for (const c of candidates) if (fs.existsSync(c)) return c;
+  return null;
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/* ---------------------------------------------------- 極簡 CDP 用戶端 */
+
+class CDP {
+  constructor(ws, label) {
+    this.ws = ws;
+    this.label = label || '';
+    this.id = 0;
+    this.pending = new Map();
+    this.listeners = new Map();
+    ws.addEventListener('message', (ev) => {
+      const msg = JSON.parse(ev.data);
+      if (msg.id && this.pending.has(msg.id)) {
+        const { resolve, reject } = this.pending.get(msg.id);
+        this.pending.delete(msg.id);
+        if (msg.error) reject(new Error(msg.error.message));
+        else resolve(msg.result);
+      } else if (msg.method) {
+        (this.listeners.get(msg.method) || []).forEach((fn) => fn(msg.params));
+      }
+    });
+  }
+  send(method, params) {
+    const id = ++this.id;
+    this.ws.send(JSON.stringify({ id, method, params: params || {} }));
+    return new Promise((resolve, reject) => {
+      this.pending.set(id, { resolve, reject });
+      setTimeout(() => {
+        if (this.pending.has(id)) { this.pending.delete(id); reject(new Error('CDP timeout: ' + method)); }
+      }, 30000);
+    });
+  }
+  on(method, fn) {
+    const list = this.listeners.get(method) || [];
+    list.push(fn);
+    this.listeners.set(method, list);
+  }
+  async eval(expression) {
+    const res = await this.send('Runtime.evaluate', {
+      expression: '(function(){' + expression + '})()',
+      returnByValue: true, awaitPromise: true
+    });
+    if (res.exceptionDetails) {
+      throw new Error('頁面執行例外：' + (res.exceptionDetails.exception && res.exceptionDetails.exception.description));
+    }
+    return res.result.value;
+  }
+  async json(expression) { return JSON.parse(await this.eval('return JSON.stringify(' + expression + ');')); }
+  async waitFor(expression, timeoutMs, label) {
+    const deadline = Date.now() + (timeoutMs || 8000);
+    while (Date.now() < deadline) {
+      if (await this.eval('try { return !!(' + expression + '); } catch (e) { return false; }')) return true;
+      await sleep(140);
+    }
+    throw new Error((this.label ? this.label + '：' : '') + '等不到條件 ' + (label || expression));
+  }
+}
+
+/* ------------------------------ 頁面端探針（字串化送進瀏覽器） */
+
+const PAGE_HELPERS = `
+  window.__probe = {
+    layout: function () {
+      var doc = document.documentElement;
+      var vw = window.innerWidth, vh = window.innerHeight;
+      var fab = document.getElementById('b-settings');
+      var fr = fab.getBoundingClientRect();
+
+      /* 收合中的抽屜（左側摘要、收起來的猜題紀錄）是刻意畫在畫面外的，
+         不算版面溢出，也不用檢查命中區。 */
+      function offCanvas(el) {
+        if (!el.closest) return false;
+        var aside = el.closest('#game-aside');
+        if (aside && !aside.classList.contains('open') && getComputedStyle(aside).position === 'fixed') return true;
+        var panel = el.closest('#feed-panel');
+        if (panel && panel.hidden) return true;
+        return false;
+      }
+      function hitBox(el) {
+        var lab = el.closest ? el.closest('label') : null;
+        return (lab || el).getBoundingClientRect();
+      }
+      /* 橫向可捲動的工具帶裡，捲出可視範圍的項目是正常的，不是版面溢出 */
+      function inHScroller(el) {
+        var n = el.parentElement;
+        while (n && n !== document.body) {
+          var ox = getComputedStyle(n).overflowX;
+          if (ox === 'auto' || ox === 'scroll') return true;
+          n = n.parentElement;
+        }
+        return false;
+      }
+      /* 畫布工具（工具、顏色、筆寬、填滿）數量多又常駐，刻意做得比一般按鈕小；
+         它們有自己的下限，想要大按鈕的人可以開設定裡的「放大工具列」。 */
+      function isCanvasTool(el) {
+        if (!el.closest) return false;
+        return !!(el.closest('.toolbtn') || el.closest('.widthbtn') ||
+          el.closest('.colorbtn') || el.closest('.fillbox'));
+      }
+
+      var small = [];
+      var smallTools = [];
+      var list = document.querySelectorAll(
+        '.screen.active button, .settings-modal.open button, .settings-modal.open input, .screen.active input:not([type=range])'
+      );
+      for (var i = 0; i < list.length; i++) {
+        var el = list[i];
+        if (el.hidden || el.offsetParent === null || offCanvas(el)) continue;
+        var r = hitBox(el);
+        if (r.width === 0 && r.height === 0) continue;
+        var label = (el.id || el.className) + ' ' + Math.round(r.width) + 'x' + Math.round(r.height);
+        if (isCanvasTool(el)) {
+          if (r.height < 34 || r.width < 34) smallTools.push(label);
+        } else if (r.height < 46 || r.width < 46) {
+          small.push(label);
+        }
+      }
+
+      var wide = [];
+      var all = document.querySelectorAll('.screen.active *, .settings-modal.open *');
+      for (var j = 0; j < all.length; j++) {
+        var rr = all[j].getBoundingClientRect();
+        if (rr.width === 0 || all[j].offsetParent === null || offCanvas(all[j])) continue;
+        if (inHScroller(all[j])) continue;
+        if (rr.right > vw + 1.5 || rr.left < -1.5) {
+          wide.push((all[j].id || all[j].className || all[j].tagName) + ' [' + Math.round(rr.left) + ',' + Math.round(rr.right) + ']');
+        }
+      }
+
+      var covered = [];
+      var clickable = document.querySelectorAll('.screen.active button:not(#b-settings), .screen.active input, .screen.active .optcard, .screen.active .pillbtn');
+      for (var k = 0; k < clickable.length; k++) {
+        var el2 = clickable[k];
+        if (el2.hidden || el2.offsetParent === null || offCanvas(el2)) continue;
+        var cr = el2.getBoundingClientRect();
+        if (cr.width === 0 || cr.height === 0) continue;
+        if (cr.left < fr.right && cr.right > fr.left && cr.top < fr.bottom && cr.bottom > fr.top) {
+          covered.push(el2.id || el2.className);
+        }
+      }
+      return {
+        vw: vw, vh: vh,
+        scrollWidth: doc.scrollWidth,
+        activeScreen: (document.querySelector('.screen.active') || {}).id,
+        fab: { top: Math.round(fr.top), right: Math.round(vw - fr.right), w: Math.round(fr.width), h: Math.round(fr.height) },
+        smallTargets: small.slice(0, 6),
+        smallTools: smallTools.slice(0, 6),
+        overflowing: wide.slice(0, 6),
+        fabCovers: covered.slice(0, 6)
+      };
+    },
+    stage: function () {
+      var c = document.getElementById('board');
+      var s = document.getElementById('stage');
+      var cr = c.getBoundingClientRect();
+      var sr = s.getBoundingClientRect();
+      var dock = document.getElementById('feeddock');
+      var dockRect = dock.hidden ? null : dock.getBoundingClientRect();
+      var toolbar = document.getElementById('toolbar');
+      var guessbar = document.getElementById('guessbar');
+      return {
+        canvas: { w: Math.round(cr.width), h: Math.round(cr.height), l: Math.round(cr.left), r: Math.round(cr.right), t: Math.round(cr.top), b: Math.round(cr.bottom) },
+        stage: { w: Math.round(sr.width), h: Math.round(sr.height), l: Math.round(sr.left), r: Math.round(sr.right), t: Math.round(sr.top), b: Math.round(sr.bottom) },
+        ratio: Math.round((cr.width / Math.max(1, cr.height)) * 100) / 100,
+        fill: Math.round((cr.width * cr.height) / Math.max(1, sr.width * sr.height) * 100),
+        toolbarShown: !toolbar.hidden,
+        guessbarShown: !guessbar.hidden,
+        feedOpen: !document.getElementById('feed-panel').hidden,
+        asideOpen: document.getElementById('game-aside').classList.contains('open'),
+        overlayShown: !document.getElementById('stage-overlay').hidden
+      };
+    },
+    click: function (sel) {
+      var el = document.querySelector(sel);
+      if (!el || el.disabled) return false;
+      el.click();
+      return true;
+    },
+    text: function (sel) {
+      var el = document.querySelector(sel);
+      return el ? (el.textContent || '').trim() : null;
+    },
+    exists: function (sel) { return !!document.querySelector(sel); },
+    game: function () {
+      var a = window.DrawGuessApp;
+      if (!a) return null;
+      var v = a.view;
+      return {
+        mode: a.mode, screen: a.screen,
+        phase: v && v.game ? v.game.phase : null,
+        roomPhase: v && v.room ? v.room.phase : null,
+        turnNo: v && v.game ? v.game.turnNo : null,
+        totalTurns: v && v.game ? v.game.totalTurns : null,
+        isDrawer: v && v.game ? v.game.you.isDrawer : null,
+        canDraw: v ? v.you.can.draw : null,
+        canGuess: v ? v.you.can.guess : null,
+        canPick: v ? v.you.can.pick : null,
+        role: v ? v.you.role : null,
+        over: v && v.game ? v.game.over : null,
+        strokes: a.paint ? a.paint.count() : 0,
+        redo: a.paint ? a.paint.redoCount() : 0,
+        scores: v && v.game ? v.game.players.map(function (p) { return p.name + ':' + p.score; }).join(',') : '',
+        answer: v && v.game ? v.game.answer : null,
+        mask: v && v.game && v.game.hint ? v.game.hint.mask : null,
+        feed: a.feed.length,
+        code: a.roomCode
+      };
+    }
+  };
+`;
+
+/* ------------------------------------------------------------ 主流程 */
+
+async function attach(target, label) {
+  const ws = new WebSocket(target.webSocketDebuggerUrl);
+  await new Promise((resolve, reject) => {
+    ws.addEventListener('open', resolve);
+    ws.addEventListener('error', reject);
+    setTimeout(() => reject(new Error('WebSocket 連線逾時')), 10000);
+  });
+  const cdp = new CDP(ws, label);
+  const errors = [];
+  cdp.on('Runtime.exceptionThrown', (p) => {
+    errors.push((p.exceptionDetails && p.exceptionDetails.exception && p.exceptionDetails.exception.description) || '未知例外');
+  });
+  cdp.on('Runtime.consoleAPICalled', (p) => {
+    if (p.type === 'error') errors.push(p.args.map((a) => a.description || a.value).join(' '));
+  });
+  await cdp.send('Page.enable');
+  await cdp.send('Runtime.enable');
+  await cdp.send('Log.enable');
+  await cdp.send('Page.addScriptToEvaluateOnNewDocument', { source: PAGE_HELPERS });
+  cdp.errors = errors;
+  return cdp;
+}
+
+async function goto(cdp, url) {
+  await cdp.send('Page.navigate', { url });
+  await sleep(700);
+  await cdp.waitFor('window.__probe && window.DrawGuessApp', 10000, '頁面初始化');
+}
+
+/** 在畫布上真的拖一條線（會產生 pointerdown / move / up） */
+async function drag(cdp, from, to, steps) {
+  const n = steps || 6;
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: from.x, y: from.y, button: 'left', clickCount: 1, pointerType: 'mouse' });
+  for (let i = 1; i <= n; i++) {
+    await cdp.send('Input.dispatchMouseEvent', {
+      type: 'mouseMoved', button: 'left', buttons: 1, pointerType: 'mouse',
+      x: Math.round(from.x + (to.x - from.x) * i / n),
+      y: Math.round(from.y + (to.y - from.y) * i / n)
+    });
+    await sleep(25);
+  }
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: to.x, y: to.y, button: 'left', clickCount: 1, pointerType: 'mouse' });
+  await sleep(120);
+}
+
+async function tap(cdp, x, y) {
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: 1, pointerType: 'mouse' });
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1, pointerType: 'mouse' });
+  await sleep(120);
+}
+
+async function main() {
+  const chrome = findChrome();
+  if (!chrome) {
+    console.log('找不到 Chrome 或 Edge，略過瀏覽器檢查。設定 CHROME_PATH 環境變數後可再執行。');
+    process.exit(0);
+  }
+  fs.mkdirSync(SHOTS, { recursive: true });
+
+  console.log('啟動遊戲伺服器 (port ' + PORT + ')…');
+  const server = spawn(process.execPath, [path.join(ROOT, 'server.js')], {
+    env: Object.assign({}, process.env, { PORT: String(PORT), HOST: '127.0.0.1', GAME_ALLOWED_ORIGIN: '*', ROOM_TICK_MS: '250' }),
+    stdio: 'ignore'
+  });
+  let up = false;
+  for (let i = 0; i < 40 && !up; i++) {
+    await sleep(200);
+    try { up = (await fetch(BASE + 'health')).ok; } catch (e) {}
+  }
+  if (!up) { server.kill(); throw new Error('伺服器沒有啟動'); }
+
+  console.log('啟動無頭瀏覽器…');
+  const browser = spawn(chrome, [
+    '--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
+    '--disable-extensions', '--mute-audio', '--autoplay-policy=no-user-gesture-required',
+    '--remote-debugging-port=' + DEBUG_PORT, '--user-data-dir=' + PROFILE, 'about:blank'
+  ], { stdio: 'ignore' });
+
+  const cleanup = () => { try { browser.kill(); } catch (e) {} try { server.kill(); } catch (e) {} };
+  process.on('exit', cleanup);
+
+  let firstTarget = null;
+  for (let i = 0; i < 50 && !firstTarget; i++) {
+    await sleep(300);
+    try {
+      const list = await (await fetch('http://127.0.0.1:' + DEBUG_PORT + '/json/list')).json();
+      firstTarget = list.find((t) => t.type === 'page');
+    } catch (e) {}
+  }
+  if (!firstTarget) { cleanup(); throw new Error('無法連上瀏覽器的偵錯埠'); }
+
+  const cdp = await attach(firstTarget, '主分頁');
+
+  async function shot(name, tab) {
+    try {
+      const res = await (tab || cdp).send('Page.captureScreenshot', { format: 'png' });
+      fs.writeFileSync(path.join(SHOTS, name.replace(/[\\/:*?"<>|]/g, '_') + '.png'), Buffer.from(res.data, 'base64'));
+    } catch (e) { /* 截圖失敗不影響檢查 */ }
+  }
+  async function setViewport(v) {
+    await cdp.send('Emulation.setDeviceMetricsOverride', { width: v.width, height: v.height, deviceScaleFactor: v.dsf, mobile: v.mobile });
+    await sleep(320);
+  }
+
+  function assertLayout(where, v, info) {
+    check(where + '：沒有水平溢出',
+      info.scrollWidth <= v.width + 2 && info.overflowing.length === 0,
+      'scrollWidth=' + info.scrollWidth + ' 溢出=' + JSON.stringify(info.overflowing));
+    check(where + '：設定鈕在安全區內且夠大',
+      info.fab.w >= 46 && info.fab.h >= 46 && info.fab.top >= 0 && info.fab.top < 90 && info.fab.right >= 0 && info.fab.right < 90,
+      JSON.stringify(info.fab));
+    check(where + '：設定鈕沒有蓋住其他可操作元素', info.fabCovers.length === 0, JSON.stringify(info.fabCovers));
+    check(where + '：觸控命中區都夠大', info.smallTargets.length === 0, JSON.stringify(info.smallTargets));
+    check(where + '：畫布工具雖然小，但沒有小到看不見（≥34px）',
+      info.smallTools.length === 0, JSON.stringify(info.smallTools));
+  }
+
+  /* ================= A. 各尺寸的版面檢查 ================= */
+
+  for (const v of VIEWPORTS) {
+    console.log('\n【' + v.name + ' ' + v.width + '×' + v.height + '】');
+    await setViewport(v);
+    await goto(cdp, BASE);
+    await cdp.eval('localStorage.clear(); return 1;');
+    await goto(cdp, BASE);
+
+    let info = await cdp.json('window.__probe.layout()');
+    check(v.name + '：第一次進來直接顯示純文字教學', info.activeScreen === 's-help', info.activeScreen);
+    assertLayout('教學', v, info);
+    await shot(v.name + '-1-教學');
+
+    await cdp.eval('window.__probe.click("#b-tut-skip"); return 1;');
+    await sleep(250);
+    info = await cdp.json('window.__probe.layout()');
+    check(v.name + '：跳過教學後回到主選單', info.activeScreen === 's-home', info.activeScreen);
+    assertLayout('主選單', v, info);
+    await shot(v.name + '-2-主選單');
+
+    /* 設定彈窗 */
+    await cdp.eval('window.__probe.click("#b-settings"); return 1;');
+    await sleep(300);
+    info = await cdp.json('window.__probe.layout()');
+    assertLayout('設定彈窗', v, info);
+    const modal = await cdp.json('({open:document.getElementById("settings-modal").classList.contains("open"),focus:document.activeElement.id,aria:document.getElementById("settings-modal").getAttribute("aria-hidden"),role:document.getElementById("settings-modal").getAttribute("role"),modalAttr:document.getElementById("settings-modal").getAttribute("aria-modal")})');
+    check(v.name + '：設定是 Modal 彈窗、焦點進入面板、aria 正確',
+      modal.open && modal.focus === 'settings-panel' && modal.aria === 'false' && modal.role === 'dialog' && modal.modalAttr === 'true',
+      JSON.stringify(modal));
+    const mixed = await cdp.json('({hasGameActions:!!document.querySelector("#settings-modal #gs-skip") || !!document.querySelector("#settings-modal #gs-quit"),gameOpen:document.getElementById("game-settings-modal").classList.contains("open")})');
+    check(v.name + '：系統設定不混入本局操作', !mixed.hasGameActions && !mixed.gameOpen, JSON.stringify(mixed));
+    await shot(v.name + '-3-設定彈窗');
+
+    await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+    await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+    await sleep(250);
+    const closed = await cdp.json('({open:document.getElementById("settings-modal").classList.contains("open"),focus:document.activeElement.id})');
+    check(v.name + '：Escape 關閉設定並把焦點還給設定鈕',
+      !closed.open && closed.focus === 'b-settings', JSON.stringify(closed));
+
+    /* 單機設定 */
+    await cdp.eval('window.__probe.click("#b-solo"); return 1;');
+    await sleep(250);
+    info = await cdp.json('window.__probe.layout()');
+    check(v.name + '：進入單機設定', info.activeScreen === 's-solo', info.activeScreen);
+    assertLayout('單機設定', v, info);
+    await shot(v.name + '-4-單機設定');
+
+    /* 對局畫面 */
+    await cdp.eval(`
+      document.querySelector('#opt-ai .optcard[data-v=hard]').click();
+      document.querySelector('#opt-aicount .pillbtn').click();
+      document.querySelector('#opt-rounds .pillbtn').click();
+      document.querySelector('#opt-drawsec .pillbtn').click();
+      window.__probe.click('#b-solo-start');
+      return 1;
+    `);
+    await cdp.waitFor('window.DrawGuessApp.mode === "solo"', 6000, '進入對局');
+    await sleep(500);
+    info = await cdp.json('window.__probe.layout()');
+    check(v.name + '：進入對局畫面', info.activeScreen === 's-game', info.activeScreen);
+    assertLayout('對局中', v, info);
+
+    await sleep(400);
+    const stage = await cdp.json('window.__probe.stage()');
+    check(v.name + '：畫布是正方形', Math.abs(stage.ratio - 1) < 0.03, 'ratio=' + stage.ratio);
+    check(v.name + '：畫布沒有超出可用範圍',
+      stage.canvas.w <= stage.stage.w + 2 && stage.canvas.h <= stage.stage.h + 2,
+      JSON.stringify(stage));
+    /* 畫布是正方形，所以「最大化」= 邊長貼齊舞台較短的那一邊 */
+    const limit = Math.min(stage.stage.w, stage.stage.h);
+    check(v.name + '：畫布已經吃滿可用空間的較短邊',
+      stage.canvas.w >= limit - 10, stage.canvas.w + ' / ' + limit);
+    await shot(v.name + '-5-對局中');
+
+    /* 左側資訊欄：寬版常駐左欄、窄版是可收合的浮層 */
+    const wide = v.width >= 1100;
+    const start = await cdp.json('window.__probe.stage()');
+    check(v.name + '：' + (wide ? '寬版摘要預設常駐左欄' : '窄版摘要預設收起來'),
+      start.asideOpen === wide, 'asideOpen=' + start.asideOpen);
+
+    await cdp.eval('window.__probe.click("#b-aside-toggle"); return 1;');
+    await sleep(420);
+    const toggled = await cdp.json('window.__probe.stage()');
+    check(v.name + '：摘要按鈕可以切換', toggled.asideOpen === !wide, 'asideOpen=' + toggled.asideOpen);
+    const asideInfo = await cdp.json('window.__probe.layout()');
+    check(v.name + '：切換摘要後仍沒有水平溢出',
+      asideInfo.scrollWidth <= v.width + 2 && asideInfo.overflowing.length === 0,
+      JSON.stringify(asideInfo.overflowing));
+    check(v.name + '：切換摘要後畫布仍在舞台範圍內',
+      toggled.canvas.w <= toggled.stage.w + 2 && toggled.canvas.h <= toggled.stage.h + 2,
+      JSON.stringify(toggled));
+    await shot(v.name + '-6-操作摘要');
+
+    /* 猜題紀錄：窄版是左下浮層入口，寬版搬進左欄常駐 */
+    const dockShown = await cdp.eval('return !document.getElementById("feeddock").hidden;');
+    check(v.name + '：' + (wide ? '寬版猜題紀錄併進左欄' : '窄版有猜題紀錄的入口'),
+      wide ? dockShown === false : dockShown === true, 'dock=' + dockShown);
+    if (!wide) {
+      await cdp.eval('window.__probe.click("#b-feed-toggle"); return 1;');
+      await sleep(300);
+      const s1 = await cdp.json('window.__probe.stage()');
+      await cdp.eval('window.__probe.click("#b-feed-toggle"); return 1;');
+      await sleep(300);
+      const s2 = await cdp.json('window.__probe.stage()');
+      check(v.name + '：猜題紀錄可以開關', s1.feedOpen !== s2.feedOpen, s1.feedOpen + ' → ' + s2.feedOpen);
+    } else {
+      check(v.name + '：寬版猜題紀錄常駐可見',
+        await cdp.eval('return !document.getElementById("feed-panel").hidden && !!document.getElementById("aside-chat-slot").querySelector("#feed-panel");'));
+    }
+
+    if (wide) {
+      check(v.name + '：寬版收起左欄後遊戲主區變寬',
+        toggled.stage.w > start.stage.w, start.stage.w + ' → ' + toggled.stage.w);
+    } else {
+      check(v.name + '：窄版摘要是浮層，不會壓縮遊戲主區',
+        Math.abs(toggled.stage.w - start.stage.w) <= 2, start.stage.w + ' → ' + toggled.stage.w);
+    }
+    await cdp.eval('window.__probe.click("#b-aside-toggle"); return 1;');
+    await sleep(300);
+
+    /* 工具列展開時再量一次：之前的檢查都在「選題中」，工具列是收著的，
+       所以工具、顏色、筆寬那些按鈕的命中區從來沒被驗到。 */
+    await cdp.eval(`var a = window.DrawGuessApp, st = a.solo.state;
+      if (st.drawerId !== 'me') { st.drawerId = 'me'; st.order = ['me'].concat(st.order.filter(function(x){return x!=='me';})); }
+      window.Rules.pickWord(st, 'me', st.choices[0], Date.now());
+      return 1;`);
+    await cdp.waitFor('window.DrawGuessApp.view && window.DrawGuessApp.view.you.can.draw', 8000, '進入作畫');
+    await sleep(500);
+    const drawStage = await cdp.json('window.__probe.stage()');
+    const drawInfo = await cdp.json('window.__probe.layout()');
+    check(v.name + '：畫家的工具列有出現', drawStage.toolbarShown === true);
+    assertLayout('作畫中（工具列展開）', v, drawInfo);
+    const drawLimit = Math.min(drawStage.stage.w, drawStage.stage.h);
+    check(v.name + '：工具列展開時畫布仍吃滿較短邊',
+      drawStage.canvas.w >= drawLimit - 10, drawStage.canvas.w + ' / ' + drawLimit);
+    /* 畫布是這個遊戲的主體，不能被工具列壓到只剩一小塊 */
+    check(v.name + '：畫布邊長至少是視窗較短邊的六成',
+      drawStage.canvas.w >= Math.min(v.width, v.height) * 0.6,
+      drawStage.canvas.w + ' / 視窗較短邊 ' + Math.min(v.width, v.height));
+    await shot(v.name + '-7-作畫中');
+
+    /* 工具鈕刻意做小了，設定裡的「放大工具列」就是它的無障礙備案：
+       打開之後每一顆都要回到 46px 以上。 */
+    await cdp.eval('document.body.classList.add("big-tools"); return 1;');
+    await sleep(350);
+    const bigInfo = await cdp.json(`(function(){
+      var out = [];
+      var list = document.querySelectorAll('#toolbar .toolbtn, #toolbar .widthbtn, #toolbar .colorbtn, #toolbar .fillbox');
+      for (var i = 0; i < list.length; i++) {
+        var r = list[i].getBoundingClientRect();
+        if (r.width === 0) continue;
+        if (r.width < 46 || r.height < 46) out.push(list[i].className + ' ' + Math.round(r.width) + 'x' + Math.round(r.height));
+      }
+      return { small: out.slice(0, 5), total: list.length };
+    })()`);
+    check(v.name + '：打開「放大工具列」後每顆工具鈕都 ≥46px',
+      bigInfo.total > 0 && bigInfo.small.length === 0, JSON.stringify(bigInfo));
+    await cdp.eval('document.body.classList.remove("big-tools"); return 1;');
+    await sleep(250);
+
+    check(v.name + '：主控台沒有未處理錯誤', cdp.errors.length === 0, cdp.errors.slice(0, 2).join(' | '));
+    cdp.errors.length = 0;
+  }
+
+  /* ================= C. 設定保存 ================= */
+  console.log('\n【設定保存】');
+  await setViewport({ width: 1024, height: 768, mobile: true, dsf: 2 });
+  await goto(cdp, BASE);
+  await cdp.eval('window.__probe.click("#b-tut-skip"); window.__probe.click("#b-settings"); return 1;');
+  await sleep(300);
+  await cdp.eval('var m=document.getElementById("settings-music"); m.checked=false; m.dispatchEvent(new Event("change")); var s=document.getElementById("settings-sfx"); s.checked=false; s.dispatchEvent(new Event("change")); return 1;');
+  await sleep(200);
+  check('可以同時關掉音樂與音效', await cdp.eval('return !window.Sound.isMusicOn() && !window.Sound.isSfxOn();'));
+  await goto(cdp, BASE);
+  check('重新載入後靜音設定仍保留', await cdp.eval('return !window.Sound.isMusicOn() && !window.Sound.isSfxOn();'));
+  await cdp.eval('window.Sound.resetDefaults(); return 1;');
+  check('恢復預設會把聲音打開', await cdp.eval('return window.Sound.isMusicOn() && window.Sound.isSfxOn();'));
+
+  /* ================= D/E. 小畫家工具 + 單機一局 ================= */
+  console.log('\n【小畫家工具與單機一局】');
+  await setViewport({ width: 1024, height: 768, mobile: true, dsf: 2 });
+  await goto(cdp, BASE);
+  await cdp.eval('localStorage.clear(); return 1;');
+  await goto(cdp, BASE);
+  await cdp.eval(`
+    window.__probe.click('#b-tut-skip');
+    window.__probe.click('#b-solo');
+    document.querySelector('#opt-ai .optcard[data-v=hard]').click();
+    document.querySelector('#opt-aicount .pillbtn[aria-checked]') ;
+    document.querySelectorAll('#opt-aicount .pillbtn')[0].click();
+    document.querySelectorAll('#opt-rounds .pillbtn')[0].click();
+    document.querySelectorAll('#opt-drawsec .pillbtn')[0].click();
+    window.__probe.click('#b-solo-start');
+    return 1;
+  `);
+  await cdp.waitFor('window.DrawGuessApp.mode === "solo"', 6000, '開始單機');
+
+  /* 等到輪到自己當畫家（電腦先畫的話就先看它畫） */
+  await cdp.waitFor('window.DrawGuessApp.view && window.DrawGuessApp.view.you.can.pick', 120000, '輪到自己選題');
+  let g = await cdp.json('window.__probe.game()');
+  check('輪到自己時可以選題', g.canPick === true, JSON.stringify(g));
+  check('選題時看得到三個候選', await cdp.eval('return document.querySelectorAll(".wordchoice").length === 3;'));
+  await shot('單機-選題');
+
+  await cdp.eval('document.querySelectorAll(".wordchoice")[0].click(); return 1;');
+  await cdp.waitFor('window.DrawGuessApp.view.you.can.draw', 6000, '進入作畫');
+  g = await cdp.json('window.__probe.game()');
+  check('選完題目可以開始畫', g.canDraw === true && g.phase === 'drawing', JSON.stringify(g));
+  check('畫家看得到自己的題目', typeof g.answer === 'string' && g.answer.length > 0, g.answer);
+  const barShown = await cdp.json('window.__probe.stage()');
+  check('畫家看到工具列、看不到猜題框', barShown.toolbarShown === true && barShown.guessbarShown === false, JSON.stringify(barShown));
+
+  const box = await cdp.json('(function(){var r=document.getElementById("board").getBoundingClientRect();return {x:Math.round(r.left),y:Math.round(r.top),w:Math.round(r.width),h:Math.round(r.height)};})()');
+  const px = (fx, fy) => ({ x: Math.round(box.x + box.w * fx), y: Math.round(box.y + box.h * fy) });
+
+  /* 每個工具都真的畫得出東西 */
+  const tools = [
+    ['pen', () => drag(cdp, px(0.2, 0.2), px(0.5, 0.4))],
+    ['brush', () => drag(cdp, px(0.25, 0.5), px(0.55, 0.6))],
+    ['line', () => drag(cdp, px(0.2, 0.75), px(0.8, 0.75))],
+    ['rect', () => drag(cdp, px(0.3, 0.25), px(0.7, 0.5))],
+    ['ellipse', () => drag(cdp, px(0.35, 0.3), px(0.65, 0.45))],
+    ['erase', () => drag(cdp, px(0.4, 0.35), px(0.5, 0.35))],
+    ['fill', () => tap(cdp, px(0.85, 0.15).x, px(0.85, 0.15).y)]
+  ];
+  for (const [key, act] of tools) {
+    const before = (await cdp.json('window.__probe.game()')).strokes;
+    await cdp.eval('window.__probe.click(\'.toolbtn[data-tool=' + key + ']\'); return 1;');
+    await sleep(120);
+    const selected = await cdp.eval('return document.querySelector(\'.toolbtn[data-tool=' + key + ']\').getAttribute("aria-checked") === "true";');
+    await act();
+    const after = (await cdp.json('window.__probe.game()')).strokes;
+    check('工具「' + key + '」可以選取並畫得出筆畫', selected && after > before, before + ' → ' + after);
+  }
+  await shot('單機-作畫');
+
+  /* 顏色與筆寬 */
+  await cdp.eval('document.querySelectorAll(".colorbtn")[3].click(); document.querySelectorAll(".widthbtn")[2].click(); return 1;');
+  await sleep(150);
+  check('可以換顏色與筆寬',
+    await cdp.eval('return window.DrawGuessApp.paint.getColor() === 3 && window.DrawGuessApp.paint.getWidth() === 2;'));
+
+  /* 復原、重做、清除 */
+  let cnt = (await cdp.json('window.__probe.game()')).strokes;
+  await cdp.eval('window.__probe.click("#b-undo"); return 1;');
+  await sleep(200);
+  let after = await cdp.json('window.__probe.game()');
+  check('復原會少一筆並存進重做堆疊', after.strokes === cnt - 1 && after.redo >= 1, cnt + ' → ' + after.strokes + ' redo=' + after.redo);
+  await cdp.eval('window.__probe.click("#b-redo"); return 1;');
+  await sleep(200);
+  after = await cdp.json('window.__probe.game()');
+  check('重做會把那一筆加回來', after.strokes === cnt, after.strokes + '/' + cnt);
+  await cdp.eval('window.__probe.click("#b-clear"); return 1;');
+  await sleep(200);
+  after = await cdp.json('window.__probe.game()');
+  check('全部清除會把畫布清空', after.strokes === 0, after.strokes);
+
+  /* 快捷鍵 */
+  await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'r', code: 'KeyR', windowsVirtualKeyCode: 82 });
+  await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'r', code: 'KeyR', windowsVirtualKeyCode: 82 });
+  await sleep(200);
+  check('鍵盤快捷鍵可以換工具', await cdp.eval('return window.DrawGuessApp.paint.getTool() === "rect";'),
+    await cdp.eval('return window.DrawGuessApp.paint.getTool();'));
+
+  /* 電腦會看著畫猜：把題目的配方照抄上去，看它會不會猜 */
+  await cdp.eval(`
+    var app = window.DrawGuessApp;
+    var st = app.solo.state;
+    var strokes = window.Words.strokesOf(st.wordId);
+    for (var i = 0; i < strokes.length; i++) {
+      var p = strokes[i].p.map(function (v) { return Math.round(v); });
+      var r = window.Rules.addStroke(st, 'me', { t: 'pen', c: 0, w: 1, p: p });
+      if (r.ok) app.paint.addStroke(r.stroke);
+    }
+    return st.strokes.length;
+  `);
+  await sleep(400);
+  const guessed = await cdp.waitFor(
+    'window.DrawGuessApp.solo.state.guessed.length > 0 || window.DrawGuessApp.solo.state.phase !== "drawing"',
+    45000, '電腦猜題').catch(() => false);
+  const afterAi = await cdp.json('window.__probe.game()');
+  check('照著配方畫出來時，困難電腦猜得到',
+    (await cdp.eval('return window.DrawGuessApp.solo.state.guessed.length;')) > 0 || afterAi.phase !== 'drawing',
+    JSON.stringify(afterAi));
+  check('猜題紀錄有內容', afterAi.feed > 0, afterAi.feed);
+  await shot('單機-電腦猜題');
+
+  /* 換到猜題者的回合 */
+  await cdp.waitFor('window.DrawGuessApp.view.you.can.guess || window.DrawGuessApp.view.game.over', 130000, '輪到自己猜');
+  const guessTurn = await cdp.json('window.__probe.game()');
+  if (guessTurn.canGuess) {
+    const s2 = await cdp.json('window.__probe.stage()');
+    check('猜題者看到猜題框、看不到工具列', s2.guessbarShown === true && s2.toolbarShown === false, JSON.stringify(s2));
+    check('猜題者看不到答案、只看得到遮罩', guessTurn.answer === null && /○/.test(guessTurn.mask || ''), guessTurn.mask);
+    const feedBefore = guessTurn.feed;
+    await cdp.eval('var i=document.getElementById("guess-input"); i.value="一定不是這個"; document.getElementById("guessbar").dispatchEvent(new Event("submit",{cancelable:true})); return 1;');
+    await sleep(400);
+    check('猜錯會進猜題紀錄', (await cdp.json('window.__probe.game()')).feed > feedBefore);
+    /* 用正確答案猜（從完整狀態拿，這是測試才做得到的事） */
+    await cdp.eval('var a=window.Rules.word(window.DrawGuessApp.solo.state).text; var i=document.getElementById("guess-input"); i.value=a; document.getElementById("guessbar").dispatchEvent(new Event("submit",{cancelable:true})); return 1;');
+    await sleep(500);
+    check('猜對會加分', (await cdp.eval('return window.Rules.player(window.DrawGuessApp.solo.state,"me").score;')) > 0,
+      await cdp.eval('return window.Rules.player(window.DrawGuessApp.solo.state,"me").score;'));
+    await shot('單機-猜對');
+  } else {
+    check('輪到自己猜（這一局已結束，略過）', true);
+  }
+
+  /* 跑到結算 */
+  await cdp.eval(`
+    var st = window.DrawGuessApp.solo.state;
+    var guard = 0;
+    while (!st.over && guard < 200) {
+      guard++;
+      if (st.phase === 'picking') window.Rules.pickWord(st, st.drawerId, st.choices[0], Date.now());
+      else if (st.phase === 'drawing') window.Rules.endTurn(st, Date.now(), 'skipped');
+      else if (st.phase === 'reveal') window.Rules.nextTurn(st, Date.now());
+    }
+    return st.over;
+  `);
+  await cdp.waitFor('window.DrawGuessApp.view.game.over', 8000, '對局結束');
+  await sleep(400);
+  const over = await cdp.json('window.__probe.game()');
+  check('對局可以跑到結算', over.over === true, JSON.stringify(over));
+  check('結算畫面有排名與再玩一局',
+    await cdp.eval('return document.querySelectorAll(".resultlist li").length > 0 && !!document.querySelector("[data-act=rematch]");'));
+  await shot('單機-結算');
+
+  await cdp.eval('window.__probe.click("[data-act=rematch]"); return 1;');
+  await cdp.waitFor('window.DrawGuessApp.view && !window.DrawGuessApp.view.game.over', 8000, '再玩一局');
+  check('可以再玩一局', (await cdp.json('window.__probe.game()')).turnNo === 1);
+  check('單機流程沒有主控台錯誤', cdp.errors.length === 0, cdp.errors.slice(0, 2).join(' | '));
+  cdp.errors.length = 0;
+
+  /* ================= G. 線上三個分頁 ================= */
+  console.log('\n【線上：房主 + 玩家 + 觀戰】');
+  const hostTab = cdp;
+  await setViewport({ width: 1024, height: 768, mobile: true, dsf: 2 });
+  await goto(hostTab, BASE);
+  await hostTab.eval('localStorage.clear(); localStorage.setItem("dg_tutorial","1"); localStorage.setItem("dg_nick","房主"); return 1;');
+  await goto(hostTab, BASE);
+  await hostTab.eval('window.__probe.click("#b-online"); return 1;');
+  await hostTab.waitFor('window.Online && window.Online.isConnected()', 15000, '大廳連上線');
+  await hostTab.eval('window.__probe.click("#b-lobby-host"); return 1;');
+  await hostTab.waitFor('document.getElementById("room-create-modal").classList.contains("open")', 3000, '開房間設定');
+  check('開房前先顯示開房間設定', await hostTab.eval('return document.getElementById("room-create-modal").classList.contains("open");'));
+  await hostTab.eval('window.__probe.click("#room-create-rounds [data-v=\\"3\\"]"); window.__probe.click("#room-create-drawsec [data-v=\\"120\\"]"); window.__probe.click("#room-create-diff [data-v=\\"3\\"]"); window.__probe.click("#room-create-ai [data-v=\\"1\\"]"); return 1;');
+  await hostTab.eval('window.__probe.click("#room-create-submit"); return 1;');
+  await hostTab.waitFor('window.DrawGuessApp.mode === "online" && window.DrawGuessApp.view', 10000, '進入房間');
+  const code = await hostTab.eval('return window.DrawGuessApp.roomCode;');
+  check('房主開房成功', typeof code === 'string' && code.length === 4, code);
+  check('開房設定有套用', await hostTab.eval('var s=window.DrawGuessApp.view.room.settings; return s.rounds===3 && s.drawSec===120 && s.diff===3 && window.DrawGuessApp.view.room.aiSeats.length===1;'));
+  const actionGap = await hostTab.eval('var a=document.getElementById("b-aside-toggle").getBoundingClientRect(); var b=document.getElementById("b-game-settings").getBoundingClientRect(); return {gap: Math.max(0, b.left-a.right, a.left-b.right), aside:a.toJSON(), settings:b.toJSON()};');
+  check('左側欄與對局設定按鈕緊鄰', actionGap.gap <= 8, JSON.stringify(actionGap));
+
+  /* 產生玩家邀請連結 */
+  await hostTab.eval('window.__probe.click("[data-act=invite-role][data-v=player]"); window.__probe.click("[data-act=invite-new]"); return 1;');
+  await hostTab.waitFor('document.getElementById("invite-url") && document.getElementById("invite-url").value.length > 0', 8000, '產生邀請連結');
+  const inviteUrl = await hostTab.eval('return document.getElementById("invite-url").value;');
+  check('產生得出邀請連結', /room=[A-Z0-9]{4}&invite=[0-9a-f]{32}/.test(inviteUrl), inviteUrl);
+  await shot('線上-房主房間');
+
+  /* 第二個分頁：從邀請連結進來 */
+  const t2 = await (await fetch('http://127.0.0.1:' + DEBUG_PORT + '/json/new?' + encodeURIComponent('about:blank'), { method: 'PUT' })).json();
+  const mateTab = await attach(t2, '玩家分頁');
+  await mateTab.send('Emulation.setDeviceMetricsOverride', { width: 1024, height: 768, deviceScaleFactor: 2, mobile: true });
+  await goto(mateTab, BASE);
+  await mateTab.eval('localStorage.clear(); localStorage.setItem("dg_tutorial","1"); localStorage.setItem("dg_nick","舊名字"); return 1;');
+  await goto(mateTab, inviteUrl);
+  await mateTab.waitFor('!document.getElementById("lobby-invite").hidden', 12000, '邀請落地頁');
+  const landed = await mateTab.json('window.__probe.game()');
+  check('邀請連結不會自動進房，先停在大廳', landed.mode === null && landed.screen === 's-lobby', JSON.stringify(landed));
+  check('落地頁看得到房號與可編輯的暱稱欄位',
+    await mateTab.eval('return document.getElementById("lobby-invite-title").textContent.indexOf("' + code + '") >= 0 && !document.getElementById("lobby-nick").disabled;'),
+    await mateTab.eval('return document.getElementById("lobby-invite-title").textContent;'));
+  await shot('線上-邀請落地頁');
+
+  await mateTab.eval('document.getElementById("lobby-nick").value="新名字"; window.__probe.click("#b-lobby-invite"); return 1;');
+  await mateTab.waitFor('window.DrawGuessApp.mode === "online" && window.DrawGuessApp.view', 10000, '確認後才加入');
+  const mateView = await mateTab.json('window.__probe.game()');
+  check('確認後才以新暱稱加入', mateView.role === 'player', mateView.role);
+  check('新暱稱有送出去',
+    await mateTab.eval('return window.DrawGuessApp.view.you.name === "新名字";'),
+    await mateTab.eval('return window.DrawGuessApp.view.you.name;'));
+  check('改暱稱不會改變 token 決定的角色', mateView.role === 'player');
+
+  /* 第三個分頁：觀戰 */
+  await hostTab.eval('window.__probe.click("[data-act=invite-role][data-v=spectator]"); window.__probe.click("[data-act=invite-new]"); return 1;');
+  await hostTab.waitFor('document.getElementById("invite-url") && document.getElementById("invite-url").value.length > 0', 8000, '產生觀戰邀請連結');
+  const watchUrl = await hostTab.eval('return document.getElementById("invite-url").value;');
+
+  const t3 = await (await fetch('http://127.0.0.1:' + DEBUG_PORT + '/json/new?' + encodeURIComponent('about:blank'), { method: 'PUT' })).json();
+  const watchTab = await attach(t3, '觀戰分頁');
+  await watchTab.send('Emulation.setDeviceMetricsOverride', { width: 768, height: 1024, deviceScaleFactor: 2, mobile: true });
+  await goto(watchTab, BASE);
+  await watchTab.eval('localStorage.clear(); localStorage.setItem("dg_tutorial","1"); localStorage.setItem("dg_nick","觀眾"); return 1;');
+  await goto(watchTab, watchUrl);
+  await watchTab.waitFor('!document.getElementById("lobby-invite").hidden', 12000, '觀戰邀請落地頁');
+  await watchTab.eval('window.__probe.click("#b-lobby-invite"); return 1;');
+  await watchTab.waitFor('window.DrawGuessApp.mode === "online" && window.DrawGuessApp.view', 10000, '觀戰者進房');
+  check('觀戰連結進來就是觀戰者', (await watchTab.json('window.__probe.game()')).role === 'spectator');
+
+  /* 準備 → 開始 */
+  await hostTab.eval('window.__probe.click("[data-act=ready]"); return 1;');
+  await mateTab.eval('window.__probe.click("[data-act=ready]"); return 1;');
+  await sleep(600);
+  await hostTab.eval('window.__probe.click("[data-act=start]"); return 1;');
+  await hostTab.waitFor('window.DrawGuessApp.view.room.phase === "playing"', 10000, '對局開始');
+  await sleep(800);
+  check('三個分頁都進入對局',
+    (await mateTab.json('window.__probe.game()')).roomPhase === 'playing' &&
+    (await watchTab.json('window.__probe.game()')).roomPhase === 'playing');
+
+  const wStage = await watchTab.json('window.__probe.stage()');
+  check('觀戰者沒有工具列也沒有猜題框',
+    wStage.toolbarShown === false && wStage.guessbarShown === false, JSON.stringify(wStage));
+  check('觀戰者的畫面上沒有任何可打字的欄位',
+    await watchTab.eval('var l=document.querySelectorAll("#s-game input:not([type=range]):not([type=checkbox])"); for(var i=0;i<l.length;i++){ if(l[i].offsetParent!==null) return false; } return true;'));
+  check('觀戰者看不到答案', (await watchTab.json('window.__probe.game()')).answer === null);
+  check('觀戰者看不到畫家的選字卡',
+    await watchTab.eval('return document.querySelectorAll(".wordchoice").length === 0;'),
+    await watchTab.eval('return document.querySelectorAll(".wordchoice").length;'));
+  check('觀戰者連候選題目清單都拿不到',
+    await watchTab.eval('var c = window.DrawGuessApp.view.game.choices; return Array.isArray(c) && c.length === 0;'));
+  await shot('線上-觀戰者', watchTab);
+  await shot('線上-玩家', mateTab);
+  await shot('線上-房主對局');
+
+  const wLayout = await watchTab.json('window.__probe.layout()');
+  check('觀戰畫面（平板直向）沒有水平溢出',
+    wLayout.scrollWidth <= 768 + 2 && wLayout.overflowing.length === 0, JSON.stringify(wLayout.overflowing));
+
+  check('線上流程三個分頁都沒有主控台錯誤',
+    hostTab.errors.length === 0 && mateTab.errors.length === 0 && watchTab.errors.length === 0,
+    [hostTab.errors[0], mateTab.errors[0], watchTab.errors[0]].filter(Boolean).join(' | '));
+
+  cleanup();
+}
+
+main()
+  .then(() => {
+    console.log('\n' + '='.repeat(46));
+    if (failures.length) {
+      console.log('  瀏覽器檢查失敗 ' + failures.length + ' 項：');
+      failures.forEach((f) => console.log('   - ' + f));
+      console.log('='.repeat(46));
+      process.exit(1);
+    }
+    console.log('  瀏覽器檢查全部通過');
+    console.log('='.repeat(46));
+    process.exit(0);
+  })
+  .catch((e) => {
+    console.error('\n✗ 瀏覽器檢查中斷：' + (e && e.stack ? e.stack : e));
+    process.exit(1);
+  });

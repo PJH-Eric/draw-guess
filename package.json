@@ -1,0 +1,26 @@
+{
+  "name": "draw-guess",
+  "version": "1.0.0",
+  "description": "你畫我猜 - 可愛風畫圖猜謎（小畫家式畫布、單機三段 AI、線上房間對戰、觀戰、邀請連結、猜題紀錄與操作摘要）",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node tests/verify.js",
+    "test:online": "node scripts/online-check.js",
+    "verify": "node tests/verify.js && node scripts/online-check.js && node scripts/browser-check.js",
+    "inject": "node scripts/inject-server-url.js",
+    "test:browser": "node scripts/browser-check.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.1"
+  },
+  "license": "MIT"
+}
