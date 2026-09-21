@@ -20,6 +20,10 @@
   --radius:22px;
   --d:8px;
   --aside-w:min(86vw,320px);
+  /* 右上角三顆圓鈕（操作摘要／對局設定／系統設定）共用的尺寸、間距與右邊界 */
+  --topbtn:52px;
+  --topgap:8px;
+  --topedge:12px;
   --safe-t:env(safe-area-inset-top);
   --safe-r:env(safe-area-inset-right);
   --safe-b:env(safe-area-inset-bottom);
@@ -74,8 +78,12 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 .settings-fab{
   position:fixed;z-index:70;
   top:calc(10px + var(--safe-t));
-  right:calc(12px + var(--safe-r));
+  right:calc(var(--topedge) + var(--safe-r));
   --d:6px;
+}
+/* 右上角這一排（含固定的系統設定鈕）一律同尺寸，才對得齊 */
+.game-top .btn3d.icononly,.btn3d.settings-fab{
+  width:var(--topbtn);min-width:var(--topbtn);min-height:var(--topbtn);
 }
 .settings-fab .b3-lbl{font-size:1.2rem}
 
@@ -216,7 +224,10 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 
 /* 上排：離開、階段／題號／倒數。
    對局控制群組固定在遊戲主區右上角，不讓中間狀態列把它們拉開。 */
-.game-top{display:flex;align-items:center;gap:4px;flex:0 0 auto;padding-right:180px}
+.game-top{
+  display:flex;align-items:center;gap:4px;flex:0 0 auto;
+  padding-right:calc(var(--topedge) + 3 * var(--topbtn) + 2 * var(--topgap) + 8px);
+}
 .statusbar{flex:1 1 auto;min-width:0;display:flex;gap:5px;align-items:center;justify-content:center;flex-wrap:wrap}
 .chip{
   display:inline-flex;align-items:center;gap:6px;
@@ -231,14 +242,12 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 .chip-timer{background:var(--lemon)}
 .chip-timer[data-urgent=true]{background:var(--danger-bg);border-color:var(--danger);color:var(--danger)}
 .game-top-actions{
-  position:absolute;z-index:69;top:calc(8px + var(--safe-t));right:calc(67px + var(--safe-r));
-  width:max-content;max-width:calc(100% - 132px - var(--safe-r));
-  display:inline-flex;align-items:center;gap:2px;flex:0 0 auto;
-  padding:3px;border:2px solid var(--line);border-radius:18px;
-  background:rgba(255,253,248,.9);box-shadow:0 4px 0 rgba(74,59,85,.14);
-  backdrop-filter:blur(5px)
+  position:absolute;z-index:69;top:calc(10px + var(--safe-t));
+  right:calc(var(--topedge) + var(--topbtn) + var(--topgap) + var(--safe-r));
+  width:max-content;
+  display:inline-flex;align-items:center;gap:var(--topgap);flex:0 0 auto;
 }
-.game-top-actions .btn3d{flex:0 0 auto;width:52px}
+.game-top-actions .btn3d{flex:0 0 auto}
 
 /* 題目提示列 */
 .wordbar{
@@ -337,11 +346,11 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 /* 固定在遊戲主畫面正下方並左右滿版：輸入區更容易找到，也不用跟畫布搶欄位。
    它離開了版面流，所以 .playarea 要用 --guessbar-h 把高度讓回來（app.js 量的）。 */
 .guessbar{
-  position:absolute;z-index:60;left:0;right:0;transform:none;
-  bottom:calc(8px + var(--safe-b));
-  display:flex;gap:8px;align-items:center;padding:8px max(8px,var(--safe-r)) 8px max(8px,var(--safe-l));
-  border:3px solid var(--ink);border-left:0;border-right:0;border-radius:18px 18px 0 0;background:var(--paper);
-  box-shadow:0 -4px 0 rgba(74,59,85,.12)
+  position:absolute;z-index:60;left:0;right:0;bottom:0;transform:none;
+  display:flex;gap:8px;align-items:center;
+  padding:8px max(8px,var(--safe-r)) calc(8px + var(--safe-b)) max(8px,var(--safe-l));
+  border:3px solid var(--ink);border-left:0;border-right:0;border-bottom:0;border-radius:18px 18px 0 0;
+  background:var(--paper);box-shadow:0 -4px 0 rgba(74,59,85,.12)
 }
 body.has-guessbar .playarea{padding-bottom:var(--guessbar-h,0px)}
 .guessbar input{
@@ -451,7 +460,7 @@ body.big-tools .fillbox{min-height:56px}
   .tool-hint{display:none}
 
   /* 猜題框不在側欄裡，固定在遊戲主畫面正下方左右滿版；橫向只要壓低一點 */
-  .guessbar{bottom:calc(6px + var(--safe-b));padding:6px max(6px,var(--safe-r)) 6px max(6px,var(--safe-l))}
+  .guessbar{padding:6px max(6px,var(--safe-r)) calc(6px + var(--safe-b)) max(6px,var(--safe-l))}
   .guessbar input{min-height:48px;font-size:1rem;padding:8px 12px;text-align:center}
   .guessbar .btn3d{min-width:96px}
 }
@@ -473,7 +482,13 @@ body.big-tools .fillbox{min-height:56px}
 .aside-head h3{flex:1;margin:0;font-size:1.02rem;color:var(--grape-t)}
 .aside-close{width:48px;height:48px;flex:0 0 auto;border:3px solid var(--ink);border-radius:50%;background:var(--rose);color:var(--ink);font:inherit;font-weight:900;cursor:pointer}
 .aside-close:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
-.aside-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:8px 9px 12px}
+.aside-body{
+  flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:8px 9px 12px;
+  scrollbar-width:thin;scrollbar-color:var(--grape-d) transparent;scrollbar-gutter:stable;
+}
+.aside-body::-webkit-scrollbar{width:8px}
+.aside-body::-webkit-scrollbar-track{background:transparent}
+.aside-body::-webkit-scrollbar-thumb{background:var(--grape-d);border-radius:999px}
 .aside-chat-slot{flex:0 0 auto;padding:0 8px 8px}
 .aside-chat-slot:empty{display:none}
 
@@ -523,8 +538,12 @@ body.big-tools .fillbox{min-height:56px}
 .chat-list{
   flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:7px;
   display:flex;flex-direction:column;gap:5px;font-size:.81rem;
-  user-select:text;-webkit-user-select:text
+  user-select:text;-webkit-user-select:text;
+  scrollbar-width:thin;scrollbar-color:var(--grape-d) transparent
 }
+.chat-list::-webkit-scrollbar{width:8px}
+.chat-list::-webkit-scrollbar-track{background:transparent}
+.chat-list::-webkit-scrollbar-thumb{background:var(--grape-d);border-radius:999px}
 .chat-msg{border-radius:12px;padding:4px 8px;background:#F4EFFA;line-height:1.5;word-break:break-word}
 .chat-msg .who{font-weight:900;font-size:.75rem;color:var(--grape-t);margin-right:5px}
 .chat-msg[data-role=system]{background:#FFF6E0;color:var(--ink-soft);font-weight:700;font-size:.75rem;text-align:center}
@@ -685,7 +704,6 @@ body.big-tools .fillbox{min-height:56px}
     box-shadow:none;border-right:3px solid var(--line);
   }
   .game-aside.collapsed{display:none}
-  .aside-toggle{right:calc(126px + var(--safe-r))}
   .game.aside-open .chatdock{left:4px}
   .game.aside-open .hintdock{left:4px}
 }
@@ -703,10 +721,9 @@ body.big-tools .fillbox{min-height:56px}
   /* 窄版的頂列要在一行內放下：返回、狀態、倒數、兩顆切換鈕，
      右邊還要留給固定的系統設定鈕。所以按鈕縮到 46（仍符合命中區下限），
      chip 用小一點的字，時鐘圖示收起來，題號改掛到題目提示列上。 */
-  .game-top{padding-right:180px;gap:3px}
-  .game-top-actions{gap:1px}
-  .game-top-actions .btn3d{width:46px}
-  .game-top .btn3d.icononly{min-width:46px;min-height:46px;padding:7px 7px calc(7px + var(--d))}
+  :root{--topbtn:46px;--topgap:6px;--topedge:10px}
+  .game-top{gap:3px}
+  .game-top .btn3d.icononly,.btn3d.settings-fab{padding:7px 7px calc(7px + var(--d))}
   .statusbar{gap:3px}
   .chip{padding:3px 9px;font-size:.74rem;border-width:2px;gap:3px}
   .chip-timer .ico{display:none}
@@ -768,7 +785,8 @@ body.big-tools .fillbox{min-height:56px}
   .guessbar .btn3d{min-height:48px;min-width:84px;font-size:1rem}
   .tool-hint{display:none}
   .chat-panel{height:min(58vh,220px)}
-  .settings-fab{--d:5px;min-width:46px;min-height:46px}
+  :root{--topbtn:46px;--topgap:6px;--topedge:10px}
+  .game-top .btn3d.icononly,.btn3d.settings-fab{padding:7px 7px calc(7px + var(--d))}
 }
 
 /* 很矮的橫向手機：顏色收成兩排、只留最關鍵的控制 */
