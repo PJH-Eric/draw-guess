@@ -214,11 +214,9 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
   padding:calc(4px + var(--safe-t)) calc(8px + var(--safe-r)) calc(4px + var(--safe-b)) calc(8px + var(--safe-l));
 }
 
-/* 上排：離開、階段／題號／倒數、摘要與對局設定。
-   右邊只留給固定在安全區的系統設定鈕，其餘都走正常排版，不會互相疊到。 */
-/* 右邊留給固定的系統設定鈕：只留 4px 縫，讓 📋 🎮 ⚙ 看起來是連在一起的一排。
-   （安全區由 .game-main 的 padding 負責，這裡不重複加） */
-.game-top{display:flex;align-items:center;gap:4px;flex:0 0 auto;padding-right:60px}
+/* 上排：離開、階段／題號／倒數。
+   三顆右上角按鈕由固定控制群組統一對齊，不讓中間狀態列把它們拉開。 */
+.game-top{display:flex;align-items:center;gap:4px;flex:0 0 auto;padding-right:180px}
 .statusbar{flex:1 1 auto;min-width:0;display:flex;gap:5px;align-items:center;justify-content:center;flex-wrap:wrap}
 .chip{
   display:inline-flex;align-items:center;gap:6px;
@@ -232,7 +230,13 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 .chip-phase[data-p=over]{background:#EAE4F0;color:var(--ink-soft)}
 .chip-timer{background:var(--lemon)}
 .chip-timer[data-urgent=true]{background:var(--danger-bg);border-color:var(--danger);color:var(--danger)}
-.game-top-actions{display:flex;align-items:center;gap:2px;flex:0 0 auto}
+.game-top-actions{
+  position:fixed;z-index:69;top:calc(8px + var(--safe-t));right:calc(67px + var(--safe-r));
+  display:flex;align-items:center;gap:2px;flex:0 0 auto;
+  padding:3px;border:2px solid var(--line);border-radius:18px;
+  background:rgba(255,253,248,.9);box-shadow:0 4px 0 rgba(74,59,85,.14);
+  backdrop-filter:blur(5px)
+}
 .game-top-actions .btn3d{flex:0 0 auto}
 
 /* 題目提示列 */
@@ -695,7 +699,7 @@ body.big-tools .fillbox{min-height:56px}
   /* 窄版的頂列要在一行內放下：返回、狀態、倒數、兩顆切換鈕，
      右邊還要留給固定的系統設定鈕。所以按鈕縮到 46（仍符合命中區下限），
      chip 用小一點的字，時鐘圖示收起來，題號改掛到題目提示列上。 */
-  .game-top{padding-right:60px;gap:3px}
+  .game-top{padding-right:180px;gap:3px}
   .game-top-actions{gap:1px}
   .game-top .btn3d.icononly{min-width:46px;min-height:46px;padding:7px 7px calc(7px + var(--d))}
   .statusbar{gap:3px}
