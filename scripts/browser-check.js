@@ -611,6 +611,13 @@ async function main() {
   const barShown = await cdp.json('window.__probe.stage()');
   check('畫家看到工具列、看不到猜題框', barShown.toolbarShown === true && barShown.guessbarShown === false, JSON.stringify(barShown));
 
+  /* 提示區塊：畫家專屬，獨立掛在畫布左側，不在工具列裡 */
+  const hd = await cdp.json('(function(){var h=document.getElementById("hintrow");var r=h.getBoundingClientRect();var t=document.getElementById("toolbar");return {hidden:h.hidden,inToolbar:t.contains(h),left:Math.round(r.left),right:Math.round(r.right),cx:Math.round(r.left+r.width/2),vw:window.innerWidth,btn1:!document.getElementById("b-hint-1").disabled,btn2:!document.getElementById("b-hint-2").disabled};})()');
+  check('畫家看得到提示區塊', hd.hidden === false, JSON.stringify(hd));
+  check('提示區塊不在工具列裡', hd.inToolbar === false, JSON.stringify(hd));
+  check('提示區塊靠畫面左邊', hd.cx < hd.vw / 2 && hd.left >= -1, JSON.stringify(hd));
+  check('三張提示只有第一張能按', hd.btn1 === true && hd.btn2 === false, JSON.stringify(hd));
+
   const box = await cdp.json('(function(){var r=document.getElementById("board").getBoundingClientRect();return {x:Math.round(r.left),y:Math.round(r.top),w:Math.round(r.width),h:Math.round(r.height)};})()');
   const px = (fx, fy) => ({ x: Math.round(box.x + box.w * fx), y: Math.round(box.y + box.h * fy) });
 
@@ -692,7 +699,14 @@ async function main() {
   if (guessTurn.canGuess) {
     const s2 = await cdp.json('window.__probe.stage()');
     check('猜題者看到猜題框、看不到工具列', s2.guessbarShown === true && s2.toolbarShown === false, JSON.stringify(s2));
-    check('猜題者看不到答案、只看得到遮罩', guessTurn.answer === null && /○/.test(guessTurn.mask || ''), guessTurn.mask);
+    check('猜題者看不到答案', guessTurn.answer === null, guessTurn.answer);
+    check('遮罩要嘛還沒出現、要嘛是底線', !guessTurn.mask || /＿/.test(guessTurn.mask), guessTurn.mask);
+
+    /* 猜題框固定在畫面正下方置中，而且不壓到畫布 */
+    const gb = await cdp.json('(function(){var b=document.getElementById("guessbar").getBoundingClientRect();var c=document.getElementById("board").getBoundingClientRect();return {c:Math.round(b.left+b.width/2),vw:window.innerWidth,vh:window.innerHeight,bottom:Math.round(b.bottom),top:Math.round(b.top),canvasBottom:Math.round(c.bottom),w:Math.round(b.width)};})()');
+    check('猜題框水平置中', Math.abs(gb.c - gb.vw / 2) <= 2, JSON.stringify(gb));
+    check('猜題框貼齊畫面底部', gb.vh - gb.bottom <= 24 && gb.vh - gb.bottom >= 0, JSON.stringify(gb));
+    check('猜題框沒有壓到畫布', gb.top >= gb.canvasBottom - 1, JSON.stringify(gb));
     const feedBefore = guessTurn.feed;
     await cdp.eval('var i=document.getElementById("guess-input"); i.value="一定不是這個"; document.getElementById("guessbar").dispatchEvent(new Event("submit",{cancelable:true})); return 1;');
     await sleep(400);
@@ -751,8 +765,9 @@ async function main() {
   const code = await hostTab.eval('return window.DrawGuessApp.roomCode;');
   check('房主開房成功', typeof code === 'string' && code.length === 4, code);
   check('開房設定有套用', await hostTab.eval('var s=window.DrawGuessApp.view.room.settings; return s.rounds===3 && s.drawSec===120 && s.diff===3 && window.DrawGuessApp.view.room.aiSeats.length===1;'));
-  const actionGap = await hostTab.eval('var a=document.getElementById("b-aside-toggle").getBoundingClientRect(); var b=document.getElementById("b-game-settings").getBoundingClientRect(); return {gap: Math.max(0, b.left-a.right, a.left-b.right), aside:a.toJSON(), settings:b.toJSON()};');
+  const actionGap = await hostTab.eval('var a=document.getElementById("b-aside-toggle").getBoundingClientRect(); var b=document.getElementById("b-game-settings").getBoundingClientRect(); var c=document.getElementById("b-settings").getBoundingClientRect(); return {gap: Math.max(0, b.left-a.right, a.left-b.right), fabGap: Math.round(c.left-b.right), aside:a.toJSON(), settings:b.toJSON(), fab:c.toJSON()};');
   check('左側欄與對局設定按鈕緊鄰', actionGap.gap <= 8, JSON.stringify(actionGap));
+  check('系統設定鈕也併在同一排', actionGap.fabGap >= 0 && actionGap.fabGap <= 8, JSON.stringify(actionGap));
 
   /* 產生玩家邀請連結 */
   await hostTab.eval('window.__probe.click("[data-act=invite-role][data-v=player]"); window.__probe.click("[data-act=invite-new]"); return 1;');

@@ -1395,6 +1395,7 @@
       if (!$('tool-hint').textContent) toolHint(TOOL_TIP[app.paint.getTool()]);
     }
     renderHintRow(g, canDraw);
+    syncGuessbarSpace();
 
     var input = $('guess-input');
     if (!$('guessbar').hidden) {
@@ -1404,6 +1405,15 @@
       input.placeholder = guessed ? '你已經猜對了，等其他人…'
         : (g && g.phase === 'drawing' ? '猜猜看這是什麼？' : '等畫家開始畫…');
     }
+  }
+
+  /** 猜題列是固定在畫面正下方的浮層，把它的高度讓回給畫布（不然會蓋到） */
+  function syncGuessbarSpace() {
+    var bar = $('guessbar');
+    var on = !bar.hidden;
+    document.body.classList.toggle('has-guessbar', on);
+    var h = on ? Math.ceil(bar.getBoundingClientRect().height) + 12 : 0;
+    document.documentElement.style.setProperty('--guessbar-h', h + 'px');
   }
 
   /** 畫家的三個提示按鈕：已給的標起來、下一張可以按、單字題沒有第三張 */
@@ -1960,8 +1970,8 @@
     D.addEventListener('pointerdown', unlock);
     D.addEventListener('keydown', unlock);
 
-    w.addEventListener('resize', function () { relayoutFeed(); layoutStage(); });
-    w.addEventListener('orientationchange', function () { setTimeout(function () { relayoutFeed(); layoutStage(); }, 250); });
+    w.addEventListener('resize', function () { syncGuessbarSpace(); relayoutFeed(); layoutStage(); });
+    w.addEventListener('orientationchange', function () { setTimeout(function () { syncGuessbarSpace(); relayoutFeed(); layoutStage(); }, 250); });
     relayoutFeed();
     layoutStage();
 

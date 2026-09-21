@@ -216,7 +216,9 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 
 /* 上排：離開、階段／題號／倒數、摘要與對局設定。
    右邊只留給固定在安全區的系統設定鈕，其餘都走正常排版，不會互相疊到。 */
-.game-top{display:flex;align-items:center;gap:4px;flex:0 0 auto;padding-right:calc(74px + var(--safe-r))}
+/* 右邊留給固定的系統設定鈕：只留 4px 縫，讓 📋 🎮 ⚙ 看起來是連在一起的一排。
+   （安全區由 .game-main 的 padding 負責，這裡不重複加） */
+.game-top{display:flex;align-items:center;gap:4px;flex:0 0 auto;padding-right:60px}
 .statusbar{flex:1 1 auto;min-width:0;display:flex;gap:5px;align-items:center;justify-content:center;flex-wrap:wrap}
 .chip{
   display:inline-flex;align-items:center;gap:6px;
@@ -327,7 +329,17 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 .roomcode b{font-size:1.5rem;letter-spacing:.2em;color:var(--grape-t)}
 
 /* ---------- 猜題列 ---------- */
-.guessbar{flex:0 0 auto;display:flex;gap:8px;align-items:center;padding:6px 2px 2px}
+/* 固定在畫面正下方置中：兩隻手都好按，也不用跟畫布搶欄位。
+   它離開了版面流，所以 .playarea 要用 --guessbar-h 把高度讓回來（app.js 量的）。 */
+.guessbar{
+  position:fixed;z-index:60;left:50%;transform:translateX(-50%);
+  bottom:calc(8px + var(--safe-b));
+  width:min(520px,calc(100vw - 16px));
+  display:flex;gap:8px;align-items:center;padding:8px;
+  border:3px solid var(--ink);border-radius:22px;background:var(--paper);
+  box-shadow:0 6px 0 rgba(74,59,85,.18)
+}
+body.has-guessbar .playarea{padding-bottom:var(--guessbar-h,0px)}
 .guessbar input{
   flex:1 1 auto;min-width:0;font:inherit;font-size:1.05rem;font-weight:800;
   border:3px solid var(--ink);border-radius:18px;padding:12px 16px;background:#fff;color:var(--ink);
@@ -381,12 +393,19 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 .fillbox input{width:22px;height:22px;accent-color:var(--grape-d);cursor:pointer}
 .fillbox.on{border-color:var(--grape-d);background:#F8F4FF}
 .toolrow-misc{align-items:center}
-/* 三張提示：已經給出去的打勾變淡，下一張才是亮的 */
-.toolrow-hints{align-items:center;gap:6px}
-.hintrow-label{font-size:.76rem;font-weight:800;color:var(--ink-soft)}
+/* 三張提示：獨立掛在畫布左側，跟工具列分開。
+   已經給出去的打勾變淡，只有下一張是亮的。 */
+.hintdock{
+  position:absolute;left:4px;top:50%;transform:translateY(-50%);z-index:45;
+  display:flex;flex-direction:column;align-items:stretch;gap:5px;padding:7px;
+  border:3px solid var(--ink);border-radius:16px;background:var(--paper);
+  box-shadow:0 5px 0 rgba(74,59,85,.18)
+}
+.hintrow-label{font-size:.74rem;font-weight:900;color:var(--ink-soft);text-align:center}
+.hintdock .hintbtn{min-width:92px;font-size:.84rem;padding:8px 10px calc(8px + var(--d))}
 .hintbtn.done{opacity:.55}
 .hintbtn.done::after{content:"✓";margin-inline-start:4px}
-.hintrow-note{font-size:.72rem;font-weight:700;color:var(--ink-soft)}
+.hintrow-note{max-width:100px;font-size:.66rem;font-weight:700;line-height:1.3;color:var(--ink-soft);text-align:center}
 .toolscroll{flex:1 1 auto;min-width:0;display:flex;gap:5px;align-items:center;flex-wrap:wrap}
 .tool-done{flex:0 0 auto;margin-left:auto}
 .tool-hint{margin:0 2px;font-size:.76rem;font-weight:700;color:var(--ink-soft);line-height:1.4;min-height:1.1em}
@@ -427,10 +446,10 @@ body.big-tools .fillbox{min-height:56px}
   .fillbox{flex:1 1 auto;justify-content:center}
   .tool-hint{display:none}
 
-  /* 猜題框在側欄裡改成上下堆疊，答案通常只有 2–4 個字，寬度夠用 */
-  .guessbar{flex-direction:column;align-items:stretch;gap:5px;padding:0}
-  .guessbar input{min-height:52px;font-size:1rem;padding:10px 12px;text-align:center}
-  .guessbar .btn3d{width:100%;min-width:0}
+  /* 猜題框不在側欄裡，它固定在畫面正下方置中；橫向只要壓低一點 */
+  .guessbar{bottom:calc(6px + var(--safe-b));padding:6px;width:min(460px,calc(100vw - 16px))}
+  .guessbar input{min-height:48px;font-size:1rem;padding:8px 12px;text-align:center}
+  .guessbar .btn3d{min-width:96px}
 }
 
 /* ================================================================
@@ -480,6 +499,7 @@ body.big-tools .fillbox{min-height:56px}
 /* ---------- 猜題紀錄（唯讀，沒有自由發言） ---------- */
 .chatdock{position:absolute;left:4px;bottom:4px;z-index:45;display:flex;flex-direction:column;align-items:flex-start;gap:6px}
 .game.aside-open .chatdock{left:calc(var(--aside-w) + 8px)}
+.game.aside-open .hintdock{left:calc(var(--aside-w) + 8px)}
 .chat-pill{position:relative;--d:5px}
 .chat-unread{
   display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 5px;
@@ -659,6 +679,7 @@ body.big-tools .fillbox{min-height:56px}
   .game-aside.collapsed{display:none}
   .aside-toggle{right:calc(126px + var(--safe-r))}
   .game.aside-open .chatdock{left:4px}
+  .game.aside-open .hintdock{left:4px}
 }
 
 /* 中等寬度（平板直向）：資訊欄維持浮層，畫布吃滿 */
@@ -674,7 +695,7 @@ body.big-tools .fillbox{min-height:56px}
   /* 窄版的頂列要在一行內放下：返回、狀態、倒數、兩顆切換鈕，
      右邊還要留給固定的系統設定鈕。所以按鈕縮到 46（仍符合命中區下限），
      chip 用小一點的字，時鐘圖示收起來，題號改掛到題目提示列上。 */
-  .game-top{padding-right:calc(66px + var(--safe-r));gap:3px}
+  .game-top{padding-right:60px;gap:3px}
   .game-top-actions{gap:1px}
   .game-top .btn3d.icononly{min-width:46px;min-height:46px;padding:7px 7px calc(7px + var(--d))}
   .statusbar{gap:3px}
