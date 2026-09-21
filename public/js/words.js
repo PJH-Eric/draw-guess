@@ -46,7 +46,7 @@
     emotion: { key: 'emotion', label: '心情感受', emoji: '💗' },
     idiom: { key: 'idiom', label: '成語故事', emoji: '📖' },
     phenomenon: { key: 'phenomenon', label: '自然現象', emoji: '🌪' },
-    situation: { key: 'situation', label: '生活狀況', emoji: '🎭' },
+    place: { key: 'place', label: '場所地點', emoji: '🏫' },
     expression: { key: 'expression', label: '表情動作', emoji: '😄' },
     job: { key: 'job', label: '職業人物', emoji: '👩‍🚒' },
     fantasy: { key: 'fantasy', label: '奇幻世界', emoji: '🪄' },
@@ -940,172 +940,235 @@
     ] }
   ];
 
-  /*
-   * 題庫擴充：保留上面的 120 題手工配方，再補上 904 個可畫的組合題，
-   * 總數固定為 1024。組合題不是亂數假資料，而是「場景／形容詞 + 常見物件」；
-   * 每題仍有完整配方，所以單機 AI、伺服器抽題與答案比對都走同一條路徑。
-   */
-  var EXPANSION_MODIFIERS = [
-    '紅色的', '藍色的', '黃色的', '綠色的', '紫色的', '粉紅色的', '橘色的', '白色的', '黑色的',
-    '大大的', '小小的', '圓圓的', '可愛的', '睡著的', '跳舞的', '飛翔的', '雨中的', '雪地裡的',
-    '海邊的', '森林裡的', '生日派對的', '夜晚的', '太空中的', '廚房裡的', '公園裡的'
-  ];
-  var EXPANSION_NOUNS = {
-    animal: ['蝸牛', '長頸鹿', '熊', '狐狸', '青蛙', '海豚'],
-    food: ['蛋糕', '漢堡', '壽司', '麵包', '蘋果', '冰淇淋'],
-    home: ['椅子', '書包', '雨傘', '鉛筆', '水壺', '手電筒'],
-    vehicle: ['公車', '火車', '飛機', '腳踏車', '直升機', '熱氣球'],
-    nature: ['太陽', '月亮', '彩虹', '雲朵', '火山', '瀑布'],
-    fun: ['足球', '籃球', '吉他', '風箏', '溜滑梯', '滑板']
-  };
+  /* ================================================================
+     題庫擴充：上面 120 題是手工配方，下面依分類補上單詞題目。
+     每一題只有一個詞 —— 名詞、成語、情緒或動作，不接場景、不組句子，
+     畫家看到的就是「廚師」「臥虎藏龍」「天空」「開心」這種乾淨的題目。
 
-  function expansionDraw(cat, nounIndex, modifierIndex, sequence) {
-    var shift = (nounIndex * 23 + modifierIndex * 11) % 90;
-    var draw;
-    if (cat === 'animal') draw = [
-      ['c', 500, 560, 190], ['s', 350, 410, 405, 300, 460, 430], ['s', 540, 430, 595, 300, 650, 410],
-      ['d', 440 + shift / 5, 535], ['d', 560 - shift / 5, 535], ['a', 450, 620, 38, 10, 170], ['a', 550, 620, 38, 10, 170]
-    ];
-    else if (cat === 'food') draw = [
-      ['e', 500, 540, 270, 170], ['a', 500, 420, 180, 190, 350], ['l', 340, 540, 660, 540],
-      ['d', 410 + shift / 4, 545], ['d', 590 - shift / 4, 545], ['p', 420, 620, 500, 670, 580, 620]
-    ];
-    else if (cat === 'home') draw = [
-      ['r', 300, 360, 400, 300], ['l', 300, 360, 500, 245], ['l', 500, 245, 700, 360],
-      ['r', 430, 500, 140, 160], ['c', 470 + shift / 5, 575, 14], ['c', 530 - shift / 5, 575, 14]
-    ];
-    else if (cat === 'vehicle') draw = [
-      ['r', 220, 420, 560, 190], ['e', 300, 610, 72, 72], ['e', 700, 610, 72, 72],
-      ['l', 330, 455, 670, 455], ['l', 500, 420, 500 + shift, 330], ['c', 500 + shift, 300, 38]
-    ];
-    else if (cat === 'nature') draw = [
-      ['c', 500, 500, 150], ['ray', 500, 500, 185, 270, 10, modifierIndex * 7],
-      ['w', 160, 840, 760, 24 + nounIndex * 2, 3], ['w', 220, 780, 820, 18, 2]
-    ];
-    else draw = [
-      ['c', 500, 480, 170], ['st', 500, 480, 250, 105, 5], ['l', 500, 650, 500, 820],
-      ['l', 400, 720, 600, 720], ['d', 430 + shift / 4, 450], ['d', 570 - shift / 4, 450]
-    ];
-
-    /* 題目提示本身不帶顏色特徵；加一枚小型識別筆畫，避免不同組合題的
-       配方完全重疊，讓 AI 至少能從幾何上分出候選。 */
-    var position = (sequence * 47) % 360 * RAD;
-    var angle = (sequence * 83 + 20) % 360 * RAD;
-    var cx = 500 + Math.cos(position) * 240;
-    var cy = 500 + Math.sin(position) * 240;
-    var length = 28 + (sequence % 37);
-    draw.push(['l', cx, cy, cx + Math.cos(angle) * length, cy + Math.sin(angle) * length]);
-    return draw;
-  }
-
-  var expansionSerial = 0;
-  Object.keys(EXPANSION_NOUNS).forEach(function (cat) {
-    var nouns = EXPANSION_NOUNS[cat];
-    for (var nounIndex = 0; nounIndex < nouns.length; nounIndex++) {
-      for (var modifierIndex = 0; modifierIndex < EXPANSION_MODIFIERS.length; modifierIndex++) {
-        LIST.push({
-          id: 'prompt-' + cat + '-' + nounIndex + '-' + modifierIndex,
-          text: EXPANSION_MODIFIERS[modifierIndex] + nouns[nounIndex],
-          alt: [],
-          cat: cat,
-          diff: 1 + ((nounIndex + modifierIndex) % 3),
-          draw: expansionDraw(cat, nounIndex, modifierIndex, expansionSerial++)
-        });
-      }
-    }
-  });
-
-  [
-    { text: '節慶的南瓜', cat: 'fun' },
-    { text: '雨夜的路燈', cat: 'home' },
-    { text: '海上的燈塔', cat: 'nature' },
-    { text: '彩色的泡泡', cat: 'fun' }
-  ].forEach(function (item, index) {
-    LIST.push({
-      id: 'prompt-extra-' + index,
-      text: item.text,
-      alt: [],
-      cat: item.cat,
-      diff: 2,
-      draw: expansionDraw(item.cat, index % 6, index + 7, expansionSerial++)
-    });
-  });
-
-  /* 八種新主題 × 每種 16 個題目 × 24 個情境 = 3072 題。
-     題名是完整場景；主題圖像沿用手工配方，角落的輔助筆畫區分不同情境。
-     抽象題的配方是提示圖像，不保證電腦單靠畫面就能理解整句語意。 */
-  var SCENE_BANKS = {
+     配方沿用手工題的圖像，再在角落補一枚專屬記號筆畫，
+     讓每題的形狀特徵仍然互不相同，電腦對手照樣分得出來。
+     ================================================================ */
+  var BANKS = {
+    animal: {
+      icons: ['cat', 'dog', 'fish', 'bird', 'rabbit', 'pig', 'cow', 'elephant', 'snake', 'turtle',
+              'butterfly', 'crab', 'giraffe', 'penguin', 'lion', 'frog', 'bee', 'owl', 'whale', 'dinosaur'],
+      words: [
+        '熊', '貓熊', '老虎', '獵豹', '猴子', '猩猩', '松鼠', '刺蝟', '蝸牛', '海豚',
+        '鯊魚', '章魚', '水母', '海星', '蝦子', '龍蝦', '貝殼', '海馬', '珊瑚', '鴨子',
+        '鵝', '公雞', '母雞', '小雞', '老鷹', '鸚鵡', '孔雀', '天鵝', '燕子', '啄木鳥',
+        '紅鶴', '鴕鳥', '駱駝', '斑馬', '河馬', '犀牛', '梅花鹿', '綿羊', '山羊', '馬',
+        '驢子', '狐狸', '狼', '無尾熊', '袋鼠', '樹懶', '浣熊', '水獺', '海豹', '北極熊',
+        '蝙蝠', '老鼠', '倉鼠', '蜘蛛', '螞蟻', '蜻蜓', '蟬', '瓢蟲', '毛毛蟲', '蚯蚓',
+        '蜥蜴', '鱷魚', '變色龍', '壁虎', '金魚', '鰻魚', '羊駝', '土撥鼠', '鼴鼠', '獨角仙'
+      ]
+    },
+    food: {
+      icons: ['apple', 'banana', 'watermelon', 'cake', 'icecream', 'burger', 'pizza', 'bread', 'coffee', 'riceball',
+              'sushi', 'hotdog', 'donut', 'grape', 'strawberry', 'pineapple', 'egg', 'bubbletea', 'lollipop', 'hotpot'],
+      words: [
+        '橘子', '檸檬', '芒果', '水蜜桃', '櫻桃', '奇異果', '木瓜', '哈密瓜', '柚子', '蓮霧',
+        '芭樂', '楊桃', '藍莓', '椰子', '梨子', '柿子', '番茄', '玉米', '紅蘿蔔', '白蘿蔔',
+        '馬鈴薯', '地瓜', '南瓜', '茄子', '青椒', '花椰菜', '高麗菜', '洋蔥', '大蒜', '辣椒',
+        '豆腐', '白飯', '稀飯', '麵條', '拉麵', '義大利麵', '水餃', '包子', '饅頭', '蔥油餅',
+        '蛋餅', '鍋貼', '小籠包', '肉粽', '湯圓', '月餅', '鳳梨酥', '蛋塔', '布丁', '果凍',
+        '巧克力', '餅乾', '洋芋片', '爆米花', '棉花糖', '薯條', '炸雞', '牛排', '培根', '香腸',
+        '起司', '牛奶', '果汁', '汽水', '紅茶', '豆漿', '蜂蜜', '三明治', '貝果', '可頌'
+      ]
+    },
+    home: {
+      icons: ['umbrella', 'clock', 'book', 'chair', 'table', 'cup', 'bulb', 'key', 'scissors', 'glasses',
+              'phone', 'tv', 'toothbrush', 'broom', 'mirror', 'pencil', 'hat', 'shoe', 'fan', 'washer'],
+      words: [
+        '沙發', '床', '枕頭', '棉被', '衣櫃', '冰箱', '微波爐', '電鍋', '烤箱', '吹風機',
+        '檯燈', '蠟燭', '垃圾桶', '拖把', '水桶', '肥皂', '毛巾', '牙膏', '梳子', '指甲剪',
+        '吸塵器', '熨斗', '衣架', '曬衣夾', '平底鍋', '菜刀', '砧板', '湯匙', '叉子', '筷子',
+        '碗', '盤子', '水壺', '保溫瓶', '吸管', '開瓶器', '鑰匙圈', '錢包', '背包', '行李箱',
+        '手錶', '項鍊', '戒指', '耳環', '圍巾', '手套', '襪子', '拖鞋', '雨衣', '口罩',
+        '扇子', '針線', '鈕扣', '拉鍊', '橡皮擦', '尺', '筆記本', '便利貼', '釘書機', '膠水',
+        '信封', '郵票', '地圖', '日曆', '相框', '花瓶', '溫度計', '雨鞋', '安全帽', '鎖頭'
+      ]
+    },
+    vehicle: {
+      icons: ['car', 'bicycle', 'airplane', 'boat', 'train', 'bus', 'motorcycle', 'balloon', 'rocket', 'helicopter',
+              'truck', 'ambulance', 'submarine', 'skateboard', 'tricycle', 'sailboat', 'cablecar', 'firetruck', 'tractor', 'canoe'],
+      words: [
+        '計程車', '警車', '垃圾車', '挖土機', '推土機', '起重機', '水泥車', '校車', '露營車', '賽車',
+        '吉普車', '敞篷車', '電動車', '高鐵', '捷運', '地鐵', '蒸汽火車', '遊覽車', '小貨車', '郵輪',
+        '渡輪', '漁船', '竹筏', '快艇', '氣墊船', '太空船', '飛船', '滑翔翼', '降落傘', '手推車',
+        '娃娃車', '馬車', '雪橇', '輪椅', '嬰兒車', '獨輪車'
+      ]
+    },
+    nature: {
+      icons: ['sun', 'moon', 'star', 'cloud', 'rain', 'rainbow', 'tree', 'flower', 'mountain', 'sea',
+              'lightning', 'snowman', 'volcano', 'island', 'desert', 'waterfall', 'cactus', 'mushroom', 'maple', 'tornado'],
+      words: [
+        '天空', '海灘', '河流', '湖泊', '溪流', '池塘', '森林', '草原', '竹林', '山谷',
+        '山洞', '懸崖', '冰山', '冰河', '沼澤', '綠洲', '岩石', '石頭', '泥土', '沙丘',
+        '樹枝', '樹根', '花瓣', '花園', '草地', '種子', '果實', '松樹', '椰子樹', '櫻花',
+        '向日葵', '玫瑰', '鬱金香', '百合', '蒲公英', '荷花', '楓樹', '苔蘚', '藤蔓', '露珠',
+        '雪花', '冰塊', '星空', '銀河', '流星', '地球', '月球', '土星', '雲海', '山脈'
+      ]
+    },
+    fun: {
+      icons: ['soccer', 'basketball', 'racket', 'guitar', 'drum', 'kite', 'swing', 'slide', 'ferriswheel', 'dice',
+              'cards', 'puzzle', 'note', 'microphone', 'camera', 'trophy', 'computer', 'piano', 'bowling', 'jumprope'],
+      words: [
+        '棒球', '網球', '羽毛球', '桌球', '排球', '高爾夫', '撞球', '躲避球', '游泳圈', '衝浪板',
+        '滑雪板', '溜冰鞋', '拳擊手套', '啞鈴', '跑步機', '呼拉圈', '毽子', '陀螺', '彈珠', '積木',
+        '玩具車', '洋娃娃', '泰迪熊', '魔術方塊', '象棋', '圍棋', '西洋棋', '麻將', '扭蛋', '煙火',
+        '彩帶', '口琴', '小提琴', '長笛', '喇叭', '薩克斯風', '手風琴', '鈴鼓', '三角鐵', '豎琴',
+        '耳機', '收音機', '畫架', '調色盤', '畫筆', '蠟筆', '水彩', '素描本', '望遠鏡', '釣竿',
+        '帳篷', '營火', '睡袋', '指南針', '風車', '泡泡', '蹺蹺板', '沙坑', '跳跳床', '飛鏢'
+      ]
+    },
     emotion: {
-      topics: ['開心', '難過', '緊張', '興奮', '害羞', '生氣', '害怕', '驚訝', '失望', '感動', '孤單', '安心', '焦慮', '得意', '想念', '無聊'],
-      scenes: ['考試前的', '放學後的', '生日當天的', '下雨天的', '第一次上台的', '收到禮物時的', '迷路時的', '找到朋友時的', '比賽前的', '比賽結束後的', '半夜醒來的', '搭飛機前的', '等待消息時的', '看電影時的', '聽到秘密時的', '搬家那天的', '畢業典禮上的', '第一次約會的', '失去玩具時的', '看到彩虹時的', '坐雲霄飛車時的', '回到家時的', '道別時的', '重逢時的'],
-      icons: ['sun', 'rain', 'clock', 'trophy', 'flower', 'lightning', 'moon', 'star', 'rainbow', 'tree', 'boat', 'cloud', 'puzzle', 'hat', 'note', 'book']
+      icons: ['sun', 'rain', 'cloud', 'star', 'rainbow', 'lightning', 'flower', 'moon',
+              'trophy', 'note', 'tree', 'puzzle', 'book', 'hat', 'boat', 'clock'],
+      words: [
+        '開心', '難過', '生氣', '害怕', '驚訝', '害羞', '緊張', '興奮', '失望', '感動',
+        '孤單', '安心', '焦慮', '得意', '想念', '無聊', '幸福', '快樂', '傷心', '委屈',
+        '嫉妒', '後悔', '期待', '滿足', '溫暖', '心動', '疲倦', '放鬆', '好奇', '勇敢',
+        '自信', '甜蜜', '感謝', '同情', '寂寞', '煩惱', '驚喜', '尷尬', '痛苦', '舒服'
+      ]
     },
     idiom: {
-      topics: ['守株待兔', '畫蛇添足', '井底之蛙', '亡羊補牢', '狐假虎威', '掩耳盜鈴', '對牛彈琴', '刻舟求劍', '杯弓蛇影', '鷸蚌相爭', '塞翁失馬', '盲人摸象', '愚公移山', '拔苗助長', '葉公好龍', '三顧茅廬'],
-      scenes: ['課堂上的', '舞台上的', '故事書裡的', '夢境裡的', '森林裡的', '校園裡的', '公園裡的', '古代村莊的', '雨天裡的', '夜晚裡的', '河邊的', '山上的', '旅行中的', '小朋友演出的', '漫畫裡的', '童話版的', '考卷上的', '猜謎遊戲中的', '博物館裡的', '壁畫上的', '戲劇社演出的', '午休時想到的', '魔法世界裡的', '動物王國的'],
-      icons: ['rabbit', 'snake', 'frog', 'cow', 'dog', 'clock', 'cow', 'boat', 'cup', 'bird', 'cow', 'elephant', 'mountain', 'flower', 'dinosaur', 'book']
+      icons: ['rabbit', 'snake', 'frog', 'cow', 'dog', 'boat', 'cup', 'bird',
+              'elephant', 'mountain', 'flower', 'dinosaur', 'book', 'fish', 'tree', 'lion'],
+      words: [
+        '守株待兔', '畫蛇添足', '井底之蛙', '亡羊補牢', '狐假虎威', '掩耳盜鈴', '對牛彈琴', '刻舟求劍', '杯弓蛇影', '鷸蚌相爭',
+        '塞翁失馬', '盲人摸象', '愚公移山', '拔苗助長', '葉公好龍', '三顧茅廬', '臥虎藏龍', '畫龍點睛', '一箭雙鵰', '半途而廢',
+        '百發百中', '馬到成功', '一鳴驚人', '名落孫山', '破釜沉舟', '臥薪嘗膽', '完璧歸趙', '負荊請罪', '紙上談兵', '四面楚歌',
+        '指鹿為馬', '望梅止渴', '草木皆兵', '胸有成竹', '雪中送炭', '錦上添花', '火上加油', '如魚得水', '對症下藥', '一石二鳥',
+        '千鈞一髮', '九牛一毛', '一飛沖天', '雞飛狗跳', '龍飛鳳舞', '鳥語花香', '風和日麗', '春暖花開', '秋高氣爽', '冰天雪地',
+        '風吹草動', '山明水秀', '水落石出', '滴水穿石', '開門見山', '走馬看花', '畫餅充飢', '望子成龍', '狗急跳牆', '虎頭蛇尾',
+        '打草驚蛇', '引狼入室', '螳螂捕蟬', '老馬識途', '汗馬功勞', '害群之馬', '龍馬精神', '生龍活虎', '如虎添翼', '狼吞虎嚥',
+        '三心二意', '一心一意', '七上八下', '五花八門', '十全十美', '千變萬化', '萬紫千紅', '五顏六色', '七嘴八舌', '手忙腳亂',
+        '眼明手快', '目瞪口呆', '大開眼界', '面紅耳赤', '口是心非', '心花怒放', '心驚膽跳', '全神貫注', '廢寢忘食', '聚精會神',
+        '熟能生巧', '精益求精', '一日千里', '突飛猛進', '名列前茅', '大顯身手', '出人頭地', '一舉兩得', '事半功倍', '得不償失',
+        '因小失大', '舉一反三', '溫故知新', '循序漸進', '半信半疑', '自相矛盾', '弄巧成拙', '班門弄斧', '東施效顰', '邯鄲學步',
+        '濫竽充數', '南轅北轍', '守口如瓶', '一諾千金', '雪上加霜', '光陰似箭', '日新月異', '滄海桑田', '天衣無縫', '世外桃源'
+      ]
     },
     phenomenon: {
-      topics: ['日出', '日落', '雷雨', '暴風雪', '海浪', '海嘯', '地震', '流星雨', '極光', '沙塵暴', '濃霧', '結霜', '潮汐', '火山爆發', '彩虹', '月蝕'],
-      scenes: ['海邊看到的', '山頂看到的', '小島上的', '城市裡的', '鄉村裡的', '清晨的', '黃昏的', '深夜的', '春天的', '夏天的', '秋天的', '冬天的', '旅行途中遇到的', '窗外看到的', '森林深處的', '草原上的', '湖面上的', '遠方的', '屋頂上看到的', '照片裡的', '夢裡的', '電影裡的', '童話裡的', '太空人看到的'],
-      icons: ['sun', 'sun', 'lightning', 'snowman', 'sea', 'waterfall', 'mountain', 'star', 'rainbow', 'desert', 'cloud', 'snowman', 'sea', 'volcano', 'rainbow', 'moon']
+      icons: ['sun', 'lightning', 'snowman', 'sea', 'waterfall', 'mountain', 'star', 'rainbow',
+              'desert', 'cloud', 'volcano', 'moon', 'rain', 'island', 'tornado', 'tree'],
+      words: [
+        '日出', '日落', '雷雨', '暴風雪', '海浪', '海嘯', '地震', '流星雨', '極光', '沙塵暴',
+        '濃霧', '結霜', '潮汐', '火山爆發', '月蝕', '日蝕', '下雪', '冰雹', '洪水', '乾旱',
+        '山崩', '土石流', '雪崩', '晚霞', '朝霞', '露水', '霜降', '寒流', '熱浪', '季風',
+        '海市蜃樓', '日暈', '月暈', '星雲', '隕石', '彗星', '滿月', '漲潮', '退潮', '結冰'
+      ]
     },
-    situation: {
-      topics: ['手機沒電', '忘記帶鑰匙', '趕不上公車', '找不到眼鏡', '弄丟錢包', '鞋帶鬆了', '雨傘壞了', '蛋糕掉地上', '咖啡打翻', '走錯教室', '迷路了', '停電了', '睡過頭', '忘記寫作業', '禮物送錯人', '寵物跑走了'],
-      scenes: ['上學前', '上班前', '放學後', '放假時', '旅行中', '下雨天', '大熱天', '生日那天', '派對上', '公車站裡', '餐廳裡', '教室裡', '電梯裡', '公園裡', '海邊', '山上', '半夜', '清晨', '比賽前', '約會時', '跟朋友見面時', '搬家時', '回家路上', '拍照時'],
-      icons: ['phone', 'key', 'bus', 'glasses', 'hat', 'shoe', 'umbrella', 'cake', 'coffee', 'book', 'clock', 'bulb', 'clock', 'pencil', 'cake', 'dog']
+    place: {
+      icons: ['book', 'tv', 'table', 'chair', 'cup', 'clock', 'bus', 'tree',
+              'umbrella', 'hat', 'computer', 'camera', 'bulb', 'key', 'phone', 'washer'],
+      words: [
+        '教室', '學校', '圖書館', '醫院', '郵局', '銀行', '超市', '便利商店', '市場', '夜市',
+        '餐廳', '咖啡廳', '麵包店', '花店', '書店', '電影院', '遊樂園', '動物園', '水族館', '博物館',
+        '美術館', '公園', '操場', '游泳池', '體育館', '車站', '機場', '港口', '加油站', '停車場',
+        '消防局', '警察局', '廟宇', '教堂', '城堡', '燈塔', '農場', '牧場', '果園', '菜園',
+        '溫室', '廚房', '浴室', '臥室', '客廳', '陽台', '樓梯', '電梯', '屋頂', '橋',
+        '隧道', '摩天大樓', '涼亭', '噴水池', '走廊'
+      ]
     },
     expression: {
-      topics: ['哈哈大笑', '皺眉頭', '翻白眼', '眨眼睛', '吐舌頭', '裝可愛', '瞪大眼睛', '嘟嘴巴', '哭笑不得', '嚇一跳', '打哈欠', '流口水', '偷偷微笑', '咬牙切齒', '滿臉通紅', '目瞪口呆'],
-      scenes: ['聽笑話時', '看到成績時', '收到禮物時', '發現秘密時', '吃到辣椒時', '照鏡子時', '看恐怖片時', '拍照時', '唱歌時', '跳舞時', '上台時', '搭車時', '吃飯時', '玩遊戲時', '睡醒時', '做惡夢後', '遇見朋友時', '看到小狗時', '坐雲霄飛車時', '過生日時', '放學時', '下雨時', '比賽贏了時', '說再見時'],
-      icons: ['sun', 'cloud', 'star', 'flower', 'lightning', 'cat', 'moon', 'camera', 'note', 'guitar', 'microphone', 'bus', 'hotpot', 'dice', 'clock', 'puzzle']
+      icons: ['sun', 'cloud', 'star', 'flower', 'lightning', 'cat', 'moon', 'camera',
+              'note', 'guitar', 'microphone', 'bus', 'hotpot', 'dice', 'clock', 'puzzle'],
+      words: [
+        '微笑', '大笑', '哭泣', '皺眉', '眨眼', '吐舌頭', '嘟嘴', '打哈欠', '打噴嚏', '咳嗽',
+        '嘆氣', '鼓掌', '揮手', '點頭', '搖頭', '敬禮', '擁抱', '握手', '比讚', '剪刀手',
+        '飛吻', '撒嬌', '裝可愛', '瞪眼', '傻笑', '偷笑', '苦笑', '大叫', '流口水', '臉紅',
+        '發呆', '吹口哨'
+      ]
     },
     job: {
-      topics: ['醫生', '護士', '消防員', '警察', '老師', '廚師', '畫家', '太空人', '飛行員', '農夫', '郵差', '攝影師', '歌手', '魔術師', '獸醫', '科學家'],
-      scenes: ['雨天出門的', '夜班中的', '趕時間的', '正在休假的', '剛上班的', '下班回家的', '住在海邊的', '住在山上的', '在學校裡的', '在公園裡的', '在廚房裡的', '在火車上的', '在飛機上的', '在舞台上的', '在森林裡的', '在太空裡的', '穿雨衣的', '戴帽子的', '帶著寵物的', '拿著氣球的', '騎腳踏車的', '慶祝生日的', '參加比賽的', '正在拍照的'],
-      icons: ['ambulance', 'cup', 'firetruck', 'car', 'book', 'hotpot', 'pencil', 'rocket', 'airplane', 'tractor', 'key', 'camera', 'microphone', 'hat', 'dog', 'bulb']
+      icons: ['ambulance', 'cup', 'firetruck', 'car', 'book', 'hotpot', 'pencil', 'rocket',
+              'airplane', 'tractor', 'key', 'camera', 'microphone', 'hat', 'dog', 'bulb'],
+      words: [
+        '醫生', '護士', '消防員', '警察', '老師', '廚師', '畫家', '太空人', '飛行員', '農夫',
+        '郵差', '攝影師', '歌手', '魔術師', '獸醫', '科學家', '工程師', '建築師', '設計師', '律師',
+        '法官', '記者', '主播', '作家', '演員', '導演', '舞者', '音樂家', '指揮家', '運動員',
+        '教練', '裁判', '漁夫', '獵人', '牧羊人', '木匠', '水電工', '麵包師', '理髮師', '服務生',
+        '店員', '司機', '機長', '空服員', '船長', '潛水員', '救生員', '園丁', '清潔員', '圖書館員',
+        '考古學家', '探險家'
+      ]
     },
     fantasy: {
-      topics: ['魔法師', '小精靈', '巨龍', '獨角獸', '人魚', '吸血鬼', '狼人', '幽靈', '外星人', '機器人', '樹人', '海怪', '雪怪', '鳳凰', '時間旅人', '月亮公主'],
-      scenes: ['迷路的', '戴眼鏡的', '愛唱歌的', '會跳舞的', '正在睡覺的', '住在森林裡的', '住在海底的', '住在月亮上的', '住在城堡裡的', '正在找寶藏的', '帶著寵物的', '拿著雨傘的', '騎腳踏車的', '搭火車的', '喜歡蛋糕的', '不會飛的', '怕黑的', '怕水的', '穿紅鞋子的', '戴大帽子的', '過生日的', '在學魔法的', '生氣的', '害羞的'],
-      icons: ['hat', 'butterfly', 'dinosaur', 'cow', 'fish', 'bird', 'dog', 'cloud', 'rocket', 'computer', 'tree', 'whale', 'snowman', 'bird', 'clock', 'moon']
+      icons: ['hat', 'butterfly', 'dinosaur', 'cow', 'fish', 'bird', 'dog', 'cloud',
+              'rocket', 'computer', 'tree', 'whale', 'snowman', 'star', 'clock', 'moon'],
+      words: [
+        '魔法師', '小精靈', '巨龍', '獨角獸', '人魚', '吸血鬼', '狼人', '幽靈', '外星人', '機器人',
+        '樹人', '海怪', '雪怪', '鳳凰', '時光機', '巫婆', '仙女', '騎士', '公主', '王子',
+        '國王', '女王', '海盜', '忍者', '武士', '超人', '英雄', '小矮人', '巨人', '木乃伊',
+        '殭屍', '半人馬', '獅鷲', '九尾狐', '天使', '惡魔', '魔法棒', '水晶球', '飛天掃帚', '魔法書',
+        '藏寶圖', '寶箱', '神燈', '許願池', '傳送門', '魔毯', '隱形斗篷', '海妖', '龍蛋', '石像鬼'
+      ]
     },
     action: {
-      topics: ['跳舞', '唱歌', '跑步', '游泳', '爬山', '打籃球', '踢足球', '畫畫', '看書', '做蛋糕', '釣魚', '放風箏', '拍照', '彈吉他', '種花', '騎腳踏車'],
-      scenes: ['雨中', '雪地裡', '沙灘上', '山頂上', '森林裡', '公園裡', '學校裡', '家裡', '火車上', '船上', '舞台上', '月亮上', '夢裡', '派對上', '生日當天', '清晨', '深夜', '假日', '放學後', '旅行時', '朋友面前', '小狗旁邊', '彩虹下面', '星空下'],
-      icons: ['note', 'microphone', 'shoe', 'sea', 'mountain', 'basketball', 'soccer', 'pencil', 'book', 'cake', 'fish', 'kite', 'camera', 'guitar', 'flower', 'bicycle']
+      icons: ['note', 'microphone', 'shoe', 'sea', 'mountain', 'basketball', 'soccer', 'pencil',
+              'book', 'cake', 'fish', 'kite', 'camera', 'guitar', 'flower', 'bicycle'],
+      words: [
+        '跳舞', '唱歌', '跑步', '游泳', '爬山', '打籃球', '踢足球', '畫畫', '看書', '做蛋糕',
+        '釣魚', '放風箏', '拍照', '彈吉他', '種花', '騎腳踏車', '睡覺', '吃飯', '喝水', '刷牙',
+        '洗澡', '洗手', '掃地', '拖地', '洗碗', '曬衣服', '澆花', '遛狗', '散步', '慢跑',
+        '爬樹', '溜冰', '滑雪', '衝浪', '潛水', '划船', '露營', '烤肉', '野餐', '購物',
+        '寫字', '摺紙', '剪紙', '堆雪人', '打電話', '看電視', '玩遊戲', '搭飛機', '排隊', '過馬路',
+        '上學', '放學', '做夢', '打呼', '搬家'
+      ]
     }
   };
 
-  var sceneIconRecipes = {};
-  LIST.forEach(function (word) { sceneIconRecipes[word.id] = word.draw; });
+  /* 手工題的配方，就是擴充題的圖像來源 */
+  var iconRecipes = {};
+  LIST.forEach(function (word) { iconRecipes[word.id] = word.draw; });
 
-  function sceneDraw(bank, topicIndex, sceneIndex, sequence) {
-    var source = sceneIconRecipes[bank.icons[topicIndex]];
-    if (!source) throw new Error('找不到情境題圖像：' + bank.icons[topicIndex]);
+  /**
+   * 擴充題的配方 = 主題圖像 + 角落一枚專屬記號。
+   * 記號落在 7 × 5 的格位上，半徑與尾線角度再依序號變化，
+   * 因此同一張主題圖像底下的題目，形狀特徵仍然彼此分得開。
+   */
+  function bankDraw(iconId, slot, sequence) {
+    var source = iconRecipes[iconId];
+    if (!source) throw new Error('找不到題目圖像：' + iconId);
     var draw = source.map(function (op) { return op.slice(); });
-    var x = 85 + (sceneIndex % 6) * 135;
-    var y = 75 + Math.floor(sceneIndex / 6) * 105;
-    draw.push(['c', x, y, 21 + sceneIndex % 3 * 8]);
+    var x = 80 + (slot % 7) * 140;
+    var y = 70 + Math.floor(slot / 7) * 120;
+    draw.push(['c', x, y, 18 + (slot % 5) * 6]);
     draw.push(['l', x - 18, y + 36, x + 18, y + 36]);
     var angle = (sequence * 73 % 360) * RAD;
-    var markerLength = 42 + sequence * 0.007;
-    draw.push(['l', x, y + 48, x + Math.cos(angle) * markerLength, y + 48 + Math.sin(angle) * markerLength]);
+    var length = 40 + (sequence % 29);
+    draw.push(['l', x, y + 48, x + Math.cos(angle) * length, y + 48 + Math.sin(angle) * length]);
     return draw;
   }
 
-  Object.keys(SCENE_BANKS).forEach(function (cat) {
-    var bank = SCENE_BANKS[cat];
-    bank.topics.forEach(function (topic, topicIndex) {
-      bank.scenes.forEach(function (scene, sceneIndex) {
-        LIST.push({
-          id: 'scene-' + cat + '-' + topicIndex + '-' + sceneIndex,
-          text: scene + topic,
-          alt: [],
-          cat: cat,
-          diff: cat === 'idiom' ? 3 : 1 + (topicIndex + sceneIndex) % 3,
-          draw: sceneDraw(bank, topicIndex, sceneIndex, expansionSerial++)
-        });
+  /** 難度：成語最難；字數越多、越難一筆說清楚 */
+  function bankDiff(cat, text, index) {
+    if (cat === 'idiom') return 3;
+    if (text.length <= 1) return 1;
+    if (text.length === 2) return 1 + (index % 2);
+    if (text.length === 3) return 2 + (index % 2);
+    return 3;
+  }
+
+  var bankSerial = 0;
+  var usedText = {};
+  LIST.forEach(function (word) {
+    usedText[word.text] = true;
+    (word.alt || []).forEach(function (name) { usedText[name] = true; });
+  });
+
+  Object.keys(BANKS).forEach(function (cat) {
+    var bank = BANKS[cat];
+    bank.words.forEach(function (text, index) {
+      if (usedText[text]) throw new Error('題目文字重複：' + text);
+      usedText[text] = true;
+      LIST.push({
+        id: 'w-' + cat + '-' + index,
+        text: text,
+        alt: [],
+        cat: cat,
+        diff: bankDiff(cat, text, index),
+        draw: bankDraw(bank.icons[index % bank.icons.length], index % 35, bankSerial++)
       });
     });
   });

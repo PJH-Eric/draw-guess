@@ -54,7 +54,7 @@ function toDrawing(st, t) {
    ================================================================ */
 section('題庫（words.js）');
 {
-  check('題目數量為 4096', Words.LIST.length === 4096, Words.LIST.length);
+  check('題目數量為 920', Words.LIST.length === 920, Words.LIST.length);
 
   const ids = new Set();
   let dupe = null;
@@ -66,7 +66,13 @@ section('題庫（words.js）');
   for (const w of Words.LIST) cats[w.cat] = (cats[w.cat] || 0) + 1;
   check('十四個分類都有題目', Object.keys(cats).length === 14, JSON.stringify(cats));
   check('每個分類至少 10 題', Object.values(cats).every((n) => n >= 10), JSON.stringify(cats));
-  check('新增主題都有 384 題', ['emotion', 'idiom', 'phenomenon', 'situation', 'expression', 'job', 'fantasy', 'action'].every((cat) => cats[cat] === 384));
+  check('抽象主題都有題目', ['emotion', 'idiom', 'phenomenon', 'place', 'expression', 'job', 'fantasy', 'action'].every((cat) => cats[cat] >= 30), JSON.stringify(cats));
+
+  /* 題目只能是名詞、成語或單一動作，不能是句子或加了場景的長描述 */
+  const tooLong = Words.LIST.filter((w) => w.text.length > 4).map((w) => w.text);
+  check('每一題都是單詞（最多四個字）', tooLong.length === 0, tooLong.slice(0, 5).join('，'));
+  const withParticle = Words.LIST.filter((w) => /[的了嗎呢，。]/.test(w.text)).map((w) => w.text);
+  check('題目不含助詞或標點（不是句子）', withParticle.length === 0, withParticle.slice(0, 5).join('，'));
 
   const diffs = new Set(Words.LIST.map((w) => w.diff));
   check('三種難度都有題目', diffs.has(1) && diffs.has(2) && diffs.has(3), [...diffs].join(','));
