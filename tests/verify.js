@@ -54,7 +54,7 @@ function toDrawing(st, t) {
    ================================================================ */
 section('題庫（words.js）');
 {
-  check('題目數量為 2088', Words.LIST.length === 2088, Words.LIST.length);
+  check('題目數量為 2204', Words.LIST.length === 2204, Words.LIST.length);
 
   const ids = new Set();
   let dupe = null;
@@ -118,7 +118,7 @@ section('題庫（words.js）');
   check('答案比對：完全不同算沒中', Words.match(sun, '月亮') === 'miss');
   check('答案比對：空字串算沒中', Words.match(sun, '   ') === 'miss');
   check('全形標點會被正規化掉', Words.normalize('太陽！') === '太陽');
-  check('遮罩只露出指定的字', Words.maskOf(Words.byId('bubbletea'), [0, 2]) === '珍○奶○');
+  check('遮罩只露出指定的字', Words.maskOf(Words.byId('bubbletea'), [0, 2]) === '珍＿奶＿');
 
   /* 同一個種子要抽到同一批題目 */
   const a = Words.pick(RNG.createRng('seed-a'), 3, {});
@@ -248,11 +248,19 @@ section('隱藏資訊（toPublic 投影）');
   check('畫家看得到答案', drawerView.answer === answer, drawerView.answer);
   check('其他玩家看不到答案', guesserView.answer === null, guesserView.answer);
   check('觀戰者看不到答案', spectatorView.answer === null, spectatorView.answer);
-  check('猜題者拿到的是遮罩', guesserView.hint.mask.length === answer.length && guesserView.hint.mask.indexOf('○') >= 0, guesserView.hint.mask);
-  check('觀戰者拿到的也是遮罩', spectatorView.hint.mask.indexOf('○') >= 0, spectatorView.hint.mask);
+  check('畫家還沒給提示時沒有遮罩', guesserView.hint.mask === '' && guesserView.hint.len === 0, guesserView.hint.mask);
+  check('畫家還沒給提示時也沒有種類', guesserView.hint.catLabel === null && spectatorView.hint.catLabel === null);
   check('整份投影字串裡沒有答案', JSON.stringify(guesserView).indexOf(answer) < 0);
   check('觀戰者的投影裡也沒有答案', JSON.stringify(spectatorView).indexOf(answer) < 0);
-  check('分類與字數是公開提示', guesserView.hint.catLabel && guesserView.hint.len === answer.length);
+  /* 給了第一張提示：字數（底線）才會出現 */
+  Rules.giveHint(st, drawerId, 1);
+  const afterLen = Rules.toPublic(st, other);
+  check('第一張提示公開字數', afterLen.hint.len === answer.length &&
+    afterLen.hint.mask.length === answer.length &&
+    afterLen.hint.mask.indexOf(Words.MASK_CHAR) >= 0, afterLen.hint.mask);
+  check('第一張提示還沒公開種類', afterLen.hint.catLabel === null);
+  Rules.giveHint(st, drawerId, 2);
+  check('第二張提示公開種類', Rules.toPublic(st, other).hint.catLabel === Words.CATEGORIES[Words.byId(st.wordId).cat].label);
 
   /* 選字清單只有畫家看得到 */
   const picking = makeState({ seed: 'HIDE02' });
@@ -281,18 +289,13 @@ section('時間推進（tick）');
   check('自動挑題有事件', r1.events.some((e) => e.type === 'autopick'));
   check('自動挑的是第一個候選', st.wordId === st.choices[0]);
 
-  /* 揭字：時間過了才會翻 */
+  /* 提示不會隨時間自動翻開，一律要畫家自己按 */
   const base = st.startedAt;
-  Rules.tick(st, base + st.drawMs * 0.2);
-  check('前 45% 不會翻字', st.revealed.length === 0, st.revealed.length);
-  const before = Rules.maskOf(st);
   Rules.tick(st, base + st.drawMs * 0.5);
-  check('過了 45% 開始翻字', st.revealed.length >= 1, st.revealed.length);
-  check('翻字後遮罩會變', Rules.maskOf(st) !== before, Rules.maskOf(st));
+  check('時間過去不會自動翻字', st.revealed.length === 0 && st.hints === 0, st.hints + '/' + st.revealed.length);
   Rules.tick(st, base + st.drawMs * 0.99);
   const answer = Rules.word(st).text;
-  check('最後一個字永遠不會被翻開', st.revealed.length <= Math.max(0, answer.length - 1), st.revealed.length + '/' + answer.length);
-  check('遮罩至少留一個 ○', Rules.maskOf(st).indexOf('○') >= 0, Rules.maskOf(st));
+  check('時間到底了還是不會自動給提示', st.hints === 0, st.hints);
 
   /* 作畫逾時 → 公布答案 */
   const r2 = Rules.tick(st, st.deadline + 1);
@@ -426,9 +429,16 @@ section('電腦對手（ai.js）');
   const rank2 = AI.rankCandidates(Rules.toPublic(st3, guesserId), 'hard');
   check('照配方畫出來時，正確答案排第一', rank2.length > 0 && rank2[0].id === target, rank2.slice(0, 3).map((c) => c.id).join(','));
 
-  /* 候選只會落在公開的分類裡 */
+  /* 畫家還沒給提示：電腦得在整個題庫裡找，不知道分類 */
   const cat = Words.byId(target).cat;
-  check('候選只在公開的分類裡', rank2.every((c) => Words.byId(c.id).cat === cat));
+  check('沒有提示時，候選不限分類', rank2.some((c) => Words.byId(c.id).cat !== cat));
+
+  /* 畫家給了「種類」這張提示之後，候選才收斂到那個分類 */
+  Rules.giveHint(st3, drawer, 1);
+  Rules.giveHint(st3, drawer, 2);
+  const rank3 = AI.rankCandidates(Rules.toPublic(st3, guesserId), 'hard');
+  check('給了種類提示後，候選只在那個分類裡', rank3.length > 0 && rank3.every((c) => Words.byId(c.id).cat === cat));
+  check('給了字數提示後，正確答案仍排第一', rank3[0].id === target, rank3.slice(0, 3).map((c) => c.id).join(','));
 
   /* 難度差異：固定情境下的猜中率與速度 */
   const stats = {};

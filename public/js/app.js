@@ -474,6 +474,12 @@
 
     AI.drive(app.solo.director, st, now, app.solo.seed, {
       pick: function (aiId, wordId) { Rules.pickWord(st, aiId, wordId, now); },
+      hint: function (aiId) {
+        var r = Rules.giveHint(st, aiId, now);
+        if (!r.ok) return;
+        pushFeed({ kind: 'system', from: '系統', text: hintFeedText(r), at: now });
+        Sound.play('hint');
+      },
       stroke: function (aiId, stroke) {
         var r = Rules.addStroke(st, aiId, stroke);
         if (r.ok) { app.paint.addStroke(r.stroke); Sound.playPen(); }
@@ -497,13 +503,20 @@
     soloRefresh();
   }
 
+  /** 提示要怎麼寫進猜題紀錄（單機與線上共用同一套措辭） */
+  function hintFeedText(ev) {
+    if (ev.step === 1) return '畫家給了提示：題目有 ' + (ev.mask || '').length + ' 個字。';
+    if (ev.step === 2) return '畫家給了提示：題目的種類。';
+    return '畫家給了提示：' + (ev.mask || '');
+  }
+
   function handleGameEvents(events) {
     for (var i = 0; i < events.length; i++) {
       var ev = events[i];
       if (ev.type === 'autopick') {
         pushFeed({ kind: 'system', from: '系統', text: '時間到，系統幫畫家挑了題目。', at: Date.now() });
       } else if (ev.type === 'hint') {
-        pushFeed({ kind: 'system', from: '系統', text: '提示：' + ev.mask, at: Date.now() });
+        pushFeed({ kind: 'system', from: '系統', text: hintFeedText(ev), at: Date.now() });
         Sound.play('hint');
       } else if (ev.type === 'turnend') {
         pushFeed({ kind: 'system', from: '系統', text: '答案是「' + ev.entry.word + '」，' + ev.entry.correct + '/' + ev.entry.total + ' 人猜中。', at: Date.now() });
@@ -769,6 +782,9 @@
     $('b-redo').addEventListener('click', doRedo);
     $('b-clear').addEventListener('click', doClear);
     $('b-done').addEventListener('click', doSkip);
+    $('b-hint-1').addEventListener('click', doHint);
+    $('b-hint-2').addEventListener('click', doHint);
+    $('b-hint-3').addEventListener('click', doHint);
   }
 
   function chooseTool(key) {
@@ -838,6 +854,26 @@
     }
     w.Online.send('room:clear', {});
     Sound.play('clear');
+  }
+
+  /* 三張提示依序給：字數 → 種類 → 一個字。按鈕只是送出「給下一張」。 */
+  function doHint() {
+    if (app.mode === 'solo') {
+      var r = Rules.giveHint(app.solo.state, ME, Date.now());
+      if (!r.ok) { toolHint(r.error, 'error'); Sound.play('blocked'); return; }
+      noteHint(r);
+      Sound.play('hint');
+      soloRefresh();
+      return;
+    }
+    w.Online.send('room:hint', {});
+  }
+
+  function noteHint(r) {
+    var text = r.step === 1 ? '你給了提示：題目有 ' + r.mask.length + ' 個字。'
+      : r.step === 2 ? '你給了提示：題目的種類。'
+        : '你給了提示：' + r.mask;
+    pushFeed({ kind: 'system', from: '系統', text: text, at: Date.now() });
   }
 
   function doSkip() {
@@ -924,13 +960,20 @@
       wb.hidden = true;
     } else if (g.hint) {
       var mine = g.you.isDrawer;
+      var h = g.hint;
       wb.hidden = false;
       wb.setAttribute('data-mine', String(mine));
       $('wordbar-label').textContent = mine ? '你要畫的是' : '題目';
-      $('wordbar-mask').textContent = (mine || g.answer) ? (g.answer || '') : g.hint.mask;
-      $('wordbar-meta').textContent = g.hint.catLabel + '・' + g.hint.len + ' 個字' +
-        (mine ? '' : (g.hint.revealed ? '・已翻開 ' + g.hint.revealed + ' 個字' : '')) +
-        '・第 ' + g.turnNo + '/' + g.totalTurns + ' 題';
+      /* 猜題者要等畫家按提示：還沒按就連幾個字都不知道 */
+      $('wordbar-mask').textContent = (mine || g.answer) ? (g.answer || '')
+        : (h.lenShown ? h.mask : '？');
+      var meta = [];
+      if (h.catShown) meta.push(h.catLabel);
+      if (h.lenShown) meta.push(h.len + ' 個字');
+      if (!mine && !h.lenShown && !h.catShown) meta.push('畫家還沒給提示');
+      if (!mine && h.revealed) meta.push('翻開了 1 個字');
+      meta.push('第 ' + g.turnNo + '/' + g.totalTurns + ' 題');
+      $('wordbar-meta').textContent = meta.join('・');
     } else {
       wb.hidden = false;
       wb.setAttribute('data-mine', 'false');
@@ -1351,6 +1394,7 @@
       syncToolbar();
       if (!$('tool-hint').textContent) toolHint(TOOL_TIP[app.paint.getTool()]);
     }
+    renderHintRow(g, canDraw);
 
     var input = $('guess-input');
     if (!$('guessbar').hidden) {
@@ -1360,6 +1404,25 @@
       input.placeholder = guessed ? '你已經猜對了，等其他人…'
         : (g && g.phase === 'drawing' ? '猜猜看這是什麼？' : '等畫家開始畫…');
     }
+  }
+
+  /** 畫家的三個提示按鈕：已給的標起來、下一張可以按、單字題沒有第三張 */
+  function renderHintRow(g, canDraw) {
+    var row = $('hintrow');
+    row.hidden = !canDraw;
+    if (!canDraw || !g || !g.hint) return;
+    var steps = g.hint.steps || [];
+    for (var i = 0; i < 3; i++) {
+      var b = $('b-hint-' + (i + 1));
+      var st = steps[i] || { done: false, available: false, exists: false };
+      b.disabled = !st.available;
+      b.classList.toggle('done', !!st.done);
+      b.hidden = !st.exists;
+      b.setAttribute('aria-pressed', String(!!st.done));
+    }
+    $('hintrow-note').textContent = g.hint.step >= g.hint.total
+      ? (g.hint.total < 3 ? '單字題沒有「一個字」這張提示。' : '提示都給完了。')
+      : '按下去就公開給所有人，收不回來。';
   }
 
   /* ------------------------------------------------------ 左側摘要 */
@@ -1376,7 +1439,10 @@
     $('sum-role').textContent = youRole;
     $('sum-can').textContent = canDoText(v, g);
     $('sum-hint').textContent = g && g.hint
-      ? ((g.you.isDrawer || g.answer) ? (g.answer || '') : g.hint.mask) + '（' + g.hint.catLabel + '）'
+      ? ((g.you.isDrawer || g.answer)
+        ? (g.answer || '') + (g.hint.catLabel ? '（' + g.hint.catLabel + '）' : '')
+        : (g.hint.lenShown ? g.hint.mask : '畫家還沒給提示') +
+          (g.hint.catLabel ? '（' + g.hint.catLabel + '）' : ''))
       : '—';
     $('sum-conn').textContent = app.mode === 'solo' ? '單機（不需要連線）'
       : ({ connected: '已連線', connecting: '重新連線中…', loading: '載入中…', error: '連線錯誤', offline: '無伺服器', idle: '未連線' }[app.conn.status] || app.conn.status);

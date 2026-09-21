@@ -162,7 +162,7 @@ async function run() {
   const health = await startServer();
   check('/health 回報服務正常', health && health.ok === true, JSON.stringify(health));
   check('/health 說得出服務名稱', health.service === 'draw-guess', health.service);
-  check('/health 回報題庫大小', health.words === 2088, health.words);
+  check('/health 回報題庫大小', health.words === 2204, health.words);
   const pageOrigin = await fetch(BASE + '/health', { headers: { Origin: 'https://pjh-eric.github.io' } });
   check('GitHub Pages 可跨來源連線', pageOrigin.headers.get('access-control-allow-origin') === 'https://pjh-eric.github.io');
   const renderOrigin = await fetch(BASE + '/health', { headers: { Origin: 'https://draw-guess.onrender.com' } });
@@ -295,10 +295,31 @@ async function run() {
     check('觀戰者看不到答案', watcher.view.game.answer === null, watcher.view.game.answer);
     check('猜題者收到的整包資料裡沒有答案', JSON.stringify(guesser.view).indexOf(answer) < 0);
     check('觀戰者收到的整包資料裡沒有答案', JSON.stringify(watcher.view).indexOf(answer) < 0);
-    check('猜題者拿到的是遮罩', (guesser.view.game.hint.mask || '').indexOf('○') >= 0, guesser.view.game.hint.mask);
-    check('分類與字數是公開提示',
-      !!guesser.view.game.hint.catLabel && guesser.view.game.hint.len === answer.length,
-      guesser.view.game.hint.catLabel + '/' + guesser.view.game.hint.len);
+    check('畫家還沒給提示時，猜題者看不到字數與種類',
+      guesser.view.game.hint.mask === '' && guesser.view.game.hint.catLabel === null,
+      guesser.view.game.hint.mask + '/' + guesser.view.game.hint.catLabel);
+
+    /* 三張提示：字數 → 種類 → 一個字，由畫家主動按 */
+    drawer.emit('room:hint', {});
+    check('第一張提示公開字數',
+      await guesser.until((c) => (c.view.game.hint.mask || '').length === answer.length, 6000),
+      guesser.view.game.hint.mask);
+    check('第一張提示只有底線', (guesser.view.game.hint.mask || '').indexOf('＿') >= 0 &&
+      guesser.view.game.hint.catLabel === null, guesser.view.game.hint.mask);
+    drawer.emit('room:hint', {});
+    check('第二張提示公開種類',
+      await guesser.until((c) => !!c.view.game.hint.catLabel, 6000),
+      guesser.view.game.hint.catLabel);
+    if (answer.length > 1) {
+      drawer.emit('room:hint', {});
+      check('第三張提示翻開一個字',
+        await guesser.until((c) => c.view.game.hint.revealed === 1, 6000),
+        guesser.view.game.hint.mask);
+      check('翻開一個字後仍看不到完整答案', guesser.view.game.answer === null &&
+        JSON.stringify(guesser.view).indexOf(answer) < 0);
+    }
+    check('猜題者不能替畫家給提示',
+      !(await guesser.until((c) => c.view.game.hint.step > 3, 600)), guesser.view.game.hint.step);
     check('操作摘要在揭曉前不含答案',
       host.view.room.summary.every((s) => s.text.indexOf(answer) < 0),
       JSON.stringify(host.view.room.summary.slice(-2)));

@@ -263,7 +263,8 @@
           </div>
         </header>
 
-        <!-- 題目提示：類別、字數與已揭開的字。畫家看到的是真正的題目。 -->
+        <!-- 題目提示：字數（底線）、種類與被揭開的那個字，都要等畫家按提示才會出現。
+             畫家看到的是真正的題目。 -->
         <div class="wordbar" id="wordbar">
           <span class="wordbar-label" id="wordbar-label">題目</span>
           <b class="wordbar-mask" id="wordbar-mask">— — —</b>
@@ -315,6 +316,17 @@
           <div class="toolrow toolrow-colors" id="color-list" role="radiogroup" aria-label="顏色"></div>
           <!-- 粗細、填滿與編輯動作放同一條；窄版時這一條可以橫向捲動，
                但「畫完了」固定在右邊不會被捲走。 -->
+          <!-- 三張提示：依序給，給出去就收不回來 -->
+          <div class="toolrow toolrow-hints" id="hintrow" aria-label="給猜題者的提示">
+            <span class="hintrow-label">提示</span>
+            <button class="btn3d small hintbtn" data-color="sky" id="b-hint-1" type="button"
+                    title="公開題目有幾個字">① 字數</button>
+            <button class="btn3d small hintbtn" data-color="sky" id="b-hint-2" type="button"
+                    title="公開題目的種類">② 種類</button>
+            <button class="btn3d small hintbtn" data-color="sky" id="b-hint-3" type="button"
+                    title="在底線上翻開其中一個字">③ 一個字</button>
+            <span class="hintrow-note" id="hintrow-note"></span>
+          </div>
           <div class="toolrow toolrow-misc">
             <div class="toolscroll" id="toolscroll">
               <div class="widthgroup" id="width-list" role="radiogroup" aria-label="筆的粗細"></div>

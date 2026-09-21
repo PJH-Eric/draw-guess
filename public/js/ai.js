@@ -201,12 +201,12 @@
     g.nextAt = now + levelOf(g.level).firstMs;
   }
 
-  /** 遮罩字串（例如「太○」）是否與某個候選答案相容 */
+  /** 遮罩字串（例如「太＿」）是否與某個候選答案相容 */
   function maskFits(mask, text) {
     if (!mask || mask.length !== text.length) return false;
     for (var i = 0; i < mask.length; i++) {
       var m = mask.charAt(i);
-      if (m !== '○' && m !== text.charAt(i)) return false;
+      if (m !== Words.MASK_CHAR && m !== text.charAt(i)) return false;
     }
     return true;
   }
@@ -225,15 +225,17 @@
     var f = Words.features(Rules.toPolylines(view.strokes || []));
     if (!f) return [];
 
-    var pool = Words.inCategory(hint.cat);
-    if (L.useLength) {
+    /* 電腦拿到的公開提示跟人一樣：畫家沒按提示，就沒有種類也沒有字數可用 */
+    var pool = hint.cat ? Words.inCategory(hint.cat) : Words.all();
+    var whole = pool;
+    if (L.useLength && hint.len > 0) {
       pool = pool.filter(function (w) { return w.text.length === hint.len; });
     }
     if (L.useMask && hint.mask && hint.revealed > 0) {
       var narrowed = pool.filter(function (w) { return maskFits(hint.mask, w.text); });
       if (narrowed.length) pool = narrowed;
     }
-    if (!pool.length) pool = Words.inCategory(hint.cat);
+    if (!pool.length) pool = whole;
 
     return pool.map(function (w) {
       return { id: w.id, text: w.text, d: Words.distance(f, Words.featuresOf(w.id)) };
@@ -329,6 +331,14 @@
 
       /* ---- 輪到自己作畫 ---- */
       if (state.drawerId === p.id) {
+        /* 電腦畫家也會按提示：畫到一定比例就掀一張，人類才不會乾等 */
+        if (typeof h.hint === 'function') {
+          var at = Rules.CONST.AI_HINT_AT;
+          var done = 0;
+          var pace = (now - state.startedAt) / state.drawMs;
+          for (var q = 0; q < at.length; q++) if (pace >= at[q]) done = q + 1;
+          if (done > state.hints) h.hint(p.id);
+        }
         if (!d.plans[p.id]) {
           d.plans[p.id] = planDrawing(state.wordId, p.ai, rng, state.drawMs);
           d.cursor[p.id] = 0;

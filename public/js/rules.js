@@ -39,7 +39,8 @@
     MAX_STROKE_POINTS: 400,  // 單筆最多幾個點
     MAX_TOTAL_POINTS: 30000, // 一題全部點數上限
     GUESS_MAX: 24,           // 猜測字數上限
-    HINT_AT: [0.45, 0.68, 0.86],   // 依已用時間比例揭字
+    HINTS: 3,                      // 畫家手上的提示張數：字數 → 種類 → 揭一個字
+    AI_HINT_AT: [0.18, 0.40, 0.62],// 電腦當畫家時，依已用時間比例自動按提示
     BOX: Words.BOX
   };
 
@@ -123,6 +124,7 @@
       choices: [],
       wordId: null,
       usedWords: [],
+      hints: 0,
       revealed: [],
       hintPlan: [],
       strokes: [],
@@ -188,6 +190,7 @@
     state.phase = 'picking';
     state.drawerId = state.order[state.turn] || (state.players[0] && state.players[0].id) || null;
     state.wordId = null;
+    state.hints = 0;
     state.revealed = [];
     state.hintPlan = [];
     state.strokes = [];
@@ -228,16 +231,12 @@
     state.deadline = now + state.drawMs;
     state.startedAt = now;
 
-    /* 揭字順序也吃種子，重播才會一樣；答案最後一個字永遠不會被揭開 */
+    /* 第三張提示要揭哪一個字也吃種子，重播才會一樣；答案最後一個字永遠留著 */
     var rng = RNG.createRng(state.seed + ':hint:' + state.turnNo);
     var idx = [];
-    for (var i = 0; i < w.text.length; i++) idx.push(i);
-    for (var j = idx.length - 1; j > 0; j--) {
-      var k = Math.floor(rng() * (j + 1)) % (j + 1);
-      var t = idx[j]; idx[j] = idx[k]; idx[k] = t;
-    }
-    var maxHints = Math.max(0, Math.min(CONST.HINT_AT.length, w.text.length - 1));
-    state.hintPlan = idx.slice(0, maxHints);
+    for (var i = 0; i < w.text.length - 1; i++) idx.push(i);
+    state.hintPlan = idx.length ? [idx[Math.floor(rng() * idx.length) % idx.length]] : [];
+    state.hints = 0;
     state.revealed = [];
     return ok({ state: state, wordId: id, auto: !!auto });
   }
@@ -471,20 +470,7 @@
       }
 
       if (state.phase === 'drawing') {
-        /* 揭字：依已用時間比例逐步公開，最後一個字永遠留著 */
-        var w = word(state);
-        if (w) {
-          var ratio = (now - state.startedAt) / state.drawMs;
-          var want = 0;
-          for (var i = 0; i < state.hintPlan.length; i++) {
-            if (ratio >= CONST.HINT_AT[i]) want = i + 1;
-          }
-          while (state.revealed.length < want) {
-            var idx = state.hintPlan[state.revealed.length];
-            state.revealed.push(idx);
-            events.push({ type: 'hint', index: idx, mask: maskOf(state) });
-          }
-        }
+        /* 提示不再隨時間自動翻開：三張提示由畫家自己按（AI 畫家見 ai.js） */
         var all = guesserIds(state).length > 0 && state.guessed.length >= guesserIds(state).length;
         if (all) {
           var e1 = endTurn(state, now, 'allcorrect');
@@ -511,6 +497,58 @@
       break;
     }
     return { events: events };
+  }
+
+  /* ------------------------------------------------------------ 提示
+     畫家手上有三張提示，只能依序給，給出去就收不回來：
+       1 字數   畫面上出現對應數量的底線（漢堡 → ＿＿）
+       2 種類   公開題目的分類
+       3 一個字 在底線上填回其中一個字（單字題沒有這一張）
+   */
+
+  /** 這一題總共有幾張提示可以給（單字題只有兩張） */
+  function hintTotal(state) {
+    var w = word(state);
+    if (!w) return 0;
+    return w.text.length > 1 ? CONST.HINTS : CONST.HINTS - 1;
+  }
+
+  var HINT_LABEL = ['字數', '種類', '一個字'];
+
+  /** 三張提示現在各自的狀態，畫面直接拿去畫按鈕 */
+  function hintSteps(state) {
+    var total = hintTotal(state);
+    var out = [];
+    for (var i = 0; i < CONST.HINTS; i++) {
+      out.push({
+        step: i + 1,
+        label: HINT_LABEL[i],
+        done: state.hints > i,
+        /* 只能依序給：下一張才是可按的那一張 */
+        available: i + 1 <= total && state.hints === i,
+        exists: i + 1 <= total
+      });
+    }
+    return out;
+  }
+
+  /** 畫家給出下一張提示 */
+  function giveHint(state, playerId, now) {
+    if (state.phase !== 'drawing') return err('現在沒有進行中的題目。', 'phase');
+    if (playerId !== state.drawerId) return err('只有畫家可以給提示。', 'forbidden');
+    var total = hintTotal(state);
+    var next = state.hints + 1;
+    if (next > total) {
+      return err(total < CONST.HINTS ? '這是單字題，沒有「一個字」這張提示了。' : '三張提示都給完了。', 'hint');
+    }
+    state.hints = next;
+    if (next === 3 && state.hintPlan.length) state.revealed = [state.hintPlan[0]];
+    return ok({
+      state: state, step: next, label: HINT_LABEL[next - 1],
+      mask: next >= 1 ? maskOf(state) : '',
+      index: next === 3 ? state.revealed[0] : -1,
+      at: now
+    });
   }
 
   /** 畫家提前宣告畫完（或其他人都猜中了）時手動收掉這一回合 */
@@ -596,11 +634,19 @@
         };
       }),
       strokes: state.strokes,
-      /* 題目資訊：類別與字數是公開提示，答案本身只給有權限的人 */
+      /* 題目資訊：字數與種類要等畫家按提示才會出現，答案本身只給有權限的人 */
       hint: info ? {
-        cat: info.cat, catLabel: info.catLabel, catEmoji: info.catEmoji,
+        step: state.hints,
+        total: hintTotal(state),
+        steps: hintSteps(state),
+        lenShown: state.hints >= 1,
+        catShown: state.hints >= 2,
+        cat: state.hints >= 2 ? info.cat : null,
+        catLabel: state.hints >= 2 ? info.catLabel : null,
+        catEmoji: state.hints >= 2 ? info.catEmoji : null,
         diff: info.diff, diffLabel: info.diffLabel,
-        len: info.len, mask: maskOf(state),
+        len: state.hints >= 1 ? info.len : 0,
+        mask: state.hints >= 1 ? maskOf(state) : '',
         revealed: state.revealed.length
       } : null,
       answer: showAnswer && w ? w.text : null,
@@ -624,8 +670,9 @@
         guessed: hasGuessed(state, viewerId),
         canDraw: isDrawer && state.phase === 'drawing',
         canPick: isDrawer && state.phase === 'picking',
+        canHint: isDrawer && state.phase === 'drawing' && state.hints < hintTotal(state),
         canGuess: !isDrawer && state.phase === 'drawing' && !!player(state, viewerId) && !hasGuessed(state, viewerId)
-      } : { id: null, isDrawer: false, guessed: false, canDraw: false, canPick: false, canGuess: false }
+      } : { id: null, isDrawer: false, guessed: false, canDraw: false, canPick: false, canHint: false, canGuess: false }
     };
   }
 
@@ -667,6 +714,9 @@
     endTurn: endTurn,
     nextTurn: nextTurn,
     giveUp: giveUp,
+    giveHint: giveHint,
+    hintSteps: hintSteps,
+    hintTotal: hintTotal,
     tick: tick,
     finish: finish,
     removePlayer: removePlayer,

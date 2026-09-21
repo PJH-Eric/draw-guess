@@ -409,6 +409,12 @@ io.on('connection', (socket) => {
     broadcastBoard(room, 'clear');
   }));
 
+  socket.on('room:hint', withRoom((room) => {
+    const res = room.giveHint(socket.data.clientId, now());
+    if (!res.ok) return fail(socket, res.error, res.code);
+    syncRoom(room, true);
+  }));
+
   socket.on('room:skip', withRoom((room) => {
     const res = room.skipTurn(socket.data.clientId, now());
     if (!res.ok) return fail(socket, res.error, res.code);

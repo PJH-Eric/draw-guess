@@ -381,6 +381,12 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 .fillbox input{width:22px;height:22px;accent-color:var(--grape-d);cursor:pointer}
 .fillbox.on{border-color:var(--grape-d);background:#F8F4FF}
 .toolrow-misc{align-items:center}
+/* 三張提示：已經給出去的打勾變淡，下一張才是亮的 */
+.toolrow-hints{align-items:center;gap:6px}
+.hintrow-label{font-size:.76rem;font-weight:800;color:var(--ink-soft)}
+.hintbtn.done{opacity:.55}
+.hintbtn.done::after{content:"✓";margin-inline-start:4px}
+.hintrow-note{font-size:.72rem;font-weight:700;color:var(--ink-soft)}
 .toolscroll{flex:1 1 auto;min-width:0;display:flex;gap:5px;align-items:center;flex-wrap:wrap}
 .tool-done{flex:0 0 auto;margin-left:auto}
 .tool-hint{margin:0 2px;font-size:.76rem;font-weight:700;color:var(--ink-soft);line-height:1.4;min-height:1.1em}
