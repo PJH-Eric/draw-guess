@@ -294,24 +294,6 @@
                     title="在底線上翻開其中一個字">③ 一個字</button>
             <span class="hintrow-note" id="hintrow-note"></span>
           </div>
-
-          <!-- 猜題紀錄：與操作摘要同在左側，錨定左下；預設收合。
-               這是唯讀的 —— 這個遊戲唯一能打字的地方就是下面的猜題框。 -->
-          <div class="chatdock" id="feeddock" hidden>
-            <button class="chat-pill btn3d small" data-color="sky" id="b-feed-toggle" type="button"
-                    aria-expanded="false" aria-controls="feed-panel">
-              <span class="ico" data-ico="chat"></span>猜題紀錄<span class="chat-unread" id="feed-unread" hidden>0</span>
-            </button>
-            <div class="chat-panel" id="feed-panel" hidden aria-label="猜題紀錄">
-              <div class="chat-head">
-                <b>猜題紀錄</b>
-                <span class="chat-scope" id="feed-scope">單機練習</span>
-                <button class="chat-close" id="b-feed-close" type="button" aria-label="收起猜題紀錄">✕</button>
-              </div>
-              <div class="chat-list" id="feed-list" role="log" aria-live="polite"></div>
-              <p class="chat-state" id="feed-state" role="status" aria-live="polite"></p>
-            </div>
-          </div>
         </div>
 
         <div class="playbar" id="playbar">
@@ -353,7 +335,7 @@
         </div>
       </div>
 
-      <!-- 左側資訊欄：上方是操作 Summary，下方（畫面左下）是猜題紀錄 -->
+      <!-- 左側資訊欄：操作 Summary、比分，以及包含每一則猜題的「猜題紀錄」 -->
       <aside class="game-aside" id="game-aside" aria-label="左側操作摘要">
         <div class="aside-head">
           <h3>📋 操作摘要</h3>
@@ -373,12 +355,10 @@
           <h4 class="sum-h">目前比分</h4>
           <ol class="scorelist" id="scorelist"></ol>
 
-          <h4 class="sum-h">最近發生的事</h4>
-          <ol class="sum-list" id="sum-list"></ol>
-          <p class="sum-empty" id="sum-empty">還沒有任何紀錄。</p>
+          <h4 class="sum-h">猜題紀錄</h4>
+          <ol class="sum-list" id="sum-list" role="log" aria-live="polite"></ol>
+          <p class="sum-empty" id="sum-empty">還沒有任何紀錄。猜題（包含猜錯的）都會列在這裡。</p>
         </div>
-        <!-- 寬版時猜題紀錄會被搬進這裡，錨定在左欄下方；窄版搬回畫布左下的浮層 -->
-        <div class="aside-chat-slot" id="aside-chat-slot"></div>
       </aside>
     </div>
   </section>
@@ -437,10 +417,6 @@
           <label class="setting-toggle" for="settings-bigtools">
             <span><b>放大工具列</b><small>工具與顏色的按鈕變大，手指比較好按</small></span>
             <input id="settings-bigtools" type="checkbox">
-          </label>
-          <label class="setting-toggle" for="settings-trace">
-            <span><b>自動打開猜題紀錄</b><small>進入對局時就把左下的紀錄面板展開</small></span>
-            <input id="settings-trace" type="checkbox" checked>
           </label>
         </div>
 

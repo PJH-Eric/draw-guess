@@ -489,8 +489,6 @@ body.big-tools .fillbox{min-height:56px}
 .aside-body::-webkit-scrollbar{width:8px}
 .aside-body::-webkit-scrollbar-track{background:transparent}
 .aside-body::-webkit-scrollbar-thumb{background:var(--grape-d);border-radius:999px}
-.aside-chat-slot{flex:0 0 auto;padding:0 8px 8px}
-.aside-chat-slot:empty{display:none}
 
 .sumcard{border:3px solid var(--line);border-radius:16px;background:#fff;padding:7px 10px}
 .sum-line{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:2px dashed var(--line);font-size:.78rem}
@@ -513,57 +511,10 @@ body.big-tools .fillbox{min-height:56px}
 .sum-list li[data-k=turn]{border-left:7px solid var(--grape-d);color:var(--ink)}
 .sum-list li[data-k=hint]{border-left:7px solid var(--lemon-d)}
 .sum-list li[data-k=closed]{border-left:7px solid var(--danger);color:var(--danger)}
+/* 猜題（含猜錯的）也列在這裡；自己猜的標成綠色，一眼認得出來 */
+.sum-list li[data-k=guess]{border-left:7px solid var(--line)}
+.sum-list li[data-k=guess][data-mine=true]{border-left-color:var(--mint-d);background:#F1F9F4;color:var(--ink)}
 .sum-empty{margin:8px 2px;font-size:.79rem;color:var(--ink-soft)}
-
-/* ---------- 猜題紀錄（唯讀，沒有自由發言） ---------- */
-.chatdock{position:absolute;left:4px;bottom:4px;z-index:45;display:flex;flex-direction:column;align-items:flex-start;gap:6px}
-.game.aside-open .chatdock{left:calc(var(--aside-w) + 8px)}
-.game.aside-open .hintdock{left:calc(var(--aside-w) + 8px)}
-.chat-pill{position:relative;--d:5px}
-.chat-unread{
-  display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 5px;
-  border:2px solid var(--ink);border-radius:999px;background:var(--danger);color:#fff;font-size:.7rem;font-weight:900
-}
-.chat-panel{
-  order:-1;width:min(80vw,320px);height:min(42vh,300px);
-  display:flex;flex-direction:column;
-  border:3px solid var(--ink);border-radius:18px;background:var(--paper);
-  box-shadow:0 8px 0 rgba(74,59,85,.2);overflow:hidden
-}
-.chat-head{display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:3px solid var(--line);background:#F6EEFF;flex:0 0 auto}
-.chat-head b{font-size:.88rem;white-space:nowrap}
-.chat-scope{flex:1;font-size:.7rem;font-weight:800;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.chat-close{width:48px;height:48px;flex:0 0 auto;border:2px solid var(--ink);border-radius:50%;background:var(--rose);color:var(--ink);font:inherit;font-weight:900;cursor:pointer}
-.chat-close:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
-.chat-list{
-  flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:7px;
-  display:flex;flex-direction:column;gap:5px;font-size:.81rem;
-  user-select:text;-webkit-user-select:text;
-  scrollbar-width:thin;scrollbar-color:var(--grape-d) transparent
-}
-.chat-list::-webkit-scrollbar{width:8px}
-.chat-list::-webkit-scrollbar-track{background:transparent}
-.chat-list::-webkit-scrollbar-thumb{background:var(--grape-d);border-radius:999px}
-.chat-msg{border-radius:12px;padding:4px 8px;background:#F4EFFA;line-height:1.5;word-break:break-word}
-.chat-msg .who{font-weight:900;font-size:.75rem;color:var(--grape-t);margin-right:5px}
-.chat-msg[data-role=system]{background:#FFF6E0;color:var(--ink-soft);font-weight:700;font-size:.75rem;text-align:center}
-.chat-msg[data-role=ai]{background:#EAF4FC}
-.chat-msg[data-mine=true]{background:#DFF3E9}
-.chat-empty{margin:auto;font-size:.78rem;color:var(--ink-soft);text-align:center}
-.chat-form{display:flex;gap:6px;padding:6px;border-top:3px solid var(--line);background:#FBF7FF;flex:0 0 auto}
-.chat-form input{
-  flex:1 1 auto;min-width:0;font:inherit;font-size:.86rem;
-  border:3px solid var(--line);border-radius:12px;padding:7px 10px;background:#fff;color:var(--ink);
-  outline:none;min-height:48px;user-select:text;-webkit-user-select:text
-}
-.chat-form input:focus{border-color:var(--grape-d)}
-.chat-form .btn3d{min-height:48px;--d:5px;padding:7px 12px calc(7px + var(--d))}
-.chat-state{margin:0;padding:0 8px 5px;font-size:.71rem;font-weight:800;color:var(--ink-soft);min-height:1.1em;flex:0 0 auto}
-.chat-state[data-kind=error]{color:var(--danger)}
-.chat-state[data-kind=ok]{color:var(--ok)}
-
-/* 猜題紀錄放進左欄時，靠左下並吃滿寬度 */
-.aside-chat-slot .chat-panel{width:100%;height:min(34vh,280px);box-shadow:0 4px 0 rgba(74,59,85,.14)}
 
 /* ---------- 對局設定彈窗裡的房間區塊 ---------- */
 .roomcode-pill{flex:0 0 auto;border:3px solid var(--grape-d);border-radius:999px;background:#F8F4FF;color:var(--grape-t);padding:3px 14px;font-size:1rem;font-weight:900;letter-spacing:.18em}
@@ -704,7 +655,6 @@ body.big-tools .fillbox{min-height:56px}
     box-shadow:none;border-right:3px solid var(--line);
   }
   .game-aside.collapsed{display:none}
-  .game.aside-open .chatdock{left:4px}
   .game.aside-open .hintdock{left:4px}
 }
 
@@ -757,10 +707,7 @@ body.big-tools .fillbox{min-height:56px}
   .pface{width:26px;height:26px}
   .guessbar .btn3d{min-width:84px}
   .guessbar input{font-size:1rem;min-height:56px}
-  .chat-panel{width:min(88vw,320px);height:min(36vh,260px)}
   .toolacts{margin-left:0}
-  /* 手機直向沒有空間同時顯示兩個浮層；摘要開啟時先收起猜題紀錄 */
-  .game.aside-open .chatdock{left:4px;visibility:hidden;pointer-events:none}
   .create-choice{align-items:stretch;flex-direction:column;gap:6px}
   .create-choice .chiprow{justify-content:flex-start}
 }
@@ -784,7 +731,6 @@ body.big-tools .fillbox{min-height:56px}
   .guessbar input{min-height:48px;font-size:.95rem;padding:8px 12px}
   .guessbar .btn3d{min-height:48px;min-width:84px;font-size:1rem}
   .tool-hint{display:none}
-  .chat-panel{height:min(58vh,220px)}
   :root{--topbtn:46px;--topgap:6px;--topedge:10px}
   .game-top .btn3d.icononly,.btn3d.settings-fab{padding:7px 7px calc(7px + var(--d))}
 }
@@ -810,7 +756,6 @@ input,textarea,select{user-select:text;-webkit-user-select:text}
 
 /* iOS 對 font-size < 16px 的欄位聚焦時會自動放大整頁，放大後輸入框常被推出畫面 */
 @media (pointer:coarse){
-  .chat-form input,#guess-input,#lobby-nick,#lobby-code{font-size:16px}
+  #guess-input,#lobby-nick,#lobby-code{font-size:16px}
 }
 body.kb-open .game-aside{bottom:var(--kb,0px)}
-body.kb-open .chat-panel{height:min(40vh,300px,calc(var(--app-h,100dvh) - 150px))}

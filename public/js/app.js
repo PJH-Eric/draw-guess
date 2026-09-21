@@ -5,7 +5,7 @@
  *   線上：狀態在伺服器，這裡只收 Rules.toPublic 投影，權限一律看 you.can。
  * 兩種模式最後都收斂成同一個 view 物件，所以只有一套畫面程式碼。
  *
- * 這個遊戲沒有聊天室：唯一的文字輸入就是猜題框，左下的「猜題紀錄」是唯讀的。
+ * 這個遊戲沒有聊天室：唯一的文字輸入就是猜題框，「猜題紀錄」併在操作摘要裡，唯讀。
  */
 (function (w) {
   'use strict';
@@ -18,6 +18,9 @@
   var ME = 'me';                    // 單機模式裡自己的玩家 id
   var LOOP_MS = 120;                // 單機推進與倒數更新的間隔
 
+  /* 「猜題紀錄」最多列幾筆（再多也捲不完，前面的意義不大） */
+  var RECENT_MAX = 60;
+
   var app = {
     screen: 's-home',
     mode: null,                     // 'solo' | 'online'
@@ -28,8 +31,6 @@
     solo: null,                     // { state, director, seed, level }
     loop: 0,
     asideOpen: false,
-    feedOpen: false,
-    unread: 0,
     lastTurnKey: '',
     lastPhase: '',
     lastMask: '',
@@ -54,9 +55,6 @@
     var list = D.querySelectorAll('.screen');
     for (var i = 0; i < list.length; i++) list[i].classList.toggle('active', list[i].id === id);
     app.screen = id;
-    /* 猜題紀錄的浮動入口只在對局畫面出現（寬版是搬進左欄，不用這顆按鈕） */
-    var dock = $('feeddock');
-    if (dock) dock.hidden = (id !== 's-game') || !!app.wideLayout;
     if (id === 's-game') { layoutStage(); if (app.paint) app.paint.resize(); }
     Sound.setTrack(id === 's-game' ? 'draw' : 'menu');
   }
@@ -228,7 +226,6 @@
     $('settings-bigtools').addEventListener('change', function () {
       Store.bigTools(this.checked); applyDisplaySettings(); layoutStage();
     });
-    $('settings-trace').addEventListener('change', function () { Store.showTrace(this.checked); });
     $('settings-nick').addEventListener('change', function () {
       var v = this.value.trim().slice(0, 12);
       Store.nick(v);
@@ -267,7 +264,6 @@
     $('settings-haptic').checked = Sound.isHapticOn();
     $('settings-motion').checked = Store.reduceMotion();
     $('settings-bigtools').checked = Store.bigTools();
-    $('settings-trace').checked = Store.showTrace();
     $('settings-nick').value = Store.nick();
     $('settings-server-url').textContent = Cfg.describe();
     setServerPill(Cfg.status === 'ok' ? (w.Online && w.Online.isConnected() ? 'ok' : 'unset') : Cfg.status);
@@ -302,7 +298,7 @@
       '<ul>' +
       '<li><b>猜對了</b>：加分，而且你猜的內容不會被別人看到。</li>' +
       '<li><b>很接近了</b>：只差一個字，這個提示只有你看得到。</li>' +
-      '<li><b>沒猜中</b>：會出現在左下的「猜題紀錄」裡，讓大家知道這個答案已經有人試過了。</li>' +
+      '<li><b>沒猜中</b>：會出現在操作摘要的「猜題紀錄」裡，讓大家知道這個答案已經有人試過了。</li>' +
       '</ul>' +
       '<p>猜得越早、名次越前面，分數越高。</p>' },
     { h: '題目提示怎麼看', b:
@@ -321,7 +317,7 @@
       '<p>在主選單按「線上對戰」可以開房間或用房號加入，2 到 8 個人都行；人不夠可以加電腦對手湊。</p>' +
       '<p>房主可以在對局設定裡產生<b>邀請連結</b>，對方開啟後會先停在大廳確認暱稱，按下按鈕才會真的進房。</p>' +
       '<p>位子滿了或對局已經開始時，新來的人會變成<b>觀戰者</b>：可以看畫、看紀錄，但不能畫也不能猜。</p>' +
-      '<p>左上角的 📋 打開操作摘要（目前階段、你能做什麼、比分）；左下角是猜題紀錄。房間裡沒有任何真人玩家時會立刻關閉。</p>' }
+      '<p>右上角的 📋 打開操作摘要：目前階段、你能做什麼、比分，還有「猜題紀錄」——每一則猜題（含猜錯的）與對局事件都在那裡。房間裡沒有任何真人玩家時會立刻關閉。</p>' }
   ];
 
   var tutIndex = 0;
@@ -450,7 +446,6 @@
     app.roomCode = null;
     app.feed = [];
     app.feedSeen = {};
-    app.unread = 0;
     app.recorded = false;
     app.lastTurnKey = '';
     app.lastPhase = '';
@@ -462,9 +457,7 @@
     ensurePaint();
     app.paint.clearLocal();
     app.paint.clearRedo();
-    setFeedOpen(Store.showTrace());
     soloRefresh();
-    if (app.view && app.view.you.can.draw && !app.wideLayout) setFeedOpen(false);
     Sound.play('start');
     startLoop();
   }
@@ -498,8 +491,6 @@
         }
       }
     };
-    /* 剛換成自己當畫家：窄版先收起疊在畫布上的紀錄面板 */
-    if (!app.wideLayout && app.feedOpen && game.you.isDrawer && !wasDrawer) setFeedOpen(false);
     render();
   }
 
@@ -588,7 +579,7 @@
   function stopLoop() { if (app.loop) { clearInterval(app.loop); app.loop = 0; } }
 
   /* ================================================================
-     猜題紀錄（唯讀）
+     猜題紀錄（唯讀，顯示在操作摘要裡）
      ================================================================ */
 
   function pushFeed(entry) {
@@ -597,49 +588,52 @@
     if (entry.id) app.feedSeen[entry.id] = 1;
     app.feed.push(entry);
     if (app.feed.length > 120) app.feed.splice(0, app.feed.length - 120);
-    if (!app.feedOpen) { app.unread++; updateFeedBadge(); }
-    renderFeed();
+    renderRecent();
   }
 
   function replaceFeed(list) {
     app.feed = (list || []).slice();
     app.feedSeen = {};
     for (var i = 0; i < app.feed.length; i++) if (app.feed[i].id) app.feedSeen[app.feed[i].id] = 1;
-    renderFeed();
+    renderRecent();
   }
 
-  function renderFeed() {
-    var box = $('feed-list');
-    if (!box) return;
-    if (!app.feed.length) {
-      box.innerHTML = '<p class="chat-empty">還沒有人猜過。猜錯的答案會出現在這裡，讓大家知道哪些試過了。</p>';
-      return;
+  /** 系統事件與每一則猜題合成同一條時間軸；線上的系統訊息以伺服器摘要為準，不重複。 */
+  function recentEvents() {
+    var v = app.view;
+    var hasSummary = !!(v && v.room && v.room.summary);
+    var out = [];
+    var i, n, m;
+    if (hasSummary) {
+      for (i = 0; i < v.room.summary.length; i++) {
+        n = v.room.summary[i];
+        out.push({ at: n.at || 0, kind: n.kind || 'info', text: n.text });
+      }
     }
-    var html = '';
-    for (var i = 0; i < app.feed.length; i++) {
-      var m = app.feed[i];
-      var role = m.kind === 'guess' ? (m.role === 'ai' ? 'ai' : 'player') : 'system';
-      var mine = m.fromId && app.view && app.view.you && m.fromId === app.view.you.id;
-      html += '<div class="chat-msg" data-role="' + role + '" data-mine="' + (mine ? 'true' : 'false') + '">' +
-        (m.kind === 'guess' ? '<span class="who">' + esc(m.from) + '</span>' : '') +
-        esc(m.text) + '</div>';
+    for (i = 0; i < app.feed.length; i++) {
+      m = app.feed[i];
+      if (hasSummary && m.kind !== 'guess') continue;
+      out.push({
+        at: m.at || 0,
+        kind: m.kind === 'guess' ? 'guess' : (m.kind || 'info'),
+        text: m.kind === 'guess' ? (m.from + ' 猜「' + m.text + '」') : m.text,
+        mine: !!(m.fromId && v && v.you && m.fromId === v.you.id)
+      });
     }
-    box.innerHTML = html;
-    box.scrollTop = box.scrollHeight;
+    out.sort(function (a, b) { return (a.at || 0) - (b.at || 0); });
+    return out;
   }
 
-  function updateFeedBadge() {
-    var b = $('feed-unread');
-    if (!b) return;
-    b.hidden = app.unread <= 0;
-    b.textContent = app.unread > 99 ? '99+' : String(app.unread);
-  }
-
-  function setFeedOpen(open) {
-    app.feedOpen = !!open;
-    $('feed-panel').hidden = !app.feedOpen;
-    $('b-feed-toggle').setAttribute('aria-expanded', String(app.feedOpen));
-    if (app.feedOpen) { app.unread = 0; updateFeedBadge(); renderFeed(); }
+  /** 唯一的紀錄區：最新的排在最上面，不用捲到底就看得到 */
+  function renderRecent() {
+    var ul = $('sum-list');
+    if (!ul) return;
+    var recent = recentEvents().slice(-RECENT_MAX).reverse();
+    ul.innerHTML = recent.map(function (n) {
+      return '<li data-k="' + esc(n.kind || 'info') + '"' + (n.mine ? ' data-mine="true"' : '') +
+        '>' + esc(n.text) + '</li>';
+    }).join('');
+    $('sum-empty').hidden = recent.length > 0;
   }
 
   function setAsideOpen(open) {
@@ -653,28 +647,13 @@
     layoutStage();
   }
 
-  /* 寬版把猜題紀錄搬進左欄下方，窄版搬回畫布左下的浮層 */
+  /* 寬版左欄常駐（紀錄就在裡面），窄版收起來、用 📋 叫出來 */
   function relayoutFeed() {
     var wide = w.matchMedia('(min-width:1100px)').matches;
     if (app.wideLayout === wide) return;
     app.wideLayout = wide;
-    var panel = $('feed-panel');
-    if (wide) {
-      $('aside-chat-slot').appendChild(panel);
-      setAsideOpen(true);
-      $('feeddock').hidden = true;
-      panel.hidden = false;
-      app.feedOpen = true;
-      app.unread = 0;
-      updateFeedBadge();
-    } else {
-      $('feeddock').appendChild(panel);
-      $('feeddock').hidden = app.screen !== 's-game';
-      setAsideOpen(false);
-      setFeedOpen(Store.showTrace());
-      if (app.screen === 's-game') $('feeddock').hidden = false;
-    }
-    renderFeed();
+    setAsideOpen(wide);
+    renderRecent();
     layoutStage();
   }
 
@@ -1518,17 +1497,8 @@
       }).join('');
     } else sl.innerHTML = '';
 
-    /* 最近發生的事 */
-    var notes = (v.room && v.room.summary) ? v.room.summary : localSummary();
-    var ul = $('sum-list');
-    var recent = notes.slice(-8).reverse();
-    ul.innerHTML = recent.map(function (n) {
-      return '<li data-k="' + esc(n.kind || 'info') + '">' + esc(n.text) + '</li>';
-    }).join('');
-    $('sum-empty').hidden = recent.length > 0;
-
-    var scope = $('feed-scope');
-    if (scope) scope.textContent = app.mode === 'online' && app.roomCode ? ('房號 ' + app.roomCode) : '單機練習';
+    /* 猜題紀錄：系統事件 + 每一則猜題 */
+    renderRecent();
   }
 
   function canDoText(v, g) {
@@ -1547,13 +1517,6 @@
     }
     if (g.phase === 'reveal') return '看一下答案，馬上換下一位畫家。';
     return '這一局結束了，可以再玩一局或離開。';
-  }
-
-  /** 單機沒有伺服器摘要，就從本機紀錄湊一份一樣格式的 */
-  function localSummary() {
-    return app.feed.slice(-8).map(function (m) {
-      return { text: m.kind === 'guess' ? (m.from + ' 猜「' + m.text + '」') : m.text, kind: m.kind === 'guess' ? 'info' : (m.kind || 'info') };
-    });
   }
 
   /* ================================================================
@@ -1692,7 +1655,6 @@
     app.view = null;
     app.feed = [];
     app.feedSeen = {};
-    app.unread = 0;
     app.recorded = false;
     app.lastTurnKey = '';
     app.lastPhase = '';
@@ -1704,7 +1666,6 @@
     ensurePaint();
     app.paint.clearLocal();
     app.paint.clearRedo();
-    setFeedOpen(app.wideLayout ? true : Store.showTrace());
     startLoop();
     /* 保險：萬一第一份投影比 ack 早到而被丟掉，這裡再要一次 */
     w.Online.send('room:resync', {});
@@ -1844,8 +1805,6 @@
       }
       if (key !== app.lastTurnKey) {
         app.lastTurnKey = key;
-        /* 換自己畫的時候，窄版的紀錄浮層先讓開，免得一開始就擋住畫布 */
-        if (!app.wideLayout && app.feedOpen && v.game && v.game.you.isDrawer) setFeedOpen(false);
         if (v.game && v.game.phase === 'drawing') Sound.play('turn');
         if (v.game && v.game.phase === 'over') {
           Sound.play(v.game.winners.indexOf(v.you.id) >= 0 ? 'win' : 'lose');
@@ -2004,15 +1963,6 @@
     });
     $('b-aside-toggle').addEventListener('click', function () { setAsideOpen(!app.asideOpen); Sound.play('click'); });
     $('b-aside-close').addEventListener('click', function () { setAsideOpen(false); });
-    $('b-feed-toggle').addEventListener('click', function () { setFeedOpen(!app.feedOpen); Sound.play('click'); });
-    $('b-feed-close').addEventListener('click', function () { setFeedOpen(false); });
-
-    /* 窄版的猜題紀錄是疊在畫布上的浮層。輪到自己畫的時候一碰畫布就讓它閃開，
-       不然它會擋住左半邊的作畫區。寬版是併在左欄裡，不會擋到，就不用動。 */
-    $('board').addEventListener('pointerdown', function () {
-      if (!app.wideLayout && app.feedOpen && app.view && app.view.you.can.draw) setFeedOpen(false);
-    }, true);
-
     /* 音訊必須等第一次使用者手勢才能解鎖 */
     var unlock = function () {
       Sound.unlock();

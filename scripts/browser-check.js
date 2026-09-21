@@ -13,7 +13,7 @@
  *   D. 小畫家工具列：鉛筆／直線／矩形／橢圓／橡皮擦／油漆桶都真的畫得出筆畫，
  *      復原、重做、全部清除都有作用，而且非畫家時工具列不會出現。
  *   E. 單機完整一局：選題 → 作畫 → 猜題 → 電腦回合 → 結算 → 再玩一局。
- *   F. 左側操作摘要可以展開收合，猜題紀錄不遮住畫布。
+ *   F. 左側操作摘要可以展開收合，而且每一則猜題（含猜錯的）都列在「猜題紀錄」。
  *   G. 線上 UI：同一個瀏覽器開三個分頁（房主、玩家、觀戰），走完
  *      邀請連結 →（停在大廳改暱稱）→ 加入 → 準備 → 開打，
  *      並確認觀戰者的工具列與猜題框確實不存在。
@@ -142,8 +142,6 @@ const PAGE_HELPERS = `
         if (!el.closest) return false;
         var aside = el.closest('#game-aside');
         if (aside && !aside.classList.contains('open') && getComputedStyle(aside).position === 'fixed') return true;
-        var panel = el.closest('#feed-panel');
-        if (panel && panel.hidden) return true;
         return false;
       }
       function hitBox(el) {
@@ -224,8 +222,6 @@ const PAGE_HELPERS = `
       var s = document.getElementById('stage');
       var cr = c.getBoundingClientRect();
       var sr = s.getBoundingClientRect();
-      var dock = document.getElementById('feeddock');
-      var dockRect = dock.hidden ? null : dock.getBoundingClientRect();
       var toolbar = document.getElementById('toolbar');
       var guessbar = document.getElementById('guessbar');
       return {
@@ -235,7 +231,7 @@ const PAGE_HELPERS = `
         fill: Math.round((cr.width * cr.height) / Math.max(1, sr.width * sr.height) * 100),
         toolbarShown: !toolbar.hidden,
         guessbarShown: !guessbar.hidden,
-        feedOpen: !document.getElementById('feed-panel').hidden,
+        recentCount: document.querySelectorAll('#sum-list li').length,
         asideOpen: document.getElementById('game-aside').classList.contains('open'),
         overlayShown: !document.getElementById('stage-overlay').hidden
       };
@@ -512,22 +508,10 @@ async function main() {
       JSON.stringify(toggled));
     await shot(v.name + '-6-操作摘要');
 
-    /* 猜題紀錄：窄版是左下浮層入口，寬版搬進左欄常駐 */
-    const dockShown = await cdp.eval('return !document.getElementById("feeddock").hidden;');
-    check(v.name + '：' + (wide ? '寬版猜題紀錄併進左欄' : '窄版有猜題紀錄的入口'),
-      wide ? dockShown === false : dockShown === true, 'dock=' + dockShown);
-    if (!wide) {
-      await cdp.eval('window.__probe.click("#b-feed-toggle"); return 1;');
-      await sleep(300);
-      const s1 = await cdp.json('window.__probe.stage()');
-      await cdp.eval('window.__probe.click("#b-feed-toggle"); return 1;');
-      await sleep(300);
-      const s2 = await cdp.json('window.__probe.stage()');
-      check(v.name + '：猜題紀錄可以開關', s1.feedOpen !== s2.feedOpen, s1.feedOpen + ' → ' + s2.feedOpen);
-    } else {
-      check(v.name + '：寬版猜題紀錄常駐可見',
-        await cdp.eval('return !document.getElementById("feed-panel").hidden && !!document.getElementById("aside-chat-slot").querySelector("#feed-panel");'));
-    }
+    /* 猜題紀錄一律併進左側操作摘要，畫面上不該再有任何浮動的紀錄面板 */
+    check(v.name + '：沒有猜題紀錄浮層',
+      await cdp.eval('return !document.getElementById("feeddock") && !document.getElementById("feed-panel");'));
+    check(v.name + '：猜題紀錄有內容', toggled.recentCount > 0, 'recentCount=' + toggled.recentCount);
 
     if (wide) {
       check(v.name + '：寬版收起左欄後遊戲主區變寬',

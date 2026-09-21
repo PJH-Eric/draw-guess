@@ -17,7 +17,6 @@
     stats: 'dg_stats',
     reduceMotion: 'dg_reduce_motion',
     bigTools: 'dg_big_tools',
-    showTrace: 'dg_show_trace',
     tool: 'dg_tool',
     color: 'dg_color',
     width: 'dg_width'
@@ -87,7 +86,6 @@
     tutorialDone: function (v) { if (v === undefined) return getFlag(KEY.tutorialDone, false); setFlag(KEY.tutorialDone, v); return v; },
     reduceMotion: function (v) { if (v === undefined) return getFlag(KEY.reduceMotion, false); setFlag(KEY.reduceMotion, v); return v; },
     bigTools: function (v) { if (v === undefined) return getFlag(KEY.bigTools, false); setFlag(KEY.bigTools, v); return v; },
-    showTrace: function (v) { if (v === undefined) return getFlag(KEY.showTrace, true); setFlag(KEY.showTrace, v); return v; },
     tool: function (v) { if (v === undefined) return get(KEY.tool, 'pen'); set(KEY.tool, v); return v; },
     color: function (v) { if (v === undefined) return getInt(KEY.color, 0, 0, 31); set(KEY.color, v); return v; },
     width: function (v) { if (v === undefined) return getInt(KEY.width, 1, 0, 3); set(KEY.width, v); return v; },
@@ -96,7 +94,6 @@
     resetDefaults: function () {
       setFlag(KEY.reduceMotion, false);
       setFlag(KEY.bigTools, false);
-      setFlag(KEY.showTrace, true);
     }
   };
 }(window));
