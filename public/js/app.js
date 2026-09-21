@@ -144,7 +144,55 @@
     return api;
   }
 
-  var settingsModal, gameModal, roomCreateModal;
+  var settingsModal, gameModal, roomCreateModal, confirmModal;
+
+  /* ---------------------------------------------------------- 確認對話框
+     離開對局這種收不回來的動作，先再問一次。用同一組 Modal 行為
+     （焦點鎖定、Escape 關閉、關閉後焦點歸位），不用瀏覽器的 confirm()。 */
+  var confirmAction = null;
+
+  function setupConfirm() {
+    confirmModal = makeModal('confirm-modal', 'confirm-panel', null);
+    $('confirm-cancel').addEventListener('click', function () { confirmAction = null; confirmModal.close(); Sound.play('click'); });
+    $('confirm-ok').addEventListener('click', function () {
+      var fn = confirmAction;
+      confirmAction = null;
+      confirmModal.close();
+      Sound.play('click');
+      if (fn) fn();
+    });
+    var back = D.querySelector('[data-confirm-close]');
+    if (back) back.addEventListener('click', function () { confirmAction = null; confirmModal.close(); });
+  }
+
+  /**
+   * 問一次再做。
+   * @param {{title:string, text:string, ok:string, cancel:string}} o
+   * @param {function} onOk 按下確定才會跑
+   */
+  function askConfirm(o, onOk) {
+    $('confirm-title').textContent = o.title;
+    $('confirm-text').textContent = o.text;
+    S.setLabel($('confirm-ok'), esc(o.ok));
+    S.setLabel($('confirm-cancel'), esc(o.cancel));
+    confirmAction = onOk;
+    confirmModal.open();
+  }
+
+  /** 離開對局前的確認：線上是離開房間、單機是離開這一局 */
+  function askLeaveGame() {
+    var online = app.mode === 'online';
+    askConfirm({
+      title: online ? '要離開這間房嗎？' : '要離開這一局嗎？',
+      text: online
+        ? '離開後你的座位會釋出，房間裡的對局會繼續進行。想再回來的話要重新從大廳加入。'
+        : '目前這一局的進度與分數不會保留。',
+      ok: online ? '離開房間' : '離開這一局',
+      cancel: online ? '留下來' : '繼續玩'
+    }, function () {
+      leaveGame(online ? 's-lobby' : 's-home');
+    });
+  }
 
   /* ================================================================
      系統設定
@@ -1523,7 +1571,7 @@
     $('gs-skip').addEventListener('click', function () { doSkip(); gameModal.close(); });
     $('gs-quit').addEventListener('click', function () {
       gameModal.close();
-      leaveGame(app.mode === 'online' ? 's-lobby' : 's-home');
+      askLeaveGame();
     });
   }
 
@@ -1922,6 +1970,7 @@
     applyDisplaySettings();
 
     setupSettings();
+    setupConfirm();
     setupRoomCreate();
     setupGameSettings();
     setupTutorial();
@@ -1947,7 +1996,11 @@
     }
 
     $('b-game-back').addEventListener('click', function () {
-      leaveGame(app.mode === 'online' ? 's-lobby' : 's-home');
+      /* 對局已經結束就不用再問，直接走 */
+      var g = app.view && app.view.game;
+      var done = (app.view && app.view.room && app.view.room.closed) || (g && g.phase === 'over') || !g;
+      if (done) { leaveGame(app.mode === 'online' ? 's-lobby' : 's-home'); return; }
+      askLeaveGame();
     });
     $('b-aside-toggle').addEventListener('click', function () { setAsideOpen(!app.asideOpen); Sound.play('click'); });
     $('b-aside-close').addEventListener('click', function () { setAsideOpen(false); });

@@ -618,6 +618,17 @@ async function main() {
   check('提示區塊靠畫面左邊', hd.cx < hd.vw / 2 && hd.left >= -1, JSON.stringify(hd));
   check('三張提示只有第一張能按', hd.btn1 === true && hd.btn2 === false, JSON.stringify(hd));
 
+  /* 上一頁要先問過：按了只開確認框，不會直接把人踢出對局 */
+  await cdp.eval('window.__probe.click("#b-game-back"); return 1;');
+  await sleep(220);
+  const askedLeave = await cdp.json('(function(){return {open:document.getElementById("confirm-modal").classList.contains("open"),screen:(document.querySelector(".screen.active")||{}).id,text:(document.getElementById("confirm-text").textContent||"").trim()};})()');
+  check('上一頁會先跳確認框', askedLeave.open === true, JSON.stringify(askedLeave));
+  check('還沒確認之前留在對局裡', askedLeave.screen === 's-game', JSON.stringify(askedLeave));
+  await cdp.eval('window.__probe.click("#confirm-cancel"); return 1;');
+  await sleep(220);
+  const stayed = await cdp.json('(function(){return {open:document.getElementById("confirm-modal").classList.contains("open"),screen:(document.querySelector(".screen.active")||{}).id,canDraw:!!(window.DrawGuessApp.view&&window.DrawGuessApp.view.you.can.draw)};})()');
+  check('取消之後關掉確認框、繼續玩', stayed.open === false && stayed.screen === 's-game' && stayed.canDraw === true, JSON.stringify(stayed));
+
   const box = await cdp.json('(function(){var r=document.getElementById("board").getBoundingClientRect();return {x:Math.round(r.left),y:Math.round(r.top),w:Math.round(r.width),h:Math.round(r.height)};})()');
   const px = (fx, fy) => ({ x: Math.round(box.x + box.w * fx), y: Math.round(box.y + box.h * fy) });
 

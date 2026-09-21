@@ -468,6 +468,26 @@
     </section>
   </div>
 
+  <!-- ============================== 確認彈窗 ============================== -->
+  <!-- 通用的「再問一次」對話框：離開對局這種收不回來的動作都走這裡 -->
+  <div class="settings-modal confirm-modal" id="confirm-modal" role="dialog" aria-modal="true"
+       aria-labelledby="confirm-title" aria-describedby="confirm-text" aria-hidden="true">
+    <div class="settings-backdrop" data-confirm-close></div>
+    <section class="settings-panel confirm-panel" id="confirm-panel" tabindex="-1">
+      <div class="settings-head">
+        <span class="settings-badge" aria-hidden="true">❓</span>
+        <h2 id="confirm-title">確認</h2>
+      </div>
+      <div class="settings-body">
+        <p class="confirm-text" id="confirm-text"></p>
+      </div>
+      <div class="settings-foot">
+        <button class="btn3d small" data-color="gray" id="confirm-cancel" type="button">先不要</button>
+        <button class="btn3d settings-done" data-color="peach" id="confirm-ok" type="button">確定</button>
+      </div>
+    </section>
+  </div>
+
   <!-- ============================== 對局設定彈窗 ============================== -->
   <div class="settings-modal" id="game-settings-modal" role="dialog" aria-modal="true"
        aria-labelledby="game-settings-title" aria-hidden="true">

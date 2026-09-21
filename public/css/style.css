@@ -586,6 +586,10 @@ body.big-tools .fillbox{min-height:56px}
   box-shadow:0 12px 0 rgba(74,59,85,.2);outline:none;
 }
 .room-create-panel{width:min(94vw,620px)}
+/* 確認對話框：比設定彈窗小一號，內容只有一句話 */
+.confirm-panel{width:min(92vw,400px)}
+.confirm-text{margin:0;font-size:.95rem;font-weight:700;line-height:1.7;color:var(--ink)}
+.confirm-modal .settings-body{padding:16px 18px}
 .settings-head{
   flex:0 0 auto;display:flex;align-items:center;gap:10px;
   padding:12px 14px 10px;background:linear-gradient(180deg,#F6EEFF 0%,var(--paper) 100%);
