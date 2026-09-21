@@ -1455,7 +1455,7 @@
     }
   }
 
-  /** 猜題列是固定在畫面正下方的浮層，把它的高度讓回給畫布（不然會蓋到） */
+  /** 猜題列是固定在遊戲主畫面正下方的浮層，把它的高度讓回給畫布（不然會蓋到） */
   function syncGuessbarSpace() {
     var bar = $('guessbar');
     var on = !bar.hidden;

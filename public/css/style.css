@@ -333,12 +333,11 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 .roomcode b{font-size:1.5rem;letter-spacing:.2em;color:var(--grape-t)}
 
 /* ---------- 猜題列 ---------- */
-/* 固定在畫面正下方並左右滿版：輸入區更容易找到，也不用跟畫布搶欄位。
+/* 固定在遊戲主畫面正下方並左右滿版：輸入區更容易找到，也不用跟畫布搶欄位。
    它離開了版面流，所以 .playarea 要用 --guessbar-h 把高度讓回來（app.js 量的）。 */
 .guessbar{
-  position:fixed;z-index:60;left:0;transform:none;
+  position:absolute;z-index:60;left:0;right:0;transform:none;
   bottom:calc(8px + var(--safe-b));
-  width:100vw;
   display:flex;gap:8px;align-items:center;padding:8px max(8px,var(--safe-r)) 8px max(8px,var(--safe-l));
   border:3px solid var(--ink);border-left:0;border-right:0;border-radius:18px 18px 0 0;background:var(--paper);
   box-shadow:0 -4px 0 rgba(74,59,85,.12)
@@ -450,7 +449,7 @@ body.big-tools .fillbox{min-height:56px}
   .fillbox{flex:1 1 auto;justify-content:center}
   .tool-hint{display:none}
 
-  /* 猜題框不在側欄裡，固定在畫面正下方左右滿版；橫向只要壓低一點 */
+  /* 猜題框不在側欄裡，固定在遊戲主畫面正下方左右滿版；橫向只要壓低一點 */
   .guessbar{bottom:calc(6px + var(--safe-b));padding:6px max(6px,var(--safe-r)) 6px max(6px,var(--safe-l))}
   .guessbar input{min-height:48px;font-size:1rem;padding:8px 12px;text-align:center}
   .guessbar .btn3d{min-width:96px}

@@ -713,9 +713,9 @@ async function main() {
     check('猜題者看不到答案', guessTurn.answer === null, guessTurn.answer);
     check('遮罩要嘛還沒出現、要嘛是底線', !guessTurn.mask || /＿/.test(guessTurn.mask), guessTurn.mask);
 
-    /* 猜題框固定在畫面正下方左右滿版，而且不壓到畫布 */
-    const gb = await cdp.json('(function(){var b=document.getElementById("guessbar").getBoundingClientRect();var c=document.getElementById("board").getBoundingClientRect();return {c:Math.round(b.left+b.width/2),left:Math.round(b.left),right:Math.round(b.right),vw:window.innerWidth,vh:window.innerHeight,bottom:Math.round(b.bottom),top:Math.round(b.top),canvasBottom:Math.round(c.bottom),w:Math.round(b.width)};})()');
-    check('猜題框左右滿版', gb.left <= 1 && gb.right >= gb.vw - 1, JSON.stringify(gb));
+    /* 猜題框固定在遊戲主畫面正下方左右滿版，而且不壓到畫布 */
+    const gb = await cdp.json('(function(){var b=document.getElementById("guessbar").getBoundingClientRect();var m=document.querySelector(".game-main").getBoundingClientRect();var c=document.getElementById("board").getBoundingClientRect();return {left:Math.round(b.left),right:Math.round(b.right),mainLeft:Math.round(m.left),mainRight:Math.round(m.right),vh:window.innerHeight,bottom:Math.round(b.bottom),top:Math.round(b.top),canvasBottom:Math.round(c.bottom),w:Math.round(b.width)};})()');
+    check('猜題框填滿遊戲主畫面', Math.abs(gb.left - gb.mainLeft) <= 1 && Math.abs(gb.right - gb.mainRight) <= 1, JSON.stringify(gb));
     check('猜題框貼齊畫面底部', gb.vh - gb.bottom <= 24 && gb.vh - gb.bottom >= 0, JSON.stringify(gb));
     check('猜題框沒有壓到畫布', gb.top >= gb.canvasBottom - 1, JSON.stringify(gb));
     const feedBefore = guessTurn.feed;
