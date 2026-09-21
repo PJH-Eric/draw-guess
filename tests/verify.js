@@ -54,7 +54,7 @@ function toDrawing(st, t) {
    ================================================================ */
 section('題庫（words.js）');
 {
-  check('題目數量為 1380', Words.LIST.length === 1380, Words.LIST.length);
+  check('題目數量為 2088', Words.LIST.length === 2088, Words.LIST.length);
 
   const ids = new Set();
   let dupe = null;
