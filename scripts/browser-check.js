@@ -35,6 +35,7 @@ const SHOTS = path.join(ROOT, 'screenshots');
 
 const VIEWPORTS = [
   { name: '手機窄版直向', width: 360, height: 640, mobile: true, dsf: 2 },
+  { name: '手機中窄版直向', width: 456, height: 800, mobile: true, dsf: 2 },
   { name: '手機直向', width: 390, height: 844, mobile: true, dsf: 3 },
   { name: '手機橫向', width: 844, height: 390, mobile: true, dsf: 3 },
   { name: '小手機橫向', width: 667, height: 375, mobile: true, dsf: 2 },
@@ -238,6 +239,17 @@ const PAGE_HELPERS = `
         asideOpen: document.getElementById('game-aside').classList.contains('open'),
         overlayShown: !document.getElementById('stage-overlay').hidden
       };
+    },
+    topActions: function () {
+      var group = document.querySelector('.game-top-actions');
+      var aside = document.getElementById('b-aside-toggle');
+      var settings = document.getElementById('b-game-settings');
+      var fab = document.getElementById('b-settings');
+      function rect(el) {
+        var r = el.getBoundingClientRect();
+        return { left: Math.round(r.left), right: Math.round(r.right), width: Math.round(r.width), top: Math.round(r.top), bottom: Math.round(r.bottom) };
+      }
+      return { group: rect(group), aside: rect(aside), settings: rect(settings), fab: rect(fab) };
     },
     click: function (sel) {
       var el = document.querySelector(sel);
@@ -460,6 +472,14 @@ async function main() {
     info = await cdp.json('window.__probe.layout()');
     check(v.name + '：進入對局畫面', info.activeScreen === 's-game', info.activeScreen);
     assertLayout('對局中', v, info);
+    if (v.width <= 620) {
+      const topActions = await cdp.json('window.__probe.topActions()');
+      check(v.name + '：上方對局按鈕靠攏且不被設定鈕拉開',
+        topActions.group.width <= 132 &&
+        topActions.settings.left - topActions.aside.right <= 8 &&
+        topActions.group.right <= topActions.fab.left + 1,
+        JSON.stringify(topActions));
+    }
 
     await sleep(400);
     const stage = await cdp.json('window.__probe.stage()');

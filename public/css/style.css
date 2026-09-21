@@ -215,7 +215,7 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 }
 
 /* 上排：離開、階段／題號／倒數。
-   三顆右上角按鈕由固定控制群組統一對齊，不讓中間狀態列把它們拉開。 */
+   對局控制群組固定在遊戲主區右上角，不讓中間狀態列把它們拉開。 */
 .game-top{display:flex;align-items:center;gap:4px;flex:0 0 auto;padding-right:180px}
 .statusbar{flex:1 1 auto;min-width:0;display:flex;gap:5px;align-items:center;justify-content:center;flex-wrap:wrap}
 .chip{
@@ -231,13 +231,14 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 .chip-timer{background:var(--lemon)}
 .chip-timer[data-urgent=true]{background:var(--danger-bg);border-color:var(--danger);color:var(--danger)}
 .game-top-actions{
-  position:fixed;z-index:69;top:calc(8px + var(--safe-t));right:calc(67px + var(--safe-r));
-  display:flex;align-items:center;gap:2px;flex:0 0 auto;
+  position:absolute;z-index:69;top:calc(8px + var(--safe-t));right:calc(67px + var(--safe-r));
+  width:max-content;max-width:calc(100% - 132px - var(--safe-r));
+  display:inline-flex;align-items:center;gap:2px;flex:0 0 auto;
   padding:3px;border:2px solid var(--line);border-radius:18px;
   background:rgba(255,253,248,.9);box-shadow:0 4px 0 rgba(74,59,85,.14);
   backdrop-filter:blur(5px)
 }
-.game-top-actions .btn3d{flex:0 0 auto}
+.game-top-actions .btn3d{flex:0 0 auto;width:52px}
 
 /* 題目提示列 */
 .wordbar{
@@ -704,6 +705,7 @@ body.big-tools .fillbox{min-height:56px}
      chip 用小一點的字，時鐘圖示收起來，題號改掛到題目提示列上。 */
   .game-top{padding-right:180px;gap:3px}
   .game-top-actions{gap:1px}
+  .game-top-actions .btn3d{width:46px}
   .game-top .btn3d.icononly{min-width:46px;min-height:46px;padding:7px 7px calc(7px + var(--d))}
   .statusbar{gap:3px}
   .chip{padding:3px 9px;font-size:.74rem;border-width:2px;gap:3px}
