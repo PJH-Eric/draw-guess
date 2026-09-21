@@ -50,7 +50,17 @@
     expression: { key: 'expression', label: '表情動作', emoji: '😄' },
     job: { key: 'job', label: '職業人物', emoji: '👩‍🚒' },
     fantasy: { key: 'fantasy', label: '奇幻世界', emoji: '🪄' },
-    action: { key: 'action', label: '活動行為', emoji: '🎬' }
+    action: { key: 'action', label: '活動行為', emoji: '🎭' },
+    star: { key: 'star', label: '明星人物', emoji: '🌟' },
+    movie: { key: 'movie', label: '電影作品', emoji: '🎬' },
+    trend: { key: 'trend', label: '時事話題', emoji: '📰' },
+    history: { key: 'history', label: '歷史人文', emoji: '🏛' },
+    geography: { key: 'geography', label: '世界地理', emoji: '🗺' },
+    civics: { key: 'civics', label: '公民社會', emoji: '⚖' },
+    physics: { key: 'physics', label: '物理現象', emoji: '🧲' },
+    astro: { key: 'astro', label: '天文宇宙', emoji: '🔭' },
+    music: { key: 'music', label: '音樂世界', emoji: '🎵' },
+    people: { key: 'people', label: '人物角色', emoji: '🧑' }
   };
   var CATEGORY_KEYS = Object.keys(CATEGORIES);
 
@@ -1115,6 +1125,122 @@
         '寫字', '摺紙', '剪紙', '堆雪人', '打電話', '看電視', '玩遊戲', '搭飛機', '排隊', '過馬路',
         '上學', '放學', '做夢', '打呼', '搬家'
       ]
+    },
+    star: {
+      hard: true,
+      icons: ['microphone', 'camera', 'note', 'guitar', 'trophy', 'hat', 'glasses', 'piano',
+              'drum', 'soccer', 'basketball', 'star', 'flower', 'computer', 'cards', 'clock'],
+      words: [
+        '周杰倫', '蔡依林', '五月天', '張惠妹', '林俊傑', '劉德華', '成龍', '周星馳', '梁朝偉', '張學友',
+        '郭富城', '鄧紫棋', '蕭敬騰', '陳奕迅', '李安', '楊紫瓊', '舒淇', '林志玲', '金城武', '周潤發',
+        '李小龍', '甄子丹', '張曼玉', '鞏俐', '章子怡', '費玉清', '鳳飛飛', '鄧麗君', '伍佰', '張國榮',
+        '泰勒絲', '碧昂絲', '瑪丹娜', '麥可傑克森', '貓王', '披頭四', '湯姆克魯斯', '李奧納多', '布萊德彼特', '艾瑪華森',
+        '基努李維', '奧黛麗赫本', '瑪麗蓮夢露', '卓別林', '憨豆先生', '麥可喬丹', '梅西', '貝克漢', '費德勒', '大谷翔平',
+        '王建民', '戴資穎'
+      ]
+    },
+    movie: {
+      hard: true,
+      icons: ['camera', 'tv', 'computer', 'rocket', 'dinosaur', 'boat', 'lion', 'hat',
+              'star', 'cake', 'car', 'airplane', 'whale', 'cat', 'book', 'trophy'],
+      words: [
+        '鐵達尼號', '阿凡達', '侏羅紀公園', '星際大戰', '哈利波特', '魔戒', '玩具總動員', '冰雪奇緣', '獅子王', '海底總動員',
+        '怪獸電力公司', '天外奇蹟', '腦筋急轉彎', '無敵破壞王', '動物方城市', '汽車總動員', '超人特攻隊', '瓦力', '花木蘭', '阿拉丁',
+        '美女與野獸', '小美人魚', '白雪公主', '睡美人', '灰姑娘', '彼得潘', '木偶奇遇記', '龍貓', '神隱少女', '天空之城',
+        '魔女宅急便', '蜘蛛人', '蝙蝠俠', '鋼鐵人', '美國隊長', '雷神索爾', '復仇者聯盟', '黑豹', '神力女超人', '變形金剛',
+        '侏羅紀世界', '玩命關頭', '捍衛戰士', '回到未來', '教父', '大白鯊', '駭客任務', '全面啟動', '星際效應', '阿甘正傳',
+        '功夫熊貓', '馴龍高手'
+      ]
+    },
+    trend: {
+      icons: ['phone', 'computer', 'car', 'rocket', 'bulb', 'clock', 'camera', 'tv',
+              'washer', 'bicycle', 'sun', 'key', 'cup', 'note', 'book', 'glasses'],
+      words: [
+        '人工智慧', '聊天機器人', '自動駕駛', '太空旅行', '衛星網路', '虛擬實境', '元宇宙', '區塊鏈', '加密貨幣', '行動支付',
+        '電子錢包', '外送員', '網購', '直播', '短影音', '社群媒體', '網紅', '遠距上班', '視訊會議', '線上課程',
+        '智慧手錶', '無人機', '掃地機器人', '智慧音箱', '電子書', '雲端硬碟', '太陽能板', '風力發電', '淨零碳排', '資源回收',
+        '環保杯', '電子票證', '快篩', '疫苗', '共享單車', '銀髮族', '少子化', '極端氣候', '世界盃', '奧運',
+        '演唱會', '行動電源', '自拍棒', '電競'
+      ]
+    },
+    history: {
+      hard: true,
+      icons: ['mountain', 'book', 'boat', 'pencil', 'clock', 'key', 'trophy', 'tree',
+              'cup', 'star', 'umbrella', 'hat', 'bulb', 'camera', 'table', 'drum'],
+      words: [
+        '萬里長城', '兵馬俑', '金字塔', '人面獅身', '羅馬競技場', '比薩斜塔', '巨石陣', '復活節島', '馬丘比丘', '吳哥窟',
+        '泰姬瑪哈陵', '紫禁城', '故宮', '敦煌', '絲路', '大運河', '火藥', '造紙術', '活字印刷', '蒸汽機',
+        '工業革命', '大航海', '哥倫布', '麥哲倫', '馬可波羅', '孔子', '老子', '孫子兵法', '秦始皇', '武則天',
+        '諸葛亮', '關羽', '張飛', '曹操', '劉備', '岳飛', '鄭成功', '李白', '杜甫', '蘇東坡',
+        '王羲之', '畢卡索', '梵谷', '達文西', '莫札特', '貝多芬', '愛因斯坦', '牛頓', '愛迪生', '居禮夫人',
+        '南丁格爾', '萊特兄弟', '伽利略', '拿破崙', '成吉思汗', '甲骨文'
+      ]
+    },
+    geography: {
+      hard: true,
+      icons: ['mountain', 'sea', 'island', 'desert', 'waterfall', 'volcano', 'tree', 'sun',
+              'boat', 'airplane', 'cloud', 'maple', 'cactus', 'snowman', 'rainbow', 'book'],
+      words: [
+        '台灣', '日本', '韓國', '泰國', '越南', '新加坡', '印度', '埃及', '法國', '英國',
+        '德國', '義大利', '西班牙', '荷蘭', '瑞士', '希臘', '俄羅斯', '美國', '加拿大', '墨西哥',
+        '巴西', '阿根廷', '澳洲', '紐西蘭', '肯亞', '南非', '冰島', '芬蘭', '土耳其', '蒙古',
+        '玉山', '阿里山', '日月潭', '太魯閣', '墾丁', '澎湖', '蘭嶼', '富士山', '喜馬拉雅山', '聖母峰',
+        '撒哈拉沙漠', '亞馬遜河', '尼羅河', '長江', '黃河', '密西西比河', '大峽谷', '尼加拉瀑布', '死海', '貝加爾湖',
+        '赤道', '北極', '南極', '熱帶雨林', '大堡礁', '地中海'
+      ]
+    },
+    civics: {
+      hard: true,
+      icons: ['book', 'key', 'clock', 'table', 'chair', 'bulb', 'phone', 'bus',
+              'umbrella', 'hat', 'computer', 'camera', 'cup', 'tv', 'pencil', 'trophy'],
+      words: [
+        '投票', '選舉', '憲法', '法律', '人權', '國旗', '國會', '法院', '判決', '納稅',
+        '身分證', '護照', '戶口名簿', '公投', '民主', '自由', '平等', '公平', '責任', '義務',
+        '權利', '議會', '市長', '縣長', '立法', '司法', '行政', '戶政', '兵役', '健保卡',
+        '駕照', '垃圾分類', '交通號誌', '斑馬線', '紅綠燈', '消防演習', '地震演習', '公聽會', '陪審團', '志工'
+      ]
+    },
+    physics: {
+      hard: true,
+      icons: ['bulb', 'clock', 'fan', 'swing', 'balloon', 'skateboard', 'boat', 'sun',
+              'lightning', 'glasses', 'cup', 'key', 'star', 'drum', 'washer', 'bicycle'],
+      words: [
+        '重力', '摩擦力', '浮力', '磁力', '反射', '折射', '蒸發', '凝結', '慣性', '槓桿',
+        '滑輪', '彈簧', '靜電', '電流', '磁鐵', '稜鏡', '回聲', '共振', '真空', '沸騰',
+        '結晶', '導電', '絕緣', '影子', '光速', '音速', '熱傳導', '熱脹冷縮', '表面張力', '毛細現象',
+        '自由落體', '拋物線', '齒輪', '斜坡', '天平', '擺錘', '水壓', '氣壓', '離心力', '虹吸'
+      ]
+    },
+    astro: {
+      hard: true,
+      icons: ['moon', 'star', 'sun', 'rocket', 'cloud', 'mountain', 'tornado', 'rainbow',
+              'sea', 'clock', 'computer', 'camera', 'bulb', 'glasses', 'boat', 'tree'],
+      words: [
+        '太陽系', '銀河系', '黑洞', '超新星', '星座', '北斗七星', '獵戶座', '北極星', '火星', '金星',
+        '木星', '水星', '天王星', '海王星', '冥王星', '土星環', '月相', '新月', '弦月', '隕石坑',
+        '太空站', '太空衣', '登月', '人造衛星', '哈雷彗星', '日冕', '黃道', '星圖', '天文台', '太空望遠鏡',
+        '宇宙', '光年', '星團', '雙星', '小行星', '彗尾', '月球車', '火箭發射', '無重力', '星軌'
+      ]
+    },
+    music: {
+      icons: ['note', 'piano', 'guitar', 'drum', 'microphone', 'trophy', 'book', 'camera',
+              'star', 'clock', 'computer', 'hat', 'flower', 'cup', 'tv', 'bulb'],
+      words: [
+        '五線譜', '高音譜號', '音階', '節拍器', '交響樂團', '合唱團', '指揮棒', '樂譜', '鼓棒', '琴鍵',
+        '打擊樂', '音樂會', '搖滾', '爵士', '古典樂', '流行歌', '搖籃曲', '進行曲', '圓舞曲', '國歌',
+        '生日快樂歌', '卡農', '小星星', '兒歌', '饒舌', '合音', '唱片', '黑膠', '錄音室', '節奏',
+        '旋律', '和弦', '拍子', '休止符', '二重唱', '獨奏', '伴奏', '樂團', '舞曲', '電子音樂'
+      ]
+    },
+    people: {
+      icons: ['cat', 'dog', 'hat', 'shoe', 'cake', 'book', 'camera', 'clock',
+              'flower', 'cup', 'bus', 'star', 'umbrella', 'phone', 'trophy', 'chair'],
+      words: [
+        '爸爸', '媽媽', '哥哥', '姊姊', '弟弟', '妹妹', '爺爺', '奶奶', '外公', '外婆',
+        '叔叔', '阿姨', '舅舅', '表哥', '堂妹', '嬰兒', '小孩', '學生', '同學', '朋友',
+        '鄰居', '客人', '新娘', '新郎', '雙胞胎', '老人', '青少年', '班長', '隊長', '房東',
+        '室友', '壽星', '導遊', '觀眾', '路人', '顧客', '主人', '夥伴', '偶像', '粉絲'
+      ]
     }
   };
 
@@ -1141,9 +1267,10 @@
     return draw;
   }
 
-  /** 難度：成語最難；字數越多、越難一筆說清楚 */
-  function bankDiff(cat, text, index) {
+  /** 難度：成語與專有名詞最難；字數越多、越難一筆說清楚 */
+  function bankDiff(bank, cat, text, index) {
     if (cat === 'idiom') return 3;
+    if (bank.hard) return text.length >= 5 ? 3 : 2;
     if (text.length <= 1) return 1;
     if (text.length === 2) return 1 + (index % 2);
     if (text.length === 3) return 2 + (index % 2);
@@ -1167,7 +1294,7 @@
         text: text,
         alt: [],
         cat: cat,
-        diff: bankDiff(cat, text, index),
+        diff: bankDiff(bank, cat, text, index),
         draw: bankDraw(bank.icons[index % bank.icons.length], index % 35, bankSerial++)
       });
     });

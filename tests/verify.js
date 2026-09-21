@@ -54,7 +54,7 @@ function toDrawing(st, t) {
    ================================================================ */
 section('題庫（words.js）');
 {
-  check('題目數量為 920', Words.LIST.length === 920, Words.LIST.length);
+  check('題目數量為 1380', Words.LIST.length === 1380, Words.LIST.length);
 
   const ids = new Set();
   let dupe = null;
@@ -64,13 +64,17 @@ section('題庫（words.js）');
 
   const cats = {};
   for (const w of Words.LIST) cats[w.cat] = (cats[w.cat] || 0) + 1;
-  check('十四個分類都有題目', Object.keys(cats).length === 14, JSON.stringify(cats));
+  check('二十四個分類都有題目', Object.keys(cats).length === 24, JSON.stringify(cats));
   check('每個分類至少 10 題', Object.values(cats).every((n) => n >= 10), JSON.stringify(cats));
-  check('抽象主題都有題目', ['emotion', 'idiom', 'phenomenon', 'place', 'expression', 'job', 'fantasy', 'action'].every((cat) => cats[cat] >= 30), JSON.stringify(cats));
+  const themes = ['emotion', 'idiom', 'phenomenon', 'place', 'expression', 'job', 'fantasy', 'action',
+    'star', 'movie', 'trend', 'history', 'geography', 'civics', 'physics', 'astro', 'music', 'people'];
+  check('每個主題分類都有題目', themes.every((cat) => cats[cat] >= 30), JSON.stringify(cats));
 
   /* 題目只能是名詞、成語或單一動作，不能是句子或加了場景的長描述 */
-  const tooLong = Words.LIST.filter((w) => w.text.length > 4).map((w) => w.text);
-  check('每一題都是單詞（最多四個字）', tooLong.length === 0, tooLong.slice(0, 5).join('，'));
+  /* 專有名詞（人名、片名、地名、術語）放寬到六個字，其餘一律四個字以內 */
+  const NAME_CATS = ['star', 'movie', 'trend', 'history', 'geography', 'civics', 'physics', 'astro', 'music'];
+  const tooLong = Words.LIST.filter((w) => w.text.length > (NAME_CATS.indexOf(w.cat) >= 0 ? 6 : 4)).map((w) => w.text);
+  check('每一題都是單詞（專有名詞最多六個字，其餘四個字）', tooLong.length === 0, tooLong.slice(0, 5).join('，'));
   const withParticle = Words.LIST.filter((w) => /[的了嗎呢，。]/.test(w.text)).map((w) => w.text);
   check('題目不含助詞或標點（不是句子）', withParticle.length === 0, withParticle.slice(0, 5).join('，'));
 
