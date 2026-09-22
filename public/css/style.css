@@ -24,6 +24,8 @@
   --topbtn:52px;
   --topgap:8px;
   --topedge:12px;
+  /* 右上三顆固定鈕佔掉的寬度，抬頭那一列要讓出來才不會被蓋到 */
+  --hud-reserve:calc(var(--topedge) + 3 * var(--topbtn) + 2 * var(--topgap) + 8px);
   --safe-t:env(safe-area-inset-top);
   --safe-r:env(safe-area-inset-right);
   --safe-b:env(safe-area-inset-bottom);
@@ -222,25 +224,39 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
   padding:calc(4px + var(--safe-t)) calc(8px + var(--safe-r)) calc(4px + var(--safe-b)) calc(8px + var(--safe-l));
 }
 
-/* 上排：離開、階段／題號／倒數。
-   對局控制群組固定在遊戲主區右上角，不讓中間狀態列把它們拉開。 */
+/* 對局抬頭：上排狀態（離開、階段、題號、倒數）＋ 題目提示列。
+   直向是上下兩列；橫向／寬螢幕合併成同一列，整整一列的高度還給畫布。 */
+.game-head{flex:0 0 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+
+/* 對局控制群組固定在遊戲主區右上角，不讓中間狀態列把它們拉開。 */
 .game-top{
-  display:flex;align-items:center;gap:4px;flex:0 0 auto;
-  padding-right:calc(var(--topedge) + 3 * var(--topbtn) + 2 * var(--topgap) + 8px);
+  display:flex;align-items:center;gap:6px;flex:0 0 auto;min-width:0;
+  padding-right:var(--hud-reserve);
 }
-.statusbar{flex:1 1 auto;min-width:0;display:flex;gap:5px;align-items:center;justify-content:center;flex-wrap:wrap}
+.statusbar{flex:1 1 auto;min-width:0;display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap}
 .chip{
-  display:inline-flex;align-items:center;gap:6px;
+  display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
   border:3px solid var(--ink);border-radius:999px;background:#fff;
-  padding:4px 13px;font-weight:900;font-size:.84rem;box-shadow:0 3px 0 rgba(74,59,85,.14)
+  padding:4px 14px;font-weight:900;font-size:.9rem;box-shadow:0 3px 0 rgba(74,59,85,.14)
 }
 .chip-phase{background:var(--grape);color:#3A2C46}
 .chip-phase[data-p=drawing]{background:var(--mint)}
 .chip-phase[data-p=picking]{background:var(--lemon)}
 .chip-phase[data-p=reveal]{background:var(--sky)}
 .chip-phase[data-p=over]{background:#EAE4F0;color:var(--ink-soft)}
-.chip-timer{background:var(--lemon)}
-.chip-timer[data-urgent=true]{background:var(--danger-bg);border-color:var(--danger);color:var(--danger)}
+/* 倒數：跟題目一樣是「隔著平板也要看得到」的資訊，字級刻意吃滿抬頭的高度。
+   tabular-nums 讓數字不會因為字寬不同一直跳。 */
+.chip-timer{
+  background:var(--lemon);gap:8px;padding:3px 16px;
+  font-size:clamp(1.15rem,3vmin,1.8rem);line-height:1.15;
+  font-variant-numeric:tabular-nums;
+}
+.chip-timer .ico{width:1.05em;height:1.05em}
+.chip-timer[data-urgent=true]{
+  background:var(--danger-bg);border-color:var(--danger);color:var(--danger);
+  animation:timer-beat .9s ease-in-out infinite;
+}
+@keyframes timer-beat{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 .game-top-actions{
   position:absolute;z-index:69;top:calc(10px + var(--safe-t));
   right:calc(var(--topedge) + var(--topbtn) + var(--topgap) + var(--safe-r));
@@ -249,21 +265,29 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 }
 .game-top-actions .btn3d{flex:0 0 auto}
 
-/* 題目提示列 */
+/* 題目提示列：整個畫面最重要的一行字，字級用 vmin 流動放大。 */
 .wordbar{
-  flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;
-  margin:5px 0 3px;padding:5px 12px;
-  border:3px solid var(--line);border-radius:16px;background:rgba(255,253,248,.9);
+  flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;
+  margin:4px 0 2px;padding:3px 16px;min-height:clamp(40px,4.4vh,50px);
+  border:3px solid var(--line);border-radius:18px;background:rgba(255,253,248,.9);
 }
 .wordbar[data-mine=true]{border-color:var(--grape-d);background:#F8F4FF}
-.wordbar-label{font-size:.76rem;font-weight:800;color:var(--ink-soft);white-space:nowrap}
-.wordbar-mask{font-size:1.3rem;font-weight:900;letter-spacing:.28em;color:var(--grape-t);word-break:break-all}
-.wordbar-meta{font-size:.76rem;font-weight:800;color:var(--ink-soft)}
+.wordbar-label{font-size:.86rem;font-weight:800;color:var(--ink-soft);white-space:nowrap}
+.wordbar-mask{
+  font-size:clamp(1.45rem,4.3vmin,2.6rem);font-weight:900;letter-spacing:.2em;line-height:1.12;
+  color:var(--grape-t);word-break:break-all
+}
+.wordbar-meta{font-size:.82rem;font-weight:800;color:var(--ink-soft)}
+
+/* 畫布上方一列：左邊是畫家的三張提示，右邊玩家與分數（玩家多的時候自己橫向捲）。
+   提示以前是絕對定位壓在畫布左側，窄螢幕會蓋掉一大塊畫圖區，改成橫式擺這裡。 */
+/* 一行放得下就跟名稱並排，放不下就整組掉到下一行（不橫向捲，才點得到） */
+.canvastop{flex:0 0 auto;display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:1px 0 3px}
 
 /* 玩家列 */
 .playerstrip{
-  flex:0 0 auto;display:flex;gap:6px;align-items:stretch;
-  overflow-x:auto;overflow-y:hidden;padding:2px 0 4px;scrollbar-width:thin;
+  flex:0 1 auto;min-width:0;display:flex;gap:6px;align-items:stretch;
+  overflow-x:auto;overflow-y:hidden;padding:1px 0 2px;scrollbar-width:thin;
 }
 .pcard{
   flex:0 0 auto;min-width:92px;max-width:150px;
@@ -406,19 +430,23 @@ body.has-guessbar .playarea{padding-bottom:var(--guessbar-h,0px)}
 .fillbox input{width:22px;height:22px;accent-color:var(--grape-d);cursor:pointer}
 .fillbox.on{border-color:var(--grape-d);background:#F8F4FF}
 .toolrow-misc{align-items:center}
-/* 三張提示：獨立掛在畫布左側，跟工具列分開。
+/* 三張提示：橫式擺在畫布正上方，跟工具列分開，不再壓在畫布上。
    已經給出去的打勾變淡，只有下一張是亮的。 */
 .hintdock{
-  position:absolute;left:4px;top:50%;transform:translateY(-50%);z-index:45;
-  display:flex;flex-direction:column;align-items:stretch;gap:5px;padding:7px;
-  border:3px solid var(--ink);border-radius:16px;background:var(--paper);
-  box-shadow:0 5px 0 rgba(74,59,85,.18)
+  flex:0 0 auto;max-width:100%;
+  display:flex;flex-direction:row;align-items:center;gap:5px;padding:2px 8px;
+  border:2px solid var(--line);border-radius:14px;background:var(--paper);
+  box-shadow:0 3px 0 rgba(74,59,85,.1);
 }
-.hintrow-label{font-size:.74rem;font-weight:900;color:var(--ink-soft);text-align:center}
-.hintdock .hintbtn{min-width:92px;font-size:.84rem;padding:8px 10px calc(8px + var(--d))}
+.hintrow-label{flex:0 0 auto;font-size:.74rem;font-weight:900;color:var(--ink-soft);white-space:nowrap}
+/* 刻意做小：只要看得到、點得到就好，畫布比它重要（一般按鈕的 48px 下限在這裡放寬） */
+.hintdock .hintbtn{
+  flex:0 0 auto;--d:4px;min-height:40px;
+  font-size:.76rem;padding:4px 10px calc(4px + var(--d));border-radius:12px;white-space:nowrap;
+}
 .hintbtn.done{opacity:.55}
 .hintbtn.done::after{content:"✓";margin-inline-start:4px}
-.hintrow-note{max-width:100px;font-size:.66rem;font-weight:700;line-height:1.3;color:var(--ink-soft);text-align:center}
+.hintrow-note{flex:0 0 auto;max-width:170px;font-size:.66rem;font-weight:700;line-height:1.25;color:var(--ink-soft)}
 .toolscroll{flex:1 1 auto;min-width:0;display:flex;gap:5px;align-items:center;flex-wrap:wrap}
 .tool-done{flex:0 0 auto;margin-left:auto}
 .tool-hint{margin:0 2px;font-size:.76rem;font-weight:700;color:var(--ink-soft);line-height:1.4;min-height:1.1em}
@@ -436,9 +464,23 @@ body.big-tools .fillbox{min-height:56px}
    一整個工具列的高度（實測手機橫向 140 → 287、平板橫向 430 → 620）。
    ================================================================ */
 @media (orientation:landscape) and (min-width:560px){
+  /* 抬頭合併成一列：左邊狀態與倒數、右邊題目吃滿剩下的寬度。
+     省下一整列的高度（實測手機橫向多 40px、平板橫向多 44px 給畫布）。 */
+  .game-head{flex-direction:row;align-items:center;gap:8px;padding-right:var(--hud-reserve)}
+  .game-top{flex:0 0 auto;padding-right:0}
+  .statusbar{flex:0 0 auto;flex-wrap:nowrap}
+  .wordbar{flex:1 1 auto;min-width:0;margin:0;min-height:48px;padding:3px 14px}
+
+  /* 畫布是正方形又受高度限制，畫布左右本來就是空的；
+     工具欄拿去用不會讓畫布變小，反而少換幾行、按鈕不會被裁掉。 */
+  /* 這一列跟右上角那三顆固定按鈕同高，右邊要留出來才不會被蓋住 */
+  .canvastop{padding:1px var(--hud-reserve) 2px 0}
+  .hintdock{padding:1px 7px;gap:4px}
+  .hintrow-note{display:none}
+
   .playarea{flex-direction:row;gap:6px}
   .playbar{
-    flex:0 0 auto;width:clamp(150px,24vw,196px);
+    flex:0 0 auto;width:clamp(160px,24vw,240px);
     padding:0 2px 0 0;
     /* 很矮的橫向手機放不下整條工具列，讓側欄自己捲，
        不要把「畫完了」之類的按鈕裁掉。寬一點的螢幕根本不會捲到。 */
@@ -447,7 +489,7 @@ body.big-tools .fillbox{min-height:56px}
   }
   .playbar::-webkit-scrollbar{width:8px}
   .playbar::-webkit-scrollbar-thumb{background:var(--grape);border-radius:999px}
-  body.big-tools .playbar{width:clamp(168px,28vw,228px)}
+  body.big-tools .playbar{width:clamp(180px,28vw,264px)}
 
   .toolbar{flex:0 0 auto;padding:0;gap:4px}
   .toolrow{gap:4px}
@@ -455,7 +497,8 @@ body.big-tools .fillbox{min-height:56px}
   .toolrow-misc{flex-wrap:wrap;gap:4px}
   .widthgroup{gap:4px}
   .toolscroll{margin-left:0;gap:4px;width:100%;flex-wrap:wrap}
-  .tool-done{margin-left:0;width:100%}
+  /* 很矮的橫向手機工具列會捲動，「畫完了」黏在底部才不會被捲不到 */
+  .tool-done{margin-left:0;width:100%;position:sticky;bottom:0;z-index:2}
   .fillbox{flex:1 1 auto;justify-content:center}
   .tool-hint{display:none}
 
@@ -655,7 +698,6 @@ body.big-tools .fillbox{min-height:56px}
     box-shadow:none;border-right:3px solid var(--line);
   }
   .game-aside.collapsed{display:none}
-  .game.aside-open .hintdock{left:4px}
 }
 
 /* 中等寬度（平板直向）：資訊欄維持浮層，畫布吃滿 */
@@ -665,6 +707,9 @@ body.big-tools .fillbox{min-height:56px}
 
 /* 手機直向：工具列壓縮成三段，把高度還給畫布 */
 @media (max-width:620px){
+  /* 手機直向的畫布是「寬度」在限制大小，左右邊距每省 1px 畫布就大 1px */
+  .game-main{padding-left:calc(4px + var(--safe-l));padding-right:calc(4px + var(--safe-r))}
+  .stage{padding:2px 0}
   .panel{padding:14px 12px 24px}
   .panel-head h2{font-size:1.25rem}
   .home-row{flex-direction:column}
@@ -674,12 +719,24 @@ body.big-tools .fillbox{min-height:56px}
   :root{--topbtn:46px;--topgap:6px;--topedge:10px}
   .game-top{gap:3px}
   .game-top .btn3d.icononly,.btn3d.settings-fab{padding:7px 7px calc(7px + var(--d))}
-  .statusbar{gap:3px}
-  .chip{padding:3px 9px;font-size:.74rem;border-width:2px;gap:3px}
+  /* 一列放得下：階段 chip 可以被壓縮，倒數不縮（它要夠大） */
+  .statusbar{gap:4px;flex-wrap:nowrap;overflow:hidden}
+  .chip{padding:3px 10px;font-size:.78rem;border-width:2px;gap:3px}
+  .chip-phase{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .chip-timer{
+    flex:0 0 auto;border-width:3px;padding:2px 12px;gap:4px;
+    font-size:clamp(1.2rem,5.6vw,1.55rem);
+  }
   .chip-timer .ico{display:none}
   .chip-round{display:none}
-  .wordbar{gap:6px;padding:3px 9px;margin:3px 0 2px}
+  .wordbar{gap:8px;padding:2px 10px;margin:3px 0 2px;min-height:46px;border-radius:16px}
+  /* 提示接在名稱右邊，一行放不下就整組掉到下一行（名稱不會被切掉） */
+  .canvastop{gap:5px;padding:0 0 2px}
   .playerstrip{padding:1px 0 2px}
+  .hintdock{padding:2px 7px;gap:4px;border-width:2px}
+  .hintdock .hintbtn{font-size:.74rem;min-height:36px;padding:3px 8px calc(3px + var(--d))}
+  .hintrow-label{font-size:.7rem}
+  .hintrow-note{display:none}
   .toolbar{gap:4px;padding:4px 2px 2px}
   .toolrow{gap:4px}
   .toolbtn,.widthbtn{width:40px;height:40px;border-radius:11px;padding:4px}
@@ -701,8 +758,8 @@ body.big-tools .fillbox{min-height:56px}
   .toolbtn,.widthbtn,.colorbtn,.fillbox,.widthgroup{flex:0 0 auto}
   /* 工具提示在小螢幕上不值得那一行高度，工具本身有 title 與 aria-label */
   .tool-hint{display:none}
-  .wordbar-mask{font-size:1.15rem;letter-spacing:.22em}
-  .chip{font-size:.78rem;padding:3px 10px}
+  .wordbar-mask{font-size:clamp(1.4rem,7vw,2.1rem);letter-spacing:.16em}
+  .wordbar-label,.wordbar-meta{font-size:.74rem}
   .pcard{min-width:82px;padding:2px 5px;gap:4px}
   .pface{width:26px;height:26px}
   .guessbar .btn3d{min-width:84px}
@@ -715,11 +772,18 @@ body.big-tools .fillbox{min-height:56px}
 /* 橫向且高度很矮（手機橫向）：把裝飾與留白壓到最低，先保住畫布與操作 */
 @media (orientation:landscape) and (max-height:560px){
   .game-main{padding-top:calc(2px + var(--safe-t));padding-bottom:calc(2px + var(--safe-b))}
-  .wordbar{margin:1px 0 0;padding:1px 8px;border-width:2px}
-  .wordbar-mask{font-size:1rem;letter-spacing:.2em}
+  .wordbar{margin:0;padding:1px 10px;border-width:2px;min-height:40px}
+  .wordbar-mask{font-size:clamp(1.25rem,4.8vh,1.8rem);letter-spacing:.14em}
   .wordbar-label,.wordbar-meta{font-size:.7rem}
+  .chip{padding:2px 10px;font-size:.76rem;border-width:2px}
+  .chip-timer{font-size:1.3rem;padding:1px 12px;border-width:3px}
+  .chip-timer .ico{display:none}
   .chip-round{display:none}
+  .canvastop{padding:0 0 1px;gap:6px}
   .playerstrip{padding:1px 0}
+  .hintdock{padding:1px 7px;gap:4px;border-width:2px}
+  .hintdock .hintbtn{font-size:.74rem;min-height:34px;padding:2px 8px calc(2px + var(--d))}
+  .hintrow-label{font-size:.7rem}
   .pcard{min-width:70px;padding:1px 5px;gap:4px;border-radius:11px}
   .pface{width:22px;height:22px}
   .pname{font-size:.7rem}
@@ -732,18 +796,65 @@ body.big-tools .fillbox{min-height:56px}
   .guessbar .btn3d{min-height:48px;min-width:84px;font-size:1rem}
   .tool-hint{display:none}
   :root{--topbtn:46px;--topgap:6px;--topedge:10px}
+  .game-head{gap:4px}
+  /* 畫布在這裡是被「高度」卡住的，畫布右邊本來就空著一大塊。
+     工具欄加寬把那塊空白吃掉，整條工具列就不用捲、也不會被「畫完了」蓋住。 */
+  .playbar{width:clamp(200px,32vw,300px)}
+  body.big-tools .playbar{width:clamp(220px,36vw,330px)}
   .game-top .btn3d.icononly,.btn3d.settings-fab{padding:7px 7px calc(7px + var(--d))}
 }
 
 /* 很矮的橫向手機：顏色收成兩排、只留最關鍵的控制 */
 @media (orientation:landscape) and (max-height:430px){
   .wordbar-label,.wordbar-meta{display:none}
+  .wordbar{min-height:36px}
+  .wordbar-mask{font-size:1.35rem}
+  .chip-timer{font-size:1.15rem}
   .chip-round{display:none}
+  .hintdock .hintbtn{font-size:.72rem;min-height:34px;padding:2px 7px calc(2px + var(--d))}
   .toolrow-colors{max-width:none}
   .toolbtn,.widthbtn{width:38px;height:38px;padding:3px}
   .colorbtn{width:34px;height:34px}
+  .playbar{width:clamp(190px,34vw,290px)}
   .home-wrap{padding:14px}
   .logo{max-width:360px}
+}
+
+/* 平板直向：畫布是「高度」在限制大小，下方工具列每省 1px 畫布就大 1px。
+   工具提示那一行在這裡不划算（每顆工具都有 title 與 aria-label）。 */
+@media (orientation:portrait) and (min-width:621px){
+  .canvastop{padding:0 0 2px}
+  .toolbar{gap:4px;padding:3px 2px 0}
+  .toolrow{gap:5px}
+  .tool-hint{display:none}
+}
+
+/* 很窄的手機（360 這種）：上排要塞下返回、階段、倒數，再加右上三顆固定鈕，
+   倒數收一級，階段 chip 才不會被切到字。 */
+@media (max-width:400px){
+  .chip-timer{font-size:1.15rem;padding:2px 11px}
+  .statusbar{gap:3px}
+}
+
+/* 矮的手機直向（640 高這種）：畫布同樣被高度卡住，所有配角再縮一級，
+   但題目與倒數仍然比改版前大。 */
+@media (orientation:portrait) and (max-height:700px){
+  /* 這種小螢幕的畫布是被高度卡住的，名稱與提示要擠進同一行才不會再吃掉一行 */
+  .pcard{min-width:52px;max-width:86px;padding:2px 4px;gap:3px}
+  .pface{width:22px;height:22px}
+  .pname{font-size:.7rem}
+  .hintdock{padding:1px 5px;gap:3px}
+  .hintrow-label{font-size:.66rem}
+  .hintdock .hintbtn{font-size:.7rem;min-height:34px;padding:2px 5px calc(2px + var(--d))}
+  .wordbar{min-height:38px;padding:1px 10px;margin:2px 0 1px}
+  .wordbar-mask{font-size:clamp(1.25rem,6vw,1.7rem)}
+  .canvastop{padding:0 0 1px}
+  .pstate{display:none}
+  .hintdock{padding:1px 7px}
+  .toolbar{gap:3px;padding:3px 2px 0}
+  .toolbtn,.widthbtn{width:38px;height:38px}
+  .colorbtn{width:34px;height:34px}
+  .fillbox{min-height:38px}
 }
 
 /* ================================================================

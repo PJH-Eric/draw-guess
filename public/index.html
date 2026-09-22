@@ -245,6 +245,9 @@
     <div class="game" id="game">
 
       <div class="game-main">
+
+        <!-- 對局抬頭：上排狀態 + 題目提示列。橫向時兩者合併成同一列，把高度還給畫布 -->
+        <div class="game-head">
         <header class="game-top">
           <button class="btn3d small icononly" data-color="cream" id="b-game-back" title="離開這一局" aria-label="離開這一局">◀</button>
 
@@ -264,15 +267,32 @@
         </header>
 
         <!-- 題目提示：字數（底線）、種類與被揭開的那個字，都要等畫家按提示才會出現。
-             畫家看到的是真正的題目。 -->
+             畫家看到的是真正的題目。這一列是全畫面最該看清楚的東西，字級刻意放到最大。 -->
         <div class="wordbar" id="wordbar">
           <span class="wordbar-label" id="wordbar-label">題目</span>
           <b class="wordbar-mask" id="wordbar-mask">— — —</b>
           <span class="wordbar-meta" id="wordbar-meta"></span>
         </div>
+        </div>
 
-        <!-- 玩家列：頭像、分數、目前狀態（作畫中／已猜中／思考中） -->
-        <div class="playerstrip" id="playerstrip" aria-label="玩家與分數"></div>
+        <!-- 畫布上方一列：玩家名稱與分數，旁邊接著畫家的三張提示（橫式，小張就好）。
+             提示以前絕對定位壓在畫布上，窄螢幕會蓋掉一大塊畫圖區，所以搬到這裡；
+             一行放不下就自己掉到下一行，橫向時則排到名稱左邊（右上角有固定按鈕）。 -->
+        <div class="canvastop" id="canvastop">
+          <div class="playerstrip" id="playerstrip" aria-label="玩家與分數"></div>
+
+          <!-- 提示區塊：畫家專用，橫式擺在畫布正上方 -->
+          <div class="hintdock" id="hintrow" aria-label="給猜題者的提示" hidden>
+            <span class="hintrow-label">提示</span>
+            <button class="btn3d small hintbtn" data-color="sky" id="b-hint-1" type="button"
+                    title="公開題目有幾個字">①字數</button>
+            <button class="btn3d small hintbtn" data-color="sky" id="b-hint-2" type="button"
+                    title="公開題目的種類">②種類</button>
+            <button class="btn3d small hintbtn" data-color="sky" id="b-hint-3" type="button"
+                    title="在底線上翻開其中一個字">③一個字</button>
+            <span class="hintrow-note" id="hintrow-note"></span>
+          </div>
+        </div>
 
         <!-- 遊戲主區：畫布 + 操作列。
              直向時操作列在畫布下方；橫向／寬螢幕時移到畫布右側，
@@ -281,18 +301,6 @@
         <div class="stage" id="stage">
           <div class="stage-canvas" id="stage-canvas">
             <canvas id="board" width="900" height="900" aria-label="畫布：畫家在這裡作畫，其他人看著猜"></canvas>
-          </div>
-
-          <!-- 提示區塊：畫家專用，獨立掛在畫布左側，跟工具列分開 -->
-          <div class="hintdock" id="hintrow" aria-label="給猜題者的提示" hidden>
-            <span class="hintrow-label">提示</span>
-            <button class="btn3d small hintbtn" data-color="sky" id="b-hint-1" type="button"
-                    title="公開題目有幾個字">① 字數</button>
-            <button class="btn3d small hintbtn" data-color="sky" id="b-hint-2" type="button"
-                    title="公開題目的種類">② 種類</button>
-            <button class="btn3d small hintbtn" data-color="sky" id="b-hint-3" type="button"
-                    title="在底線上翻開其中一個字">③ 一個字</button>
-            <span class="hintrow-note" id="hintrow-note"></span>
           </div>
         </div>
 

@@ -162,8 +162,9 @@ const PAGE_HELPERS = `
          它們有自己的下限，想要大按鈕的人可以開設定裡的「放大工具列」。 */
       function isCanvasTool(el) {
         if (!el.closest) return false;
+        /* 提示鈕跟畫布工具一樣，刻意做小把空間讓給畫布（只要看得到、點得到） */
         return !!(el.closest('.toolbtn') || el.closest('.widthbtn') ||
-          el.closest('.colorbtn') || el.closest('.fillbox'));
+          el.closest('.colorbtn') || el.closest('.fillbox') || el.closest('.hintbtn'));
       }
 
       var small = [];
@@ -615,11 +616,12 @@ async function main() {
   const barShown = await cdp.json('window.__probe.stage()');
   check('畫家看到工具列、看不到猜題框', barShown.toolbarShown === true && barShown.guessbarShown === false, JSON.stringify(barShown));
 
-  /* 提示區塊：畫家專屬，獨立掛在畫布左側，不在工具列裡 */
-  const hd = await cdp.json('(function(){var h=document.getElementById("hintrow");var r=h.getBoundingClientRect();var t=document.getElementById("toolbar");return {hidden:h.hidden,inToolbar:t.contains(h),left:Math.round(r.left),right:Math.round(r.right),cx:Math.round(r.left+r.width/2),vw:window.innerWidth,btn1:!document.getElementById("b-hint-1").disabled,btn2:!document.getElementById("b-hint-2").disabled};})()');
+  /* 提示區塊：畫家專屬，橫式擺在畫布正上方，不在工具列裡，也不可以蓋住畫布 */
+  const hd = await cdp.json('(function(){var h=document.getElementById("hintrow");var r=h.getBoundingClientRect();var b=document.getElementById("board").getBoundingClientRect();var t=document.getElementById("toolbar");return {hidden:h.hidden,inToolbar:t.contains(h),left:Math.round(r.left),right:Math.round(r.right),top:Math.round(r.top),bottom:Math.round(r.bottom),w:Math.round(r.width),h:Math.round(r.height),boardTop:Math.round(b.top),vw:window.innerWidth,btn1:!document.getElementById("b-hint-1").disabled,btn2:!document.getElementById("b-hint-2").disabled};})()');
   check('畫家看得到提示區塊', hd.hidden === false, JSON.stringify(hd));
   check('提示區塊不在工具列裡', hd.inToolbar === false, JSON.stringify(hd));
-  check('提示區塊靠畫面左邊', hd.cx < hd.vw / 2 && hd.left >= -1, JSON.stringify(hd));
+  check('提示區塊是橫的（寬大於高）', hd.w > hd.h, JSON.stringify(hd));
+  check('提示區塊在畫布上方、沒有蓋住畫布', hd.bottom <= hd.boardTop + 1 && hd.left >= -1, JSON.stringify(hd));
   check('三張提示只有第一張能按', hd.btn1 === true && hd.btn2 === false, JSON.stringify(hd));
 
   /* 上一頁要先問過：按了只開確認框，不會直接把人踢出對局 */
