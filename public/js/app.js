@@ -1,7 +1,7 @@
 /* ===== app.js — 畫面、輸入與流程 =====
  *
  * 這一層只負責「呈現狀態」與「把玩家意圖送出去」，不自己判斷規則。
- *   單機：自己持有完整的 Rules state，用同一份 Rules + AI 推進。
+ *   單機：自己持有完整的 Rules state，用同一份 Rules 推進（就你一個人，沒有電腦對手）。
  *   線上：狀態在伺服器，這裡只收 Rules.toPublic 投影，權限一律看 you.can。
  * 兩種模式最後都收斂成同一個 view 物件，所以只有一套畫面程式碼。
  *
@@ -12,7 +12,7 @@
 
   var D = document;
   var $ = function (id) { return D.getElementById(id); };
-  var Rules = w.Rules, AI = w.AI, Words = w.Words, RNG = w.RNG;
+  var Rules = w.Rules, Words = w.Words, RNG = w.RNG;
   var Cfg = w.GameConfig, S = w.SvgUI, Store = w.Store, Sound = w.Sound, Paint = w.Paint;
 
   var ME = 'me';                    // 單機模式裡自己的玩家 id

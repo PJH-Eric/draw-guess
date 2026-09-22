@@ -567,6 +567,11 @@ section('房間狀態機（lib/rooms.js）');
   let t = 1000;
   const created = store.create('u1', { name: '阿明', roomName: '測試房', now: t });
   check('可以開房', created.ok);
+  /* 沒帶 settings 的房間用的是 Rules.CONST.DRAW_MS。
+     它必須剛好是房間設定面板那三顆按鈕（60／90／120）之一，
+     否則房主打開房間設定，秒數那一列會一顆都沒亮。 */
+  check('房間預設秒數是設定面板選得到的值',
+    [60, 90, 120].indexOf(created.room.settings.drawSec) >= 0, created.room.settings.drawSec);
   const configured = store.create('u-create', {
     name: '設定房主', roomName: '預先設定房',
     settings: { rounds: 3, drawSec: 120, diff: 3 }, now: t
