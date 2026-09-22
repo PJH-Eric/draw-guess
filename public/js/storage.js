@@ -74,10 +74,39 @@
     return s;
   }
 
+  /* 沒取名字的人不能全都叫「玩家」——猜題紀錄與席位卡會完全分不出誰是誰。
+     第一次要用到名字時，自動配一個「形容詞＋小動物」的可愛暱稱並記起來，
+     使用者隨時可以在大廳或設定裡改掉。 */
+  var NICK_ADJ = [
+    '快樂', '愛睏', '勇敢', '迷糊', '害羞', '貪吃', '安靜', '調皮', '溫柔', '神祕',
+    '閃亮', '認真', '悠哉', '熱血', '冷靜', '幸運', '好奇', '努力', '慢吞吞', '急驚風'
+  ];
+  var NICK_ANIMAL = [
+    '小貓', '小狗', '兔子', '企鵝', '狐狸', '水獺', '浣熊', '刺蝟', '海豚', '貓熊',
+    '樹懶', '鸚鵡', '松鼠', '山羊', '袋鼠', '海豹', '章魚', '蜜蜂', '烏龜', '羊駝'
+  ];
+  function randomNick() {
+    return NICK_ADJ[Math.floor(Math.random() * NICK_ADJ.length)] +
+      NICK_ANIMAL[Math.floor(Math.random() * NICK_ANIMAL.length)];
+  }
+  /* 舊版沒取名字的人會被伺服器叫做「玩家」／「觀眾」，那不是名字，看到就換掉 */
+  var GENERIC_NICKS = ['玩家', '觀眾', '觀戰者', '你'];
+
+  /** 一定拿得到名字：沒有（或還是舊版的通稱）就現配一個並存起來 */
+  function ensureNick() {
+    var n = get(KEY.nick, '');
+    if (n && GENERIC_NICKS.indexOf(n) < 0) return n;
+    n = randomNick();
+    set(KEY.nick, n);
+    return n;
+  }
+
   w.Store = {
     KEY: KEY,
     clientId: clientId,
     nick: function (v) { if (v === undefined) return get(KEY.nick, ''); set(KEY.nick, v); return v; },
+    randomNick: randomNick,
+    ensureNick: ensureNick,
     aiLevel: function (v) { if (v === undefined) return get(KEY.aiLevel, 'normal'); set(KEY.aiLevel, v); return v; },
     aiCount: function (v) { if (v === undefined) return getInt(KEY.aiCount, 2, 1, 7); set(KEY.aiCount, v); return v; },
     rounds: function (v) { if (v === undefined) return getInt(KEY.rounds, 2, 1, 5); set(KEY.rounds, v); return v; },

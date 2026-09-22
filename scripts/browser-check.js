@@ -776,12 +776,14 @@ async function main() {
   await hostTab.eval('window.__probe.click("#b-lobby-host"); return 1;');
   await hostTab.waitFor('document.getElementById("room-create-modal").classList.contains("open")', 3000, '開房間設定');
   check('開房前先顯示開房間設定', await hostTab.eval('return document.getElementById("room-create-modal").classList.contains("open");'));
-  await hostTab.eval('window.__probe.click("#room-create-rounds [data-v=\\"3\\"]"); window.__probe.click("#room-create-drawsec [data-v=\\"120\\"]"); window.__probe.click("#room-create-diff [data-v=\\"3\\"]"); window.__probe.click("#room-create-ai [data-v=\\"1\\"]"); return 1;');
+  await hostTab.eval('window.__probe.click("#room-create-rounds [data-v=\\"3\\"]"); window.__probe.click("#room-create-drawsec [data-v=\\"120\\"]"); window.__probe.click("#room-create-diff [data-v=\\"3\\"]"); return 1;');
   await hostTab.eval('window.__probe.click("#room-create-submit"); return 1;');
   await hostTab.waitFor('window.DrawGuessApp.mode === "online" && window.DrawGuessApp.view', 10000, '進入房間');
   const code = await hostTab.eval('return window.DrawGuessApp.roomCode;');
   check('房主開房成功', typeof code === 'string' && code.length === 4, code);
-  check('開房設定有套用', await hostTab.eval('var s=window.DrawGuessApp.view.room.settings; return s.rounds===3 && s.drawSec===120 && s.diff===3 && window.DrawGuessApp.view.room.aiSeats.length===1;'));
+  check('開房設定有套用', await hostTab.eval('var s=window.DrawGuessApp.view.room.settings; return s.rounds===3 && s.drawSec===120 && s.diff===3;'));
+  check('線上房間沒有電腦對手的入口', await hostTab.eval('return !document.getElementById("room-create-ai") && !document.querySelector("[data-act=add-ai]");'));
+  check('房間設定裡有離開／退出房間的按鈕', await hostTab.eval('var b=document.querySelector("[data-act=leave-room]"); return !!b && b.textContent.indexOf("房間") >= 0;'));
   const actionGap = await hostTab.eval('var a=document.getElementById("b-aside-toggle").getBoundingClientRect(); var b=document.getElementById("b-game-settings").getBoundingClientRect(); var c=document.getElementById("b-settings").getBoundingClientRect(); return {gap: Math.max(0, b.left-a.right, a.left-b.right), fabGap: Math.round(c.left-b.right), aside:a.toJSON(), settings:b.toJSON(), fab:c.toJSON()};');
   check('左側欄與對局設定按鈕緊鄰', actionGap.gap <= 8, JSON.stringify(actionGap));
   check('系統設定鈕也併在同一排', actionGap.fabGap >= 0 && actionGap.fabGap <= 8, JSON.stringify(actionGap));

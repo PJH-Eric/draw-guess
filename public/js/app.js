@@ -40,7 +40,7 @@
     inviteToken: null,
     inviteRole: 'any',
     inviteUrl: '',
-    roomCreate: { roomName: '', rounds: 2, drawSec: 80, diff: 0, aiCount: 0 },
+    roomCreate: { roomName: '', rounds: 2, drawSec: 80, diff: 0 },
     lastOverlayHtml: null,
     conn: { status: 'idle', message: '' },
     wideLayout: null,
@@ -192,6 +192,25 @@
     });
   }
 
+  /** 等待中的房間裡按「離開房間／退出房間」：房主退出會把房主交給下一位 */
+  function askLeaveRoom() {
+    var v = app.view;
+    var isHost = !!(v && v.you && v.you.isHost);
+    var alone = !!(v && v.room && v.room.members && v.room.members.length <= 1);
+    askConfirm({
+      title: isHost ? '要退出這間房嗎？' : '要離開這間房嗎？',
+      text: isHost
+        ? (alone
+          ? '房間裡只剩你，退出之後這間房會直接關掉，邀請連結也會失效。'
+          : '退出之後房主會交給下一位，房間會繼續留著。想再回來的話要重新從大廳加入。')
+        : '離開後你的座位會釋出，房間會繼續留著。想再回來的話要重新從大廳加入。',
+      ok: isHost ? '退出房間' : '離開房間',
+      cancel: '留下來'
+    }, function () {
+      leaveGame('s-lobby');
+    });
+  }
+
   /* ================================================================
      系統設定
      ================================================================ */
@@ -226,11 +245,7 @@
     $('settings-bigtools').addEventListener('change', function () {
       Store.bigTools(this.checked); applyDisplaySettings(); layoutStage();
     });
-    $('settings-nick').addEventListener('change', function () {
-      var v = this.value.trim().slice(0, 12);
-      Store.nick(v);
-      $('lobby-nick').value = v;
-    });
+    $('settings-nick').addEventListener('change', function () { saveNick(this); });
     $('settings-server-check').addEventListener('click', function () {
       Cfg.checkHealth(function (state) { setServerPill(state); });
     });
@@ -309,15 +324,17 @@
       '<li>時間過了一半之後，系統會陸續<b>翻開</b>其中幾個字，但最後一個字永遠不會翻開。</li>' +
       '</ul>' +
       '<p>右上角的倒數就是這一題剩下的時間。時間到、或所有人都猜中了，這一題就結束並公布答案。</p>' },
-    { h: '電腦對手在做什麼', b:
+    { h: '電腦對手在做什麼（只有單機）', b:
+      '<p>電腦對手只出現在<b>單機練習</b>裡，線上房間一律是真人。</p>' +
       '<p>電腦當畫家時，它會照著內建的形狀一筆一筆畫給你猜；<b>簡單</b>的手很抖、會漏掉細節、畫得慢，<b>困難</b>的又快又完整。</p>' +
       '<p>電腦當猜題者時，它看到的東西跟你完全一樣：畫布上的線、分類、字數、已經翻開的字。它<b>拿不到答案</b>，是真的在比對形狀來猜，所以也常常猜錯。</p>' +
       '<p>難度只影響它反應多快、猜幾次、以及要不要用字數和已翻開的字來縮小範圍——不會偷看，也不會偷改分數。</p>' },
     { h: '線上一起玩', b:
-      '<p>在主選單按「線上對戰」可以開房間或用房號加入，2 到 8 個人都行；人不夠可以加電腦對手湊。</p>' +
+      '<p>在主選單按「線上對戰」可以開房間或用房號加入，2 到 8 個人都行（線上只有真人，沒有電腦對手）。</p>' +
       '<p>房主可以在對局設定裡產生<b>邀請連結</b>，對方開啟後會先停在大廳確認暱稱，按下按鈕才會真的進房。</p>' +
       '<p>位子滿了或對局已經開始時，新來的人會變成<b>觀戰者</b>：可以看畫、看紀錄，但不能畫也不能猜。</p>' +
-      '<p>右上角的 📋 打開操作摘要：目前階段、你能做什麼、比分，還有「猜題紀錄」——每一則猜題（含猜錯的）與對局事件都在那裡。房間裡沒有任何真人玩家時會立刻關閉。</p>' }
+      '<p>右上角的 📋 打開操作摘要：目前階段、你能做什麼、比分，還有「猜題紀錄」——每一則猜題（含猜錯的）與對局事件都在那裡。房間裡沒有任何真人玩家時會立刻關閉。</p>' +
+      '<p>等待畫面的「房間設定」最下面有<b>離開房間</b>（房主是<b>退出房間</b>）：房主退出會把房主交給下一位，最後一個人退出房間就會關掉。</p>' }
   ];
 
   var tutIndex = 0;
@@ -426,7 +443,7 @@
   function startSolo() {
     var level = Store.aiLevel();
     var count = Store.aiCount();
-    var players = [{ id: ME, name: Store.nick() || '你', ai: null }];
+    var players = [{ id: ME, name: '你', ai: null }];
     for (var i = 1; i <= count; i++) {
       players.push({ id: 'ai' + i, name: '電腦' + i + '號（' + AI.levelOf(level).label + '）', ai: level });
     }
@@ -472,7 +489,7 @@
       game: game,
       you: {
         id: ME,
-        name: Store.nick() || '你',
+        name: '你',
         role: 'player',
         ready: true,
         isHost: true,
@@ -1116,10 +1133,6 @@
     { v: 'player', label: '一定是玩家' },
     { v: 'spectator', label: '一定是觀戰' }
   ];
-  var CREATE_AI_CHOICES = [
-    { v: 0, label: '不加' }, { v: 1, label: '1 個' }, { v: 2, label: '2 個' }, { v: 3, label: '3 個' }
-  ];
-
   function chips(act, list, current) {
     return '<div class="chiprow">' + list.map(function (o) {
       var val = (o.v !== undefined ? o.v : o);
@@ -1135,7 +1148,6 @@
     $('room-create-rounds').innerHTML = chips('create-rounds', ROUND_CHOICES, c.rounds);
     $('room-create-drawsec').innerHTML = chips('create-drawsec', SEC_CHOICES, c.drawSec);
     $('room-create-diff').innerHTML = chips('create-diff', DIFF_CHOICES, c.diff);
-    $('room-create-ai').innerHTML = chips('create-ai', CREATE_AI_CHOICES, c.aiCount);
   }
 
   function setupRoomCreate() {
@@ -1145,7 +1157,7 @@
     var back = D.querySelector('[data-room-create-close]');
     if (back) back.addEventListener('click', function () { roomCreateModal.close(); });
 
-    ['room-create-rounds', 'room-create-drawsec', 'room-create-diff', 'room-create-ai'].forEach(function (id) {
+    ['room-create-rounds', 'room-create-drawsec', 'room-create-diff'].forEach(function (id) {
       $(id).addEventListener('click', function (ev) {
         var button = ev.target.closest('button[data-act]');
         if (!button) return;
@@ -1154,7 +1166,6 @@
         if (action === 'create-rounds') app.roomCreate.rounds = Number(value);
         else if (action === 'create-drawsec') app.roomCreate.drawSec = Number(value);
         else if (action === 'create-diff') app.roomCreate.diff = Number(value);
-        else if (action === 'create-ai') app.roomCreate.aiCount = Number(value);
         renderRoomCreateOptions();
         Sound.play('click');
       });
@@ -1171,8 +1182,7 @@
       roomName: (Store.nick() || '大家') + ' 的房間',
       rounds: 2,
       drawSec: 80,
-      diff: 0,
-      aiCount: 0
+      diff: 0
     };
     renderRoomCreateOptions();
     roomCreateModal.open();
@@ -1182,15 +1192,12 @@
     var c = app.roomCreate;
     var roomName = $('lobby-room-name').value.trim().slice(0, 16) || '畫畫小房間';
     c.roomName = roomName;
-    Store.nick($('lobby-nick').value.trim().slice(0, 12));
-    var aiLevels = [];
-    for (var i = 0; i < c.aiCount; i++) aiLevels.push('normal');
+    saveNick($('lobby-nick'));
     $('room-create-submit').disabled = true;
     w.Online.send('room:create', {
-      name: Store.nick(),
+      name: Store.ensureNick(),
       roomName: roomName,
-      settings: { rounds: c.rounds, drawSec: c.drawSec, diff: c.diff },
-      aiLevels: aiLevels
+      settings: { rounds: c.rounds, drawSec: c.drawSec, diff: c.diff }
     }, function (res) {
       $('room-create-submit').disabled = false;
       if (!res || !res.ok) return toast((res && res.error) || '開房失敗。', 'error');
@@ -1199,7 +1206,7 @@
     });
   }
 
-  /** 開房間設定：房主在這裡調規則、加電腦對手、產生邀請連結 */
+  /** 房間設定：房主在這裡調規則、產生邀請連結；線上房間只有真人，沒有電腦對手 */
   function roomSetupHtml(v) {
     var r = v.room;
     var seats = '';
@@ -1209,10 +1216,6 @@
       seats += '<span class="seatchip' + (m.ready ? ' ready' : '') + '">' +
         '<span class="sface" aria-hidden="true">' + S.face(i, m.ready ? 'happy' : 'idle') + '</span>' +
         esc(m.name) + (m.host ? '（房主）' : '') + (m.ready ? ' ✓' : '') + '</span>';
-    }
-    for (var j = 0; j < r.aiSeats.length; j++) {
-      seats += '<span class="seatchip ai"><span class="sface" aria-hidden="true">' +
-        S.face(r.members.length + j, 'think') + '</span>' + esc(r.aiSeats[j].name) + '</span>';
     }
     var specs = r.members.filter(function (x) { return x.role === 'spectator'; });
     var host = v.you.can.setSettings;
@@ -1230,26 +1233,6 @@
       rules = '<div class="setupblock"><h4>遊戲規則</h4>' +
         '<p class="setupnote">每人畫 ' + r.settings.rounds + ' 次・每題 ' + r.settings.drawSec + ' 秒・' +
         esc(dl ? dl.label : '混合') + '難度（由房主決定）</p></div>';
-    }
-
-    /* ---- 電腦對手 ---- */
-    var ai = '';
-    if (host) {
-      var rows = r.aiSeats.map(function (s) {
-        return '<div class="aiseat"><span class="an">' + esc(s.name) + '</span>' +
-          '<select data-act="ai-level" data-ai="' + esc(s.id) + '" aria-label="' + esc(s.name) + ' 的難度">' +
-          AI.LEVEL_KEYS.map(function (k) {
-            return '<option value="' + k + '"' + (k === s.level ? ' selected' : '') + '>' + AI.levelOf(k).label + '</option>';
-          }).join('') + '</select>' +
-          '<button type="button" data-act="remove-ai" data-ai="' + esc(s.id) + '" aria-label="移除 ' + esc(s.name) + '">✕</button></div>';
-      }).join('');
-      ai = '<div class="setupblock"><h4>電腦對手</h4>' +
-        (rows || '<p class="setupnote">還沒有電腦對手。人不夠的時候加幾個就能開始。</p>') +
-        '<div class="setuprow"><span>加一個</span><div class="chiprow">' +
-        AI.LEVEL_KEYS.map(function (k) {
-          return '<button type="button" class="pillbtn" data-act="add-ai" data-v="' + k + '"' +
-            (r.openSeats > 0 ? '' : ' disabled') + '>＋ ' + AI.levelOf(k).label + '</button>';
-        }).join('') + '</div></div></div>';
     }
 
     /* ---- 邀請連結 ---- */
@@ -1280,13 +1263,16 @@
       btns += '<button class="btn3d" data-color="grape" data-act="start"' +
         (v.you.can.start ? '' : ' disabled') + '>開始！</button>';
     }
+    /* 進來之後要走得掉：房主退出會把房主交給下一位，最後一個人退出房間就關掉 */
+    btns += '<button class="btn3d small" data-color="peach" data-act="leave-room">' +
+      (v.you.isHost ? '退出房間' : '離開房間') + '</button>';
 
     return '<h3>房間設定</h3>' +
       '<div class="roomcode"><b>' + esc(r.code) + '</b><span>把房號唸給朋友，或用下面的邀請連結</span></div>' +
       '<div class="seatlist">' + (seats || '<span class="seatchip">還沒有人入座</span>') + '</div>' +
       '<p>' + r.seatsTaken + ' / ' + r.settings.maxPlayers + ' 位玩家' +
       (specs.length ? '・' + specs.length + ' 位觀戰' : '') + '</p>' +
-      rules + ai + invite +
+      rules + invite +
       (v.you.can.start ? '' : '<p>' + esc(v.you.can.startBlockedBy || '等房主按開始。') + '</p>') +
       '<div class="overlay-btns">' + btns + '</div>';
   }
@@ -1352,14 +1338,6 @@
   }
 
   function bindOverlay(card) {
-    var sels = card.querySelectorAll('select[data-act=ai-level]');
-    for (var s = 0; s < sels.length; s++) {
-      (function (sel) {
-        sel.addEventListener('change', function () {
-          w.Online.send('room:setAiLevel', { aiId: sel.getAttribute('data-ai'), level: sel.value });
-        });
-      }(sels[s]));
-    }
     var list = card.querySelectorAll('button[data-act]');
     for (var i = 0; i < list.length; i++) {
       (function (el) {
@@ -1377,8 +1355,6 @@
           } else if (act === 'set-rounds') w.Online.send('room:settings', { rounds: Number(el.getAttribute('data-v')) });
           else if (act === 'set-drawsec') w.Online.send('room:settings', { drawSec: Number(el.getAttribute('data-v')) });
           else if (act === 'set-diff') w.Online.send('room:settings', { diff: Number(el.getAttribute('data-v')) });
-          else if (act === 'add-ai') w.Online.send('room:addAi', { level: el.getAttribute('data-v') });
-          else if (act === 'remove-ai') w.Online.send('room:removeAi', { aiId: el.getAttribute('data-ai') });
           else if (act === 'invite-role') {
             app.inviteRole = el.getAttribute('data-v');
             app.lastOverlayHtml = null;
@@ -1390,6 +1366,7 @@
           else if (act === 'start') w.Online.send('room:start', {});
           else if (act === 'become-player') w.Online.send('room:becomePlayer', {});
           else if (act === 'become-spectator') w.Online.send('room:becomeSpectator', {});
+          else if (act === 'leave-room') askLeaveRoom();
           else if (act === 'settings') gameModal.open();
           else if (act === 'rematch') {
             if (app.mode === 'solo') startSolo();
@@ -1612,12 +1589,21 @@
      大廳與線上
      ================================================================ */
 
+  /** 從輸入框收暱稱：清空就重新配一個可愛名字，兩個輸入框一起同步。
+      沒有名字的人在猜題紀錄與席位卡上會全部都叫「玩家」，分不出誰是誰。 */
+  function saveNick(el) {
+    Store.nick(String(el.value || '').trim().slice(0, 12));
+    var n = Store.ensureNick();
+    el.value = n;
+    var other = el.id === 'lobby-nick' ? $('settings-nick') : $('lobby-nick');
+    if (other) other.value = n;
+    return n;
+  }
+
   function setupLobby() {
-    $('lobby-nick').addEventListener('change', function () {
-      Store.nick(this.value.trim().slice(0, 12));
-    });
+    $('lobby-nick').addEventListener('change', function () { saveNick(this); });
     $('b-lobby-host').addEventListener('click', function () {
-      Store.nick($('lobby-nick').value.trim().slice(0, 12));
+      saveNick($('lobby-nick'));
       Sound.play('click');
       openRoomCreate();
     });
@@ -1630,7 +1616,7 @@
     $('b-lobby-retry').addEventListener('click', connectOnline);
     $('b-lobby-invite').addEventListener('click', function () {
       if (!app.pendingInvite) return;
-      Store.nick($('lobby-nick').value.trim().slice(0, 12));
+      saveNick($('lobby-nick'));
       joinRoom(app.pendingInvite.code, app.pendingInvite.token, app.pendingInvite.role);
     });
     $('b-lobby-invite-cancel').addEventListener('click', function () {
@@ -1640,7 +1626,7 @@
   }
 
   function joinRoom(code, token, role) {
-    w.Online.send('room:join', { code: code, token: token, role: role, name: Store.nick() }, function (res) {
+    w.Online.send('room:join', { code: code, token: token, role: role, name: Store.ensureNick() }, function (res) {
       if (!res || !res.ok) return toast((res && res.error) || '加入失敗。', 'error');
       if (res.downgraded) toast('位子滿了（或對局進行中），你先以觀戰身分進來。', 'info');
       app.pendingInvite = null;
@@ -1693,7 +1679,7 @@
   }
 
   function connectOnline() {
-    $('lobby-nick').value = Store.nick();
+    $('lobby-nick').value = Store.ensureNick();
     setLobbyEnabled(false);
     if (!Cfg.isOnlineEnabled()) {
       $('lobby-off').hidden = false;
@@ -1704,7 +1690,7 @@
       return;
     }
     $('lobby-state').textContent = '正在連線…';
-    w.Online.connect({ clientId: Store.clientId(), name: Store.nick() || '玩家' })
+    w.Online.connect({ clientId: Store.clientId(), name: Store.ensureNick() })
       .then(function () {
         $('lobby-off').hidden = true;
         $('lobby-live').hidden = false;
@@ -1756,7 +1742,6 @@
         '<span class="rc-main"><b class="rc-name">' + esc(r.name) + '</b>' +
         '<span class="rc-sub"><span class="rc-badge" data-p="' + r.phase + '">' + phase + '</span>' +
         r.players + '/' + r.maxPlayers + ' 位玩家' +
-        (r.ai.length ? '（含 ' + r.ai.length + ' 個電腦）' : '') +
         (r.spectators ? '・' + r.spectators + ' 觀戰' : '') +
         '・房主 ' + esc(r.host) + '</span></span>' +
         '<span class="rc-btns">' +

@@ -530,11 +530,10 @@ section('房間狀態機（lib/rooms.js）');
   check('可以開房', created.ok);
   const configured = store.create('u-create', {
     name: '設定房主', roomName: '預先設定房',
-    settings: { rounds: 3, drawSec: 120, diff: 3 },
-    aiLevels: ['easy', 'hard'], now: t
+    settings: { rounds: 3, drawSec: 120, diff: 3 }, now: t
   });
   check('開房時可以套用房主規則', configured.ok && configured.room.settings.rounds === 3 && configured.room.settings.drawSec === 120 && configured.room.settings.diff === 3);
-  check('開房時可以先放電腦對手', configured.ok && configured.room.aiSeats.size === 2, configured.ok && configured.room.aiSeats.size);
+  check('線上房間沒有電腦對手可以加', typeof configured.room.addAi !== 'function');
   const room = created.room;
   check('房號是 4 個字', room.code.length === 4, room.code);
   check('開房的人是房主', room.isHost('u1'));
@@ -545,9 +544,7 @@ section('房間狀態機（lib/rooms.js）');
   check('實體玩家數 = 2', room.humanPlayers().length === 2, room.humanPlayers().length);
   check('觀戰者不算實體玩家', room.spectators().length === 1);
 
-  check('只有房主能加電腦對手', !room.addAi('u2', 'normal').ok);
-  check('房主可以加電腦對手', room.addAi('u1', 'normal').ok);
-  check('席位數包含電腦', room.seatsTaken() === 3, room.seatsTaken());
+  check('席位數只算真人', room.seatsTaken() === 2, room.seatsTaken());
 
   check('沒準備時不能開始', !room.canStart().ok, room.canStart().error);
   room.setReady('u1', true);
@@ -557,7 +554,7 @@ section('房間狀態機（lib/rooms.js）');
   check('只有房主能開始', !room.start('u2', t).ok);
   check('房主開始成功', room.start('u1', t).ok);
   check('對局進行中', room.phase === 'playing' && !!room.state);
-  check('三個人都在名單裡', room.state.players.length === 3, room.state.players.length);
+  check('兩個真人都在名單裡', room.state.players.length === 2, room.state.players.length);
 
   /* 觀戰者的權限 */
   check('觀戰者不能畫', !room.stroke('s1', { t: 'pen', p: [1, 1, 2, 2] }, t).ok);
@@ -568,15 +565,8 @@ section('房間狀態機（lib/rooms.js）');
   check('觀戰者的投影不含答案', !sv.game.answer, sv.game.answer);
   check('觀戰者的權限旗標都是不能操作', !sv.you.can.draw && !sv.you.can.guess && !sv.you.can.pick);
 
-  /* 猜題。房間開局的種子是隨機的，可能剛好輪到電腦先畫，
-     先把回合推到「真人當畫家」再測，測試才不會時好時壞。 */
-  let hop = 0;
-  while (room.state.drawerId.indexOf('ai') === 0 && hop < 8) {
-    hop += 1;
-    Rules.endTurn(room.state, t, 'skipped');
-    Rules.nextTurn(room.state, t);
-  }
-  check('可以推進到真人當畫家的回合', room.state.drawerId.indexOf('ai') !== 0, room.state.drawerId);
+  /* 線上房間只有真人，畫家一定是真人 */
+  check('畫家一定是真人', room.state.drawerId.indexOf('ai') !== 0, room.state.drawerId);
   const drawerId = room.state.drawerId;
   const humanGuesser = ['u1', 'u2'].find((id) => id !== drawerId);
   if (room.state.phase === 'picking') room.pickWord(drawerId, room.state.choices[0], t);
@@ -620,7 +610,6 @@ section('房間生命週期：沒有實體玩家就關閉');
   let t = 1000;
   const room = store.create('h1', { name: '房主', now: t }).room;
   room.join('s1', { name: '觀眾', role: 'spectator', now: t });
-  room.addAi('h1', 'easy');
   check('有真人玩家時不該關閉', !room.shouldClose());
 
   room.leave('h1', t);
@@ -629,19 +618,18 @@ section('房間生命週期：沒有實體玩家就關閉');
   check('定時工作會把它關掉', swept.closed.length === 1 && room.closed, swept.closed.length);
   check('關閉原因講清楚只剩觀戰者', room.closedReason.indexOf('觀戰') >= 0, room.closedReason);
   check('關閉後邀請全部失效', [...room.invites.values()].every((i) => i.revoked));
-  check('關閉後對局狀態被清掉（計時器與 AI 停工）', room.state === null);
+  check('關閉後對局狀態被清掉（計時器停工）', room.state === null);
   check('關閉的房間不會出現在大廳列表', store.list().every((r) => r.code !== room.code));
   check('關閉的房間用房號也找不到', store.get(room.code) === null);
   check('關閉後不能再加入（重連也救不回來）', !room.join('h1', { name: '房主', role: 'player', now: t + 2 }).ok);
   check('關閉的房間觀戰者還查得到狀態', store.getAny(room.code) === room);
 
-  /* 只剩 AI 也要關 */
+  /* 只剩觀戰者也要關 */
   const store2 = new RoomStore({});
   const r2 = store2.create('h2', { name: '房主', now: t }).room;
-  r2.addAi('h2', 'hard');
-  r2.addAi('h2', 'easy');
+  r2.join('s2', { name: '觀眾2', role: 'spectator', now: t });
   r2.leave('h2', t);
-  check('只剩電腦對手也要關閉', r2.shouldClose());
+  check('只剩觀戰者也要關閉', r2.shouldClose());
 }
 
 section('斷線保留與重新連線');
@@ -698,6 +686,26 @@ section('房主設定與再玩一局');
   check('只有房主能改規則', !room.setSettings('b', { rounds: 3 }).ok);
   check('房主可以改輪數', room.setSettings('a', { rounds: 3 }).ok && room.settings.rounds === 3);
   check('超出範圍的輪數被拒絕', !room.setSettings('a', { rounds: 99 }).ok);
+  /* 沒取名字的人不能全都叫「玩家」 */
+  {
+    const anonStore = new RoomStore({});
+    const anon = anonStore.create('a1', { name: '', now: 1000 }).room;
+    anon.join('a2', { name: '玩家', role: 'player', now: 1000 });
+    const anonNames = [...anon.members.values()].map((m) => m.name);
+    check('沒給名字會自動配一個可愛暱稱', anonNames.every((n) => n && n !== '玩家' && n.length >= 3), anonNames.join(','));
+  }
+
+  /* 同名的人要分得出來：猜題紀錄與席位卡都只認名字 */
+  {
+    const dupStore = new RoomStore({});
+    const dup = dupStore.create('h', { name: '小明', now: 1000 }).room;
+    dup.join('m1', { name: '小明', role: 'player', now: 1000 });
+    dup.join('m2', { name: '小明', role: 'player', now: 1000 });
+    const names = [...dup.members.values()].map((m) => m.name);
+    check('同一間房不會有兩個一樣的名字', new Set(names).size === names.length, names.join(','));
+    check('重複的名字自動接編號', names.indexOf('小明2') >= 0, names.join(','));
+  }
+
   check('超出範圍的秒數被拒絕', !room.setSettings('a', { drawSec: 5 }).ok);
   check('超過上限的秒數被拒絕（180 已移除）', !room.setSettings('a', { drawSec: 180 }).ok);
   check('可以指定題目難度', room.setSettings('a', { diff: 1 }).ok && room.settings.diff === 1);

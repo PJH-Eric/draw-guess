@@ -22,7 +22,6 @@ const express = require('express');
 const { Server } = require('socket.io');
 
 const Rules = require('./public/js/rules.js');
-const AI = require('./public/js/ai.js');
 const Words = require('./public/js/words.js');
 const { RoomStore, sanitizeName } = require('./lib/rooms.js');
 
@@ -235,7 +234,7 @@ function enforceLifecycle(room, t) {
 
 io.on('connection', (socket) => {
   socket.data.clientId = null;
-  socket.data.name = '玩家';
+  socket.data.name = sanitizeName('', '');
   socket.data.roomCode = null;
 
   socket.on('hello', (payload, ack) => {
@@ -243,7 +242,7 @@ io.on('connection', (socket) => {
     let id = String(p.clientId || '').trim();
     if (!/^[A-Za-z0-9_-]{8,64}$/.test(id)) id = crypto.randomBytes(12).toString('hex');
     socket.data.clientId = id;
-    socket.data.name = sanitizeName(p.name, '玩家');
+    socket.data.name = sanitizeName(p.name, '');
     if (typeof ack === 'function') ack({ ok: true, clientId: id, name: socket.data.name, serverTime: now() });
   });
 
@@ -264,13 +263,12 @@ io.on('connection', (socket) => {
       roomName: p.roomName,
       private: !!p.private,
       settings: p.settings,
-      aiLevels: p.aiLevels,
       now: now()
     });
     if (!res.ok) { fail(socket, res.error, res.code); if (typeof ack === 'function') ack(res); return; }
     const room = res.room;
     attach(socket, room.code);
-    room.system(socket.data.name + ' 開了這間房。人不夠可以加電腦對手，準備好就能開始。', now());
+    room.system(socket.data.name + ' 開了這間房。把房號或邀請連結傳給朋友，大家準備好就能開始。', now());
     /* 先回 ack：用戶端要先知道自己進了哪一間房，才收得下後面的投影 */
     if (typeof ack === 'function') ack({ ok: true, code: room.code });
     syncRoom(room, true);
@@ -348,27 +346,6 @@ io.on('connection', (socket) => {
   socket.on('room:ready', withRoom((room, p) => {
     const res = room.setReady(socket.data.clientId, !!p.ready);
     if (!res.ok) return fail(socket, res.error, res.code);
-    syncRoom(room); syncLobby();
-  }));
-
-  socket.on('room:addAi', withRoom((room, p) => {
-    const res = room.addAi(socket.data.clientId, String(p.level || 'normal'));
-    if (!res.ok) return fail(socket, res.error, res.code);
-    room.system('加入了 ' + res.seat.name + '。', now());
-    syncRoom(room); syncLobby();
-  }));
-
-  socket.on('room:removeAi', withRoom((room, p) => {
-    const res = room.removeAi(socket.data.clientId, String(p.aiId || ''));
-    if (!res.ok) return fail(socket, res.error, res.code);
-    room.system(res.seat.name + ' 離開了。', now());
-    syncRoom(room); syncLobby();
-  }));
-
-  socket.on('room:setAiLevel', withRoom((room, p) => {
-    const res = room.setAiLevel(socket.data.clientId, String(p.aiId || ''), String(p.level || ''));
-    if (!res.ok) return fail(socket, res.error, res.code);
-    room.system(res.seat.name + ' 的難度改成' + AI.levelOf(res.seat.level).label + '。', now());
     syncRoom(room); syncLobby();
   }));
 

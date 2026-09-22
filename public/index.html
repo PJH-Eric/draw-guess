@@ -183,7 +183,7 @@
         </div>
         <p class="lobby-state" id="lobby-state" role="status" aria-live="polite">正在連線…</p>
         <div class="roomlist" id="roomlist"></div>
-        <p class="hint-note">房間只存在伺服器的記憶體裡：伺服器重新部署或重啟，房間就會消失。房間裡沒有任何真人玩家時會立刻關閉（只剩觀戰者或電腦對手也一樣）。</p>
+        <p class="hint-note">房間只存在伺服器的記憶體裡：伺服器重新部署或重啟，房間就會消失。房間裡沒有任何真人玩家時會立刻關閉（只剩觀戰者也一樣）。線上房間只有真人，電腦對手只在單機練習裡。</p>
       </div>
     </div>
   </section>
@@ -219,15 +219,9 @@
             <div class="chiprow" id="room-create-drawsec" role="radiogroup" aria-label="新房間每題作畫秒數"></div>
           </div>
           <div class="create-choice">
-            <span><b>題目難度</b><small>混合會平均抽三種難度</small></span>
+            <span><b>題目難度</b><small>混合以簡單題為主，偶爾出困難題</small></span>
             <div class="chiprow" id="room-create-diff" role="radiogroup" aria-label="新房間題目難度"></div>
           </div>
-        </div>
-
-        <div class="settings-group">
-          <h3><span class="gico" aria-hidden="true">🤖</span>先放幾個電腦對手</h3>
-          <div class="chiprow" id="room-create-ai" role="radiogroup" aria-label="新房間電腦對手數量"></div>
-          <p class="settings-note">人不夠時可以先用電腦湊席位；進房後房主仍能在中央「房間設定」裡調整。</p>
         </div>
 
         <p class="settings-note room-create-invite-note">房間建立後，邀請連結會放在等待畫面的「房間設定」裡；不會塞進右上角的對局設定。</p>
@@ -431,8 +425,8 @@
         <div class="settings-group">
           <h3><span class="gico" aria-hidden="true">🌐</span>個人與連線</h3>
           <label class="setting-text" for="settings-nick">
-            <span><b>我的暱稱</b><small>線上房間裡別人看到的名字</small></span>
-            <input id="settings-nick" type="text" maxlength="12" autocomplete="off" spellcheck="false">
+            <span><b>我的暱稱</b><small>線上房間、猜題紀錄裡別人看到的名字；清空會自動幫你配一個</small></span>
+            <input id="settings-nick" type="text" maxlength="12" autocomplete="off" spellcheck="false" placeholder="留空會自動配一個">
           </label>
           <div class="setting-static">
             <span><b>遊戲伺服器</b><small id="settings-server-url">—</small></span>

@@ -11,7 +11,7 @@
  *   2.  開房、產生玩家邀請連結、第二台憑 token 加入並成為玩家
  *   3.  觀戰用邀請連結進來就是觀戰者
  *   4.  觀戰者不能準備、不能開始、不能選題、不能畫、不能猜（伺服器擋下並說原因）
- *   5.  準備 → 加電腦對手 → 開始 → 三個用戶端都收到同一份房間投影
+ *   5.  準備 → 開始（線上只有真人，沒有電腦對手）→ 三個用戶端都收到同一份房間投影
  *   6.  筆畫即時廣播、復原與清除同步、筆數對不上時可以重新同步
  *   7.  猜錯進紀錄、猜對只公布「某某猜對了」、答案不會外流給非畫家
  *   8.  猜題冷卻、猜對的人不能再猜、畫家不能猜
@@ -231,13 +231,11 @@ async function run() {
     JSON.stringify(watcher.view.you.can));
 
   /* ------------------------------------------------ 準備與開始 */
-  section('準備、電腦對手與開始');
+  section('準備與開始');
   mate.clearErrors();
   mate.emit('room:addAi', { level: 'easy' });
-  check('非房主不能加電腦對手', await mate.until((c) => !!c.lastError()), mate.lastError());
-
-  host.emit('room:addAi', { level: 'easy' });
-  check('房主可以加電腦對手', await host.until((c) => c.view.room.aiSeats.length === 1), JSON.stringify(host.view.room.aiSeats));
+  check('線上版沒有電腦對手可以加', await mate.until((c) => !!c.lastError(), 3000) || !mate.view.room.aiSeats,
+    JSON.stringify(mate.view.room.aiSeats || null));
 
   host.emit('room:start', {});
   check('沒準備好就不能開始', await host.until((c) => !!c.lastError()), host.lastError());
@@ -255,7 +253,7 @@ async function run() {
   check('房主開始成功', await host.until((c) => c.view.room.phase === 'playing'), host.view.room.phase);
   check('三個用戶端都看到對局開始',
     await mate.until((c) => c.view.room.phase === 'playing') && await watcher.until((c) => c.view.room.phase === 'playing'));
-  check('名單裡有 3 位（2 真人 + 1 電腦）', host.view.game.players.length === 3, host.view.game.players.length);
+  check('名單裡有 2 位真人（線上沒有電腦對手）', host.view.game.players.length === 2, host.view.game.players.length);
   check('三個用戶端看到同一個題號與同一位畫家',
     host.view.game.turnNo === mate.view.game.turnNo && host.view.game.drawerId === watcher.view.game.drawerId,
     host.view.game.drawerId + '/' + watcher.view.game.drawerId);
@@ -263,17 +261,12 @@ async function run() {
   /* -------------------------------------------- 選題與隱藏資訊 */
   section('選題與隱藏資訊');
 
-  /* 推進到「其中一個真人當畫家」的回合，才能測畫圖與猜題 */
+  /* 線上房間只有真人，第一位畫家一定是其中一個人 */
   const humans = { [host.clientId]: host, [mate.clientId]: mate };
-  let drawer = null;
-  let guesser = null;
-  for (let hop = 0; hop < 10 && !drawer; hop++) {
-    const id = host.view.game.drawerId;
-    if (humans[id]) { drawer = humans[id]; guesser = id === host.clientId ? mate : host; break; }
-    /* 這一輪是電腦畫，等它畫完再看下一輪 */
-    await host.until((c) => c.view.game.drawerId !== id, 130000);
-  }
-  check('有輪到真人當畫家', !!drawer, drawer ? drawer.label : 'none');
+  const drawerId = host.view.game.drawerId;
+  const drawer = humans[drawerId] || null;
+  const guesser = drawer ? (drawerId === host.clientId ? mate : host) : null;
+  check('畫家是真人', !!drawer, drawer ? drawer.label : drawerId);
 
   if (drawer) {
     await drawer.until((c) => c.view.game.phase === 'picking' && c.view.game.choices.length === 3, 20000);
@@ -370,7 +363,12 @@ async function run() {
     const feedBefore = watcher.feed.length;
     guesser.emit('room:guess', { text: '一定不是這個答案' });
     check('猜錯會廣播到猜題紀錄', await watcher.until((c) => c.feed.length > feedBefore, 4000), watcher.feed.length);
-    check('猜錯的內容大家都看得到', watcher.feed[watcher.feed.length - 1].text === '一定不是這個答案');
+    const lastGuess = watcher.feed[watcher.feed.length - 1];
+    check('猜錯的內容大家都看得到', lastGuess.text === '一定不是這個答案');
+    /* 猜題紀錄要看得出「誰」猜的：沒有名字的話大家都長一樣 */
+    check('猜錯的紀錄帶著猜的人的名字',
+      !!lastGuess.from && lastGuess.from !== '玩家' && lastGuess.fromId === guesser.clientId,
+      JSON.stringify({ from: lastGuess.from, fromId: lastGuess.fromId }));
 
     guesser.privates = [];
     guesser.emit('room:guess', { text: '馬上再猜一次' });
@@ -402,8 +400,13 @@ async function run() {
     check('紀錄裡只公布「某某猜對了」',
       await watcher.until((c) => (c.view.room.feed || []).some((f) => f.kind === 'correct' && f.text.indexOf('猜對了') >= 0), 4000),
       JSON.stringify((watcher.view.room.feed || []).slice(-3)));
+    /* 兩個真人時，最後一位猜中就等於「全部猜中」，這一題會立刻結束並公布答案（kind=reveal），
+       所以只檢查「還在進行中」的那些訊息（猜題與猜對）不外流答案。 */
     check('公布訊息裡不含答案',
-      (watcher.view.room.feed || []).every((f) => f.text.indexOf(answer) < 0));
+      (watcher.view.room.feed || [])
+        .filter((f) => f.kind === 'guess' || f.kind === 'correct')
+        .every((f) => f.text.indexOf(answer) < 0),
+      JSON.stringify((watcher.view.room.feed || []).slice(-3)));
     check('分數有反映到投影上',
       await watcher.until((c) => c.view.game.players.some((p) => p.score > 0), 4000),
       JSON.stringify(watcher.view.game.players.map((p) => p.name + ':' + p.score)));
@@ -430,7 +433,9 @@ async function run() {
       host.view.room.summary.some((s) => s.kind === 'correct'),
       JSON.stringify(host.view.room.summary.slice(-3)));
     check('觀戰者也收得到摘要', watcher.view.room.summary.length > 0, watcher.view.room.summary.length);
-    check('觀戰者的摘要裡沒有答案', watcher.view.room.summary.every((s) => s.text.indexOf(answer) < 0));
+    check('觀戰者的摘要在公布前沒有答案',
+      watcher.view.room.summary.filter((s) => s.kind !== 'reveal').every((s) => s.text.indexOf(answer) < 0),
+      JSON.stringify(watcher.view.room.summary.slice(-3)));
   }
 
   /* -------------------------------------------- 邀請撤銷與滿房 */
