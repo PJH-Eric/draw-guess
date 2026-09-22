@@ -364,8 +364,7 @@ async function run() {
     guesser.emit('room:done', {});
     check('只有畫家能說畫完了', await guesser.until((c) => !!c.lastError(), 3000), guesser.lastError());
 
-    /* 快速連按兩下（畫面還來不及回來就再按一次）：
-       伺服器要能自己擋下第二下，不能因為用戶端一時沒鎖住按鈕就重複廣播。 */
+    /* 同一題想按幾次就按幾次（補了幾筆再叫大家看一次很正常），每一次都要再廣播一次 */
     const summaryBefore = watcher.view.room.summary.length;
     drawer.clearErrors();
     drawer.emit('room:done', {});
@@ -373,8 +372,8 @@ async function run() {
     check('畫家說畫完了，大家都看得到',
       await watcher.until((c) => c.view.room.drawerDone === true, 4000), String(watcher.view.room.drawerDone));
     await sleep(300);
-    check('快速連按兩下也只會通知一次，不會重複廣播',
-      watcher.view.room.summary.filter((n, i) => i >= summaryBefore && n.text.indexOf('說畫完了') >= 0).length === 1,
+    check('連按兩下就廣播兩次（不受限）',
+      watcher.view.room.summary.filter((n, i) => i >= summaryBefore && n.text.indexOf('說畫完了') >= 0).length === 2,
       JSON.stringify(watcher.view.room.summary.slice(summaryBefore)));
     check('說完畫完了這一題還在繼續',
       watcher.view.game.phase === 'drawing' && watcher.view.game.turnNo === drawer.view.game.turnNo,
@@ -384,7 +383,8 @@ async function run() {
       JSON.stringify((watcher.view.room.summary || []).slice(-2)));
     drawer.clearErrors();
     drawer.emit('room:done', {});
-    check('同一題不能重複說畫完了', await drawer.until((c) => !!c.lastError(), 3000), drawer.lastError());
+    await sleep(300);
+    check('再按一次也不會被伺服器擋下來', !drawer.lastError(), drawer.lastError());
     drawer.clearErrors();
 
     /* -------------------------------------------- 猜題 */

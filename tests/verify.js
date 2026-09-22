@@ -631,7 +631,12 @@ section('房間狀態機（lib/rooms.js）');
     check('畫家可以說畫完了', done1.ok, done1.error);
     check('說完畫完了這一題不會結束', room.state.turnNo === turn0 && room.state.phase === 'drawing', room.state.phase);
     check('說完畫完了畫家還是畫家', room.state.drawerId === drawerId);
-    check('同一題不能重複說畫完了', !room.markDone(drawerId, t).ok);
+    /* 補了幾筆想再叫大家看一次很正常，所以同一題按幾次都可以，每次都再廣播一次 */
+    const notesBefore = room.summary.filter((n) => n.text.indexOf('說畫完了') >= 0).length;
+    check('同一題可以一直說畫完了', room.markDone(drawerId, t).ok && room.markDone(drawerId, t).ok);
+    check('每按一次就再廣播一次',
+      room.summary.filter((n) => n.text.indexOf('說畫完了') >= 0).length === notesBefore + 2,
+      room.summary.filter((n) => n.text.indexOf('說畫完了') >= 0).length);
     check('投影看得出畫家已經說畫完了', room.viewFor(drawerId, t).room.drawerDone === true);
   }
 

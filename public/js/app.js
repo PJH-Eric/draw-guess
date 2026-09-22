@@ -41,8 +41,6 @@
     inviteRole: 'any',
     inviteUrl: '',
     roomCreate: { roomName: '', rounds: 2, drawSec: 90, diff: 0 },
-    /* 單機：這一題已經按過「畫完了」的題號（線上看 v.room.drawerDone） */
-    doneTurn: -1,
     lastOverlayHtml: null,
     conn: { status: 'idle', message: '' },
     wideLayout: null,
@@ -442,7 +440,6 @@
     app.feed = [];
     app.feedSeen = {};
     app.recorded = false;
-    app.doneTurn = -1;
     app.lastTurnKey = '';
     app.lastPhase = '';
     app.lastMask = '';
@@ -812,14 +809,12 @@
       skip.disabled = !drawing;
       return;
     }
-    /* 線上房間：伺服器說「已經說過畫完了」就算數，但也把本機按過的記下來（app.doneTurn）。
-       這一題只要本機記得按過，就算中途有別的事件（例如別人剛好猜對）先帶回一份
-       還沒吃到這次點擊的舊投影，也不會把鎖住的按鈕誤判成又能按。 */
-    var told = !!((v && v.room && v.room.drawerDone) || (g && app.doneTurn === g.turnNo));
+    /* 線上房間：這顆鈕只要輪到你畫就一直能按，按過也不鎖、不改字 ——
+       補了幾筆想再叫大家看一次是很自然的事，伺服器那邊同樣不擋重複。 */
     done.hidden = false;
-    done.disabled = !drawing || told;
+    done.disabled = !drawing;
     var lbl = done.querySelector('.b3-lbl') || done;
-    lbl.textContent = told ? '已說畫完了' : '畫完了';
+    lbl.textContent = '畫完了';
     skip.disabled = !drawing;
   }
 
@@ -913,18 +908,7 @@
     /* 單機自己練習沒有其他人可以通知，這顆鈕在單機一律藏起來（見 syncDoneButtons），
        按鈕不存在自然點不到，這裡留一個保險：真的被呼叫到也什麼都不做。 */
     if (app.mode === 'solo') return;
-    /* 線上房間要等伺服器廣播回來才會真的知道「已經說過畫完了」，
-       網路慢一點的話這個來回可能有感——所以跟單機一樣，先把這一題記在本機的 app.doneTurn，
-       按下去立刻鎖住按鈕，不用等伺服器回覆。
-       這個本機記憶還有另一個用處：送出去、還沒收到伺服器回音之前，
-       如果剛好有別人猜對之類的動作帶回一份還沒反映這次點擊的舊投影，
-       單靠伺服器投影判斷會誤把鎖住的按鈕解鎖；有本機記著這一題已經按過，
-       syncDoneButtons() 才不會被那種「過期」的投影騙回去。
-       等真正的 room:sync 回來，v.room.drawerDone 會補上正確答案，兩邊短路後結果一樣。 */
-    var g2 = app.view && app.view.game;
-    if (g2 && app.doneTurn === g2.turnNo) return;
-    if (g2) app.doneTurn = g2.turnNo;
-    syncDoneButtons();
+    /* 想按幾次就按幾次：不鎖按鈕、不記「按過了」，每一次都送出去再廣播一次 */
     w.Online.send('room:done', {});
   }
 
@@ -1679,7 +1663,6 @@
     app.inviteToken = null;
     app.inviteUrl = '';
     app.lastOverlayHtml = null;
-    app.doneTurn = -1;
     show('s-game');
     ensurePaint();
     app.paint.clearLocal();
@@ -1814,12 +1797,11 @@
       app.view = v;
       app.roomCode = v.room.code;
 
-      /* 換題／換階段：清畫布、播音效、重置「畫完了」的本機記憶 */
+      /* 換題／換階段：清畫布、播音效 */
       var key = v.game ? (v.game.turnNo + ':' + v.game.phase) : (v.room.phase);
       if (v.game && prev && prev.game && prev.game.turnNo !== v.game.turnNo) {
         app.paint.clearLocal();
         app.paint.clearRedo();
-        app.doneTurn = -1;
       }
       if (key !== app.lastTurnKey) {
         app.lastTurnKey = key;
