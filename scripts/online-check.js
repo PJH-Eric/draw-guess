@@ -215,6 +215,23 @@ async function run() {
   await watcher.until((c) => !!c.view);
   check('觀戰者知道自己是觀戰', watcher.view.you.role === 'spectator');
 
+  /* ------------------------------------------------ 聊天室（只在等待畫面） */
+  section('聊天室（只在等待畫面）');
+  host.clearErrors();
+  host.emit('room:chat', { text: '大家好，準備好了嗎？' });
+  check('聊天訊息送出後大家都收得到',
+    await host.until((c) => c.view.room.chat.some((m) => m.text === '大家好，準備好了嗎？')) &&
+    await mate.until((c) => c.view.room.chat.some((m) => m.text === '大家好，準備好了嗎？')));
+  check('聊天訊息帶著寄件人名字',
+    host.view.room.chat.some((m) => m.text === '大家好，準備好了嗎？' && m.from === '阿明'));
+  watcher.clearErrors();
+  watcher.emit('room:chat', { text: '我先看看規則' });
+  check('觀戰者也可以在等待畫面聊天',
+    await watcher.until((c) => c.view.room.chat.some((m) => m.text === '我先看看規則')));
+  host.clearErrors();
+  host.emit('room:chat', { text: '   ' });
+  check('空白訊息會被擋下', await host.until((c) => !!c.lastError()), host.lastError());
+
   /* ------------------------------------------------ 觀戰者權限 */
   section('觀戰者不能越權');
   watcher.clearErrors();
@@ -257,6 +274,11 @@ async function run() {
   check('三個用戶端看到同一個題號與同一位畫家',
     host.view.game.turnNo === mate.view.game.turnNo && host.view.game.drawerId === watcher.view.game.drawerId,
     host.view.game.drawerId + '/' + watcher.view.game.drawerId);
+
+  host.clearErrors();
+  host.emit('room:chat', { text: '開始之後還能聊嗎？' });
+  check('對局進行中不能聊天，會被擋下', await host.until((c) => !!c.lastError()), host.lastError());
+  check('對局中的投影不含聊天紀錄（開始前的訊息也不留）', host.view.room.chat.length === 0, host.view.room.chat.length);
 
   /* -------------------------------------------- 選題與隱藏資訊 */
   section('選題與隱藏資訊');
@@ -364,7 +386,8 @@ async function run() {
     guesser.emit('room:done', {});
     check('只有畫家能說畫完了', await guesser.until((c) => !!c.lastError(), 3000), guesser.lastError());
 
-    /* 同一題想按幾次就按幾次（補了幾筆再叫大家看一次很正常），每一次都要再廣播一次 */
+    /* 這顆鈕不鎖：畫家想再按幾次都可以（補了幾筆想再叫大家看一次是很自然的事），
+       伺服器同樣不擋重複，每按一次就再廣播一次通知。 */
     const summaryBefore = watcher.view.room.summary.length;
     drawer.clearErrors();
     drawer.emit('room:done', {});
@@ -372,7 +395,8 @@ async function run() {
     check('畫家說畫完了，大家都看得到',
       await watcher.until((c) => c.view.room.drawerDone === true, 4000), String(watcher.view.room.drawerDone));
     await sleep(300);
-    check('連按兩下就廣播兩次（不受限）',
+    check('連按兩下不會被擋下（沒有收到任何錯誤）', !drawer.lastError(), JSON.stringify(drawer.lastError()));
+    check('連按兩下會廣播兩次通知（這顆鈕不鎖）',
       watcher.view.room.summary.filter((n, i) => i >= summaryBefore && n.text.indexOf('說畫完了') >= 0).length === 2,
       JSON.stringify(watcher.view.room.summary.slice(summaryBefore)));
     check('說完畫完了這一題還在繼續',
@@ -381,10 +405,11 @@ async function run() {
     check('紀錄裡看得到「某某說畫完了」',
       (watcher.view.room.summary || []).some((n) => n.text.indexOf('說畫完了') >= 0),
       JSON.stringify((watcher.view.room.summary || []).slice(-2)));
+    const summaryBefore2 = watcher.view.room.summary.length;
     drawer.clearErrors();
     drawer.emit('room:done', {});
-    await sleep(300);
-    check('再按一次也不會被伺服器擋下來', !drawer.lastError(), drawer.lastError());
+    check('同一題還是可以再說一次畫完了', await watcher.until((c) => c.view.room.summary.length > summaryBefore2, 3000));
+    check('第三次按也沒有被擋下', !drawer.lastError(), JSON.stringify(drawer.lastError()));
     drawer.clearErrors();
 
     /* -------------------------------------------- 猜題 */

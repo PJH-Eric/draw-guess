@@ -408,7 +408,7 @@ io.on('connection', (socket) => {
   /* 整張畫布重新要一次（用戶端發現筆數對不上時） */
   socket.on('room:resync', withRoom((room) => { syncOne(socket, room, true); }));
 
-  /* 唯一的文字輸入就是猜答案；沒有聊天室，所以畫家與觀戰者沒有地方打字。 */
+  /* 對局進行中唯一的文字輸入就是猜答案；聊天室（見下面 room:chat）只在等待畫面開放。 */
   socket.on('room:guess', withRoom((room, p) => {
     const res = room.guess(socket.data.clientId, p.text, now());
     if (!res.ok) {
@@ -429,6 +429,13 @@ io.on('connection', (socket) => {
       syncRoom(room);
       if (res.allDone) syncRoom(room, true);
     }
+  }));
+
+  /* 等待畫面的自由聊天：room.chat() 自己會擋掉對局進行中的訊息，這裡不用再判斷一次。 */
+  socket.on('room:chat', withRoom((room, p) => {
+    const res = room.chat(socket.data.clientId, p.text, now());
+    if (!res.ok) return fail(socket, res.error, res.code);
+    syncRoom(room);
   }));
 
   socket.on('room:rematch', withRoom((room) => {

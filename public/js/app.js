@@ -40,6 +40,7 @@
     inviteToken: null,
     inviteRole: 'any',
     inviteUrl: '',
+    chatDraft: '',                  // 聊天室打到一半的字，投影更新時用來保留輸入框內容
     roomCreate: { roomName: '', rounds: 2, drawSec: 90, diff: 0 },
     lastOverlayHtml: null,
     conn: { status: 'idle', message: '' },
@@ -1125,10 +1126,18 @@
        重建會把邀請連結輸入框的選取與按鈕焦點洗掉。 */
     if (html === app.lastOverlayHtml) return;
     app.lastOverlayHtml = html;
+    /* 聊天室正在打字的時候，別人的訊息或房間投影也會讓這裡重建：
+       記住游標在不在聊天輸入框，重建完再把焦點（跟游標位置）放回去，
+       不然打到一半會被強制跳出輸入框。 */
+    var chatFocused = D.activeElement && D.activeElement.id === 'chat-input';
     card.innerHTML = html;
     S.decorateAll(card);
     paintIcons(card);
     bindOverlay(card);
+    if (chatFocused) {
+      var ci = $('chat-input');
+      if (ci) { ci.focus(); var L = ci.value.length; try { ci.setSelectionRange(L, L); } catch (e) {} }
+    }
   }
 
   /* 每人輪數／每題秒數／題目難度都用按鈕，不用滑桿：
@@ -1151,6 +1160,21 @@
       return '<button type="button" class="pillbtn" role="radio" data-act="' + act + '" data-v="' + esc(val) + '"' +
         ' aria-checked="' + (String(val) === String(current) ? 'true' : 'false') + '">' + esc(label) + '</button>';
     }).join('') + '</div>';
+  }
+
+  /* 房間設定卡片裡的「遊戲規則」改用下拉選單，三個欄位排在同一行（不是三行堆疊），
+     卡片矮下來，等待畫面才擠得出空間放聊天室。一顆 <select> 不管螢幕多窄都不會換行，
+     不像一排五顆按鈕在手機上會被迫斷成兩行。 */
+  function selectField(act, list, current, label) {
+    /* aria-label 會蓋過外層 <label> 的文字，所以這裡放看得懂的中文，
+       不是 data-act 那種內部代號（讀螢幕的人會聽到「set-rounds」）。 */
+    return '<select class="rule-select" data-act="' + act + '" aria-label="' + esc(label || act) + '">' +
+      list.map(function (o) {
+        var val = (o.v !== undefined ? o.v : o);
+        var label = (o.label !== undefined ? o.label : o);
+        return '<option value="' + esc(val) + '"' + (String(val) === String(current) ? ' selected' : '') + '>' +
+          esc(label) + '</option>';
+      }).join('') + '</select>';
   }
 
   function renderRoomCreateOptions() {
@@ -1224,9 +1248,9 @@
     for (var i = 0; i < r.members.length; i++) {
       var m = r.members[i];
       if (m.role !== 'player') continue;
-      seats += '<span class="seatchip' + (m.ready ? ' ready' : '') + '">' +
+      seats += '<div class="seatrow' + (m.ready ? ' ready' : '') + '">' +
         '<span class="sface" aria-hidden="true">' + S.face(i, m.ready ? 'happy' : 'idle') + '</span>' +
-        esc(m.name) + (m.host ? '（房主）' : '') + (m.ready ? ' ✓' : '') + '</span>';
+        '<span class="seatname">' + esc(m.name) + (m.host ? '（房主）' : '') + (m.ready ? ' ✓' : '') + '</span></div>';
     }
     var specs = r.members.filter(function (x) { return x.role === 'spectator'; });
     var host = v.you.can.setSettings;
@@ -1235,10 +1259,11 @@
     var rules;
     if (host) {
       rules = '<div class="setupblock"><h4>遊戲規則</h4>' +
-        '<div class="setuprow"><span>每人畫幾次</span>' + chips('set-rounds', ROUND_CHOICES, r.settings.rounds) + '</div>' +
-        '<div class="setuprow"><span>每題秒數</span>' + chips('set-drawsec', SEC_CHOICES, r.settings.drawSec) + '</div>' +
-        '<div class="setuprow"><span>題目難度</span>' + chips('set-diff', DIFF_CHOICES, r.settings.diff) + '</div>' +
-        '</div>';
+        '<div class="rules-row">' +
+        '<label class="rule-field"><span>畫幾次</span>' + selectField('set-rounds', ROUND_CHOICES, r.settings.rounds, '每人畫幾次') + '</label>' +
+        '<label class="rule-field"><span>秒數</span>' + selectField('set-drawsec', SEC_CHOICES, r.settings.drawSec, '每題秒數') + '</label>' +
+        '<label class="rule-field"><span>題型</span>' + selectField('set-diff', DIFF_CHOICES, r.settings.diff, '題目難度') + '</label>' +
+        '</div></div>';
     } else {
       var dl = DIFF_CHOICES.filter(function (d) { return d.v === r.settings.diff; })[0];
       rules = '<div class="setupblock"><h4>遊戲規則</h4>' +
@@ -1262,6 +1287,26 @@
         '按下確認才會進房；改暱稱不會改變連結給定的身分。</p></div>';
     }
 
+    /* ---- 聊天室 ----
+       刻意放在「邀請朋友」下面：只在等待畫面才有，開始對局後 v.room.phase 就不是
+       'waiting'，這個 if 分支整塊不會被畫出來，聊天室也就跟著收起來，
+       不需要另外判斷「遊戲中」——這張卡本來就只在等待畫面才會出現。 */
+    var chatHtml = '';
+    if (v.you.can.chat) {
+      var chatMsgs = (r.chat || []).map(function (c) {
+        var mine = c.fromId === v.you.id;
+        return '<li class="chatmsg' + (mine ? ' mine' : '') + '">' +
+          '<b class="chatfrom">' + esc(c.from) + '</b>' +
+          '<span class="chattext">' + esc(c.text) + '</span></li>';
+      }).join('');
+      chatHtml = '<div class="setupblock chatblock"><h4>聊天室</h4>' +
+        '<ol class="chatlist" id="chat-list">' +
+        (chatMsgs || '<li class="chatempty">開始之前先聊聊吧！</li>') + '</ol>' +
+        '<div class="chatrow"><label class="sr-only" for="chat-input">聊天訊息</label>' +
+        '<input id="chat-input" maxlength="200" autocomplete="off" placeholder="說點什麼…" value="' + esc(app.chatDraft || '') + '">' +
+        '<button type="button" class="btn3d small" data-color="sky" data-act="chat-send">送出</button></div></div>';
+    }
+
     /* ---- 主要按鈕 ---- */
     var btns = '';
     if (v.you.role === 'player') {
@@ -1278,12 +1323,13 @@
     btns += '<button class="btn3d small" data-color="peach" data-act="leave-room">' +
       (v.you.isHost ? '退出房間' : '離開房間') + '</button>';
 
+    /* 房號跟「x / y 位玩家」以前各佔一行；席位卡本身就數得出人數，
+       那行字拿掉、房號也縮小，卡片才有地方放下面新的聊天室。 */
     return '<h3>房間設定</h3>' +
       '<div class="roomcode"><b>' + esc(r.code) + '</b><span>把房號唸給朋友，或用下面的邀請連結</span></div>' +
-      '<div class="seatlist">' + (seats || '<span class="seatchip">還沒有人入座</span>') + '</div>' +
-      '<p>' + r.seatsTaken + ' / ' + r.settings.maxPlayers + ' 位玩家' +
-      (specs.length ? '・' + specs.length + ' 位觀戰' : '') + '</p>' +
-      rules + invite +
+      '<div class="seatlist">' + (seats || '<div class="seatrow">還沒有人入座</div>') +
+      (specs.length ? '<div class="seatrow spec">👀 ' + specs.length + ' 位觀戰</div>' : '') + '</div>' +
+      rules + invite + chatHtml +
       (v.you.can.start ? '' : '<p>' + esc(v.you.can.startBlockedBy || '等房主按開始。') + '</p>') +
       '<div class="overlay-btns">' + btns + '</div>';
   }
@@ -1366,10 +1412,7 @@
               app.paint.clearLocal();
               soloRefresh();
             } else w.Online.send('room:pick', { wordId: wid });
-          } else if (act === 'set-rounds') w.Online.send('room:settings', { rounds: Number(el.getAttribute('data-v')) });
-          else if (act === 'set-drawsec') w.Online.send('room:settings', { drawSec: Number(el.getAttribute('data-v')) });
-          else if (act === 'set-diff') w.Online.send('room:settings', { diff: Number(el.getAttribute('data-v')) });
-          else if (act === 'invite-role') {
+          } else if (act === 'invite-role') {
             app.inviteRole = el.getAttribute('data-v');
             app.lastOverlayHtml = null;
             renderOverlay();
@@ -1382,6 +1425,7 @@
           else if (act === 'become-spectator') w.Online.send('room:becomeSpectator', {});
           else if (act === 'leave-room') askLeaveRoom();
           else if (act === 'settings') gameModal.open();
+          else if (act === 'chat-send') sendChatMessage();
           else if (act === 'rematch') {
             if (app.mode === 'solo') startSolo();
             else w.Online.send('room:rematch', {});
@@ -1390,6 +1434,44 @@
         });
       }(list[i]));
     }
+
+    /* 遊戲規則改用下拉選單後用 change 事件，跟上面按鈕的 click 分開處理 */
+    var selects = card.querySelectorAll('select[data-act]');
+    for (var si = 0; si < selects.length; si++) {
+      (function (el) {
+        el.addEventListener('change', function () {
+          var act = el.getAttribute('data-act');
+          var value = Number(el.value);
+          Sound.play('click');
+          if (act === 'set-rounds') w.Online.send('room:settings', { rounds: value });
+          else if (act === 'set-drawsec') w.Online.send('room:settings', { drawSec: value });
+          else if (act === 'set-diff') w.Online.send('room:settings', { diff: value });
+        });
+      }(selects[si]));
+    }
+
+    var chatInput = card.querySelector('#chat-input');
+    if (chatInput) {
+      /* 值也存一份在 app.chatDraft：就算投影更新把輸入框整個重建掉，
+         下一次畫面重繪時 roomSetupHtml 還是會把打到一半的字帶回來。 */
+      chatInput.addEventListener('input', function () { app.chatDraft = chatInput.value; });
+      chatInput.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter') { ev.preventDefault(); sendChatMessage(); }
+      });
+    }
+    var chatList = card.querySelector('#chat-list');
+    if (chatList) chatList.scrollTop = chatList.scrollHeight;
+  }
+
+  /** 送出聊天室訊息；空白的不送，送出後立刻清空輸入框（不等伺服器回應） */
+  function sendChatMessage() {
+    var input = $('chat-input');
+    if (!input) return;
+    var text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    app.chatDraft = '';
+    w.Online.send('room:chat', { text: text });
   }
 
   /* ------------------------------------------------ 工具列／猜題列切換 */
@@ -1662,6 +1744,7 @@
     app.lastGuessedCount = 0;
     app.inviteToken = null;
     app.inviteUrl = '';
+    app.chatDraft = '';
     app.lastOverlayHtml = null;
     show('s-game');
     ensurePaint();

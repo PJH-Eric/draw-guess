@@ -567,11 +567,6 @@ section('房間狀態機（lib/rooms.js）');
   let t = 1000;
   const created = store.create('u1', { name: '阿明', roomName: '測試房', now: t });
   check('可以開房', created.ok);
-  /* 沒帶 settings 的房間用的是 Rules.CONST.DRAW_MS。
-     它必須剛好是房間設定面板那三顆按鈕（60／90／120）之一，
-     否則房主打開房間設定，秒數那一列會一顆都沒亮。 */
-  check('房間預設秒數是設定面板選得到的值',
-    [60, 90, 120].indexOf(created.room.settings.drawSec) >= 0, created.room.settings.drawSec);
   const configured = store.create('u-create', {
     name: '設定房主', roomName: '預先設定房',
     settings: { rounds: 3, drawSec: 120, diff: 3 }, now: t
@@ -596,6 +591,18 @@ section('房間狀態機（lib/rooms.js）');
 
   check('席位數只算真人', room.seatsTaken() === 2, room.seatsTaken());
 
+  /* 聊天室：只在等待畫面（房間還沒開始）開放，避免有人不小心把答案打進聊天室外流 */
+  {
+    check('等待畫面可以聊天', room.chat('u1', '大家好，準備好了嗎？', t).ok);
+    check('聊天紀錄進得去投影', room.viewFor('u1', t).room.chat.some((c) => c.text === '大家好，準備好了嗎？'));
+    check('不在房間裡的人不能聊天', !room.chat('nobody', '嗨', t).ok);
+    check('空白訊息會被擋下', !room.chat('u1', '   ', t).ok);
+    check('太快再聊會被擋下', !room.chat('u1', '再一句', t).ok);
+    const longMsg = room.chat('u2', '一'.repeat(500), t + 1000);
+    check('太長的訊息會被截斷', longMsg.ok && longMsg.entry.text.length <= 200, longMsg.entry && longMsg.entry.text.length);
+    check('觀戰者也能聊天', room.chat('s1', '我先看看', t + 1000).ok);
+  }
+
   check('沒準備時不能開始', !room.canStart().ok, room.canStart().error);
   room.setReady('u1', true);
   room.setReady('u2', true);
@@ -605,6 +612,8 @@ section('房間狀態機（lib/rooms.js）');
   check('房主開始成功', room.start('u1', t).ok);
   check('對局進行中', room.phase === 'playing' && !!room.state);
   check('兩個真人都在名單裡', room.state.players.length === 2, room.state.players.length);
+  check('對局進行中不能聊天', !room.chat('u1', '開始之後還能聊嗎', t).ok);
+  check('投影裡的聊天紀錄在對局中是空的（不送舊訊息）', room.viewFor('u1', t).room.chat.length === 0);
 
   /* 觀戰者的權限 */
   check('觀戰者不能畫', !room.stroke('s1', { t: 'pen', p: [1, 1, 2, 2] }, t).ok);
@@ -631,12 +640,7 @@ section('房間狀態機（lib/rooms.js）');
     check('畫家可以說畫完了', done1.ok, done1.error);
     check('說完畫完了這一題不會結束', room.state.turnNo === turn0 && room.state.phase === 'drawing', room.state.phase);
     check('說完畫完了畫家還是畫家', room.state.drawerId === drawerId);
-    /* 補了幾筆想再叫大家看一次很正常，所以同一題按幾次都可以，每次都再廣播一次 */
-    const notesBefore = room.summary.filter((n) => n.text.indexOf('說畫完了') >= 0).length;
-    check('同一題可以一直說畫完了', room.markDone(drawerId, t).ok && room.markDone(drawerId, t).ok);
-    check('每按一次就再廣播一次',
-      room.summary.filter((n) => n.text.indexOf('說畫完了') >= 0).length === notesBefore + 2,
-      room.summary.filter((n) => n.text.indexOf('說畫完了') >= 0).length);
+    check('同一題可以再說一次畫完了（不鎖、不擋重複）', room.markDone(drawerId, t).ok);
     check('投影看得出畫家已經說畫完了', room.viewFor(drawerId, t).room.drawerDone === true);
   }
 

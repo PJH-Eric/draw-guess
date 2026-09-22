@@ -333,7 +333,13 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
   width:min(100%,580px);max-height:100%;overflow-y:auto;overscroll-behavior:contain;
   border:3px solid var(--ink);border-radius:22px;background:var(--paper);
   padding:14px 16px;box-shadow:0 10px 0 rgba(74,59,85,.2);
+  /* 房間設定卡加了聊天室之後變長，很容易需要捲動：跟其他捲動區塊（.aside-body、.playbar）
+     一樣配細滾動條，不然瀏覽器原生那條粗粗的、帶上下箭頭的滾動條會很突兀，跟整體圓角卡通風完全不搭。 */
+  scrollbar-width:thin;scrollbar-color:var(--grape-d) transparent;
 }
+.overlay-card::-webkit-scrollbar{width:8px}
+.overlay-card::-webkit-scrollbar-track{background:transparent}
+.overlay-card::-webkit-scrollbar-thumb{background:var(--grape-d);border-radius:999px}
 .overlay-card:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
 .overlay-card h3{margin:0 0 8px;font-size:1.25rem;text-align:center;color:var(--grape-t)}
 .overlay-card p{margin:0 0 10px;font-size:.88rem;line-height:1.65;text-align:center;color:var(--ink-soft)}
@@ -369,14 +375,25 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 .resultlist li .rname{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .resultlist li .rpts{flex:0 0 auto;color:var(--ok);font-variant-numeric:tabular-nums}
 .resultlist li.win{border-color:var(--lemon-d);background:#FFF8E4}
-.seatlist{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 8px;justify-content:center}
-.seatchip{display:inline-flex;align-items:center;gap:6px;border:2px solid var(--line);border-radius:999px;background:#fff;padding:4px 12px;font-size:.82rem;font-weight:800}
-.seatchip .sface{width:24px;height:24px}
-.seatchip .sface svg{width:100%;height:100%}
-.seatchip.ready{border-color:var(--mint-d);background:#E4F6EC}
-.seatchip.ai{border-color:var(--sky-d);background:#EAF4FC}
-.roomcode{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:0 0 10px;padding:10px 12px;border:3px dashed var(--grape-d);border-radius:16px;background:#F8F4FF}
-.roomcode b{font-size:1.5rem;letter-spacing:.2em;color:var(--grape-t)}
+/* 玩家名單改成一列一個玩家、寬度滿版、文字置左（以前是一顆一顆的置中小 chip）：
+   人多的時候一排 chip 會斷成好幾行、寬度也東一塊西一塊，改成滿版列表比較好掃視。
+   「x / y 位玩家」那行字拿掉了，人數用眼睛數列表就好；觀戰人數改成名單最後一列。 */
+.seatlist{display:flex;flex-direction:column;gap:6px;margin:2px 0 10px}
+.seatrow{
+  display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;
+  border:2px solid var(--line);border-radius:14px;background:#fff;
+  padding:7px 12px;font-size:.86rem;font-weight:800;text-align:left;
+}
+.seatrow .sface{width:24px;height:24px;flex:0 0 auto}
+.seatrow .sface svg{width:100%;height:100%}
+.seatrow .seatname{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seatrow.ready{border-color:var(--mint-d);background:#E4F6EC}
+.seatrow.ai{border-color:var(--sky-d);background:#EAF4FC}
+.seatrow.spec{border-color:var(--line);background:#F3F1F6;color:var(--ink-soft);font-weight:700}
+/* 房號以前是整張卡最搶眼的東西，縮小一號讓位給下面的聊天室 */
+.roomcode{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:0 0 8px;padding:6px 10px;border:2px dashed var(--grape-d);border-radius:14px;background:#F8F4FF}
+.roomcode b{font-size:1.15rem;letter-spacing:.16em;color:var(--grape-t)}
+.roomcode span{font-size:.76rem;color:var(--ink-soft)}
 
 /* ---------- 猜題列 ---------- */
 /* 固定在遊戲主畫面正下方並左右滿版：輸入區更容易找到，也不用跟畫布搶欄位。
@@ -589,25 +606,65 @@ body.big-tools .fillbox{min-height:56px}
    以前這張卡沒有自己的樣式，h4 與每一列全部黏在一起，看起來很擠。
    改成一區一張白底小卡，區內每列用虛線分隔，標題、標籤、按鈕各有呼吸空間。 */
 .setupblock{
-  margin:0 0 12px;padding:10px 12px 11px;
-  border:2px solid var(--line);border-radius:18px;background:#fff;
+  margin:0 0 9px;padding:8px 11px 9px;
+  border:2px solid var(--line);border-radius:16px;background:#fff;
 }
 .setupblock:last-of-type{margin-bottom:0}
 .setupblock h4{
-  margin:0 0 6px;font-size:.96rem;color:var(--grape-t);
-  padding-bottom:6px;border-bottom:2px solid var(--line);
+  margin:0 0 5px;font-size:.9rem;color:var(--grape-t);
+  padding-bottom:5px;border-bottom:2px solid var(--line);
 }
 .setuprow{
-  display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
-  padding:8px 0;border-bottom:2px dashed var(--line);
+  display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;
+  padding:6px 0;border-bottom:2px dashed var(--line);
 }
-.setuprow:last-child{border-bottom:0;padding-bottom:2px}
-.setuprow > span{flex:0 0 auto;font-size:.84rem;font-weight:800;color:var(--ink-soft)}
+.setuprow:last-child{border-bottom:0;padding-bottom:1px}
+.setuprow > span{flex:0 0 auto;font-size:.8rem;font-weight:800;color:var(--ink-soft)}
 .setuprow .chiprow{flex:1 1 auto;justify-content:flex-end;gap:6px}
 /* 這張卡裡的 chip 刻意小一號：一排要放五顆，維持 44px 命中區就好 */
-.setupblock .pillbtn{min-height:44px;min-width:48px;padding:8px 13px;font-size:.9rem;border-radius:14px}
-.setupnote{margin:8px 2px 0;font-size:.78rem;line-height:1.7;color:var(--ink-soft);text-align:left}
+.setupblock .pillbtn{min-height:44px;min-width:44px;padding:7px 12px;font-size:.86rem;border-radius:14px}
+.setupnote{margin:6px 2px 0;font-size:.76rem;line-height:1.6;color:var(--ink-soft);text-align:left}
 .setupblock > .setupnote:first-child{margin-top:0}
+
+/* 遊戲規則改成下拉選單，三個欄位排在同一行（不是三行堆疊），
+   標籤放在選單上面，卡片矮下來，等待畫面才擠得出空間放聊天室。 */
+.rules-row{display:flex;gap:8px}
+.rule-field{display:flex;flex-direction:column;gap:3px;flex:1 1 0;min-width:0}
+.rule-field > span{font-size:.72rem;font-weight:800;color:var(--ink-soft)}
+.rule-select{
+  width:100%;min-width:0;
+  font:inherit;font-weight:800;font-size:.84rem;
+  border:2px solid var(--line);border-radius:12px;padding:7px 6px;
+  min-height:42px;background:#fff;color:var(--ink);
+}
+.rule-select:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
+
+/* ---------- 房間設定卡片裡的聊天室（只在等待畫面出現，開始對局後這整塊就不會畫出來） ---------- */
+.chatlist{
+  list-style:none;margin:0 0 8px;padding:0;
+  max-height:150px;overflow-y:auto;overscroll-behavior:contain;
+  display:flex;flex-direction:column;gap:4px;
+  scrollbar-width:thin;scrollbar-color:var(--grape-d) transparent;
+}
+.chatlist::-webkit-scrollbar{width:6px}
+.chatlist::-webkit-scrollbar-track{background:transparent}
+.chatlist::-webkit-scrollbar-thumb{background:var(--grape-d);border-radius:999px}
+.chatmsg{
+  display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;
+  border-radius:12px;background:#F5F2FA;padding:5px 9px;font-size:.82rem;line-height:1.4;
+}
+.chatmsg.mine{background:#EAF4FC}
+.chatmsg .chatfrom{flex:0 0 auto;color:var(--grape-t);font-size:.76rem}
+.chatmsg .chattext{flex:1 1 auto;min-width:0;color:var(--ink);word-break:break-word;font-weight:600}
+.chatlist .chatempty{text-align:center;color:var(--ink-soft);font-size:.8rem;padding:6px 0}
+.chatrow{display:flex;gap:8px}
+.chatrow input{
+  flex:1 1 auto;min-width:0;font:inherit;font-size:.86rem;font-weight:700;
+  border:2px solid var(--line);border-radius:12px;padding:8px 10px;background:#FAF7FF;color:var(--ink);
+  min-height:44px;outline:none;user-select:text;-webkit-user-select:text;
+}
+.chatrow input:focus{border-color:var(--grape-d)}
+.chatrow .btn3d{flex:0 0 auto;min-width:64px}
 
 /* ---------- 對局設定彈窗裡的房間區塊 ---------- */
 .roomcode-pill{flex:0 0 auto;border:3px solid var(--grape-d);border-radius:999px;background:#F8F4FF;color:var(--grape-t);padding:3px 14px;font-size:1rem;font-weight:900;letter-spacing:.18em}
@@ -823,11 +880,24 @@ body.big-tools .fillbox{min-height:56px}
   .toolacts{margin-left:0}
   .create-choice{align-items:stretch;flex-direction:column;gap:6px}
   .create-choice .chiprow{justify-content:flex-start}
-  /* 房間設定：手機一行放不下「標籤＋五顆按鈕」，標籤自己一行、按鈕靠左排 */
-  .setupblock{padding:9px 10px 10px}
-  .setuprow{flex-direction:column;align-items:stretch;gap:6px;padding:7px 0}
+  /* 房間設定：邀請身分那排還是按鈕（三顆、標籤偏長），手機一行放不下就直排。
+     遊戲規則三個欄位維持同一行不直排，只是欄位間距跟字級跟著窄螢幕縮小。 */
+  .setupblock{padding:8px 9px 9px}
+  .setuprow{flex-direction:column;align-items:stretch;gap:6px;padding:6px 0}
   .setuprow .chiprow{justify-content:flex-start}
   .setupblock .pillbtn{min-width:44px;padding:8px 11px;font-size:.86rem}
+  .rules-row{gap:5px}
+  .rule-field > span{font-size:.68rem}
+  .rule-select{font-size:.78rem;padding:6px 4px}
+  /* 手機直向卡片本來就窄，名單、房號跟平板/桌機同一套規則會擠：
+     一併縮小，跟上面規則列、聊天室的縮小幅度同步。 */
+  .seatlist{gap:5px}
+  .seatrow{padding:6px 9px;font-size:.8rem;gap:6px;border-radius:12px}
+  .seatrow .sface{width:22px;height:22px}
+  .roomcode{padding:5px 8px;gap:6px}
+  .roomcode b{font-size:1.02rem}
+  .roomcode span{font-size:.7rem}
+  .chatlist{max-height:120px}
 }
 
 /* 橫向且高度很矮（手機橫向）：把裝飾與留白壓到最低，先保住畫布與操作 */

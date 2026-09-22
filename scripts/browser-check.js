@@ -805,6 +805,42 @@ async function main() {
   await watchTab.waitFor('window.DrawGuessApp.mode === "online" && window.DrawGuessApp.view', 10000, '觀戰者進房');
   check('觀戰連結進來就是觀戰者', (await watchTab.json('window.__probe.game()')).role === 'spectator');
 
+  /* 房間設定：遊戲規則改下拉、房號縮小、玩家名單置左沒有「x/y 位玩家」、聊天室 */
+  check('遊戲規則改成下拉選單（不是按鈕）',
+    await hostTab.eval('return !!document.querySelector("#overlay-card select[data-act=set-rounds]") && !document.querySelector("#overlay-card [data-act=set-rounds][role=radio]");'));
+  await hostTab.eval('var s=document.querySelector("#overlay-card select[data-act=set-rounds]"); s.value="4"; s.dispatchEvent(new Event("change",{bubbles:true})); return 1;');
+  await hostTab.waitFor('window.DrawGuessApp.view.room.settings.rounds === 4', 4000, '下拉選單套用設定');
+  check('下拉選單可以改規則', await hostTab.eval('return window.DrawGuessApp.view.room.settings.rounds === 4;'));
+  await mateTab.waitFor('window.DrawGuessApp.view.room.settings.rounds === 4', 4000, '同步規則');
+  check('改規則後其他分頁也同步收到', await mateTab.eval('return window.DrawGuessApp.view.room.settings.rounds === 4;'));
+  check('不再出現「x / y 位玩家」的字樣',
+    await hostTab.eval('return !/\\d+\\s*\\/\\s*\\d+\\s*位玩家/.test(document.getElementById("overlay-card").textContent);'));
+  check('玩家名單改成一列一個玩家、寬度滿版、文字置左',
+    await hostTab.eval('var list=document.querySelector("#overlay-card .seatlist"); var row=list && list.querySelector(".seatrow"); if(!list||!row) return false; var lr=list.getBoundingClientRect(), rr=row.getBoundingClientRect(); return getComputedStyle(list).flexDirection==="column" && Math.abs(rr.width-lr.width)<2 && getComputedStyle(row).textAlign==="left";'));
+  check('房號縮小了（字級小於原本的 1.5rem≈24px）',
+    await hostTab.eval('var b=document.querySelector("#overlay-card .roomcode b"); return parseFloat(getComputedStyle(b).fontSize) < 22;'));
+
+  /* 上面都是用平板尺寸（1024×768）測的；房間設定卡的新版面（規則同一行、
+     一列一個玩家、聊天室）另外用手機直向尺寸量一次，確保跟平板同步縮小、不會爆版。 */
+  await hostTab.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 3, mobile: true });
+  await sleep(300);
+  const phoneCard = await hostTab.json('({sw:document.getElementById("overlay-card").scrollWidth, cw:document.getElementById("overlay-card").clientWidth, rowW:(function(){var r=document.querySelector("#overlay-card .seatrow");return r?r.getBoundingClientRect().width:0;})(), listW:document.querySelector("#overlay-card .seatlist").getBoundingClientRect().width, rulesRowFlex:getComputedStyle(document.querySelector("#overlay-card .rules-row")).flexWrap})');
+  check('手機直向：房間設定卡不會橫向溢出', phoneCard.sw <= phoneCard.cw + 2, JSON.stringify(phoneCard));
+  check('手機直向：玩家列表同樣是滿版一列（不是縮成一團）',
+    phoneCard.rowW > 0 && Math.abs(phoneCard.rowW - phoneCard.listW) < 2, JSON.stringify(phoneCard));
+  check('手機直向：遊戲規則仍是同一行（不換行）', phoneCard.rulesRowFlex === 'nowrap', JSON.stringify(phoneCard));
+  await shot('線上-房間設定-手機直向');
+  await hostTab.send('Emulation.setDeviceMetricsOverride', { width: 1024, height: 768, deviceScaleFactor: 2, mobile: true });
+  await sleep(300);
+
+  /* 聊天室：只在等待畫面出現 */
+  check('等待畫面看得到聊天室輸入框', await hostTab.eval('return !!document.getElementById("chat-input");'));
+  await hostTab.eval('var i=document.getElementById("chat-input"); i.value="大家好，準備好了嗎？"; window.__probe.click("[data-act=chat-send]"); return 1;');
+  await mateTab.waitFor('window.DrawGuessApp.view.room.chat.some(function(m){return m.text==="大家好，準備好了嗎？";})', 4000, '聊天同步');
+  check('聊天訊息送出後另一個分頁也看得到',
+    await mateTab.eval('return window.DrawGuessApp.view.room.chat.some(function(m){return m.text==="大家好，準備好了嗎？";});'));
+  check('聊天送出後輸入框清空', await hostTab.eval('return document.getElementById("chat-input").value === "";'));
+
   /* 準備 → 開始 */
   await hostTab.eval('window.__probe.click("[data-act=ready]"); return 1;');
   await mateTab.eval('window.__probe.click("[data-act=ready]"); return 1;');
@@ -815,6 +851,8 @@ async function main() {
   check('三個分頁都進入對局',
     (await mateTab.json('window.__probe.game()')).roomPhase === 'playing' &&
     (await watchTab.json('window.__probe.game()')).roomPhase === 'playing');
+  check('對局開始後聊天室跟著收起來（房間設定卡只在等待畫面出現）',
+    await hostTab.eval('return !document.getElementById("chat-input") && !document.querySelector("select[data-act=set-rounds]");'));
 
   const wStage = await watchTab.json('window.__probe.stage()');
   check('觀戰者沒有工具列也沒有猜題框',
