@@ -330,7 +330,7 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
   padding:10px;background:rgba(74,59,85,.34);backdrop-filter:blur(2px);
 }
 .overlay-card{
-  width:min(100%,560px);max-height:100%;overflow-y:auto;overscroll-behavior:contain;
+  width:min(100%,580px);max-height:100%;overflow-y:auto;overscroll-behavior:contain;
   border:3px solid var(--ink);border-radius:22px;background:var(--paper);
   padding:14px 16px;box-shadow:0 10px 0 rgba(74,59,85,.2);
 }
@@ -342,8 +342,13 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 .overlay-btns{
   position:sticky;bottom:-14px;z-index:2;
   display:flex;gap:10px;justify-content:center;flex-wrap:wrap;
-  margin-top:10px;padding:8px 0 calc(8px + 6px);
-  background:linear-gradient(to bottom,rgba(255,253,248,0),var(--paper) 22%);
+  margin-top:12px;padding:10px 0 calc(10px + 4px);
+  background:var(--paper);border-top:2px solid var(--line);
+}
+/* 卡片捲到一半時，底部按鈕條下面留一點漸層，看得出來還有內容 */
+.overlay-btns::before{
+  content:"";position:absolute;left:0;right:0;top:-14px;height:14px;pointer-events:none;
+  background:linear-gradient(to bottom,rgba(255,253,248,0),var(--paper));
 }
 .wordchoices{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:6px 0}
 .wordchoice{
@@ -364,13 +369,13 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 .resultlist li .rname{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .resultlist li .rpts{flex:0 0 auto;color:var(--ok);font-variant-numeric:tabular-nums}
 .resultlist li.win{border-color:var(--lemon-d);background:#FFF8E4}
-.seatlist{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 10px;justify-content:center}
-.seatchip{display:inline-flex;align-items:center;gap:6px;border:2px solid var(--line);border-radius:999px;background:#fff;padding:3px 10px;font-size:.8rem;font-weight:800}
+.seatlist{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 8px;justify-content:center}
+.seatchip{display:inline-flex;align-items:center;gap:6px;border:2px solid var(--line);border-radius:999px;background:#fff;padding:4px 12px;font-size:.82rem;font-weight:800}
 .seatchip .sface{width:24px;height:24px}
 .seatchip .sface svg{width:100%;height:100%}
 .seatchip.ready{border-color:var(--mint-d);background:#E4F6EC}
 .seatchip.ai{border-color:var(--sky-d);background:#EAF4FC}
-.roomcode{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:0 0 10px;padding:8px;border:3px dashed var(--grape-d);border-radius:16px;background:#F8F4FF}
+.roomcode{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:0 0 10px;padding:10px 12px;border:3px dashed var(--grape-d);border-radius:16px;background:#F8F4FF}
 .roomcode b{font-size:1.5rem;letter-spacing:.2em;color:var(--grape-t)}
 
 /* ---------- 猜題列 ---------- */
@@ -566,9 +571,33 @@ body.big-tools .fillbox{min-height:56px}
 .sum-list li[data-k=guess][data-mine=true]{border-left-color:var(--mint-d);background:#F1F9F4;color:var(--ink)}
 .sum-empty{margin:8px 2px;font-size:.79rem;color:var(--ink-soft)}
 
+/* ---------- 等待畫面中央的「房間設定」卡 ----------
+   以前這張卡沒有自己的樣式，h4 與每一列全部黏在一起，看起來很擠。
+   改成一區一張白底小卡，區內每列用虛線分隔，標題、標籤、按鈕各有呼吸空間。 */
+.setupblock{
+  margin:0 0 12px;padding:10px 12px 11px;
+  border:2px solid var(--line);border-radius:18px;background:#fff;
+}
+.setupblock:last-of-type{margin-bottom:0}
+.setupblock h4{
+  margin:0 0 6px;font-size:.96rem;color:var(--grape-t);
+  padding-bottom:6px;border-bottom:2px solid var(--line);
+}
+.setuprow{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+  padding:8px 0;border-bottom:2px dashed var(--line);
+}
+.setuprow:last-child{border-bottom:0;padding-bottom:2px}
+.setuprow > span{flex:0 0 auto;font-size:.84rem;font-weight:800;color:var(--ink-soft)}
+.setuprow .chiprow{flex:1 1 auto;justify-content:flex-end;gap:6px}
+/* 這張卡裡的 chip 刻意小一號：一排要放五顆，維持 44px 命中區就好 */
+.setupblock .pillbtn{min-height:44px;min-width:48px;padding:8px 13px;font-size:.9rem;border-radius:14px}
+.setupnote{margin:8px 2px 0;font-size:.78rem;line-height:1.7;color:var(--ink-soft);text-align:left}
+.setupblock > .setupnote:first-child{margin-top:0}
+
 /* ---------- 對局設定彈窗裡的房間區塊 ---------- */
 .roomcode-pill{flex:0 0 auto;border:3px solid var(--grape-d);border-radius:999px;background:#F8F4FF;color:var(--grape-t);padding:3px 14px;font-size:1rem;font-weight:900;letter-spacing:.18em}
-.inviterow{display:flex;gap:8px;flex-wrap:wrap;padding:4px}
+.inviterow{display:flex;gap:8px;flex-wrap:wrap;padding:0;margin:8px 0}
 .inviterow input{
   flex:1 1 200px;min-width:0;font:inherit;font-size:.78rem;font-weight:700;
   border:3px solid var(--line);border-radius:12px;padding:8px 10px;background:#FAF7FF;color:var(--ink);
@@ -774,6 +803,11 @@ body.big-tools .fillbox{min-height:56px}
   .toolacts{margin-left:0}
   .create-choice{align-items:stretch;flex-direction:column;gap:6px}
   .create-choice .chiprow{justify-content:flex-start}
+  /* 房間設定：手機一行放不下「標籤＋五顆按鈕」，標籤自己一行、按鈕靠左排 */
+  .setupblock{padding:9px 10px 10px}
+  .setuprow{flex-direction:column;align-items:stretch;gap:6px;padding:7px 0}
+  .setuprow .chiprow{justify-content:flex-start}
+  .setupblock .pillbtn{min-width:44px;padding:8px 11px;font-size:.86rem}
 }
 
 /* 橫向且高度很矮（手機橫向）：把裝飾與留白壓到最低，先保住畫布與操作 */
