@@ -145,6 +145,16 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
   box-shadow:0 4px 0 rgba(74,59,85,.08);
 }
 .pillbtn[aria-checked=true]{border-color:var(--grape-d);background:var(--grape);box-shadow:0 4px 0 var(--grape-d)}
+
+/* 數字輸入欄：練習幾次／每次畫多久，數字範圍太大不適合排成一排選字鈕 */
+.numfield{display:flex;align-items:center;gap:8px}
+.numfield input[type=number]{
+  width:7em;min-height:48px;padding:10px 14px;font:inherit;font-weight:800;font-size:.95rem;
+  border:3px solid var(--ink);border-radius:16px;background:#fff;color:var(--ink);
+  outline:none;-moz-appearance:textfield;
+}
+.numfield input[type=number]:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
+.numfield-unit{font-weight:800;color:var(--grape-t)}
 .pillbtn:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
 
 /* ---------- 教學 ---------- */

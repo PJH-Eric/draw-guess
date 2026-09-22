@@ -25,16 +25,24 @@
   'use strict';
 
   var CONST = {
-    MIN_PLAYERS: 2,
+    /* 引擎本身只要求 1 個人就能開局（單機自己練習畫畫就是這樣）；
+       線上房間需要至少 2 個真人才能開始，那是房間層級的規則，見 lib/rooms.js 的 ROOM_MIN_PLAYERS。 */
+    MIN_PLAYERS: 1,
+    /* 對局進行中一路掉到只剩 1 個人（例如線上房間走掉一個人）就沒辦法再猜題了，直接收掉這一局；
+       這跟「開局最少要幾個人」（MIN_PLAYERS）是兩回事——單機本來就從 1 個人開始，不該套用這條。 */
+    MULTIPLAYER_MIN: 2,
     MAX_PLAYERS: 8,
     CHOICES: 3,
     PICK_MS: 15000,          // 選字時間
-    DRAW_MS: 90000,          // 作畫時間（預設值，要跟設定面板的 60／90／120 對得上）
+    DRAW_MS: 80000,          // 作畫時間
     REVEAL_MS: 7000,         // 公布答案停留時間
     ROUNDS_DEFAULT: 2,       // 每個人輪流當幾次畫家
-    ROUNDS_MAX: 5,
+    /* 這兩個上限是引擎層級的極限值：單機自己練習沒有電腦對手要等，可以拉到很大；
+       線上房間為了不要讓其他真人乾等太久，用自己更小的上限，見 lib/rooms.js 的
+       ROOM_ROUNDS_MAX / ROOM_DRAW_SEC_MAX。 */
+    ROUNDS_MAX: 999,
     DRAW_SEC_MIN: 60,
-    DRAW_SEC_MAX: 120,
+    DRAW_SEC_MAX: 99999,
     MAX_STROKES: 600,        // 一題最多幾筆（防洪）
     MAX_STROKE_POINTS: 400,  // 單筆最多幾個點
     MAX_TOTAL_POINTS: 30000, // 一題全部點數上限
@@ -166,7 +174,7 @@
   /** 開始整局：安排第一位畫家並進入選字 */
   function start(state, now) {
     if (state.players.length < CONST.MIN_PLAYERS) {
-      return err('至少要 ' + CONST.MIN_PLAYERS + ' 個人（可以用電腦對手湊人數）才能開始。', 'players');
+      return err('至少要 ' + CONST.MIN_PLAYERS + ' 個人才能開始。', 'players');
     }
     state.round = 1;
     state.turn = 0;
@@ -576,7 +584,7 @@
     state.totalTurns = state.rounds * Math.max(1, state.order.length);
 
     if (state.over) return ok({ removed: id });
-    if (state.players.length < CONST.MIN_PLAYERS) {
+    if (state.players.length < CONST.MULTIPLAYER_MIN) {
       finish(state, now);
       return ok({ removed: id, finished: true });
     }

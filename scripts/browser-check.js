@@ -362,7 +362,7 @@ async function main() {
 
   console.log('啟動無頭瀏覽器…');
   const browser = spawn(chrome, [
-    '--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
+    '--headless=new', '--disable-gpu', '--no-sandbox', '--disable-dev-shm-usage', '--no-first-run', '--no-default-browser-check',
     '--disable-extensions', '--mute-audio', '--autoplay-policy=no-user-gesture-required',
     '--remote-debugging-port=' + DEBUG_PORT, '--user-data-dir=' + PROFILE, 'about:blank'
   ], { stdio: 'ignore' });
@@ -455,12 +455,12 @@ async function main() {
     assertLayout('單機設定', v, info);
     await shot(v.name + '-4-單機設定');
 
-    /* 對局畫面 */
+    /* 對局畫面：單機沒有電腦對手了，練習次數／作畫秒數是數字輸入欄 */
     await cdp.eval(`
-      document.querySelector('#opt-ai .optcard[data-v=hard]').click();
-      document.querySelector('#opt-aicount .pillbtn').click();
-      document.querySelector('#opt-rounds .pillbtn').click();
-      document.querySelector('#opt-drawsec .pillbtn').click();
+      document.querySelector('#in-rounds').value = '2';
+      document.querySelector('#in-rounds').dispatchEvent(new Event('change'));
+      document.querySelector('#in-drawsec').value = '60';
+      document.querySelector('#in-drawsec').dispatchEvent(new Event('change'));
       window.__probe.click('#b-solo-start');
       return 1;
     `);
@@ -591,18 +591,17 @@ async function main() {
   await cdp.eval(`
     window.__probe.click('#b-tut-skip');
     window.__probe.click('#b-solo');
-    document.querySelector('#opt-ai .optcard[data-v=hard]').click();
-    document.querySelector('#opt-aicount .pillbtn[aria-checked]') ;
-    document.querySelectorAll('#opt-aicount .pillbtn')[0].click();
-    document.querySelectorAll('#opt-rounds .pillbtn')[0].click();
-    document.querySelectorAll('#opt-drawsec .pillbtn')[0].click();
+    document.querySelector('#in-rounds').value = '2';
+    document.querySelector('#in-rounds').dispatchEvent(new Event('change'));
+    document.querySelector('#in-drawsec').value = '60';
+    document.querySelector('#in-drawsec').dispatchEvent(new Event('change'));
     window.__probe.click('#b-solo-start');
     return 1;
   `);
   await cdp.waitFor('window.DrawGuessApp.mode === "solo"', 6000, '開始單機');
 
-  /* 等到輪到自己當畫家（電腦先畫的話就先看它畫） */
-  await cdp.waitFor('window.DrawGuessApp.view && window.DrawGuessApp.view.you.can.pick', 120000, '輪到自己選題');
+  /* 單機沒有電腦對手了，只有你自己，永遠輪到自己選題 */
+  await cdp.waitFor('window.DrawGuessApp.view && window.DrawGuessApp.view.you.can.pick', 6000, '輪到自己選題');
   let g = await cdp.json('window.__probe.game()');
   check('輪到自己時可以選題', g.canPick === true, JSON.stringify(g));
   check('選題時看得到三個候選', await cdp.eval('return document.querySelectorAll(".wordchoice").length === 3;'));
@@ -624,15 +623,24 @@ async function main() {
   check('提示區塊在畫布上方、沒有蓋住畫布', hd.bottom <= hd.boardTop + 1 && hd.left >= -1, JSON.stringify(hd));
   check('三張提示只有第一張能按', hd.btn1 === true && hd.btn2 === false, JSON.stringify(hd));
 
-  /* 「畫完了」只是通知，不會結束這一題；真的要結束是「跳過這題」 */
-  const beforeDone = await cdp.json('(function(){var g=window.DrawGuessApp.view.game;return {turnNo:g.turnNo,phase:g.phase};})()');
-  await cdp.eval('window.__probe.click("#b-done"); return 1;');
-  await sleep(400);
-  const afterDone = await cdp.json('(function(){var g=window.DrawGuessApp.view.game;var b=document.getElementById("b-done");return {turnNo:g.turnNo,phase:g.phase,label:b.textContent.trim(),disabled:b.disabled,skip:!!document.getElementById("b-skip")};})()');
-  check('按「畫完了」不會結束這一題',
-    afterDone.turnNo === beforeDone.turnNo && afterDone.phase === 'drawing', JSON.stringify(afterDone));
-  check('按過之後「畫完了」變成已通知', afterDone.disabled === true && afterDone.label.indexOf('已說') >= 0, JSON.stringify(afterDone));
-  check('「畫完了」下面有「跳過這題」', afterDone.skip === true);
+  /* 單機沒有電腦對手、只有你自己，「畫完了」沒有其他人可以通知，整顆鈕藏起來；
+     只留「跳過這題」，按下去會直接結束這一題並公布答案。 */
+  const doneBtn = await cdp.json('(function(){var b=document.getElementById("b-done");return {hidden:b.hidden};})()');
+  check('單機沒有「畫完了」鈕（藏起來）', doneBtn.hidden === true, JSON.stringify(doneBtn));
+
+  const beforeSkip = await cdp.json('(function(){var g=window.DrawGuessApp.view.game;return {turnNo:g.turnNo,phase:g.phase};})()');
+  await cdp.eval('window.__probe.click("#b-skip"); return 1;');
+  await sleep(300);
+  const afterSkip = await cdp.json('(function(){var g=window.DrawGuessApp.view.game;return {turnNo:g.turnNo,phase:g.phase};})()');
+  check('按「跳過這題」直接結束這一題並公布答案',
+    afterSkip.turnNo === beforeSkip.turnNo && afterSkip.phase === 'reveal', JSON.stringify(afterSkip));
+
+  /* 公布完會自動換下一題，回到 drawing 讓你繼續練習 */
+  await cdp.waitFor('window.DrawGuessApp.view.game.phase === "drawing" || window.DrawGuessApp.view.game.phase === "picking"', 10000, '換下一題');
+  if ((await cdp.json('window.DrawGuessApp.view.game.phase')) === 'picking') {
+    await cdp.eval('document.querySelectorAll(".wordchoice")[0].click(); return 1;');
+    await cdp.waitFor('window.DrawGuessApp.view.game.phase === "drawing"', 6000, '再次進入作畫');
+  }
 
   /* 上一頁要先問過：按了只開確認框，不會直接把人踢出對局 */
   await cdp.eval('window.__probe.click("#b-game-back"); return 1;');
@@ -697,56 +705,13 @@ async function main() {
   check('鍵盤快捷鍵可以換工具', await cdp.eval('return window.DrawGuessApp.paint.getTool() === "rect";'),
     await cdp.eval('return window.DrawGuessApp.paint.getTool();'));
 
-  /* 電腦會看著畫猜：把題目的配方照抄上去，看它會不會猜 */
-  await cdp.eval(`
-    var app = window.DrawGuessApp;
-    var st = app.solo.state;
-    var strokes = window.Words.strokesOf(st.wordId);
-    for (var i = 0; i < strokes.length; i++) {
-      var p = strokes[i].p.map(function (v) { return Math.round(v); });
-      var r = window.Rules.addStroke(st, 'me', { t: 'pen', c: 0, w: 1, p: p });
-      if (r.ok) app.paint.addStroke(r.stroke);
-    }
-    return st.strokes.length;
-  `);
-  await sleep(400);
-  const guessed = await cdp.waitFor(
-    'window.DrawGuessApp.solo.state.guessed.length > 0 || window.DrawGuessApp.solo.state.phase !== "drawing"',
-    45000, '電腦猜題').catch(() => false);
-  const afterAi = await cdp.json('window.__probe.game()');
-  check('照著配方畫出來時，困難電腦猜得到',
-    (await cdp.eval('return window.DrawGuessApp.solo.state.guessed.length;')) > 0 || afterAi.phase !== 'drawing',
-    JSON.stringify(afterAi));
-  check('猜題紀錄有內容', afterAi.feed > 0, afterAi.feed);
-  await shot('單機-電腦猜題');
-
-  /* 換到猜題者的回合 */
-  await cdp.waitFor('window.DrawGuessApp.view.you.can.guess || window.DrawGuessApp.view.game.over', 130000, '輪到自己猜');
-  const guessTurn = await cdp.json('window.__probe.game()');
-  if (guessTurn.canGuess) {
-    const s2 = await cdp.json('window.__probe.stage()');
-    check('猜題者看到猜題框、看不到工具列', s2.guessbarShown === true && s2.toolbarShown === false, JSON.stringify(s2));
-    check('猜題者看不到答案', guessTurn.answer === null, guessTurn.answer);
-    check('遮罩要嘛還沒出現、要嘛是底線', !guessTurn.mask || /＿/.test(guessTurn.mask), guessTurn.mask);
-
-    /* 猜題框固定在遊戲主畫面正下方左右滿版，而且不壓到畫布 */
-    const gb = await cdp.json('(function(){var b=document.getElementById("guessbar").getBoundingClientRect();var m=document.querySelector(".game-main").getBoundingClientRect();var c=document.getElementById("board").getBoundingClientRect();return {left:Math.round(b.left),right:Math.round(b.right),mainLeft:Math.round(m.left),mainRight:Math.round(m.right),vh:window.innerHeight,bottom:Math.round(b.bottom),top:Math.round(b.top),canvasBottom:Math.round(c.bottom),w:Math.round(b.width)};})()');
-    check('猜題框填滿遊戲主畫面', Math.abs(gb.left - gb.mainLeft) <= 1 && Math.abs(gb.right - gb.mainRight) <= 1, JSON.stringify(gb));
-    check('猜題框貼齊畫面底部', gb.vh - gb.bottom <= 24 && gb.vh - gb.bottom >= 0, JSON.stringify(gb));
-    check('猜題框沒有壓到畫布', gb.top >= gb.canvasBottom - 1, JSON.stringify(gb));
-    const feedBefore = guessTurn.feed;
-    await cdp.eval('var i=document.getElementById("guess-input"); i.value="一定不是這個"; document.getElementById("guessbar").dispatchEvent(new Event("submit",{cancelable:true})); return 1;');
-    await sleep(400);
-    check('猜錯會進猜題紀錄', (await cdp.json('window.__probe.game()')).feed > feedBefore);
-    /* 用正確答案猜（從完整狀態拿，這是測試才做得到的事） */
-    await cdp.eval('var a=window.Rules.word(window.DrawGuessApp.solo.state).text; var i=document.getElementById("guess-input"); i.value=a; document.getElementById("guessbar").dispatchEvent(new Event("submit",{cancelable:true})); return 1;');
-    await sleep(500);
-    check('猜對會加分', (await cdp.eval('return window.Rules.player(window.DrawGuessApp.solo.state,"me").score;')) > 0,
-      await cdp.eval('return window.Rules.player(window.DrawGuessApp.solo.state,"me").score;'));
-    await shot('單機-猜對');
-  } else {
-    check('輪到自己猜（這一局已結束，略過）', true);
-  }
+  /* 沒有電腦對手了：drawer 永遠是自己一個人，不會有「輪到自己猜」這種事，
+     猜題框在單機應該完全不會出現。 */
+  const soloGame = await cdp.json('window.__probe.game()');
+  check('單機沒有猜題者，canGuess 永遠是 false', soloGame.canGuess === false, JSON.stringify(soloGame));
+  const soloStage = await cdp.json('window.__probe.stage()');
+  check('單機看不到猜題框', soloStage.guessbarShown === false, JSON.stringify(soloStage));
+  await shot('單機-作畫中沒有猜題框');
 
   /* 跑到結算 */
   await cdp.eval(`

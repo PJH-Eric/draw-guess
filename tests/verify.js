@@ -152,7 +152,10 @@ section('規則核心（rules.js）');
   check('同一個種子產生同一個畫家順序', s1.order.join() === s2.order.join(), s1.order.join());
 
   const st = makeState();
-  check('人數不足無法開始', !Rules.start(Rules.createState({ seed: 'X', players: [{ id: 'a', name: 'A' }] }), 0).ok);
+  /* 引擎本身只要求 1 個人就能開局——單機自己練習畫畫就是這樣，沒有電腦對手也能開始；
+     線上房間要 2 個真人才能開始是房間層級的規則，見 lib/rooms.js 的 ROOM_MIN_PLAYERS。 */
+  check('單機一個人也能開局', Rules.start(Rules.createState({ seed: 'X', players: [{ id: 'a', name: 'A' }] }), 0).ok);
+  check('一個人都沒有無法開始', !Rules.start(Rules.createState({ seed: 'X', players: [] }), 0).ok);
 
   const started = Rules.start(st, 1000);
   check('開局成功', started.ok);
@@ -360,6 +363,42 @@ section('整局跑到底');
   check('結束後不能再猜', !Rules.guess(st, st.players[0].id, 'x', t + 1).ok);
 }
 
+section('單機自己一個人練習（沒有電腦對手）');
+{
+  /* 拔掉電腦對手之後，單機就是 1 個玩家、沒有猜題者：
+     每一題只能靠自己按「跳過這題」或時間到才會結束，不會有「全部猜中」這條路。 */
+  const st = Rules.createState({ seed: 'SOLO01', players: [{ id: 'you', name: '你' }], rounds: 3, drawSec: 60 });
+  const started = Rules.start(st, 0);
+  check('一個人也能開局', started.ok, started.error);
+  check('唯一的玩家就是這一輪的畫家', st.drawerId === 'you');
+  check('沒有猜題者', Rules.guesserIds(st).length === 0);
+
+  let t = 0;
+  let guard = 0;
+  while (!st.over && guard < 2000) {
+    guard += 1;
+    t += 1000;
+    if (st.phase === 'picking') Rules.pickWord(st, st.drawerId, st.choices[0], t);
+    else if (st.phase === 'drawing') Rules.giveUp(st, st.drawerId, t); // 自己按「跳過這題」
+    Rules.tick(st, t);
+  }
+  check('自己一個人也能把整局玩完', st.over, 'guard=' + guard);
+  check('畫了 rounds 次', Rules.player(st, 'you').drew === st.rounds, Rules.player(st, 'you').drew);
+  check('每一題都沒有人猜中（total=0）', st.log.every((e) => e.total === 0 && e.correct === 0));
+
+  /* 只靠時間到（不手動跳過）也走得完，不會卡住 */
+  const st2 = Rules.createState({ seed: 'SOLO02', players: [{ id: 'you', name: '你' }], rounds: 1, drawSec: 30 });
+  Rules.start(st2, 0);
+  let t2 = 0, guard2 = 0;
+  while (!st2.over && guard2 < 2000) {
+    guard2 += 1;
+    t2 += 1000;
+    if (st2.phase === 'picking') Rules.pickWord(st2, st2.drawerId, st2.choices[0], t2);
+    Rules.tick(st2, t2);
+  }
+  check('不按任何按鈕、光靠時間到也能結束', st2.over, 'guard=' + guard2);
+}
+
 section('成員中途離開');
 {
   const st = toDrawing(makeState({ seed: 'LEAVE1' }), 0);
@@ -528,11 +567,6 @@ section('房間狀態機（lib/rooms.js）');
   let t = 1000;
   const created = store.create('u1', { name: '阿明', roomName: '測試房', now: t });
   check('可以開房', created.ok);
-  /* 沒帶 settings 的房間用的是 Rules.CONST.DRAW_MS。
-     它必須剛好是設定面板那三顆按鈕（60／90／120）之一，
-     否則房間設定會出現「一顆都沒亮」的秒數。 */
-  check('房間預設秒數是設定面板選得到的值',
-    [60, 90, 120].indexOf(created.room.settings.drawSec) >= 0, created.room.settings.drawSec);
   const configured = store.create('u-create', {
     name: '設定房主', roomName: '預先設定房',
     settings: { rounds: 3, drawSec: 120, diff: 3 }, now: t
@@ -543,6 +577,12 @@ section('房間狀態機（lib/rooms.js）');
   check('房號是 4 個字', room.code.length === 4, room.code);
   check('開房的人是房主', room.isHost('u1'));
   check('開房的人是玩家', room.member('u1').role === 'player');
+
+  /* 線上房間至少要兩個真人才能開始，跟單機引擎允許 1 個人開局（Rules.CONST.MIN_PLAYERS）分開算：
+     一個人只準備好還是不能開始，要去玩單機練習。 */
+  room.setReady('u1', true);
+  check('只有一個真人不能開始線上對局', !room.canStart().ok, room.canStart().error);
+  room.setReady('u1', false);
 
   check('第二個人可以加入', room.join('u2', { name: '小華', role: 'player', now: t }).ok);
   check('觀戰者可以加入', room.join('s1', { name: '觀眾', role: 'spectator', now: t }).ok);

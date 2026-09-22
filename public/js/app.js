@@ -307,9 +307,9 @@
       '<p>右邊還有<b>復原</b>、<b>重做</b>、<b>全部清除</b>。顏色和粗細在工具列上直接點選；矩形和橢圓可以勾「填滿」畫成實心。</p>' },
     { h: '當畫家：不能做的事', b:
       '<p>這個遊戲刻意<b>沒有文字工具，也沒有聊天室</b>——畫家沒有任何可以打字的地方，所以不可能把答案寫出來。</p>' +
-      '<p>畫好了按<b>「畫完了」</b>——那只是告訴大家可以猜了，這一題還會繼續，你也還能補幾筆。</p>' +
-      '<p>只能用線條和顏色表達。真的畫不出來就按「畫完了」下面的<b>「跳過這題」</b>（或右上角 🎮 的「跳過這一題」），會直接公布答案。</p>' +
-      '<p>畫得越多人猜中，你這一題拿的分數越高；全部人都猜中還有額外加分。</p>' },
+      '<p>線上房間裡，畫好了按<b>「畫完了」</b>——那只是告訴大家可以猜了，這一題還會繼續，你也還能補幾筆。（單機自己練習只有你一個人，沒有其他人要通知，看不到這顆鈕。）</p>' +
+      '<p>只能用線條和顏色表達。真的畫不出來就按<b>「跳過這題」</b>（或右上角 🎮 的「跳過這一題」），會直接公布答案、換下一題。</p>' +
+      '<p>線上房間裡，畫得越多人猜中，你這一題拿的分數越高；全部人都猜中還有額外加分。</p>' },
     { h: '當猜題者：把答案打進去', b:
       '<p>輪到別人畫的時候，畫布下方會出現猜題框。想到什麼就直接打進去按「猜！」，答錯不扣分，可以一直猜。</p>' +
       '<p>三種回應：</p>' +
@@ -327,11 +327,10 @@
       '<li>時間過了一半之後，系統會陸續<b>翻開</b>其中幾個字，但最後一個字永遠不會翻開。</li>' +
       '</ul>' +
       '<p>右上角的倒數就是這一題剩下的時間。時間到、或所有人都猜中了，這一題就結束並公布答案。</p>' },
-    { h: '電腦對手在做什麼（只有單機）', b:
-      '<p>電腦對手只出現在<b>單機練習</b>裡，線上房間一律是真人。</p>' +
-      '<p>電腦當畫家時，它會照著內建的形狀一筆一筆畫給你猜；<b>簡單</b>的手很抖、會漏掉細節、畫得慢，<b>困難</b>的又快又完整。</p>' +
-      '<p>電腦當猜題者時，它看到的東西跟你完全一樣：畫布上的線、分類、字數、已經翻開的字。它<b>拿不到答案</b>，是真的在比對形狀來猜，所以也常常猜錯。</p>' +
-      '<p>難度只影響它反應多快、猜幾次、以及要不要用字數和已翻開的字來縮小範圍——不會偷看，也不會偷改分數。</p>' },
+    { h: '單機自己練習', b:
+      '<p>單機練習就你自己一個人，沒有電腦對手、也不計分，單純練習下筆用的。</p>' +
+      '<p>挑一個題目開始畫，畫完（或不想畫了）按「跳過這題」就換下一題，想練幾次、每次想畫多久都能自己調整。</p>' +
+      '<p>因為只有你自己，猜題、提示、分數這些跟別人比賽的東西在單機裡都用不到，重點是練習下筆。</p>' },
     { h: '線上一起玩', b:
       '<p>在主選單按「線上對戰」可以開房間或用房號加入，2 到 8 個人都行（線上只有真人，沒有電腦對手）。</p>' +
       '<p>房主可以在對局設定裡產生<b>邀請連結</b>，對方開啟後會先停在大廳確認暱稱，按下按鈕才會真的進房。</p>' +
@@ -361,8 +360,6 @@
     $('b-tut-skip').addEventListener('click', function () { Store.tutorialDone(true); show('s-home'); });
     $('b-tut-practice').addEventListener('click', function () {
       Store.tutorialDone(true);
-      Store.aiLevel('easy');
-      Store.aiCount(1);
       startSolo();
     });
   }
@@ -409,28 +406,27 @@
     });
   }
 
-  function setupSoloScreen() {
-    var cards = $('opt-ai').querySelectorAll('.optcard');
-    for (var i = 0; i < cards.length; i++) {
-      (function (card) {
-        card.setAttribute('aria-checked', String(Store.aiLevel() === card.getAttribute('data-v')));
-        card.addEventListener('click', function () {
-          Store.aiLevel(card.getAttribute('data-v'));
-          Sound.play('click');
-          for (var j = 0; j < cards.length; j++) cards[j].setAttribute('aria-checked', String(cards[j] === card));
-        });
-      }(cards[i]));
-    }
+  /** 數字輸入欄：夾在 min/max 之間，失焦或改變時存檔 */
+  function buildNumberField(inputId, min, max, getter, setter) {
+    var input = $(inputId);
+    if (!input) return;
+    input.min = String(min);
+    input.max = String(max);
+    input.value = String(getter());
+    var commit = function () {
+      var n = Math.round(Number(input.value));
+      if (!isFinite(n)) n = getter();
+      n = Math.max(min, Math.min(max, n));
+      input.value = String(n);
+      setter(n);
+    };
+    input.addEventListener('change', function () { commit(); Sound.play('click'); });
+    input.addEventListener('blur', commit);
+  }
 
-    buildChips('opt-aicount',
-      [1, 2, 3, 4, 5].map(function (n) { return { value: n, label: n + ' 位' }; }),
-      Store.aiCount, Store.aiCount);
-    buildChips('opt-rounds',
-      [1, 2, 3].map(function (n) { return { value: n, label: n + ' 次' }; }),
-      Store.rounds, Store.rounds);
-    buildChips('opt-drawsec',
-      [60, 90, 120].map(function (n) { return { value: n, label: n + ' 秒' }; }),
-      Store.drawSec, Store.drawSec);
+  function setupSoloScreen() {
+    buildNumberField('in-rounds', 1, Rules.CONST.ROUNDS_MAX, Store.rounds, Store.rounds);
+    buildNumberField('in-drawsec', Rules.CONST.DRAW_SEC_MIN, Rules.CONST.DRAW_SEC_MAX, Store.drawSec, Store.drawSec);
     buildChips('opt-worddiff', [
       { value: 0, label: '混合' }, { value: 1, label: '簡單' },
       { value: 2, label: '普通' }, { value: 3, label: '困難' }
@@ -440,16 +436,11 @@
   }
 
   /* ================================================================
-     單機引擎：自己持有完整狀態，用同一份 Rules + AI 推進
+     單機引擎：自己持有完整狀態，就你一個人，單純練習作畫用的
      ================================================================ */
 
   function startSolo() {
-    var level = Store.aiLevel();
-    var count = Store.aiCount();
     var players = [{ id: ME, name: '你', ai: null }];
-    for (var i = 1; i <= count; i++) {
-      players.push({ id: 'ai' + i, name: '電腦' + i + '號（' + AI.levelOf(level).label + '）', ai: level });
-    }
     var seed = RNG.randomSeed(null, 6);
     var state = Rules.createState({
       seed: seed,
@@ -462,7 +453,7 @@
     if (!r.ok) { toast(r.error, 'error'); return; }
 
     app.mode = 'solo';
-    app.solo = { state: state, director: AI.createDirector(), seed: seed, level: level };
+    app.solo = { state: state, seed: seed };
     app.roomCode = null;
     app.feed = [];
     app.feedSeen = {};
@@ -472,7 +463,7 @@
     app.lastPhase = '';
     app.lastMask = '';
     app.lastGuessedCount = 0;
-    pushFeed({ kind: 'system', from: '系統', text: '單機練習開始，每人畫 ' + state.rounds + ' 次。', at: Date.now() });
+    pushFeed({ kind: 'system', from: '系統', text: '練習開始，畫 ' + state.rounds + ' 次。', at: Date.now() });
 
     show('s-game');
     ensurePaint();
@@ -529,37 +520,10 @@
     }
     var now = Date.now();
 
+    /* 沒有電腦對手了：這裡只需要推進時間（選字逾時、作畫逾時、公布完換下一題），
+       畫布跟猜題都是你自己在操作，走各自的按鈕處理函式就好。 */
     var t = Rules.tick(st, now);
     handleGameEvents(t.events);
-
-    AI.drive(app.solo.director, st, now, app.solo.seed, {
-      pick: function (aiId, wordId) { Rules.pickWord(st, aiId, wordId, now); },
-      hint: function (aiId) {
-        var r = Rules.giveHint(st, aiId, now);
-        if (!r.ok) return;
-        pushFeed({ kind: 'system', from: '系統', text: hintFeedText(r), at: now });
-        Sound.play('hint');
-      },
-      stroke: function (aiId, stroke) {
-        var r = Rules.addStroke(st, aiId, stroke);
-        if (r.ok) { app.paint.addStroke(r.stroke); Sound.playPen(); }
-      },
-      guess: function (aiId, text) {
-        var p = Rules.player(st, aiId);
-        var g = Rules.guess(st, aiId, text, now);
-        if (!g.ok) return;
-        if (g.verdict === 'hit') {
-          pushFeed({ kind: 'correct', from: '系統', text: (p ? p.name : '電腦') + ' 猜對了！（第 ' + g.order + ' 個，+' + g.points + ' 分）', at: now });
-          Sound.play('correct');
-        } else if (g.verdict !== 'close') {
-          pushFeed({ kind: 'guess', from: p ? p.name : '電腦', fromId: aiId, role: 'ai', text: text, at: now });
-          Sound.playChat();
-        }
-      }
-    });
-
-    var t2 = Rules.tick(st, now);
-    handleGameEvents(t2.events);
     soloRefresh();
   }
 
@@ -579,7 +543,12 @@
         pushFeed({ kind: 'system', from: '系統', text: hintFeedText(ev), at: Date.now() });
         Sound.play('hint');
       } else if (ev.type === 'turnend') {
-        pushFeed({ kind: 'system', from: '系統', text: '答案是「' + ev.entry.word + '」，' + ev.entry.correct + '/' + ev.entry.total + ' 人猜中。', at: Date.now() });
+        /* 單機自己練習沒有其他人猜題，total 會是 0——這時候不要顯示「0/0 人猜中」，
+           畫完（或跳過）就直接換下一題。 */
+        var turnendText = ev.entry.total > 0
+          ? '答案是「' + ev.entry.word + '」，' + ev.entry.correct + '/' + ev.entry.total + ' 人猜中。'
+          : '答案是「' + ev.entry.word + '」，換下一題。';
+        pushFeed({ kind: 'system', from: '系統', text: turnendText, at: Date.now() });
         Sound.play(ev.entry.correct > 0 ? 'turn' : 'timeup');
         if (app.paint) { app.paint.clearRedo(); }
       } else if (ev.type === 'turnstart') {
@@ -851,9 +820,18 @@
     if (!done || !skip) return;
     var v = app.view, g = v && v.game;
     var drawing = !!(g && g.phase === 'drawing' && g.you.isDrawer);
-    var told = app.mode === 'solo'
-      ? !!(g && app.doneTurn === g.turnNo)
-      : !!(v && v.room && v.room.drawerDone);
+    /* 單機自己練習只有你一個人，沒有其他人可以通知，「畫完了」這顆鈕整個用不到，
+       直接藏起來，只留下「跳過這題」換下一題。 */
+    if (app.mode === 'solo') {
+      done.hidden = true;
+      skip.disabled = !drawing;
+      return;
+    }
+    /* 線上房間：伺服器說「已經說過畫完了」就算數，但也把本機按過的記下來（app.doneTurn）。
+       這一題只要本機記得按過，就算中途有別的事件（例如別人剛好猜對）先帶回一份
+       還沒吃到這次點擊的舊投影，也不會把鎖住的按鈕誤判成又能按。 */
+    var told = !!((v && v.room && v.room.drawerDone) || (g && app.doneTurn === g.turnNo));
+    done.hidden = false;
     done.disabled = !drawing || told;
     var lbl = done.querySelector('.b3-lbl') || done;
     lbl.textContent = told ? '已說畫完了' : '畫完了';
@@ -947,27 +925,21 @@
    * 時間照跑，畫家還可以繼續補筆畫。真的要結束是「跳過這題」。
    */
   function doDone() {
-    if (app.mode === 'solo') {
-      var g = app.solo && app.solo.state;
-      if (!g || g.phase !== 'drawing' || g.drawerId !== ME) return;
-      if (app.doneTurn === g.turnNo) return;
-      app.doneTurn = g.turnNo;
-      pushFeed({ kind: 'system', from: '系統', text: '🎨 你說畫完了，電腦開始認真猜。', at: Date.now() });
-      toolHint('已經告訴大家你畫完了，這一題還會繼續。', 'ok');
-      syncToolbar();
-      return;
-    }
+    /* 單機自己練習沒有其他人可以通知，這顆鈕在單機一律藏起來（見 syncDoneButtons），
+       按鈕不存在自然點不到，這裡留一個保險：真的被呼叫到也什麼都不做。 */
+    if (app.mode === 'solo') return;
     /* 線上房間要等伺服器廣播回來才會真的知道「已經說過畫完了」，
-       網路慢一點的話這個來回可能有感——按下去先就地鎖住按鈕，
-       之後 room:sync 回來時 syncDoneButtons() 一樣會用伺服器的說法覆蓋一次，
-       所以就算剛好卡在題目換人那個瞬間，畫面也會被自動修正回來。 */
-    var btn = $('b-done');
-    if (btn) {
-      if (btn.disabled) return;
-      btn.disabled = true;
-      var lbl = btn.querySelector('.b3-lbl') || btn;
-      lbl.textContent = '已說畫完了';
-    }
+       網路慢一點的話這個來回可能有感——所以跟單機一樣，先把這一題記在本機的 app.doneTurn，
+       按下去立刻鎖住按鈕，不用等伺服器回覆。
+       這個本機記憶還有另一個用處：送出去、還沒收到伺服器回音之前，
+       如果剛好有別人猜對之類的動作帶回一份還沒反映這次點擊的舊投影，
+       單靠伺服器投影判斷會誤把鎖住的按鈕解鎖；有本機記著這一題已經按過，
+       syncDoneButtons() 才不會被那種「過期」的投影騙回去。
+       等真正的 room:sync 回來，v.room.drawerDone 會補上正確答案，兩邊短路後結果一樣。 */
+    var g2 = app.view && app.view.game;
+    if (g2 && app.doneTurn === g2.turnNo) return;
+    if (g2) app.doneTurn = g2.turnNo;
+    syncDoneButtons();
     w.Online.send('room:done', {});
   }
 
@@ -1026,13 +998,11 @@
 
   var PHASE_LABEL = { picking: '選題目', drawing: '作畫中', reveal: '公布答案', over: '結算' };
 
-  /* 線上房間對局中可以一直有人中途加入，順位最後一位會一直往後移，
-     所以「總題數」在結束前其實還會變，顯示出來反而是誤導：
-     對局進行中只顯示目前第幾題，結束後才回頭顯示最終總題數。
-     單機沒有中途加入這回事，兩個數字一路都可以放心顯示。 */
-  function turnLabel(g, slash) {
-    if (app.mode === 'online' && g.phase !== 'over') return '第 ' + g.turnNo + ' 題';
-    return '第 ' + g.turnNo + slash + g.totalTurns + ' 題';
+  /* 只顯示目前第幾題，不顯示「/ 總題數」：
+     線上房間對局中可以一直有人中途加入，總題數在結束前其實還會變，
+     顯示分母反而是誤導；單機沒有這回事，但兩邊乾脆都只看目前題號就好，簡單清楚。 */
+  function turnLabel(g) {
+    return '第 ' + g.turnNo + ' 題';
   }
 
   function render() {
@@ -1053,7 +1023,7 @@
       phaseChip.textContent = PHASE_LABEL[g.phase] || g.phase;
       phaseChip.setAttribute('data-p', g.phase);
     }
-    $('round-chip').textContent = g ? turnLabel(g, ' / ') : '尚未開始';
+    $('round-chip').textContent = g ? turnLabel(g) : '尚未開始';
 
     updateTimers();
 
@@ -1076,7 +1046,7 @@
       if (h.lenShown) meta.push(h.len + ' 個字');
       if (!mine && !h.lenShown && !h.catShown) meta.push('畫家還沒給提示');
       if (!mine && h.revealed) meta.push('翻開了 1 個字');
-      meta.push(turnLabel(g, '/'));
+      meta.push(turnLabel(g));
       $('wordbar-meta').textContent = meta.join('・');
     } else {
       wb.hidden = false;
@@ -1084,7 +1054,7 @@
       $('wordbar-label').textContent = '題目';
       $('wordbar-mask').textContent = '—';
       $('wordbar-meta').textContent = (g.phase === 'picking' ? '畫家正在挑題目…' : '等待開始') +
-        '・' + turnLabel(g, '/');
+        '・' + turnLabel(g);
     }
 
     renderPlayers();
@@ -1368,10 +1338,13 @@
         '<span class="rname">' + esc(last.drawerName) + '（畫家）</span>' +
         '<span class="rpts">+' + last.drawerPoints + '</span></li>';
     }
+    /* 單機自己練習沒有其他人猜題（total===0），不顯示「0 / 0 人猜中」；
+       換下一位畫家的措辭在單機也怪（永遠是同一個你），改成「換下一題」。 */
+    var subline = last ? (last.total > 0 ? (last.correct + ' / ' + last.total + ' 人猜中') : '練習完成') : '';
     return '<h3>答案是</h3><div class="revealword">' + esc(g.answer || (last ? last.word : '—')) + '</div>' +
-      '<p>' + (last ? last.correct + ' / ' + last.total + ' 人猜中' : '') + '</p>' +
+      '<p>' + subline + '</p>' +
       '<ul class="resultlist">' + (rows || '<li><span class="rname">這一題沒有人猜中</span></li>') + '</ul>' +
-      '<p>馬上換下一位畫家…</p>';
+      '<p>' + (app.mode === 'solo' ? '馬上出下一題…' : '馬上換下一位畫家…') + '</p>';
   }
 
   function overHtml(v, g) {
@@ -1709,6 +1682,7 @@
     app.inviteToken = null;
     app.inviteUrl = '';
     app.lastOverlayHtml = null;
+    app.doneTurn = -1;
     show('s-game');
     ensurePaint();
     app.paint.clearLocal();
@@ -1843,11 +1817,12 @@
       app.view = v;
       app.roomCode = v.room.code;
 
-      /* 換題／換階段：清畫布、播音效 */
+      /* 換題／換階段：清畫布、播音效、重置「畫完了」的本機記憶 */
       var key = v.game ? (v.game.turnNo + ':' + v.game.phase) : (v.room.phase);
       if (v.game && prev && prev.game && prev.game.turnNo !== v.game.turnNo) {
         app.paint.clearLocal();
         app.paint.clearRedo();
+        app.doneTurn = -1;
       }
       if (key !== app.lastTurnKey) {
         app.lastTurnKey = key;

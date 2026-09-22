@@ -9,8 +9,6 @@
     nick: 'dg_nick',
     clientId: 'dg_client',
     tutorialDone: 'dg_tutorial',
-    aiLevel: 'dg_ai_level',
-    aiCount: 'dg_ai_count',
     rounds: 'dg_rounds',
     drawSec: 'dg_draw_sec',
     diff: 'dg_diff',
@@ -107,10 +105,10 @@
     nick: function (v) { if (v === undefined) return get(KEY.nick, ''); set(KEY.nick, v); return v; },
     randomNick: randomNick,
     ensureNick: ensureNick,
-    aiLevel: function (v) { if (v === undefined) return get(KEY.aiLevel, 'normal'); set(KEY.aiLevel, v); return v; },
-    aiCount: function (v) { if (v === undefined) return getInt(KEY.aiCount, 2, 1, 7); set(KEY.aiCount, v); return v; },
-    rounds: function (v) { if (v === undefined) return getInt(KEY.rounds, 2, 1, 5); set(KEY.rounds, v); return v; },
-    drawSec: function (v) { if (v === undefined) return getInt(KEY.drawSec, 90, 60, 120); set(KEY.drawSec, v); return v; },
+    /* 單機自己練習沒有電腦對手了，練習次數跟每次畫多久可以調得很大（999 次 / 99999 秒），
+       跟 public/js/rules.js 的 CONST.ROUNDS_MAX / DRAW_SEC_MAX 對齊。 */
+    rounds: function (v) { if (v === undefined) return getInt(KEY.rounds, 2, 1, 999); set(KEY.rounds, v); return v; },
+    drawSec: function (v) { if (v === undefined) return getInt(KEY.drawSec, 90, 60, 99999); set(KEY.drawSec, v); return v; },
     diff: function (v) { if (v === undefined) return getInt(KEY.diff, 0, 0, 3); set(KEY.diff, v); return v; },
     tutorialDone: function (v) { if (v === undefined) return getFlag(KEY.tutorialDone, false); setFlag(KEY.tutorialDone, v); return v; },
     reduceMotion: function (v) { if (v === undefined) return getFlag(KEY.reduceMotion, false); setFlag(KEY.reduceMotion, v); return v; },
