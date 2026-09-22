@@ -9,8 +9,6 @@
     nick: 'dg_nick',
     clientId: 'dg_client',
     tutorialDone: 'dg_tutorial',
-    rounds: 'dg_rounds',
-    drawSec: 'dg_draw_sec',
     diff: 'dg_diff',
     stats: 'dg_stats',
     reduceMotion: 'dg_reduce_motion',
@@ -105,10 +103,8 @@
     nick: function (v) { if (v === undefined) return get(KEY.nick, ''); set(KEY.nick, v); return v; },
     randomNick: randomNick,
     ensureNick: ensureNick,
-    /* 單機自己練習沒有電腦對手了，練習次數跟每次畫多久可以調得很大（999 次 / 99999 秒），
-       跟 public/js/rules.js 的 CONST.ROUNDS_MAX / DRAW_SEC_MAX 對齊。 */
-    rounds: function (v) { if (v === undefined) return getInt(KEY.rounds, 2, 1, 999); set(KEY.rounds, v); return v; },
-    drawSec: function (v) { if (v === undefined) return getInt(KEY.drawSec, 90, 60, 99999); set(KEY.drawSec, v); return v; },
+    /* 單機練習不設限（次數與秒數都吃引擎上限，見 app.js 的 startSolo），
+       線上房間的規則存在伺服器上，所以這裡不再需要記練習次數與每題秒數。 */
     diff: function (v) { if (v === undefined) return getInt(KEY.diff, 0, 0, 3); set(KEY.diff, v); return v; },
     tutorialDone: function (v) { if (v === undefined) return getFlag(KEY.tutorialDone, false); setFlag(KEY.tutorialDone, v); return v; },
     reduceMotion: function (v) { if (v === undefined) return getFlag(KEY.reduceMotion, false); setFlag(KEY.reduceMotion, v); return v; },

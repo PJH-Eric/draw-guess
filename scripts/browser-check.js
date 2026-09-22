@@ -455,12 +455,8 @@ async function main() {
     assertLayout('單機設定', v, info);
     await shot(v.name + '-4-單機設定');
 
-    /* 對局畫面：單機沒有電腦對手了，練習次數／作畫秒數是數字輸入欄 */
+    /* 對局畫面：單機沒有電腦對手了，練幾次、畫多久都不用設定，直接開始 */
     await cdp.eval(`
-      document.querySelector('#in-rounds').value = '2';
-      document.querySelector('#in-rounds').dispatchEvent(new Event('change'));
-      document.querySelector('#in-drawsec').value = '60';
-      document.querySelector('#in-drawsec').dispatchEvent(new Event('change'));
       window.__probe.click('#b-solo-start');
       return 1;
     `);
@@ -591,10 +587,6 @@ async function main() {
   await cdp.eval(`
     window.__probe.click('#b-tut-skip');
     window.__probe.click('#b-solo');
-    document.querySelector('#in-rounds').value = '2';
-    document.querySelector('#in-rounds').dispatchEvent(new Event('change'));
-    document.querySelector('#in-drawsec').value = '60';
-    document.querySelector('#in-drawsec').dispatchEvent(new Event('change'));
     window.__probe.click('#b-solo-start');
     return 1;
   `);
@@ -713,9 +705,12 @@ async function main() {
   check('單機看不到猜題框', soloStage.guessbarShown === false, JSON.stringify(soloStage));
   await shot('單機-作畫中沒有猜題框');
 
-  /* 跑到結算 */
+  /* 跑到結算：單機預設就是給到上限的練習次數（不用設定、想練多久都可以），
+     測試沒必要真的跑 999 輪，直接把這一局的輪數壓低，確定「跑到結束」這條路沒壞掉就好。 */
   await cdp.eval(`
     var st = window.DrawGuessApp.solo.state;
+    st.rounds = 1;
+    st.totalTurns = st.rounds * st.order.length;
     var guard = 0;
     while (!st.over && guard < 200) {
       guard++;

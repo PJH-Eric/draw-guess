@@ -406,27 +406,8 @@
     });
   }
 
-  /** 數字輸入欄：夾在 min/max 之間，失焦或改變時存檔 */
-  function buildNumberField(inputId, min, max, getter, setter) {
-    var input = $(inputId);
-    if (!input) return;
-    input.min = String(min);
-    input.max = String(max);
-    input.value = String(getter());
-    var commit = function () {
-      var n = Math.round(Number(input.value));
-      if (!isFinite(n)) n = getter();
-      n = Math.max(min, Math.min(max, n));
-      input.value = String(n);
-      setter(n);
-    };
-    input.addEventListener('change', function () { commit(); Sound.play('click'); });
-    input.addEventListener('blur', commit);
-  }
-
   function setupSoloScreen() {
-    buildNumberField('in-rounds', 1, Rules.CONST.ROUNDS_MAX, Store.rounds, Store.rounds);
-    buildNumberField('in-drawsec', Rules.CONST.DRAW_SEC_MIN, Rules.CONST.DRAW_SEC_MAX, Store.drawSec, Store.drawSec);
+    /* 單機只剩「題目難度」要選：練幾次、每題畫多久都不設限（見 startSolo） */
     buildChips('opt-worddiff', [
       { value: 0, label: '混合' }, { value: 1, label: '簡單' },
       { value: 2, label: '普通' }, { value: 3, label: '困難' }
@@ -442,11 +423,14 @@
   function startSolo() {
     var players = [{ id: ME, name: '你', ai: null }];
     var seed = RNG.randomSeed(null, 6);
+    /* 單機練習不設限：沒有別人在等，所以直接把引擎上限吃滿 ——
+       練幾次、每題畫多久都不用先決定，練夠了直接離開就好。
+       （引擎需要一個有限數字才跑得動，所以用 CONST 的極限值當「不設限」。） */
     var state = Rules.createState({
       seed: seed,
       players: players,
-      rounds: Store.rounds(),
-      drawSec: Store.drawSec(),
+      rounds: Rules.CONST.ROUNDS_MAX,
+      drawSec: Rules.CONST.DRAW_SEC_MAX,
       diff: Store.diff()
     });
     var r = Rules.start(state, Date.now());
@@ -463,7 +447,8 @@
     app.lastPhase = '';
     app.lastMask = '';
     app.lastGuessedCount = 0;
-    pushFeed({ kind: 'system', from: '系統', text: '練習開始，畫 ' + state.rounds + ' 次。', at: Date.now() });
+    /* 不設限＝上限吃滿，寫出「畫 999 次」只會讓人困惑，直接講怎麼換題 */
+    pushFeed({ kind: 'system', from: '系統', text: '練習開始，想畫幾題就畫幾題，按「跳過這題」換下一題。', at: Date.now() });
 
     show('s-game');
     ensurePaint();
@@ -1070,6 +1055,18 @@
     var g = v.game;
     var chip = $('timer-chip');
     if (g.phase === 'over' || !g.deadline || (v.room && v.room.closed)) { chip.hidden = true; return; }
+    /* 單機作畫不設限（上限 99999 秒）：寫「99999 秒」只會讓人以為壞了，
+       但整顆藏起來會讓抬頭少一列的高度，右側工具列跟著上移鑽到設定鈕底下，
+       所以維持同一顆 chip，只把數字換成「不限時」。
+       選題那 15 秒是真的會逾時自動挑第一個，那個照常倒數。 */
+    if (app.mode === 'solo' && g.phase === 'drawing') {
+      chip.hidden = false;
+      chip.setAttribute('data-urgent', 'false');
+      $('timer-text').textContent = '不限時';
+      var soloSum = $('sum-timer');
+      if (soloSum) soloSum.textContent = '不限時';
+      return;
+    }
     var s = secsLeft(g.deadline);
     chip.hidden = false;
     $('timer-text').textContent = s + ' 秒';
