@@ -34,7 +34,7 @@
     ROUNDS_DEFAULT: 2,       // 每個人輪流當幾次畫家
     ROUNDS_MAX: 5,
     DRAW_SEC_MIN: 30,
-    DRAW_SEC_MAX: 180,
+    DRAW_SEC_MAX: 120,
     MAX_STROKES: 600,        // 一題最多幾筆（防洪）
     MAX_STROKE_POINTS: 400,  // 單筆最多幾個點
     MAX_TOTAL_POINTS: 30000, // 一題全部點數上限

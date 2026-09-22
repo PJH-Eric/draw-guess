@@ -81,7 +81,7 @@
     aiLevel: function (v) { if (v === undefined) return get(KEY.aiLevel, 'normal'); set(KEY.aiLevel, v); return v; },
     aiCount: function (v) { if (v === undefined) return getInt(KEY.aiCount, 2, 1, 7); set(KEY.aiCount, v); return v; },
     rounds: function (v) { if (v === undefined) return getInt(KEY.rounds, 2, 1, 5); set(KEY.rounds, v); return v; },
-    drawSec: function (v) { if (v === undefined) return getInt(KEY.drawSec, 80, 30, 180); set(KEY.drawSec, v); return v; },
+    drawSec: function (v) { if (v === undefined) return getInt(KEY.drawSec, 80, 30, 120); set(KEY.drawSec, v); return v; },
     diff: function (v) { if (v === undefined) return getInt(KEY.diff, 0, 0, 3); set(KEY.diff, v); return v; },
     tutorialDone: function (v) { if (v === undefined) return getFlag(KEY.tutorialDone, false); setFlag(KEY.tutorialDone, v); return v; },
     reduceMotion: function (v) { if (v === undefined) return getFlag(KEY.reduceMotion, false); setFlag(KEY.reduceMotion, v); return v; },

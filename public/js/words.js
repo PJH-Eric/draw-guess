@@ -1219,6 +1219,7 @@
       ]
     },
     trend: {
+      hard: true,
       icons: ['phone', 'computer', 'car', 'rocket', 'bulb', 'clock', 'camera', 'tv',
               'washer', 'bicycle', 'sun', 'key', 'cup', 'note', 'book', 'glasses'],
       words: [
@@ -1356,10 +1357,12 @@
     return draw;
   }
 
-  /** 難度：成語與專有名詞最難；字數越多、越難一筆說清楚 */
+  /** 難度：成語與專有名詞（明星、電影、歷史、地理、公民、物理、天文、時事）一律歸「困難」。
+      它們本來就畫不太出來，混在「普通」裡會讓人一直抽到「章子怡」「身分證」這種題目。
+      其餘的具體名詞，字數越多越難一筆說清楚。 */
   function bankDiff(bank, cat, text, index) {
     if (cat === 'idiom') return 3;
-    if (bank.hard) return text.length >= 5 ? 3 : 2;
+    if (bank.hard) return 3;
     if (text.length <= 1) return 1;
     if (text.length === 2) return 1 + (index % 2);
     if (text.length === 3) return 2 + (index % 2);
@@ -1620,22 +1623,49 @@
     return prev[n2];
   }
 
+  /* 「混合」不是整池亂抽 —— 題庫裡困難題比簡單題多，整池亂抽會變成大部分都很難。
+     刻意偏簡單：一半簡單、四成普通，困難只留一成當調味。 */
+  var MIX = [{ diff: 1, weight: 50 }, { diff: 2, weight: 40 }, { diff: 3, weight: 10 }];
+
   /** 依難度挑選候選題目；用可注入的種子亂數，讓同一場對局可以重播 */
   function pick(rng, count, opts) {
     var o = opts || {};
-    var pool = LIST.filter(function (w) {
-      if (o.diff && w.diff !== o.diff) return false;
-      if (o.cat && w.cat !== o.cat) return false;
-      if (o.exclude && o.exclude.indexOf(w.id) >= 0) return false;
-      return true;
-    });
-    if (!pool.length) pool = LIST.slice();
+    function poolOf(diff) {
+      return LIST.filter(function (w) {
+        if (diff && w.diff !== diff) return false;
+        if (o.cat && w.cat !== o.cat) return false;
+        if (o.exclude && o.exclude.indexOf(w.id) >= 0) return false;
+        return true;
+      });
+    }
+    var all = poolOf(0);
+    if (!all.length) all = LIST.slice();
+    var fixed = o.diff ? poolOf(o.diff) : null;
+    if (fixed && !fixed.length) fixed = all;
+    var mixed = {};
+    if (!fixed) {
+      MIX.forEach(function (m) {
+        var sub = poolOf(m.diff);
+        mixed[m.diff] = sub.length ? sub : all;
+      });
+    }
+    var total = 0;
+    MIX.forEach(function (m) { total += m.weight; });
+
     var next = rng || Math.random;
     var out = [];
     var taken = {};
     var guard = 0;
     while (out.length < count && guard < 500) {
       guard += 1;
+      var pool = fixed;
+      if (!pool) {
+        var roll = next() * total;
+        for (var i = 0; i < MIX.length; i++) {
+          roll -= MIX[i].weight;
+          if (roll < 0 || i === MIX.length - 1) { pool = mixed[MIX[i].diff]; break; }
+        }
+      }
       var w2 = pool[Math.floor(next() * pool.length) % pool.length];
       if (taken[w2.id]) continue;
       taken[w2.id] = true;

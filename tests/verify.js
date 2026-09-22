@@ -126,6 +126,20 @@ section('題庫（words.js）');
   check('同一個種子抽到同一批題目', a.join() === b.join(), a.join() + ' vs ' + b.join());
   const diffOnly = Words.pick(RNG.createRng('x'), 5, { diff: 1 });
   check('可以只抽指定難度', diffOnly.every((id) => Words.byId(id).diff === 1));
+
+  /* 混合難度要偏簡單：題庫裡困難題比簡單題多，整池亂抽會變成大部分都很難 */
+  const mixCount = { 1: 0, 2: 0, 3: 0 };
+  for (let i = 0; i < 300; i++) {
+    Words.pick(RNG.createRng('mix-' + i), 3, {}).forEach((id) => { mixCount[Words.byId(id).diff] += 1; });
+  }
+  const mixTotal = mixCount[1] + mixCount[2] + mixCount[3];
+  check('混合難度以簡單題為大宗', mixCount[1] / mixTotal > 0.4, JSON.stringify(mixCount));
+  check('混合難度只放一成左右的困難題', mixCount[3] / mixTotal < 0.18, JSON.stringify(mixCount));
+
+  /* 明星、電影、歷史、地理、公民、物理、天文、時事、成語都畫不太出來，一律算困難 */
+  const HARD_CATS = ['star', 'movie', 'history', 'geography', 'civics', 'physics', 'astro', 'trend', 'idiom'];
+  const leaked = Words.LIST.filter((w) => HARD_CATS.indexOf(w.cat) >= 0 && w.diff !== 3);
+  check('專有名詞與抽象題一律歸困難', leaked.length === 0, leaked.slice(0, 5).map((w) => w.text + '/' + w.cat).join(' '));
 }
 
 /* ================================================================
@@ -685,6 +699,7 @@ section('房主設定與再玩一局');
   check('房主可以改輪數', room.setSettings('a', { rounds: 3 }).ok && room.settings.rounds === 3);
   check('超出範圍的輪數被拒絕', !room.setSettings('a', { rounds: 99 }).ok);
   check('超出範圍的秒數被拒絕', !room.setSettings('a', { drawSec: 5 }).ok);
+  check('超過上限的秒數被拒絕（180 已移除）', !room.setSettings('a', { drawSec: 180 }).ok);
   check('可以指定題目難度', room.setSettings('a', { diff: 1 }).ok && room.settings.diff === 1);
   check('不合法的難度被拒絕', !room.setSettings('a', { diff: 9 }).ok);
 
