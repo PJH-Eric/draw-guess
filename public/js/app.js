@@ -957,6 +957,17 @@
       syncToolbar();
       return;
     }
+    /* 線上房間要等伺服器廣播回來才會真的知道「已經說過畫完了」，
+       網路慢一點的話這個來回可能有感——按下去先就地鎖住按鈕，
+       之後 room:sync 回來時 syncDoneButtons() 一樣會用伺服器的說法覆蓋一次，
+       所以就算剛好卡在題目換人那個瞬間，畫面也會被自動修正回來。 */
+    var btn = $('b-done');
+    if (btn) {
+      if (btn.disabled) return;
+      btn.disabled = true;
+      var lbl = btn.querySelector('.b3-lbl') || btn;
+      lbl.textContent = '已說畫完了';
+    }
     w.Online.send('room:done', {});
   }
 
