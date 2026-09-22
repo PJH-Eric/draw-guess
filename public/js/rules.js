@@ -29,7 +29,7 @@
     MAX_PLAYERS: 8,
     CHOICES: 3,
     PICK_MS: 15000,          // 選字時間
-    DRAW_MS: 80000,          // 作畫時間
+    DRAW_MS: 90000,          // 作畫時間（預設值，要跟設定面板的 60／90／120 對得上）
     REVEAL_MS: 7000,         // 公布答案停留時間
     ROUNDS_DEFAULT: 2,       // 每個人輪流當幾次畫家
     ROUNDS_MAX: 5,
