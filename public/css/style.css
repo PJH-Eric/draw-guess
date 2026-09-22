@@ -627,17 +627,47 @@ body.big-tools .fillbox{min-height:56px}
 .setupblock > .setupnote:first-child{margin-top:0}
 
 /* 遊戲規則改成下拉選單，三個欄位排在同一行（不是三行堆疊），
-   標籤放在選單上面，卡片矮下來，等待畫面才擠得出空間放聊天室。 */
+   標籤放在選單上面，卡片矮下來，等待畫面才擠得出空間放聊天室。
+   刻意不用原生 <select>：原生選單的清單交給瀏覽器／作業系統畫，跟卡通風的圓角、
+   陰影、配色不搭，這裡自己刻一顆按鈕（顯示目前值）＋按下展開的清單，
+   全部用卡片本身的樣式畫。清單用 position:absolute 蓋在下面的卡片上，不會把版面往下推開。 */
 .rules-row{display:flex;gap:8px}
-.rule-field{display:flex;flex-direction:column;gap:3px;flex:1 1 0;min-width:0}
+.rule-field{display:flex;flex-direction:column;gap:3px;flex:1 1 0;min-width:0;position:relative}
 .rule-field > span{font-size:.72rem;font-weight:800;color:var(--ink-soft)}
-.rule-select{
+.ruledd-btn{
+  display:flex;align-items:center;justify-content:space-between;gap:6px;
   width:100%;min-width:0;
   font:inherit;font-weight:800;font-size:.84rem;
-  border:2px solid var(--line);border-radius:12px;padding:7px 6px;
-  min-height:42px;background:#fff;color:var(--ink);
+  border:2px solid var(--line);border-radius:12px;padding:7px 10px;
+  min-height:42px;background:#fff;color:var(--ink);cursor:pointer;
 }
-.rule-select:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
+.ruledd.open .ruledd-btn{border-color:var(--grape-d)}
+.ruledd-btn:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
+.ruledd-val{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+.ruledd-arrow{
+  flex:0 0 auto;width:0;height:0;margin-top:2px;
+  border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid var(--ink-soft);
+  transition:transform .15s ease;
+}
+.ruledd.open .ruledd-arrow{transform:rotate(180deg)}
+.ruledd-list{
+  position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:5;
+  display:flex;flex-direction:column;gap:2px;max-height:200px;overflow-y:auto;
+  border:2px solid var(--grape-d);border-radius:14px;background:var(--paper);
+  padding:5px;box-shadow:0 5px 0 rgba(74,59,85,.14);
+  scrollbar-width:thin;scrollbar-color:var(--grape-d) transparent;
+}
+.ruledd-list::-webkit-scrollbar{width:6px}
+.ruledd-list::-webkit-scrollbar-track{background:transparent}
+.ruledd-list::-webkit-scrollbar-thumb{background:var(--grape-d);border-radius:999px}
+.ruledd-opt{
+  display:flex;align-items:center;justify-content:space-between;gap:6px;
+  width:100%;text-align:left;font:inherit;font-weight:700;font-size:.82rem;
+  border:0;border-radius:10px;padding:7px 9px;background:transparent;color:var(--ink);cursor:pointer;
+}
+.ruledd-opt:hover,.ruledd-opt:focus-visible{background:#F5F2FA;outline:none}
+.ruledd-opt.on{color:var(--grape-t);font-weight:900}
+.ruledd-check{flex:0 0 auto;color:var(--grape-t)}
 
 /* ---------- 房間設定卡片裡的聊天室（只在等待畫面出現，開始對局後這整塊就不會畫出來） ---------- */
 .chatlist{
@@ -888,7 +918,8 @@ body.big-tools .fillbox{min-height:56px}
   .setupblock .pillbtn{min-width:44px;padding:8px 11px;font-size:.86rem}
   .rules-row{gap:5px}
   .rule-field > span{font-size:.68rem}
-  .rule-select{font-size:.78rem;padding:6px 4px}
+  .ruledd-btn{font-size:.78rem;padding:6px 8px}
+  .ruledd-opt{font-size:.76rem;padding:6px 8px}
   /* 手機直向卡片本來就窄，名單、房號跟平板/桌機同一套規則會擠：
      一併縮小，跟上面規則列、聊天室的縮小幅度同步。 */
   .seatlist{gap:5px}

@@ -38,9 +38,9 @@
     roomCode: null,
     pendingInvite: null,
     inviteToken: null,
-    inviteRole: 'any',
     inviteUrl: '',
     chatDraft: '',                  // 聊天室打到一半的字，投影更新時用來保留輸入框內容
+    ruleMenuOpen: null,              // 遊戲規則自訂下拉選單：哪個欄位（set-rounds／set-drawsec／set-diff）展開中
     roomCreate: { roomName: '', rounds: 2, drawSec: 90, diff: 0 },
     lastOverlayHtml: null,
     conn: { status: 'idle', message: '' },
@@ -1101,6 +1101,10 @@
     var wrap = $('stage-overlay'), card = $('overlay-card');
     var html = null;
 
+    /* 規則下拉選單只在等待畫面才有意義：一離開等待畫面（開始對局、房間結束……）
+       就把展開狀態清掉，不然下次回到等待畫面（例如再玩一局）會莫名其妙自動展開。 */
+    if (!v.room || v.room.phase !== 'waiting') app.ruleMenuOpen = null;
+
     if (v.room && v.room.closed) {
       html = '<h3>房間已經結束</h3><p>' + esc(v.room.closedReason || '房間裡已經沒有玩家了。') + '</p>' +
         '<div class="overlay-btns"><button class="btn3d" data-color="grape" data-act="lobby">回大廳</button>' +
@@ -1148,11 +1152,6 @@
     { v: 0, label: '混合' }, { v: 1, label: '簡單' },
     { v: 2, label: '普通' }, { v: 3, label: '困難' }
   ];
-  var INVITE_ROLES = [
-    { v: 'any', label: '有位子就當玩家' },
-    { v: 'player', label: '一定是玩家' },
-    { v: 'spectator', label: '一定是觀戰' }
-  ];
   function chips(act, list, current) {
     return '<div class="chiprow">' + list.map(function (o) {
       var val = (o.v !== undefined ? o.v : o);
@@ -1162,19 +1161,38 @@
     }).join('') + '</div>';
   }
 
-  /* 房間設定卡片裡的「遊戲規則」改用下拉選單，三個欄位排在同一行（不是三行堆疊），
-     卡片矮下來，等待畫面才擠得出空間放聊天室。一顆 <select> 不管螢幕多窄都不會換行，
-     不像一排五顆按鈕在手機上會被迫斷成兩行。 */
-  function selectField(act, list, current, label) {
-    /* aria-label 會蓋過外層 <label> 的文字，所以這裡放看得懂的中文，
-       不是 data-act 那種內部代號（讀螢幕的人會聽到「set-rounds」）。 */
-    return '<select class="rule-select" data-act="' + act + '" aria-label="' + esc(label || act) + '">' +
-      list.map(function (o) {
-        var val = (o.v !== undefined ? o.v : o);
-        var label = (o.label !== undefined ? o.label : o);
-        return '<option value="' + esc(val) + '"' + (String(val) === String(current) ? ' selected' : '') + '>' +
-          esc(label) + '</option>';
-      }).join('') + '</select>';
+  /* 房間設定卡片裡的「遊戲規則」用下拉選單，三個欄位排在同一行（不是三行堆疊），
+     卡片矮下來，等待畫面才擠得出空間放聊天室；一顆按鈕不管螢幕多窄都不會換行，
+     不像一排五顆按鈕在手機上會被迫斷成兩行。
+     刻意不用原生 <select>：原生選單的清單樣式交給瀏覽器／作業系統畫，跟卡通風的
+     圓角、陰影、配色完全不搭（尤其桌機瀏覽器那種灰底方框）。這裡自己刻一顆按鈕
+     （顯示目前值）＋按下展開的清單，全部用卡片本身的樣式畫，跟其他按鈕一致。
+     開合狀態記在 app.ruleMenuOpen（哪個欄位在展開，同時只會開一個），
+     這樣重畫時（收到房間投影）還是知道要不要保持展開，不會每次投影一來就自動關掉。
+     點外面或按 Escape 會關閉，見 setupRuleMenuClose()。 */
+  function ruleDropdown(field, list, current) {
+    var cur = list.filter(function (o) { return String(o.v !== undefined ? o.v : o) === String(current); })[0];
+    /* list 有兩種形狀：純數字（ROUND_CHOICES／SEC_CHOICES）或 {v,label}（DIFF_CHOICES），
+       所以「目前顯示的字」跟下面 opts 那份 val/label 用同一個 fallback 邏輯：
+       沒有 .label 就退回 .v，兩個都沒有（純數字的情況）才退回 cur 本身。 */
+    var curLabel = current;
+    if (cur !== undefined) curLabel = (cur.label !== undefined ? cur.label : (cur.v !== undefined ? cur.v : cur));
+    var open = app.ruleMenuOpen === field;
+    var opts = list.map(function (o) {
+      var val = (o.v !== undefined ? o.v : o);
+      var label = (o.label !== undefined ? o.label : o);
+      var on = String(val) === String(current);
+      return '<button type="button" class="ruledd-opt' + (on ? ' on' : '') + '" role="option" aria-selected="' +
+        (on ? 'true' : 'false') + '" data-act="rule-opt" data-field="' + esc(field) + '" data-v="' + esc(val) + '">' +
+        esc(label) + (on ? '<span class="ruledd-check" aria-hidden="true">✓</span>' : '') + '</button>';
+    }).join('');
+    return '<div class="ruledd' + (open ? ' open' : '') + '">' +
+      '<button type="button" class="ruledd-btn" data-act="rule-toggle" data-field="' + esc(field) + '" ' +
+      'aria-haspopup="listbox" aria-expanded="' + (open ? 'true' : 'false') + '">' +
+      '<span class="ruledd-val">' + esc(curLabel) + '</span>' +
+      '<span class="ruledd-arrow" aria-hidden="true"></span></button>' +
+      (open ? '<div class="ruledd-list" role="listbox">' + opts + '</div>' : '') +
+      '</div>';
   }
 
   function renderRoomCreateOptions() {
@@ -1260,9 +1278,9 @@
     if (host) {
       rules = '<div class="setupblock"><h4>遊戲規則</h4>' +
         '<div class="rules-row">' +
-        '<label class="rule-field"><span>畫幾次</span>' + selectField('set-rounds', ROUND_CHOICES, r.settings.rounds, '每人畫幾次') + '</label>' +
-        '<label class="rule-field"><span>秒數</span>' + selectField('set-drawsec', SEC_CHOICES, r.settings.drawSec, '每題秒數') + '</label>' +
-        '<label class="rule-field"><span>題型</span>' + selectField('set-diff', DIFF_CHOICES, r.settings.diff, '題目難度') + '</label>' +
+        '<div class="rule-field"><span>畫幾次</span>' + ruleDropdown('set-rounds', ROUND_CHOICES, r.settings.rounds) + '</div>' +
+        '<div class="rule-field"><span>秒數</span>' + ruleDropdown('set-drawsec', SEC_CHOICES, r.settings.drawSec) + '</div>' +
+        '<div class="rule-field"><span>題型</span>' + ruleDropdown('set-diff', DIFF_CHOICES, r.settings.diff) + '</div>' +
         '</div></div>';
     } else {
       var dl = DIFF_CHOICES.filter(function (d) { return d.v === r.settings.diff; })[0];
@@ -1271,11 +1289,13 @@
         esc(dl ? dl.label : '混合') + '難度（由房主決定）</p></div>';
     }
 
-    /* ---- 邀請連結 ---- */
+    /* ---- 邀請連結 ----
+       以前這裡讓房主先選好對方的身分（一定是玩家／一定是觀戰），但那是房主在幫對方做決定。
+       身分應該讓被邀請的人自己選，所以連結本身不綁身分（一律是 'any'），對方點連結後
+       在大廳落地頁自己按「加入當玩家」或「加入觀戰」（見 checkPendingInvite／setupLobby）。 */
     var invite = '';
     if (v.you.can.invite) {
       invite = '<div class="setupblock"><h4>邀請朋友</h4>' +
-        '<div class="setuprow"><span>對方的身分</span>' + chips('invite-role', INVITE_ROLES, app.inviteRole) + '</div>' +
         '<div class="inviterow"><label class="sr-only" for="invite-url">邀請連結</label>' +
         '<input id="invite-url" readonly placeholder="按「產生連結」" value="' + esc(app.inviteUrl) + '"></div>' +
         '<div class="chiprow">' +
@@ -1284,7 +1304,7 @@
         '<button type="button" class="pillbtn" data-act="invite-revoke"' + (app.inviteToken ? '' : ' disabled') + '>撤銷</button>' +
         '</div>' +
         '<p class="setupnote">有效期 60 分鐘、最多 20 人次。對方開啟後會先停在大廳確認暱稱，' +
-        '按下確認才會進房；改暱稱不會改變連結給定的身分。</p></div>';
+        '再自己選要當玩家還是觀戰。</p></div>';
     }
 
     /* ---- 聊天室 ----
@@ -1412,10 +1432,6 @@
               app.paint.clearLocal();
               soloRefresh();
             } else w.Online.send('room:pick', { wordId: wid });
-          } else if (act === 'invite-role') {
-            app.inviteRole = el.getAttribute('data-v');
-            app.lastOverlayHtml = null;
-            renderOverlay();
           } else if (act === 'invite-new') newInvite();
           else if (act === 'invite-copy') copyText(app.inviteUrl);
           else if (act === 'invite-revoke') revokeInvite();
@@ -1431,23 +1447,33 @@
             else w.Online.send('room:rematch', {});
           } else if (act === 'lobby') leaveGame('s-lobby');
           else if (act === 'home') leaveGame('s-home');
+          else if (act === 'rule-toggle') {
+            var field = el.getAttribute('data-field');
+            app.ruleMenuOpen = (app.ruleMenuOpen === field) ? null : field;
+            app.lastOverlayHtml = null;
+            renderOverlay();
+          } else if (act === 'rule-opt') {
+            var optField = el.getAttribute('data-field');
+            var optValue = Number(el.getAttribute('data-v'));
+            var key = optField === 'set-rounds' ? 'rounds' : optField === 'set-drawsec' ? 'drawSec' : optField === 'set-diff' ? 'diff' : null;
+            if (key) {
+              var payload = {};
+              payload[key] = optValue;
+              w.Online.send('room:settings', payload);
+            }
+            app.ruleMenuOpen = null;
+            app.lastOverlayHtml = null;
+            renderOverlay();
+          }
         });
       }(list[i]));
     }
 
-    /* 遊戲規則改用下拉選單後用 change 事件，跟上面按鈕的 click 分開處理 */
-    var selects = card.querySelectorAll('select[data-act]');
-    for (var si = 0; si < selects.length; si++) {
-      (function (el) {
-        el.addEventListener('change', function () {
-          var act = el.getAttribute('data-act');
-          var value = Number(el.value);
-          Sound.play('click');
-          if (act === 'set-rounds') w.Online.send('room:settings', { rounds: value });
-          else if (act === 'set-drawsec') w.Online.send('room:settings', { drawSec: value });
-          else if (act === 'set-diff') w.Online.send('room:settings', { diff: value });
-        });
-      }(selects[si]));
+    /* 規則下拉選單展開時，把焦點放回它自己的按鈕：卡片整塊重畫（bindOverlay 每次都重綁），
+       不然按鍵盤 Tab／方向鍵操作到一半，焦點會被丟回卡片最上面。 */
+    if (app.ruleMenuOpen) {
+      var openBtn = card.querySelector('.ruledd-btn[data-field="' + app.ruleMenuOpen + '"]');
+      if (openBtn) openBtn.focus();
     }
 
     var chatInput = card.querySelector('#chat-input');
@@ -1614,8 +1640,9 @@
 
   function newInvite() {
     if (app.mode !== 'online' || !app.roomCode) return toast('目前不在可邀請的房間裡。', 'error');
+    /* 不指定 role：伺服器端 createInvite 沒收到合法值就會當成 'any'，
+       由拿到連結的人自己選要當玩家還是觀戰（見 checkPendingInvite／setupLobby）。 */
     w.Online.send('room:invite', {
-      role: app.inviteRole,
       ttlMinutes: 60,
       maxUses: 20
     }, function (res) {
@@ -1711,10 +1738,16 @@
     });
     $('b-lobby-refresh').addEventListener('click', function () { w.Online.send('lobby:subscribe', {}); });
     $('b-lobby-retry').addEventListener('click', connectOnline);
-    $('b-lobby-invite').addEventListener('click', function () {
+    /* 邀請連結不綁身分：對方自己按「加入當玩家」或「加入觀戰」，見 checkPendingInvite。 */
+    $('b-lobby-invite-player').addEventListener('click', function () {
       if (!app.pendingInvite) return;
       saveNick($('lobby-nick'));
-      joinRoom(app.pendingInvite.code, app.pendingInvite.token, app.pendingInvite.role);
+      joinRoom(app.pendingInvite.code, app.pendingInvite.token, 'player');
+    });
+    $('b-lobby-invite-spectator').addEventListener('click', function () {
+      if (!app.pendingInvite) return;
+      saveNick($('lobby-nick'));
+      joinRoom(app.pendingInvite.code, app.pendingInvite.token, 'spectator');
     });
     $('b-lobby-invite-cancel').addEventListener('click', function () {
       app.pendingInvite = null;
@@ -1745,6 +1778,7 @@
     app.inviteToken = null;
     app.inviteUrl = '';
     app.chatDraft = '';
+    app.ruleMenuOpen = null;
     app.lastOverlayHtml = null;
     show('s-game');
     ensurePaint();
@@ -1770,7 +1804,7 @@
 
   /** 連線之前先把會送出請求的按鈕停用，避免按了卻沒有送出去 */
   function setLobbyEnabled(on) {
-    ['b-lobby-host', 'b-lobby-join', 'b-lobby-refresh', 'b-lobby-invite'].forEach(function (id) {
+    ['b-lobby-host', 'b-lobby-join', 'b-lobby-refresh', 'b-lobby-invite-player', 'b-lobby-invite-spectator'].forEach(function (id) {
       var el = $(id);
       if (el) el.disabled = !on;
     });
@@ -1816,15 +1850,18 @@
         app.pendingInvite = null;
         $('lobby-invite-title').textContent = '這個邀請連結不能用了';
         $('lobby-invite-note').textContent = (res && res.error) || '連結無效。';
-        $('b-lobby-invite').hidden = true;
+        $('b-lobby-invite-player').hidden = true;
+        $('b-lobby-invite-spectator').hidden = true;
         return;
       }
-      app.pendingInvite = { code: entry.room, token: entry.invite, role: res.role };
-      $('b-lobby-invite').hidden = false;
+      /* 連結不綁身分，玩家還是觀戰由對方自己按下面兩顆鈕決定；
+         res.note 是伺服器算出來的提醒（例如玩家席已滿），有的話一起顯示。 */
+      app.pendingInvite = { code: entry.room, token: entry.invite };
+      $('b-lobby-invite-player').hidden = false;
+      $('b-lobby-invite-spectator').hidden = false;
       $('lobby-invite-title').textContent = '收到房間 ' + entry.room + ' 的邀請';
       $('lobby-invite-note').textContent =
-        '你會以「' + (res.role === 'spectator' ? '觀戰者' : (res.role === 'player' ? '玩家' : '玩家（有位子的話）')) + '」身分加入。' +
-        (res.note ? res.note : '') + ' 可以先改上面的暱稱，按下面的按鈕才會真的進房。';
+        '可以先改上面的暱稱，再選要當玩家還是觀戰。' + (res.note ? '（' + res.note + '）' : '');
     });
   }
 
@@ -2000,6 +2037,26 @@
     });
   }
 
+  /* 房間設定卡片裡「遊戲規則」的自訂下拉選單：點清單以外的地方，或按 Escape，就收起來。
+     只掛一次在 document 上（不是每次 bindOverlay 都掛，卡片每次重畫都會重新拿一批 DOM，
+     掛在卡片本身的話舊的監聽器會一直留著、越掛越多）。 */
+  function setupRuleMenuClose() {
+    D.addEventListener('click', function (ev) {
+      if (!app.ruleMenuOpen) return;
+      if (ev.target.closest && ev.target.closest('.ruledd')) return;
+      app.ruleMenuOpen = null;
+      app.lastOverlayHtml = null;
+      renderOverlay();
+    }, true);
+    D.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape' && app.ruleMenuOpen) {
+        app.ruleMenuOpen = null;
+        app.lastOverlayHtml = null;
+        renderOverlay();
+      }
+    });
+  }
+
   /* ================================================================
      啟動
      ================================================================ */
@@ -2021,6 +2078,7 @@
     setupGuessbar();
     setupOnlineEvents();
     setupKeys();
+    setupRuleMenuClose();
     buildToolbar();
     ensurePaint();
     syncToolbar();

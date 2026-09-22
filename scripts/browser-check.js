@@ -758,8 +758,10 @@ async function main() {
   check('左側欄與對局設定按鈕緊鄰', actionGap.gap <= 8, JSON.stringify(actionGap));
   check('系統設定鈕也併在同一排', actionGap.fabGap >= 0 && actionGap.fabGap <= 8, JSON.stringify(actionGap));
 
-  /* 產生玩家邀請連結 */
-  await hostTab.eval('window.__probe.click("[data-act=invite-role][data-v=player]"); window.__probe.click("[data-act=invite-new]"); return 1;');
+  /* 產生邀請連結：連結不綁身分，房主不再事先幫對方選好身分——玩家還是觀戰交給拿到連結的人自己決定 */
+  check('邀請面板不再讓房主先選對方身分',
+    await hostTab.eval('return !document.querySelector("[data-act=invite-role]");'));
+  await hostTab.eval('window.__probe.click("[data-act=invite-new]"); return 1;');
   await hostTab.waitFor('document.getElementById("invite-url") && document.getElementById("invite-url").value.length > 0', 8000, '產生邀請連結');
   const inviteUrl = await hostTab.eval('return document.getElementById("invite-url").value;');
   check('產生得出邀請連結', /room=[A-Z0-9]{4}&invite=[0-9a-f]{32}/.test(inviteUrl), inviteUrl);
@@ -775,42 +777,46 @@ async function main() {
   await mateTab.waitFor('!document.getElementById("lobby-invite").hidden', 12000, '邀請落地頁');
   const landed = await mateTab.json('window.__probe.game()');
   check('邀請連結不會自動進房，先停在大廳', landed.mode === null && landed.screen === 's-lobby', JSON.stringify(landed));
-  check('落地頁看得到房號與可編輯的暱稱欄位',
-    await mateTab.eval('return document.getElementById("lobby-invite-title").textContent.indexOf("' + code + '") >= 0 && !document.getElementById("lobby-nick").disabled;'),
+  check('落地頁看得到房號、可編輯的暱稱欄位，以及「加入當玩家／加入觀戰」兩個選擇',
+    await mateTab.eval('return document.getElementById("lobby-invite-title").textContent.indexOf("' + code + '") >= 0 && !document.getElementById("lobby-nick").disabled && !document.getElementById("b-lobby-invite-player").hidden && !document.getElementById("b-lobby-invite-spectator").hidden;'),
     await mateTab.eval('return document.getElementById("lobby-invite-title").textContent;'));
   await shot('線上-邀請落地頁');
 
-  await mateTab.eval('document.getElementById("lobby-nick").value="新名字"; window.__probe.click("#b-lobby-invite"); return 1;');
+  await mateTab.eval('document.getElementById("lobby-nick").value="新名字"; window.__probe.click("#b-lobby-invite-player"); return 1;');
   await mateTab.waitFor('window.DrawGuessApp.mode === "online" && window.DrawGuessApp.view', 10000, '確認後才加入');
   const mateView = await mateTab.json('window.__probe.game()');
-  check('確認後才以新暱稱加入', mateView.role === 'player', mateView.role);
+  check('自己選「加入當玩家」，落地就真的是玩家（不是房主先幫忙決定）', mateView.role === 'player', mateView.role);
   check('新暱稱有送出去',
     await mateTab.eval('return window.DrawGuessApp.view.you.name === "新名字";'),
     await mateTab.eval('return window.DrawGuessApp.view.you.name;'));
-  check('改暱稱不會改變 token 決定的角色', mateView.role === 'player');
+  check('改暱稱不影響自己選的身分', mateView.role === 'player');
 
-  /* 第三個分頁：觀戰 */
-  await hostTab.eval('window.__probe.click("[data-act=invite-role][data-v=spectator]"); window.__probe.click("[data-act=invite-new]"); return 1;');
-  await hostTab.waitFor('document.getElementById("invite-url") && document.getElementById("invite-url").value.length > 0', 8000, '產生觀戰邀請連結');
-  const watchUrl = await hostTab.eval('return document.getElementById("invite-url").value;');
-
+  /* 第三個分頁：同一種連結（不綁身分），這次自己選觀戰 */
   const t3 = await (await fetch('http://127.0.0.1:' + DEBUG_PORT + '/json/new?' + encodeURIComponent('about:blank'), { method: 'PUT' })).json();
   const watchTab = await attach(t3, '觀戰分頁');
   await watchTab.send('Emulation.setDeviceMetricsOverride', { width: 768, height: 1024, deviceScaleFactor: 2, mobile: true });
   await goto(watchTab, BASE);
   await watchTab.eval('localStorage.clear(); localStorage.setItem("dg_tutorial","1"); localStorage.setItem("dg_nick","觀眾"); return 1;');
-  await goto(watchTab, watchUrl);
+  await goto(watchTab, inviteUrl);
   await watchTab.waitFor('!document.getElementById("lobby-invite").hidden', 12000, '觀戰邀請落地頁');
-  await watchTab.eval('window.__probe.click("#b-lobby-invite"); return 1;');
+  await watchTab.eval('window.__probe.click("#b-lobby-invite-spectator"); return 1;');
   await watchTab.waitFor('window.DrawGuessApp.mode === "online" && window.DrawGuessApp.view', 10000, '觀戰者進房');
-  check('觀戰連結進來就是觀戰者', (await watchTab.json('window.__probe.game()')).role === 'spectator');
+  check('同一種連結，自己選「加入觀戰」就是觀戰者', (await watchTab.json('window.__probe.game()')).role === 'spectator');
 
   /* 房間設定：遊戲規則改下拉、房號縮小、玩家名單置左沒有「x/y 位玩家」、聊天室 */
-  check('遊戲規則改成下拉選單（不是按鈕）',
-    await hostTab.eval('return !!document.querySelector("#overlay-card select[data-act=set-rounds]") && !document.querySelector("#overlay-card [data-act=set-rounds][role=radio]");'));
-  await hostTab.eval('var s=document.querySelector("#overlay-card select[data-act=set-rounds]"); s.value="4"; s.dispatchEvent(new Event("change",{bubbles:true})); return 1;');
+  check('遊戲規則改成下拉選單、不是按鈕，而且不是原生 <select>（自己刻的按鈕＋清單）',
+    await hostTab.eval('return !!document.querySelector("#overlay-card .ruledd-btn[data-field=set-rounds]") && !document.querySelector("#overlay-card [data-act=set-rounds][role=radio]") && !document.querySelector("#overlay-card select");'));
+  await hostTab.eval('window.__probe.click("#overlay-card .ruledd-btn[data-field=set-rounds]"); return 1;');
+  await hostTab.waitFor('document.querySelector("#overlay-card .ruledd-list")', 3000, '下拉選單展開');
+  check('按下按鈕會展開清單（role=listbox），不是瀏覽器原生的下拉',
+    await hostTab.eval('var l=document.querySelector("#overlay-card .ruledd-list"); return !!l && l.getAttribute("role")==="listbox";'));
+  await hostTab.eval('window.__probe.click("#overlay-card .ruledd-opt[data-field=set-rounds][data-v=\\"4\\"]"); return 1;');
   await hostTab.waitFor('window.DrawGuessApp.view.room.settings.rounds === 4', 4000, '下拉選單套用設定');
   check('下拉選單可以改規則', await hostTab.eval('return window.DrawGuessApp.view.room.settings.rounds === 4;'));
+  check('選完之後清單自己收起來', await hostTab.eval('return !document.querySelector("#overlay-card .ruledd-list");'));
+  check('按鈕上顯示的目前值不是空的（純數字選項跟 {v,label} 選項都要顯示出字）',
+    await hostTab.eval('var t=document.querySelector("#overlay-card .ruledd-btn[data-field=set-rounds] .ruledd-val").textContent.trim(); var s=document.querySelector("#overlay-card .ruledd-btn[data-field=set-drawsec] .ruledd-val").textContent.trim(); return t === "4" && s.length > 0;'),
+    await hostTab.eval('return document.querySelector("#overlay-card .ruledd-btn[data-field=set-rounds] .ruledd-val").textContent;'));
   await mateTab.waitFor('window.DrawGuessApp.view.room.settings.rounds === 4', 4000, '同步規則');
   check('改規則後其他分頁也同步收到', await mateTab.eval('return window.DrawGuessApp.view.room.settings.rounds === 4;'));
   check('不再出現「x / y 位玩家」的字樣',
@@ -852,7 +858,7 @@ async function main() {
     (await mateTab.json('window.__probe.game()')).roomPhase === 'playing' &&
     (await watchTab.json('window.__probe.game()')).roomPhase === 'playing');
   check('對局開始後聊天室跟著收起來（房間設定卡只在等待畫面出現）',
-    await hostTab.eval('return !document.getElementById("chat-input") && !document.querySelector("select[data-act=set-rounds]");'));
+    await hostTab.eval('return !document.getElementById("chat-input") && !document.querySelector(".ruledd-btn[data-field=set-rounds]");'));
 
   const wStage = await watchTab.json('window.__probe.stage()');
   check('觀戰者沒有工具列也沒有猜題框',
