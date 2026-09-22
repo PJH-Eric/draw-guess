@@ -267,7 +267,6 @@
           <b class="wordbar-mask" id="wordbar-mask">— — —</b>
           <span class="wordbar-meta" id="wordbar-meta"></span>
         </div>
-        </div>
 
         <!-- 畫布上方一列：玩家名稱與分數，旁邊接著畫家的三張提示（橫式，小張就好）。
              提示以前絕對定位壓在畫布上，窄螢幕會蓋掉一大塊畫圖區，所以搬到這裡；
@@ -286,6 +285,7 @@
                     title="在底線上翻開其中一個字">③一個字</button>
             <span class="hintrow-note" id="hintrow-note"></span>
           </div>
+        </div>
         </div>
 
         <!-- 遊戲主區：畫布 + 操作列。
@@ -311,7 +311,7 @@
           <div class="toolrow toolrow-tools" id="tool-list" role="radiogroup" aria-label="畫圖工具"></div>
           <div class="toolrow toolrow-colors" id="color-list" role="radiogroup" aria-label="顏色"></div>
           <!-- 粗細、填滿與編輯動作放同一條；窄版時這一條可以橫向捲動，
-               但「畫完了」固定在右邊不會被捲走。 -->
+               但「畫完了／跳過這題」固定在右邊不會被捲走。 -->
           <div class="toolrow toolrow-misc">
             <div class="toolscroll" id="toolscroll">
               <div class="widthgroup" id="width-list" role="radiogroup" aria-label="筆的粗細"></div>
@@ -323,7 +323,13 @@
               <button class="toolbtn" id="b-redo" type="button" title="重做（Ctrl+Y）" aria-label="重做"><span class="ico" data-ico="redo"></span></button>
               <button class="toolbtn danger" id="b-clear" type="button" title="全部清除" aria-label="全部清除"><span class="ico" data-ico="trash"></span></button>
             </div>
-            <button class="btn3d small tool-done" data-color="lemon" id="b-done" type="button">畫完了</button>
+            <!-- 「畫完了」只是告訴大家可以猜了，不會結束這一題；真的要結束是下面的「跳過這題」 -->
+            <div class="donebox">
+              <button class="btn3d small tool-done" data-color="lemon" id="b-done" type="button"
+                      title="告訴大家你畫完了（這一題還會繼續，時間也照跑）">畫完了</button>
+              <button class="btn3d small tool-skip" data-color="peach" id="b-skip" type="button"
+                      title="直接結束這一題並公布答案">跳過這題</button>
+            </div>
           </div>
           <p class="tool-hint" id="tool-hint" role="status" aria-live="polite"></p>
         </div>

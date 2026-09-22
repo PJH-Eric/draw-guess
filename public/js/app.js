@@ -40,7 +40,9 @@
     inviteToken: null,
     inviteRole: 'any',
     inviteUrl: '',
-    roomCreate: { roomName: '', rounds: 2, drawSec: 80, diff: 0 },
+    roomCreate: { roomName: '', rounds: 2, drawSec: 90, diff: 0 },
+    /* 單機：這一題已經按過「畫完了」的題號（線上看 v.room.drawerDone） */
+    doneTurn: -1,
     lastOverlayHtml: null,
     conn: { status: 'idle', message: '' },
     wideLayout: null,
@@ -305,7 +307,8 @@
       '<p>右邊還有<b>復原</b>、<b>重做</b>、<b>全部清除</b>。顏色和粗細在工具列上直接點選；矩形和橢圓可以勾「填滿」畫成實心。</p>' },
     { h: '當畫家：不能做的事', b:
       '<p>這個遊戲刻意<b>沒有文字工具，也沒有聊天室</b>——畫家沒有任何可以打字的地方，所以不可能把答案寫出來。</p>' +
-      '<p>只能用線條和顏色表達。如果真的畫不出來，可以按右上角的 🎮 打開對局設定，選「跳過這一題」。</p>' +
+      '<p>畫好了按<b>「畫完了」</b>——那只是告訴大家可以猜了，這一題還會繼續，你也還能補幾筆。</p>' +
+      '<p>只能用線條和顏色表達。真的畫不出來就按「畫完了」下面的<b>「跳過這題」</b>（或右上角 🎮 的「跳過這一題」），會直接公布答案。</p>' +
       '<p>畫得越多人猜中，你這一題拿的分數越高；全部人都猜中還有額外加分。</p>' },
     { h: '當猜題者：把答案打進去', b:
       '<p>輪到別人畫的時候，畫布下方會出現猜題框。想到什麼就直接打進去按「猜！」，答錯不扣分，可以一直猜。</p>' +
@@ -426,7 +429,7 @@
       [1, 2, 3].map(function (n) { return { value: n, label: n + ' 次' }; }),
       Store.rounds, Store.rounds);
     buildChips('opt-drawsec',
-      [40, 60, 80, 120].map(function (n) { return { value: n, label: n + ' 秒' }; }),
+      [60, 90, 120].map(function (n) { return { value: n, label: n + ' 秒' }; }),
       Store.drawSec, Store.drawSec);
     buildChips('opt-worddiff', [
       { value: 0, label: '混合' }, { value: 1, label: '簡單' },
@@ -464,6 +467,7 @@
     app.feed = [];
     app.feedSeen = {};
     app.recorded = false;
+    app.doneTurn = -1;
     app.lastTurnKey = '';
     app.lastPhase = '';
     app.lastMask = '';
@@ -737,7 +741,8 @@
     var r = stage.getBoundingClientRect();
     var size = Math.floor(Math.min(r.width, r.height));
     if (!isFinite(size) || size < 80) return;
-    size = Math.max(140, size - 4);
+    /* 只扣掉外框陰影需要的一點點餘裕，其餘全部給畫布 */
+    size = Math.max(140, size - 2);
     if (box.style.width === size + 'px') return;
     box.style.width = size + 'px';
     box.style.height = size + 'px';
@@ -825,7 +830,8 @@
     $('b-undo').addEventListener('click', doUndo);
     $('b-redo').addEventListener('click', doRedo);
     $('b-clear').addEventListener('click', doClear);
-    $('b-done').addEventListener('click', doSkip);
+    $('b-done').addEventListener('click', doDone);
+    $('b-skip').addEventListener('click', doSkip);
     $('b-hint-1').addEventListener('click', doHint);
     $('b-hint-2').addEventListener('click', doHint);
     $('b-hint-3').addEventListener('click', doHint);
@@ -837,6 +843,21 @@
     Sound.play('click');
     toolHint(TOOL_TIP[key]);
     syncToolbar();
+  }
+
+  /** 「畫完了」按過就不再重複；「跳過這題」只有畫家能按 */
+  function syncDoneButtons() {
+    var done = $('b-done'), skip = $('b-skip');
+    if (!done || !skip) return;
+    var v = app.view, g = v && v.game;
+    var drawing = !!(g && g.phase === 'drawing' && g.you.isDrawer);
+    var told = app.mode === 'solo'
+      ? !!(g && app.doneTurn === g.turnNo)
+      : !!(v && v.room && v.room.drawerDone);
+    done.disabled = !drawing || told;
+    var lbl = done.querySelector('.b3-lbl') || done;
+    lbl.textContent = told ? '已說畫完了' : '畫完了';
+    skip.disabled = !drawing;
   }
 
   function syncToolbar() {
@@ -858,6 +879,7 @@
     var shape = cur === 'rect' || cur === 'ellipse';
     $('fillbox').style.display = shape ? '' : 'none';
     $('b-redo').disabled = !app.paint || app.paint.redoCount() === 0;
+    syncDoneButtons();
   }
 
   function doUndo() {
@@ -920,6 +942,24 @@
     pushFeed({ kind: 'system', from: '系統', text: text, at: Date.now() });
   }
 
+  /**
+   * 「畫完了」：只是告訴其他人可以認真猜了 —— 這一題不會結束，
+   * 時間照跑，畫家還可以繼續補筆畫。真的要結束是「跳過這題」。
+   */
+  function doDone() {
+    if (app.mode === 'solo') {
+      var g = app.solo && app.solo.state;
+      if (!g || g.phase !== 'drawing' || g.drawerId !== ME) return;
+      if (app.doneTurn === g.turnNo) return;
+      app.doneTurn = g.turnNo;
+      pushFeed({ kind: 'system', from: '系統', text: '🎨 你說畫完了，電腦開始認真猜。', at: Date.now() });
+      toolHint('已經告訴大家你畫完了，這一題還會繼續。', 'ok');
+      syncToolbar();
+      return;
+    }
+    w.Online.send('room:done', {});
+  }
+
   function doSkip() {
     if (app.mode === 'solo') {
       var r = Rules.giveUp(app.solo.state, ME, Date.now());
@@ -975,6 +1015,15 @@
 
   var PHASE_LABEL = { picking: '選題目', drawing: '作畫中', reveal: '公布答案', over: '結算' };
 
+  /* 線上房間對局中可以一直有人中途加入，順位最後一位會一直往後移，
+     所以「總題數」在結束前其實還會變，顯示出來反而是誤導：
+     對局進行中只顯示目前第幾題，結束後才回頭顯示最終總題數。
+     單機沒有中途加入這回事，兩個數字一路都可以放心顯示。 */
+  function turnLabel(g, slash) {
+    if (app.mode === 'online' && g.phase !== 'over') return '第 ' + g.turnNo + ' 題';
+    return '第 ' + g.turnNo + slash + g.totalTurns + ' 題';
+  }
+
   function render() {
     var v = app.view;
     if (!v) return;
@@ -993,7 +1042,7 @@
       phaseChip.textContent = PHASE_LABEL[g.phase] || g.phase;
       phaseChip.setAttribute('data-p', g.phase);
     }
-    $('round-chip').textContent = g ? ('第 ' + g.turnNo + ' / ' + g.totalTurns + ' 題') : '尚未開始';
+    $('round-chip').textContent = g ? turnLabel(g, ' / ') : '尚未開始';
 
     updateTimers();
 
@@ -1016,7 +1065,7 @@
       if (h.lenShown) meta.push(h.len + ' 個字');
       if (!mine && !h.lenShown && !h.catShown) meta.push('畫家還沒給提示');
       if (!mine && h.revealed) meta.push('翻開了 1 個字');
-      meta.push('第 ' + g.turnNo + '/' + g.totalTurns + ' 題');
+      meta.push(turnLabel(g, '/'));
       $('wordbar-meta').textContent = meta.join('・');
     } else {
       wb.hidden = false;
@@ -1024,7 +1073,7 @@
       $('wordbar-label').textContent = '題目';
       $('wordbar-mask').textContent = '—';
       $('wordbar-meta').textContent = (g.phase === 'picking' ? '畫家正在挑題目…' : '等待開始') +
-        '・第 ' + g.turnNo + '/' + g.totalTurns + ' 題';
+        '・' + turnLabel(g, '/');
     }
 
     renderPlayers();
@@ -1123,7 +1172,7 @@
   /* 每人輪數／每題秒數／題目難度都用按鈕，不用滑桿：
      這張面板每次收到房間投影就會重畫，滑桿拖到一半會被打斷，按鈕不會。 */
   var ROUND_CHOICES = [1, 2, 3, 4, 5];
-  var SEC_CHOICES = [30, 45, 60, 80, 120];
+  var SEC_CHOICES = [60, 90, 120];
   var DIFF_CHOICES = [
     { v: 0, label: '混合' }, { v: 1, label: '簡單' },
     { v: 2, label: '普通' }, { v: 3, label: '困難' }
@@ -1181,7 +1230,7 @@
     app.roomCreate = {
       roomName: (Store.nick() || '大家') + ' 的房間',
       rounds: 2,
-      drawSec: 80,
+      drawSec: 90,
       diff: 0
     };
     renderRoomCreateOptions();
@@ -1399,6 +1448,7 @@
       if (!$('tool-hint').textContent) toolHint(TOOL_TIP[app.paint.getTool()]);
     }
     renderHintRow(g, canDraw);
+    syncDoneButtons();
     syncGuessbarSpace();
 
     var input = $('guess-input');
@@ -1488,7 +1538,7 @@
     if (v.you.role === 'spectator') return '觀戰中：可以看畫與猜題紀錄，不能畫也不能猜。';
     if (g.phase === 'picking') return g.you.canPick ? '從三個題目裡挑一個。' : '等畫家挑題目。';
     if (g.phase === 'drawing') {
-      if (g.you.isDrawer) return '用工具列把題目畫出來，別讓時間跑完。';
+      if (g.you.isDrawer) return '用工具列把題目畫出來；畫好了按「畫完了」告訴大家（這一題不會因此結束）。';
       if (g.you.guessed) return '你已經猜中了，等其他人或時間結束。';
       return '把答案打進下面的猜題框，猜錯不扣分。';
     }

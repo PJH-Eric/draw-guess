@@ -624,6 +624,16 @@ async function main() {
   check('提示區塊在畫布上方、沒有蓋住畫布', hd.bottom <= hd.boardTop + 1 && hd.left >= -1, JSON.stringify(hd));
   check('三張提示只有第一張能按', hd.btn1 === true && hd.btn2 === false, JSON.stringify(hd));
 
+  /* 「畫完了」只是通知，不會結束這一題；真的要結束是「跳過這題」 */
+  const beforeDone = await cdp.json('(function(){var g=window.DrawGuessApp.view.game;return {turnNo:g.turnNo,phase:g.phase};})()');
+  await cdp.eval('window.__probe.click("#b-done"); return 1;');
+  await sleep(400);
+  const afterDone = await cdp.json('(function(){var g=window.DrawGuessApp.view.game;var b=document.getElementById("b-done");return {turnNo:g.turnNo,phase:g.phase,label:b.textContent.trim(),disabled:b.disabled,skip:!!document.getElementById("b-skip")};})()');
+  check('按「畫完了」不會結束這一題',
+    afterDone.turnNo === beforeDone.turnNo && afterDone.phase === 'drawing', JSON.stringify(afterDone));
+  check('按過之後「畫完了」變成已通知', afterDone.disabled === true && afterDone.label.indexOf('已說') >= 0, JSON.stringify(afterDone));
+  check('「畫完了」下面有「跳過這題」', afterDone.skip === true);
+
   /* 上一頁要先問過：按了只開確認框，不會直接把人踢出對局 */
   await cdp.eval('window.__probe.click("#b-game-back"); return 1;');
   await sleep(220);

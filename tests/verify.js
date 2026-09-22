@@ -572,6 +572,19 @@ section('房間狀態機（lib/rooms.js）');
   if (room.state.phase === 'picking') room.pickWord(drawerId, room.state.choices[0], t);
   check('真人畫家可以選題並進入作畫', room.state.phase === 'drawing', room.state.phase);
 
+  /* 「畫完了」只是通知，不會結束這一題 */
+  {
+    const turn0 = room.state.turnNo;
+    check('只有畫家能說畫完了', !room.markDone(humanGuesser, t).ok);
+    check('觀戰者不能說畫完了', !room.markDone('s1', t).ok);
+    const done1 = room.markDone(drawerId, t);
+    check('畫家可以說畫完了', done1.ok, done1.error);
+    check('說完畫完了這一題不會結束', room.state.turnNo === turn0 && room.state.phase === 'drawing', room.state.phase);
+    check('說完畫完了畫家還是畫家', room.state.drawerId === drawerId);
+    check('同一題不能重複說畫完了', !room.markDone(drawerId, t).ok);
+    check('投影看得出畫家已經說畫完了', room.viewFor(drawerId, t).room.drawerDone === true);
+  }
+
   const answer = Rules.word(room.state).text;
   t += 1000;
   const miss = room.guess(humanGuesser, '絕對不是這個', t);
@@ -671,9 +684,29 @@ section('滿房與觀戰轉換');
   room.setReady('a', true);
   room.setReady('c', true);
   room.start('a', t);
+
+  /* 對局進行中還有空位：中途加入直接當玩家，排在目前順位的最後一位 */
+  const totalBefore = room.state.totalTurns;
+  const orderBefore = room.state.order.length;
+  room.settings.maxPlayers = 4;
   const late = room.join('d', { name: 'D', role: 'player', now: t });
-  check('對局進行中加入一律先當觀戰', late.ok && late.member.role === 'spectator');
-  check('對局進行中不能下場', !room.becomePlayer('d').ok);
+  check('對局進行中還有空位就能直接加入當玩家', late.ok && late.member.role === 'player', JSON.stringify(late));
+  check('中途加入的人會被排進這一局的名單', !!Rules.player(room.state, 'd'));
+  check('中途加入排在順位最後一位', room.state.order[room.state.order.length - 1] === 'd', room.state.order.join(','));
+  check('總題數跟著人數重新計算', room.state.totalTurns === room.state.rounds * (orderBefore + 1),
+    totalBefore + '->' + room.state.totalTurns);
+
+  /* 位子滿了的話，對局進行中一樣會被降為觀戰，也一樣下不了場 */
+  room.settings.maxPlayers = 3;
+  const full = room.join('e', { name: 'E', role: 'player', now: t });
+  check('對局進行中位子滿了一樣降為觀戰', full.ok && full.downgraded && full.member.role === 'spectator');
+  check('對局進行中位子滿著就不能下場', !room.becomePlayer('e', t).ok);
+
+  /* 有空位之後，原本的觀戰者也能直接下場，一樣排在最後一位 */
+  room.settings.maxPlayers = 5;
+  const upgraded = room.becomePlayer('e', t);
+  check('對局進行中有空位就能直接下場', upgraded.ok, JSON.stringify(upgraded));
+  check('下場的人也排在順位最後一位', room.state.order[room.state.order.length - 1] === 'e', room.state.order.join(','));
 }
 
 section('房主設定與再玩一局');
@@ -711,11 +744,11 @@ section('房主設定與再玩一局');
   check('可以指定題目難度', room.setSettings('a', { diff: 1 }).ok && room.settings.diff === 1);
   check('不合法的難度被拒絕', !room.setSettings('a', { diff: 9 }).ok);
 
-  room.setSettings('a', { rounds: 1, drawSec: 30 });
+  room.setSettings('a', { rounds: 1, drawSec: 60 });
   room.setReady('a', true);
   room.setReady('b', true);
   room.start('a', t);
-  check('規則有套用到對局', room.state.rounds === 1 && room.state.drawMs === 30000);
+  check('規則有套用到對局', room.state.rounds === 1 && room.state.drawMs === 60000);
 
   /* 把一局跑完 */
   let now = t;
@@ -734,6 +767,84 @@ section('房主設定與再玩一局');
   check('一個人投票還不會開始', v1.ok && v1.started === false, JSON.stringify(v1));
   const v2 = room.voteRematch('b', now);
   check('大家都投票就重新開始', v2.ok && v2.started === true && room.phase === 'playing');
+}
+
+section('一直有人中途加入，最後順位就一直往後移');
+{
+  const store = new RoomStore({ maxPlayers: 8 });
+  const t = 1000;
+  const room = store.create('a', { name: 'A', now: t }).room;
+  room.join('b', { name: 'B', role: 'player', now: t });
+  room.setReady('a', true);
+  room.setReady('b', true);
+  room.start('a', t);
+
+  const seq = ['c', 'd', 'e'];
+  for (let i = 0; i < seq.length; i++) {
+    const id = seq[i];
+    const before = room.state.order.length;
+    room.join(id, { name: id.toUpperCase(), role: 'player', now: t + i + 1 });
+    check(id + ' 加入後排在目前的最後一位', room.state.order[room.state.order.length - 1] === id,
+      room.state.order.join(','));
+    check(id + ' 加入後總題數等於「輪數 × 目前人數」', room.state.totalTurns === room.state.rounds * (before + 1),
+      room.state.totalTurns);
+  }
+  check('最後順位跟著加入順序一路往後移',
+    room.state.order.indexOf('c') < room.state.order.indexOf('d') &&
+    room.state.order.indexOf('d') < room.state.order.indexOf('e'),
+    room.state.order.join(','));
+
+  /* 把整場（含中途一直加入）跑到底，確認真的會結束，不會因為人數一直變而卡住 */
+  let now = t + seq.length + 1;
+  let guard = 0;
+  while (room.phase === 'playing' && guard < 8000) {
+    guard += 1;
+    now += 500;
+    if (room.state && room.state.phase === 'picking') room.pickWord(room.state.drawerId, room.state.choices[0], now);
+    room.tick(now);
+  }
+  check('人數一直變動，這一場還是會正常結束', room.phase === 'finished', 'guard=' + guard);
+  check('結束時五個人都在最終名單與比分裡',
+    ['a', 'b', 'c', 'd', 'e'].every((id) => !!Rules.player(room.state, id)),
+    room.state.players.map((p) => p.id).join(','));
+}
+
+section('中途加入的玩家可以順利再玩一局');
+{
+  /* 修正過的 bug：中途加入的玩家以前一律先被降為觀戰，
+     這一局結束後常常忘記手動下場，結果「再玩一局」永遠等不到他投票。
+     現在中途加入就直接是玩家，這裡驗證他從頭到尾都在名單裡，
+     結束後可以直接投票，票數到齊也真的能重開一局。 */
+  const store = new RoomStore({});
+  const t = 1000;
+  const room = store.create('a', { name: 'A', now: t }).room;
+  room.join('b', { name: 'B', role: 'player', now: t });
+  room.setSettings('a', { rounds: 1, drawSec: 60 });
+  room.setReady('a', true);
+  room.setReady('b', true);
+  room.start('a', t);
+
+  const joined = room.join('c', { name: 'C', role: 'player', now: t + 100 });
+  check('中途加入的玩家一開始就是玩家，不是觀戰', joined.ok && joined.member.role === 'player');
+
+  let now = t + 100;
+  let guard = 0;
+  while (room.phase === 'playing' && guard < 6000) {
+    guard += 1;
+    now += 500;
+    if (room.state && room.state.phase === 'picking') room.pickWord(room.state.drawerId, room.state.choices[0], now);
+    room.tick(now);
+  }
+  check('三個人的對局可以跑到結束', room.phase === 'finished', 'guard=' + guard);
+  check('中途加入的玩家有被算進最終名單', !!Rules.player(room.state, 'c'));
+
+  check('中途加入的玩家不用手動下場就能投票', room.voteRematch('c', now).ok);
+  check('原本的玩家投票', room.voteRematch('a', now).ok);
+  const started = room.voteRematch('b', now);
+  check('三個人都投了就重新開始，不會卡住', started.ok && started.started === true && room.phase === 'playing',
+    JSON.stringify(started));
+  check('新的一局三個人都在名單裡', ['a', 'b', 'c'].every((id) => !!Rules.player(room.state, id)),
+    room.state.players.map((p) => p.id).join(','));
 }
 
 /* ================================================================

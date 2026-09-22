@@ -358,6 +358,25 @@ async function run() {
       await watcher.until((c) => c.syncCount > beforeSync && Array.isArray(c.view.game.strokes), 4000),
       watcher.view.game && watcher.view.game.strokes && watcher.view.game.strokes.length);
 
+    /* ------------------------------------- 畫完了（只是通知） */
+    section('畫完了只是通知');
+    guesser.clearErrors();
+    guesser.emit('room:done', {});
+    check('只有畫家能說畫完了', await guesser.until((c) => !!c.lastError(), 3000), guesser.lastError());
+    drawer.emit('room:done', {});
+    check('畫家說畫完了，大家都看得到',
+      await watcher.until((c) => c.view.room.drawerDone === true, 4000), String(watcher.view.room.drawerDone));
+    check('說完畫完了這一題還在繼續',
+      watcher.view.game.phase === 'drawing' && watcher.view.game.turnNo === drawer.view.game.turnNo,
+      watcher.view.game.phase);
+    check('紀錄裡看得到「某某說畫完了」',
+      (watcher.view.room.summary || []).some((n) => n.text.indexOf('說畫完了') >= 0),
+      JSON.stringify((watcher.view.room.summary || []).slice(-2)));
+    drawer.clearErrors();
+    drawer.emit('room:done', {});
+    check('同一題不能重複說畫完了', await drawer.until((c) => !!c.lastError(), 3000), drawer.lastError());
+    drawer.clearErrors();
+
     /* -------------------------------------------- 猜題 */
     section('猜題');
     const feedBefore = watcher.feed.length;
@@ -439,7 +458,7 @@ async function run() {
   }
 
   /* -------------------------------------------- 邀請撤銷與滿房 */
-  section('邀請撤銷與滿房轉觀戰');
+  section('邀請撤銷與對局中途加入');
   host.emit('room:revokeInvite', { token: invPlayer.token });
   await sleep(300);
   const revoked = await watcher.ask('invite:check', { code, token: invPlayer.token });
@@ -448,9 +467,15 @@ async function run() {
   const extra = new Client('extra', 'client-extra-001', '路人');
   await extra.connect();
   const extraJoin = await extra.ask('room:join', { code, role: 'player', name: '路人' });
-  check('對局進行中加入會被明確降為觀戰',
-    extraJoin.ok === true && extraJoin.role === 'spectator' && extraJoin.downgraded === true,
+  check('對局進行中還有空位就直接加入當玩家（自動排最後一位）',
+    extraJoin.ok === true && extraJoin.role === 'player' && !extraJoin.downgraded,
     JSON.stringify(extraJoin));
+  check('中途加入的人看得到自己在這一局的名單裡',
+    await extra.until((c) => !!c.view && !!c.view.game && !!c.view.you && c.view.you.inGame, 3000),
+    extra.view && extra.view.you);
+  check('大家都看得到「路人中途加入」的紀錄',
+    await host.until((c) => (c.view.room.summary || []).some((s) => s.text.indexOf('中途加入') >= 0), 3000),
+    JSON.stringify(host.view.room.summary.slice(-3)));
 
   /* -------------------------------------------- 斷線重連 */
   section('斷線重連');
@@ -477,14 +502,20 @@ async function run() {
 
   host.emit('room:leave', {});
   await sleep(400);
-  check('還有一位真人玩家時房間不關', watcher.closed === null, JSON.stringify(watcher.closed));
+  check('還有真人玩家時房間不關', watcher.closed === null, JSON.stringify(watcher.closed));
 
   mate2.emit('room:leave', {});
-  check('最後一位真人離開後觀戰者收到「房間已結束」',
+  await sleep(400);
+  /* 中途加入的「路人」現在是真正的玩家（不是觀戰），還在的話房間一樣不會關 */
+  check('中途加入的玩家還在，房間也不會關', watcher.closed === null, JSON.stringify(watcher.closed));
+
+  extra.emit('room:leave', {});
+  check('最後一位真人（含中途加入的）離開後觀戰者收到「房間已結束」',
     await watcher.until((c) => !!c.closed, 5000),
     JSON.stringify(watcher.closed));
   check('關閉原因講清楚', watcher.closed && /沒有玩家|沒有人/.test(watcher.closed.reason), watcher.closed && watcher.closed.reason);
-  check('另一位觀戰者也收到通知', await extra.until((c) => !!c.closed, 5000), JSON.stringify(extra.closed));
+  /* extra（路人）自己就是觸發關房的最後一位玩家，離開當下就已經離開了 socket.io 的房間分組，
+     不會再收到之後的廣播，所以改用 watcher 這個一路留到最後的觀戰者確認關房通知即可。 */
   check('房間從大廳列表消失',
     await lobbyWatcher.until((c) => !(c.rooms || []).some((r) => r.code === code), 5000),
     JSON.stringify((lobbyWatcher.rooms || []).map((r) => r.code)));

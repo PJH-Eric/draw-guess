@@ -33,7 +33,7 @@
     REVEAL_MS: 7000,         // 公布答案停留時間
     ROUNDS_DEFAULT: 2,       // 每個人輪流當幾次畫家
     ROUNDS_MAX: 5,
-    DRAW_SEC_MIN: 30,
+    DRAW_SEC_MIN: 60,
     DRAW_SEC_MAX: 120,
     MAX_STROKES: 600,        // 一題最多幾筆（防洪）
     MAX_STROKE_POINTS: 400,  // 單筆最多幾個點
@@ -593,6 +593,25 @@
     return ok({ removed: id });
   }
 
+  /** 對局進行中有人加入：排在目前順位的最後一位，這一輪還沒排到他就會排進去。
+   *  總題數（rounds × 人數）跟著重算，所以人一直加，遊戲就一直往後延。 */
+  function addPlayer(state, p) {
+    if (state.over) return err('這一局已經結束了。', 'over');
+    if (player(state, p.id)) return ok({ state: state, already: true });
+    if (state.players.length >= CONST.MAX_PLAYERS) return err('玩家席已經滿了。', 'full');
+    var entry = {
+      id: String(p.id),
+      name: String(p.name || ''),
+      ai: p.ai || null,
+      score: 0,
+      drew: 0
+    };
+    state.players.push(entry);
+    state.order.push(entry.id);
+    state.totalTurns = state.rounds * state.order.length;
+    return ok({ state: state, player: entry });
+  }
+
   /* ------------------------------------------------------------ 投影 */
 
   function maskOf(state) {
@@ -720,6 +739,7 @@
     tick: tick,
     finish: finish,
     removePlayer: removePlayer,
+    addPlayer: addPlayer,
     toPublic: toPublic,
     describe: describe,
     maskOf: maskOf,

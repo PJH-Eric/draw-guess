@@ -314,7 +314,7 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 .playbar{flex:0 0 auto;min-width:0;min-height:0;display:flex;flex-direction:column;gap:4px}
 
 /* 畫布 */
-.stage{position:relative;flex:1 1 auto;min-height:0;min-width:0;display:flex;align-items:center;justify-content:center;padding:3px 0}
+.stage{position:relative;flex:1 1 auto;min-height:0;min-width:0;display:flex;align-items:center;justify-content:center;padding:2px 0}
 .stage-canvas{position:relative;flex:0 0 auto;display:block;width:300px;height:300px}
 #board{
   display:block;width:100%;height:100%;
@@ -460,7 +460,10 @@ body.has-guessbar .playarea{padding-bottom:var(--guessbar-h,0px)}
 .hintbtn.done::after{content:"✓";margin-inline-start:4px}
 .hintrow-note{flex:0 0 auto;max-width:170px;font-size:.66rem;font-weight:700;line-height:1.25;color:var(--ink-soft)}
 .toolscroll{flex:1 1 auto;min-width:0;display:flex;gap:5px;align-items:center;flex-wrap:wrap}
-.tool-done{flex:0 0 auto;margin-left:auto}
+.donebox{flex:0 0 auto;margin-left:auto;display:flex;gap:5px;align-items:stretch}
+.tool-done{flex:0 0 auto}
+.tool-skip{flex:0 0 auto}
+.donebox .btn3d.small{white-space:nowrap}
 .tool-hint{margin:0 2px;font-size:.76rem;font-weight:700;color:var(--ink-soft);line-height:1.4;min-height:1.1em}
 .tool-hint[data-kind=error]{color:var(--danger)}
 .tool-hint[data-kind=ok]{color:var(--ok)}
@@ -476,17 +479,25 @@ body.big-tools .fillbox{min-height:56px}
    一整個工具列的高度（實測手機橫向 140 → 287、平板橫向 430 → 620）。
    ================================================================ */
 @media (orientation:landscape) and (min-width:560px){
-  /* 抬頭合併成一列：左邊狀態與倒數、右邊題目吃滿剩下的寬度。
-     省下一整列的高度（實測手機橫向多 40px、平板橫向多 44px 給畫布）。 */
-  .game-head{flex-direction:row;align-items:center;gap:8px;padding-right:var(--hud-reserve)}
+  /* 抬頭合併成一列：狀態與倒數、題目、玩家與提示全部排在同一行，
+     一行放不下的部分自己換行（不會蓋到東西）。每少一列就多一列的高度給畫布。 */
+  /* 橫向的高度全部是畫布的：上排按鈕收到 48（仍在 46 命中區之上）、列間距壓到最小 */
+  :root{--topbtn:48px}
+  .game-top .btn3d.icononly,.btn3d.settings-fab{min-width:48px;min-height:48px;padding:8px 10px calc(8px + var(--d))}
+  .game-main{padding-top:calc(2px + var(--safe-t));padding-bottom:calc(2px + var(--safe-b))}
+  .game-head{flex-direction:row;flex-wrap:wrap;align-items:center;gap:4px 8px;padding-right:var(--hud-reserve)}
   .game-top{flex:0 0 auto;padding-right:0}
   .statusbar{flex:0 0 auto;flex-wrap:nowrap}
-  .wordbar{flex:1 1 auto;min-width:0;margin:0;min-height:48px;padding:3px 14px}
+  /* 題目列的理想寬度跟著螢幕走：窄螢幕不要因為 basis 太大而被擠到下一行 */
+  .wordbar{flex:1 1 min(300px,32vw);min-width:0;margin:0;min-height:44px;padding:2px 14px}
 
   /* 畫布是正方形又受高度限制，畫布左右本來就是空的；
      工具欄拿去用不會讓畫布變小，反而少換幾行、按鈕不會被裁掉。 */
-  /* 這一列跟右上角那三顆固定按鈕同高，右邊要留出來才不會被蓋住 */
-  .canvastop{padding:1px var(--hud-reserve) 2px 0}
+  /* 已經在 .game-head 裡，右邊的保留寬度由外層負責。
+     flex:0 0 auto ＝ 整組放得下才留在同一行，放不下就整組換到下一行（不會被壓扁）；
+     max-width 讓它換行後仍不會撐破畫面（玩家多的時候玩家列自己橫向捲）。 */
+  .canvastop{flex:0 0 auto;min-width:0;max-width:100%;padding:0}
+  .playerstrip{padding:0}
   .hintdock{padding:1px 7px;gap:4px}
   .hintrow-note{display:none}
 
@@ -509,8 +520,11 @@ body.big-tools .fillbox{min-height:56px}
   .toolrow-misc{flex-wrap:wrap;gap:4px}
   .widthgroup{gap:4px}
   .toolscroll{margin-left:0;gap:4px;width:100%;flex-wrap:wrap}
-  /* 很矮的橫向手機工具列會捲動，「畫完了」黏在底部才不會被捲不到 */
-  .tool-done{margin-left:0;width:100%;position:sticky;bottom:0;z-index:2}
+  /* 很矮的橫向手機工具列會捲動，兩顆結束鍵黏在底部才不會被捲不到。
+     直向是左右並排（省高度），橫向直接上下疊（欄位夠寬） */
+  .donebox{margin-left:0;width:100%;flex-direction:column;position:sticky;bottom:0;z-index:2;
+    background:linear-gradient(to bottom,rgba(255,253,248,0),var(--paper) 30%);padding-top:4px}
+  .tool-done,.tool-skip{width:100%}
   .fillbox{flex:1 1 auto;justify-content:center}
   .tool-hint{display:none}
 
@@ -792,6 +806,12 @@ body.big-tools .fillbox{min-height:56px}
   .toolrow-colors::-webkit-scrollbar,
   .toolscroll::-webkit-scrollbar{display:none}
   .toolbtn,.widthbtn,.colorbtn,.fillbox,.widthgroup{flex:0 0 auto}
+  /* 「畫完了／跳過這題」跟粗細那條同一行（不要多吃一列高度）：
+     左邊那條自己橫向捲，兩顆按鈕釘在右邊不會被捲走。 */
+  .toolrow-misc{flex-wrap:nowrap}
+  .toolscroll{min-width:0}
+  .donebox{gap:4px}
+  .donebox .btn3d.small{min-height:46px;padding:9px 11px calc(9px + var(--d));font-size:.84rem}
   /* 工具提示在小螢幕上不值得那一行高度，工具本身有 title 與 aria-label */
   .tool-hint{display:none}
   .wordbar-mask{font-size:clamp(1.4rem,7vw,2.1rem);letter-spacing:.16em}

@@ -328,11 +328,11 @@ io.on('connection', (socket) => {
   }
 
   socket.on('room:becomePlayer', withRoom((room) => {
-    const res = room.becomePlayer(socket.data.clientId);
+    const res = room.becomePlayer(socket.data.clientId, now());
     if (!res.ok) return fail(socket, res.error, res.code);
     const m = room.member(socket.data.clientId);
     room.system(m.name + ' 從觀戰改成下場一起玩。', now());
-    syncRoom(room); syncLobby();
+    syncRoom(room, true); syncLobby();
   }));
 
   socket.on('room:becomeSpectator', withRoom((room) => {
@@ -388,6 +388,13 @@ io.on('connection', (socket) => {
 
   socket.on('room:hint', withRoom((room) => {
     const res = room.giveHint(socket.data.clientId, now());
+    if (!res.ok) return fail(socket, res.error, res.code);
+    syncRoom(room, true);
+  }));
+
+  /* 「畫完了」只是通知，不會結束這一題 */
+  socket.on('room:done', withRoom((room) => {
+    const res = room.markDone(socket.data.clientId, now());
     if (!res.ok) return fail(socket, res.error, res.code);
     syncRoom(room, true);
   }));
