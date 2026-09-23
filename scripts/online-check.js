@@ -163,7 +163,7 @@ async function run() {
   const health = await startServer();
   check('/health 回報服務正常', health && health.ok === true, JSON.stringify(health));
   check('/health 說得出服務名稱', health.service === 'draw-guess', health.service);
-  check('/health 回報題庫大小', health.words === 1999, health.words);
+  check('/health 回報題庫大小', health.words === 2000, health.words);
   const pageOrigin = await fetch(BASE + '/health', { headers: { Origin: 'https://pjh-eric.github.io' } });
   check('GitHub Pages 可跨來源連線', pageOrigin.headers.get('access-control-allow-origin') === 'https://pjh-eric.github.io');
   const renderOrigin = await fetch(BASE + '/health', { headers: { Origin: 'https://draw-guess.onrender.com' } });

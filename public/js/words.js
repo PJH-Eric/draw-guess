@@ -64,7 +64,8 @@
     people: { key: 'people', label: '人物角色', emoji: '🧑' },
     body: { key: 'body', label: '身體部位', emoji: '🖐' },
     clothes: { key: 'clothes', label: '服裝配件', emoji: '👕' },
-    festival: { key: 'festival', label: '節慶節日', emoji: '🏮' }
+    festival: { key: 'festival', label: '節慶節日', emoji: '🏮' },
+    taiwan: { key: 'taiwan', label: '台灣在地', emoji: '🧋' }
   };
   var CATEGORY_KEYS = Object.keys(CATEGORIES);
 
@@ -1092,7 +1093,7 @@
         '蘿蔔糕@bread 芋頭糕@bread 腸粉@sushi 叉燒包@riceball 蝦餃@riceball 塔可餅@pizza 千層麵@cake',
         '燉飯@hotpot 炸魚薯條@fish 漢堡排@burger 牛丼@hotpot 親子丼@hotpot 天婦羅@hotdog 烏龍麵@hotpot',
         '蕎麥麵@hotpot 大阪燒@pizza 泡菜@hotpot 石鍋拌飯@hotpot 韓式炸雞@hotdog 提拉米蘇@cake',
-        '蘋果派@pizza 春捲@hotdog 冰沙@bubbletea 紅豆湯@hotpot 仙草@cake 愛玉@cake 檳榔@grape'
+        '蘋果派@pizza 春捲@hotdog 冰沙@bubbletea 紅豆湯@hotpot 仙草@cake 愛玉@cake'
       ]
     },
     home: {
@@ -1375,15 +1376,14 @@
       hard: true,
       icons: ['island', 'mountain', 'sea'],
       3: [
-        '台灣|臺灣 日本 韓國 泰國 越南 新加坡 印度 埃及 法國 英國 德國 義大利 西班牙 荷蘭 瑞士 希臘',
+        '日本 韓國 泰國 越南 新加坡 印度 埃及 法國 英國 德國 義大利 西班牙 荷蘭 瑞士 希臘',
         '俄羅斯 美國 加拿大 墨西哥 巴西 阿根廷 澳洲 紐西蘭 肯亞 南非 冰島 芬蘭 土耳其 蒙古',
-        '玉山@mountain 阿里山@mountain 日月潭@sea 太魯閣@mountain 墾丁@sea 澎湖@island 蘭嶼@island',
         '富士山@mountain 喜馬拉雅山@mountain 聖母峰@mountain 撒哈拉沙漠@desert 亞馬遜河@sea',
         '尼羅河@sea 長江@sea 黃河@sea 密西西比河@sea 大峽谷@mountain 尼加拉瀑布@waterfall 死海@sea',
         '貝加爾湖@sea 赤道@sun 北極@snowman 南極@penguin 熱帶雨林@tree 大堡礁@fish 地中海@sea',
         '中國 菲律賓 馬來西亞 印尼 緬甸 尼泊爾 以色列 瑞典 挪威 丹麥 波蘭 捷克 奧地利 葡萄牙',
         '愛爾蘭 智利 秘魯 古巴 摩洛哥 衣索比亞 杜拜 香港 澳門 艾菲爾鐵塔|巴黎鐵塔@house',
-        '自由女神@person 大笨鐘@clock 雪梨歌劇院@house 白宮@house 聖家堂@house 台北101|101@house'
+        '自由女神@person 大笨鐘@clock 雪梨歌劇院@house 白宮@house 聖家堂@house'
       ]
     },
     civics: {
@@ -1462,6 +1462,11 @@
       ],
       3: ['旗袍 和服 婚紗 燕尾服 牛仔褲 連帽衫|帽t 羽絨外套 髮箍@hat 手環@clock 耳罩@microphone 斗笠@hat']
     },
+    taiwan: {
+      icons: ['mountain', 'house'],
+      2: ['台灣|臺灣@island 台北101|101@house 玉山@mountain 阿里山@mountain 日月潭@sea 日月光@sun 檳榔@grape'],
+      3: ['太魯閣@mountain 墾丁@sea 澎湖@island 蘭嶼@island 媽祖遶境@person 鹽水蜂炮@star']
+    },
     festival: {
       icons: ['lantern', 'xmastree'],
       1: ['紅包|壓歲錢@book 禮物|禮盒@book 聖誕老人@person 煙火@star 鞭炮@hotdog 南瓜燈@apple 天燈@lantern'],
@@ -1473,7 +1478,7 @@
       ],
       3: [
         '教師節@book 清明節@flower 除夕@hotpot 七夕@star 重陽節@mountain 感恩節@bird 中元節@lantern',
-        '媽祖遶境@person 鹽水蜂炮@star 跨年@clock'
+        '跨年@clock'
       ]
     }
   };
