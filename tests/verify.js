@@ -604,7 +604,10 @@ section('房間狀態機（lib/rooms.js）');
   }
 
   check('沒準備時不能開始', !room.canStart().ok, room.canStart().error);
-  room.setReady('u1', true);
+  room.setReady('u2', true);
+  check('房主不用按準備：其他玩家都準備好就能開始', room.canStart().ok, room.canStart().error);
+  room.setReady('u2', false);
+  check('其他玩家還沒準備就不能開始（房主準備了也一樣）', (room.setReady('u1', true), !room.canStart().ok), room.canStart().error);
   room.setReady('u2', true);
   check('觀戰者不能按準備', !room.setReady('s1', true).ok);
   check('都準備好就能開始', room.canStart().ok, room.canStart().error);

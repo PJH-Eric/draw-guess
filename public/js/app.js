@@ -56,6 +56,7 @@
     var list = D.querySelectorAll('.screen');
     for (var i = 0; i < list.length; i++) list[i].classList.toggle('active', list[i].id === id);
     app.screen = id;
+    if (id !== 's-game') D.body.classList.remove('setup-open');
     if (id === 's-game') { layoutStage(); if (app.paint) app.paint.resize(); }
     Sound.setTrack(id === 's-game' ? 'draw' : 'menu');
   }
@@ -1119,6 +1120,12 @@
       html = overHtml(v, g);
     }
 
+    /* 房間設定卡比其他卡大得多：寬螢幕要改兩欄（.setup-card），而且它開著的時候
+       提示訊息要改到上方出現，不然會蓋住卡片底部的「準備／開始」（body.setup-open）。 */
+    var isSetup = !!html && !!v.room && !v.room.closed && v.room.phase === 'waiting';
+    card.classList.toggle('setup-card', isSetup);
+    D.body.classList.toggle('setup-open', isSetup);
+
     if (!html) {
       wrap.hidden = true;
       card.innerHTML = '';
@@ -1293,18 +1300,18 @@
        以前這裡讓房主先選好對方的身分（一定是玩家／一定是觀戰），但那是房主在幫對方做決定。
        身分應該讓被邀請的人自己選，所以連結本身不綁身分（一律是 'any'），對方點連結後
        在大廳落地頁自己按「加入當玩家」或「加入觀戰」（見 checkPendingInvite／setupLobby）。 */
+    /* 網址欄跟三顆按鈕排在同一行（以前網址一行、按鈕一行、說明兩行），說明也縮成一行，
+       這一區矮下來。 */
     var invite = '';
     if (v.you.can.invite) {
       invite = '<div class="setupblock"><h4>邀請朋友</h4>' +
         '<div class="inviterow"><label class="sr-only" for="invite-url">邀請連結</label>' +
-        '<input id="invite-url" readonly placeholder="按「產生連結」" value="' + esc(app.inviteUrl) + '"></div>' +
-        '<div class="chiprow">' +
+        '<input id="invite-url" readonly placeholder="按「產生連結」" value="' + esc(app.inviteUrl) + '">' +
         '<button type="button" class="pillbtn" data-act="invite-new">產生連結</button>' +
         '<button type="button" class="pillbtn" data-act="invite-copy"' + (app.inviteUrl ? '' : ' disabled') + '>複製</button>' +
         '<button type="button" class="pillbtn" data-act="invite-revoke"' + (app.inviteToken ? '' : ' disabled') + '>撤銷</button>' +
         '</div>' +
-        '<p class="setupnote">有效期 60 分鐘、最多 20 人次。對方開啟後會先停在大廳確認暱稱，' +
-        '再自己選要當玩家還是觀戰。</p></div>';
+        '<p class="setupnote">60 分鐘內有效・最多 20 人次・對方自己選身分</p></div>';
     }
 
     /* ---- 聊天室 ----
@@ -1327,30 +1334,35 @@
         '<button type="button" class="btn3d small" data-color="sky" data-act="chat-send">送出</button></div></div>';
     }
 
-    /* ---- 主要按鈕 ---- */
+    /* ---- 主要按鈕 ----
+       每個人只有一顆主要按鈕：房主是「開始！」（房主不用另外按準備，按開始就代表他準備好了，
+       伺服器 canStart 也不等房主）、其他玩家是「準備好了」、觀戰者是「下場一起玩」。
+       「改成觀戰」「離開房間」是次要動作，縮小一號（.sub）排在後面，手機上才排得進一行。 */
     var btns = '';
-    if (v.you.role === 'player') {
+    if (v.you.isHost && v.you.role === 'player') {
+      btns += '<button class="btn3d" data-color="grape" data-act="start"' +
+        (v.you.can.start ? '' : ' disabled') + '>開始！</button>';
+    } else if (v.you.role === 'player') {
       btns += '<button class="btn3d" data-color="' + (v.you.ready ? 'lemon' : 'mint') + '" data-act="ready">' +
         (v.you.ready ? '取消準備' : '準備好了 ✓') + '</button>';
     }
-    if (v.you.can.becomePlayer) btns += '<button class="btn3d small" data-color="mint" data-act="become-player">下場一起玩</button>';
-    if (v.you.can.becomeSpectator) btns += '<button class="btn3d small" data-color="cream" data-act="become-spectator">改成觀戰</button>';
-    if (v.you.isHost) {
-      btns += '<button class="btn3d" data-color="grape" data-act="start"' +
-        (v.you.can.start ? '' : ' disabled') + '>開始！</button>';
-    }
+    if (v.you.can.becomePlayer) btns += '<button class="btn3d" data-color="mint" data-act="become-player">下場一起玩</button>';
+    if (v.you.can.becomeSpectator) btns += '<button class="btn3d small sub" data-color="cream" data-act="become-spectator">改成觀戰</button>';
     /* 進來之後要走得掉：房主退出會把房主交給下一位，最後一個人退出房間就關掉 */
-    btns += '<button class="btn3d small" data-color="peach" data-act="leave-room">' +
+    btns += '<button class="btn3d small sub" data-color="peach" data-act="leave-room">' +
       (v.you.isHost ? '退出房間' : '離開房間') + '</button>';
 
     /* 房號跟「x / y 位玩家」以前各佔一行；席位卡本身就數得出人數，
-       那行字拿掉、房號也縮小，卡片才有地方放下面新的聊天室。 */
+       那行字拿掉、房號也縮小，卡片才有地方放下面新的聊天室。
+       內容分成兩欄（.setup-col）：寬螢幕並排（左：房號、名單、規則；右：邀請、聊天室），
+       一個畫面就看得完不用捲；窄螢幕兩欄上下接著排，跟以前一樣是一欄。 */
     return '<h3>房間設定</h3>' +
-      '<div class="roomcode"><b>' + esc(r.code) + '</b><span>把房號唸給朋友，或用下面的邀請連結</span></div>' +
+      '<div class="setup-cols"><div class="setup-col">' +
+      '<div class="roomcode"><b>' + esc(r.code) + '</b><span>把房號唸給朋友，或用邀請連結</span></div>' +
       '<div class="seatlist">' + (seats || '<div class="seatrow">還沒有人入座</div>') +
       (specs.length ? '<div class="seatrow spec">👀 ' + specs.length + ' 位觀戰</div>' : '') + '</div>' +
-      rules + invite + chatHtml +
-      (v.you.can.start ? '' : '<p>' + esc(v.you.can.startBlockedBy || '等房主按開始。') + '</p>') +
+      rules + '</div><div class="setup-col">' + invite + chatHtml + '</div></div>' +
+      (v.you.can.start ? '' : '<p class="setup-blocked">' + esc(v.you.can.startBlockedBy || '等房主按開始。') + '</p>') +
       '<div class="overlay-btns">' + btns + '</div>';
   }
 
@@ -1511,6 +1523,9 @@
     /* 畫家（含選題階段）不需要猜題框，觀戰者也沒有 */
     var isDrawer = !!(g && g.you.isDrawer);
     $('toolbar').hidden = !canDraw;
+    /* 沒有工具列的人（猜題者、觀戰者、還在選題的畫家）：橫向時右側那一欄收掉，
+       畫布回到正中間，不然右邊會空著一整欄、畫布偏左。舞台有 ResizeObserver，畫布會自己重算。 */
+    D.body.classList.toggle('no-tools', !canDraw);
     $('guessbar').hidden = canDraw || isDrawer || spectator || !g ||
       g.phase === 'over' || (v.room && v.room.closed);
 

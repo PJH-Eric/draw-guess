@@ -328,6 +328,10 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 .stage-overlay{
   position:absolute;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;
   padding:10px;background:rgba(74,59,85,.34);backdrop-filter:blur(2px);
+  /* 卡片頂端讓出右上角那排固定按鈕（對局設定、操作摘要、系統設定）的高度：
+     手機上卡片是滿版的，不讓位的話「房間設定」標題會被那三顆鈕蓋住。
+     按鈕距頂 10px、高 --topbtn、底下還有 6px 的立體陰影，再多留 8px。 */
+  padding-top:calc(10px + var(--topbtn) + 14px + var(--safe-t));
 }
 .overlay-card{
   width:min(100%,580px);max-height:100%;overflow-y:auto;overscroll-behavior:contain;
@@ -347,10 +351,13 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
    房間設定這張卡很長，要捲到最後才看得到按鈕的話，等於沒有出口。 */
 .overlay-btns{
   position:sticky;bottom:-14px;z-index:2;
-  display:flex;gap:10px;justify-content:center;flex-wrap:wrap;
+  display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;
   margin-top:12px;padding:10px 0 calc(10px + 4px);
   background:var(--paper);border-top:2px solid var(--line);
 }
+/* 次要動作（改成觀戰、離開房間）小一號，跟主要按鈕（開始／準備好了）排得進同一行；
+   命中區還是維持 46px 以上 */
+.overlay-btns .btn3d.sub{font-size:.84rem;padding:8px 12px calc(8px + var(--d));min-height:46px}
 /* 卡片捲到一半時，底部按鈕條下面留一點漸層，看得出來還有內容 */
 .overlay-btns::before{
   content:"";position:absolute;left:0;right:0;top:-14px;height:14px;pointer-events:none;
@@ -610,6 +617,19 @@ body.big-tools .fillbox{min-height:56px}
   border:2px solid var(--line);border-radius:16px;background:#fff;
 }
 .setupblock:last-of-type{margin-bottom:0}
+
+/* 房間設定卡的內容分兩欄（左：房號、名單、規則；右：邀請、聊天室）。
+   窄螢幕兩欄就上下接著排，跟一欄沒兩樣；寬螢幕（≥900px）並排，卡片加寬，
+   一個畫面就看得完，不用捲到底才看到聊天室跟「開始」。 */
+.setup-cols{display:block}
+.setup-col + .setup-col{margin-top:9px}
+.setup-blocked{margin:8px 0 0}
+@media (min-width:900px){
+  .overlay-card.setup-card{width:min(100%,920px)}
+  .setup-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start}
+  .setup-col + .setup-col{margin-top:0}
+  .setup-card .chatlist{max-height:210px}
+}
 .setupblock h4{
   margin:0 0 5px;font-size:.9rem;color:var(--grape-t);
   padding-bottom:5px;border-bottom:2px solid var(--line);
@@ -698,9 +718,11 @@ body.big-tools .fillbox{min-height:56px}
 
 /* ---------- 對局設定彈窗裡的房間區塊 ---------- */
 .roomcode-pill{flex:0 0 auto;border:3px solid var(--grape-d);border-radius:999px;background:#F8F4FF;color:var(--grape-t);padding:3px 14px;font-size:1rem;font-weight:900;letter-spacing:.18em}
-.inviterow{display:flex;gap:8px;flex-wrap:wrap;padding:0;margin:8px 0}
+/* 房間設定卡的邀請區：網址欄跟「產生連結／複製／撤銷」排同一行，不換行（網址太長就截掉，反正是唯讀、用複製鈕拿） */
+.inviterow{display:flex;gap:6px;flex-wrap:nowrap;align-items:center;padding:0;margin:4px 0 2px}
+.inviterow .pillbtn{flex:0 0 auto}
 .inviterow input{
-  flex:1 1 200px;min-width:0;font:inherit;font-size:.78rem;font-weight:700;
+  flex:1 1 0;min-width:0;font:inherit;font-size:.78rem;font-weight:700;
   border:3px solid var(--line);border-radius:12px;padding:8px 10px;background:#FAF7FF;color:var(--ink);
   user-select:text;-webkit-user-select:text;outline:none;min-height:46px
 }
@@ -720,6 +742,8 @@ body.big-tools .fillbox{min-height:56px}
   padding:10px 16px;font-weight:800;font-size:.88rem;line-height:1.5;
   box-shadow:0 6px 0 rgba(74,59,85,.2);text-align:center
 }
+/* 房間設定卡開著的時候，卡片底部是「開始／準備好了」：提示改到上方出現（右上那排固定鈕的正下方），才不會蓋住按鈕 */
+body.setup-open .toast{bottom:auto;top:calc(10px + var(--topbtn) + 14px + var(--safe-t))}
 .toast[data-kind=error]{background:var(--danger-bg);border-color:var(--danger);color:var(--danger)}
 .toast[data-kind=ok]{background:#E4F6EC;border-color:var(--mint-d)}
 
@@ -929,6 +953,10 @@ body.big-tools .fillbox{min-height:56px}
   .roomcode b{font-size:1.02rem}
   .roomcode span{font-size:.7rem}
   .chatlist{max-height:120px}
+  /* 網址欄＋三顆按鈕同一行：手機上按鈕收窄一點，網址欄才留得下看得出是連結的寬度 */
+  .inviterow{gap:5px}
+  .inviterow .pillbtn{min-width:44px;padding:7px 8px;font-size:.78rem}
+  .inviterow input{padding:8px 8px;font-size:.72rem}
 }
 
 /* 橫向且高度很矮（手機橫向）：把裝飾與留白壓到最低，先保住畫布與操作 */
@@ -1032,3 +1060,49 @@ input,textarea,select{user-select:text;-webkit-user-select:text}
   #guess-input,#lobby-nick,#lobby-code{font-size:16px}
 }
 body.kb-open .game-aside{bottom:var(--kb,0px)}
+
+/* ================================================================
+ * 對局畫面版面微調（放在檔案最後，確保蓋過上面各斷點的同名規則）
+ * ================================================================ */
+
+/* 題號只留題目列裡那一個：上排狀態列的「第 N 題」標籤跟題目列的「・第 N 題」重複了
+   （手機本來就只顯示在題目列），上排只留階段跟倒數，比較乾淨。 */
+.chip-round{display:none}
+
+/* 橫向／寬螢幕：工具列在畫布右側 */
+@media (orientation:landscape) and (min-width:560px){
+  /* 沒有工具列的人（猜題者、觀戰者）右側這一欄收掉，畫布回到正中間。
+     不能用 display:none：猜題框是這一欄的子元素（絕對定位在主畫面底部），藏掉這欄它也會跟著不見。 */
+  body.no-tools .playbar{width:0;min-width:0;padding:0;overflow:visible}
+  body.no-tools .playarea{gap:0}
+
+  /* 工具列固定分成四組，由上到下：畫圖工具 → 顏色 → 粗細 → 復原／重做／清除。
+     以前粗細跟復原鍵混在同一條帶子裡自由換行，會變成「粗細＋復原」一排、「重做＋垃圾桶」又一排，
+     讓粗細（跟填滿）各自佔滿一整排，復原／重做／清除三顆就一定會排在同一排。 */
+  .widthgroup{flex:0 0 100%}
+  .fillbox{flex:0 0 100%}
+}
+
+/* 較高的手機直向（畫面高度 ≥740px）：畫布是被「寬度」卡住的，上下本來就有空白，
+   拿那些空白把顏色排成兩排全部顯示、粗細與復原鍵也不用左右滑，
+   「畫完了／跳過這題」自己一排撐滿。畫布大小不變。360×640 這種矮手機維持可滑動的帶子。 */
+@media (orientation:portrait) and (max-width:620px) and (min-height:740px){
+  .toolrow-colors,.toolscroll{flex-wrap:wrap;overflow:visible}
+  .toolrow-misc{flex-wrap:wrap}
+  .toolscroll{flex:1 1 100%}
+  .donebox{flex:1 1 100%;margin-left:0}
+  .donebox .btn3d{flex:1 1 0}
+}
+
+/* 平板直向：工具鈕放大到 48px（顏色 44px），而且撐滿整個寬度，不要全擠在左邊。
+   工具那排每顆平分寬度；顏色保持圓形、平均散開；粗細與復原鍵維持 48px，結束鍵靠右。 */
+@media (orientation:portrait) and (min-width:621px){
+  .toolbtn,.widthbtn{width:48px;height:48px}
+  .colorbtn{width:44px;height:44px}
+  .fillbox{min-height:48px}
+  .toolrow-tools .toolbtn{flex:1 1 0;width:auto;min-width:48px}
+  .toolrow-colors{justify-content:space-between}
+  .toolrow{gap:8px}
+  .widthgroup{gap:8px}
+  .toolscroll{gap:8px}
+}

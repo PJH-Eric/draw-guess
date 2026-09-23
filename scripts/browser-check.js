@@ -541,6 +541,36 @@ async function main() {
       drawStage.canvas.w + ' / 視窗較短邊 ' + Math.min(v.width, v.height));
     await shot(v.name + '-7-作畫中');
 
+    /* 版面微調：題號只留題目列、橫向工具列分組、較高手機展開不滑、平板直向工具放大 */
+    const tb = await cdp.json(`(function(){
+      function R(e){ if(!e) return null; var r=e.getBoundingClientRect(); return {l:r.left,t:r.top,r:r.right,b:r.bottom,w:r.width,h:r.height}; }
+      var colors=document.getElementById('color-list'), scroll=document.getElementById('toolscroll');
+      var tools=[].slice.call(document.querySelectorAll('#tool-list .toolbtn')).map(function(e){return e.getBoundingClientRect().width;});
+      return {
+        roundChip: getComputedStyle(document.getElementById('round-chip')).display,
+        undo:R(document.getElementById('b-undo')), redo:R(document.getElementById('b-redo')), clear:R(document.getElementById('b-clear')),
+        skip:R(document.getElementById('b-skip')),
+        colorsOverflow: colors.scrollWidth - colors.clientWidth,
+        scrollOverflow: scroll.scrollWidth - scroll.clientWidth,
+        minTool: Math.min.apply(null, tools)
+      };
+    })()`);
+    check(v.name + '：題號只顯示在題目列（上排不再重複一個「第 N 題」）', tb.roundChip === 'none', tb.roundChip);
+    const portrait = v.height > v.width;
+    if (!portrait && v.width >= 560) {
+      check(v.name + '：橫向工具列的復原／重做／清除排在同一排',
+        Math.abs(tb.undo.t - tb.redo.t) < 3 && Math.abs(tb.undo.t - tb.clear.t) < 3, JSON.stringify([tb.undo, tb.redo, tb.clear]));
+    }
+    if (portrait && v.width <= 620 && v.height >= 740) {
+      check(v.name + '：較高的手機直向顏色全部顯示、不用左右滑', tb.colorsOverflow <= 1, 'overflow=' + tb.colorsOverflow);
+      check(v.name + '：較高的手機直向粗細與復原鍵不用左右滑', tb.scrollOverflow <= 1, 'overflow=' + tb.scrollOverflow);
+      check(v.name + '：清除鍵沒有被「跳過這題」擋住',
+        tb.clear.r <= tb.skip.l + 1 || tb.clear.b <= tb.skip.t + 1 || tb.clear.t >= tb.skip.b - 1, JSON.stringify([tb.clear, tb.skip]));
+    }
+    if (portrait && v.width >= 621) {
+      check(v.name + '：平板直向工具鈕放大到 48px 以上', tb.minTool >= 48, 'min=' + tb.minTool);
+    }
+
     /* 工具鈕刻意做小了，設定裡的「放大工具列」就是它的無障礙備案：
        打開之後每一顆都要回到 46px 以上。 */
     await cdp.eval('document.body.classList.add("big-tools"); return 1;');
@@ -826,6 +856,20 @@ async function main() {
   check('房號縮小了（字級小於原本的 1.5rem≈24px）',
     await hostTab.eval('var b=document.querySelector("#overlay-card .roomcode b"); return parseFloat(getComputedStyle(b).fontSize) < 22;'));
 
+  /* 寬螢幕（1024×768）房間卡分兩欄：左邊房號／名單／規則，右邊邀請／聊天室，並排不上下接 */
+  const cols = await hostTab.json('(function(){var c=document.querySelectorAll("#overlay-card .setup-col"); if(c.length!==2) return {n:c.length}; var a=c[0].getBoundingClientRect(), b=c[1].getBoundingClientRect(); return {n:2, side:b.left>=a.right-1, top:Math.abs(a.top-b.top), invInRight:!!c[1].querySelector("#invite-url"), chatInRight:!!c[1].querySelector("#chat-input"), rulesInLeft:!!c[0].querySelector(".rules-row")};})()');
+  check('寬螢幕房間卡分成兩欄並排（左：名單／規則，右：邀請／聊天室）',
+    cols.n === 2 && cols.side && cols.top < 3 && cols.invInRight && cols.chatInRight && cols.rulesInLeft, JSON.stringify(cols));
+  check('房主只有一顆「開始！」，不用另外按「準備好了」',
+    await hostTab.eval('return !document.querySelector("#overlay-card [data-act=ready]") && !!document.querySelector("#overlay-card [data-act=start]");'));
+  check('「改成觀戰／退出房間」是小一號的次要鈕',
+    await hostTab.eval('var l=document.querySelector("#overlay-card [data-act=leave-room]"), s=document.querySelector("#overlay-card [data-act=become-spectator]"); return l.classList.contains("sub") && (!s || s.classList.contains("sub"));'));
+  await hostTab.eval('document.getElementById("toast").hidden = true; window.__probe.click("[data-act=invite-new]"); return 1;');
+  await hostTab.waitFor('!document.getElementById("toast").hidden', 6000, '提示出現');
+  check('房間卡開著時提示訊息出現在上方，不會蓋住底部的開始鈕',
+    await hostTab.eval('var t=document.getElementById("toast").getBoundingClientRect(), b=document.querySelector("#overlay-card .overlay-btns").getBoundingClientRect(); return t.bottom < innerHeight/2 && t.bottom <= b.top;'),
+    await hostTab.eval('return JSON.stringify(document.getElementById("toast").getBoundingClientRect());'));
+
   /* 上面都是用平板尺寸（1024×768）測的；房間設定卡的新版面（規則同一行、
      一列一個玩家、聊天室）另外用手機直向尺寸量一次，確保跟平板同步縮小、不會爆版。 */
   await hostTab.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 3, mobile: true });
@@ -835,6 +879,10 @@ async function main() {
   check('手機直向：玩家列表同樣是滿版一列（不是縮成一團）',
     phoneCard.rowW > 0 && Math.abs(phoneCard.rowW - phoneCard.listW) < 2, JSON.stringify(phoneCard));
   check('手機直向：遊戲規則仍是同一行（不換行）', phoneCard.rulesRowFlex === 'nowrap', JSON.stringify(phoneCard));
+  const phoneTop = await hostTab.json('(function(){var h=document.querySelector("#overlay-card h3").getBoundingClientRect(), f=document.getElementById("b-settings").getBoundingClientRect(), a=document.querySelector(".game-top-actions").getBoundingClientRect(); var i=document.getElementById("invite-url").getBoundingClientRect(); var bs=document.querySelectorAll("#overlay-card .inviterow .pillbtn"); var one=bs.length===3; for(var k=0;k<bs.length;k++){var b=bs[k].getBoundingClientRect(); if(Math.abs((b.top+b.bottom)/2-(i.top+i.bottom)/2)>4) one=false;} return {titleTop:h.top, btnBottom:Math.max(f.bottom,a.bottom), inviteOneRow:one, inviteW:i.width, oneCol:getComputedStyle(document.querySelector("#overlay-card .setup-cols")).display};})()');
+  check('手機直向：「房間設定」標題沒有被右上角的固定鈕蓋住', phoneTop.titleTop >= phoneTop.btnBottom - 1, JSON.stringify(phoneTop));
+  check('手機直向：網址欄跟三顆邀請按鈕排在同一行', phoneTop.inviteOneRow && phoneTop.inviteW >= 60, JSON.stringify(phoneTop));
+  check('手機直向：房間卡維持一欄（兩欄上下接著排）', phoneTop.oneCol === 'block', JSON.stringify(phoneTop));
   await shot('線上-房間設定-手機直向');
   await hostTab.send('Emulation.setDeviceMetricsOverride', { width: 1024, height: 768, deviceScaleFactor: 2, mobile: true });
   await sleep(300);
@@ -847,10 +895,13 @@ async function main() {
     await mateTab.eval('return window.DrawGuessApp.view.room.chat.some(function(m){return m.text==="大家好，準備好了嗎？";});'));
   check('聊天送出後輸入框清空', await hostTab.eval('return document.getElementById("chat-input").value === "";'));
 
-  /* 準備 → 開始 */
-  await hostTab.eval('window.__probe.click("[data-act=ready]"); return 1;');
+  /* 準備 → 開始：房主不用按準備，其他玩家準備好了房主就能直接開始 */
+  check('其他玩家還沒準備時房主的「開始！」是停用的',
+    await hostTab.eval('var b=document.querySelector("#overlay-card [data-act=start]"); return !!b && b.disabled;'));
   await mateTab.eval('window.__probe.click("[data-act=ready]"); return 1;');
-  await sleep(600);
+  await hostTab.waitFor('(function(){var b=document.querySelector("#overlay-card [data-act=start]"); return !!b && !b.disabled;})()', 4000, '開始鈕可按');
+  check('房主沒按準備，其他玩家準備好了就能開始',
+    await hostTab.eval('var b=document.querySelector("#overlay-card [data-act=start]"); return !!b && !b.disabled;'));
   await hostTab.eval('window.__probe.click("[data-act=start]"); return 1;');
   await hostTab.waitFor('window.DrawGuessApp.view.room.phase === "playing"', 10000, '對局開始');
   await sleep(800);
@@ -874,6 +925,12 @@ async function main() {
   await shot('線上-觀戰者', watchTab);
   await shot('線上-玩家', mateTab);
   await shot('線上-房主對局');
+
+  /* 房主這一題是猜題者（平板橫向）：沒有工具列，右側那一欄要收掉、畫布置中，不能偏左 */
+  await sleep(300);
+  const hc = await hostTab.json('(function(){var c=document.getElementById("stage-canvas").getBoundingClientRect(), m=document.querySelector(".game-main").getBoundingClientRect(); return {canvasCenter:(c.left+c.right)/2, mainCenter:(m.left+m.right)/2, playbarW:document.getElementById("playbar").getBoundingClientRect().width, drawer:window.DrawGuessApp.view.game.you.isDrawer};})()');
+  check('猜題者（橫向）沒有工具列：右側那欄收掉、畫布置中',
+    !hc.drawer && hc.playbarW < 2 && Math.abs(hc.canvasCenter - hc.mainCenter) < 12, JSON.stringify(hc));
 
   const wLayout = await watchTab.json('window.__probe.layout()');
   check('觀戰畫面（平板直向）沒有水平溢出',
