@@ -76,7 +76,10 @@ section('題庫（words.js）');
   const NAME_CATS = ['star', 'movie', 'trend', 'history', 'geography', 'civics', 'physics', 'astro', 'music', 'taiwan'];
   const tooLong = Words.LIST.filter((w) => w.text.length > (NAME_CATS.indexOf(w.cat) >= 0 ? 6 : 4)).map((w) => w.text);
   check('每一題都是單詞（專有名詞最多六個字，其餘四個字）', tooLong.length === 0, tooLong.slice(0, 5).join('，'));
-  const withParticle = Words.LIST.filter((w) => /[的了嗎呢，。]/.test(w.text)).map((w) => w.text);
+  /* 第二張提示會公開分類名稱：題目要是分類名稱的一部分（「宇宙」之於「天文宇宙」），等於直接公布答案 */
+  const inLabel = Words.LIST.filter((w) => Words.CATEGORIES[w.cat].label.indexOf(w.text) >= 0).map((w) => w.text);
+  check('題目不會出現在自己的分類名稱裡', inLabel.length === 0, inLabel.join('，'));
+  const withParticle =Words.LIST.filter((w) => /[的了嗎呢，。]/.test(w.text)).map((w) => w.text);
   check('題目不含助詞或標點（不是句子）', withParticle.length === 0, withParticle.slice(0, 5).join('，'));
 
   const diffs = new Set(Words.LIST.map((w) => w.diff));
@@ -115,7 +118,18 @@ section('題庫（words.js）');
   const sun = Words.byId('sun');
   check('答案比對：完全相同算對', Words.match(sun, ' 太陽 ') === 'hit');
   check('答案比對：別名算對', Words.match(sun, '日') === 'hit');
-  check('答案比對：差一個字算「很接近」', Words.match(sun, '太楊') === 'close');
+  check('答案比對：兩個字的題目猜中一個字算「很接近」', Words.match(sun, '太楊') === 'close');
+  check('答案比對：猜的字出現在答案裡的哪個位置都算「很接近」', Words.match(sun, '陽光') === 'close');
+  check('答案比對：猜中別名裡的字也算「很接近」', Words.match(Words.byId('cat'), '咪咪') === 'close');
+  check('答案比對：字數一樣但一個字都沒中算沒中', Words.match(Words.byId('cat'), '狗') === 'miss');
+  const giraffe = Words.byId('giraffe');
+  check('答案比對：三個字的題目要猜中兩個字才算「很接近」', Words.match(giraffe, '長頸') === 'close');
+  check('答案比對：三個字的題目只猜中一個字算沒中', Words.match(giraffe, '鹿') === 'miss');
+  const tea = Words.byId('bubbletea');
+  check('答案比對：四個字的題目猜中兩個字算「很接近」', Words.match(tea, '奶茶') === 'close');
+  check('答案比對：四個字的題目只猜中一個字算沒中', Words.match(tea, '奶昔') === 'miss');
+  check('答案比對：同一個字重複打不會重複算', Words.match(tea, '奶奶') === 'miss');
+  check('答案比對：門檻看題目字數，別名比較短也不會放寬', Words.match(tea, '珍珠') === 'close' && Words.match(tea, '珍') === 'miss');
   check('答案比對：完全不同算沒中', Words.match(sun, '月亮') === 'miss');
   check('答案比對：空字串算沒中', Words.match(sun, '   ') === 'miss');
   check('全形標點會被正規化掉', Words.normalize('太陽！') === '太陽');
@@ -210,15 +224,15 @@ section('規則核心（rules.js）');
   check('分數進到玩家身上', Rules.player(st, guesser).score === hit.points);
   check('同一個人不能再猜', !Rules.guess(st, guesser, answer, 1300).ok);
 
-  /* 差一個字 → close */
+  /* 猜中一半以上的字（這裡只差最後一個字）→ close */
   const st2 = toDrawing(makeState({ seed: 'CLOSE1' }), 0);
   const ans2 = Rules.word(st2).text;
   if (ans2.length >= 2) {
     const nearMiss = ans2.slice(0, -1) + '龘';
     const near = Rules.guess(st2, otherThan(st2.drawerId), nearMiss, 100);
-    check('差一個字回 close', near.ok && near.verdict === 'close', near.verdict);
+    check('猜中一半以上的字回 close', near.ok && near.verdict === 'close', near.verdict);
     check('close 不算猜中', !Rules.hasGuessed(st2, otherThan(st2.drawerId)));
-  } else check('差一個字回 close（答案太短，略過）', true);
+  } else check('猜中一半以上的字回 close（答案太短，略過）', true);
 
   /* 分數：越早猜中越高，名次越後越低 */
   const early = scoreAt(0);
@@ -279,6 +293,22 @@ section('隱藏資訊（toPublic 投影）');
   check('第一張提示還沒公開種類', afterLen.hint.catLabel === null);
   Rules.giveHint(st, drawerId, 2);
   check('第二張提示公開種類', Rules.toPublic(st, other).hint.catLabel === Words.CATEGORIES[Words.byId(st.wordId).cat].label);
+
+  /* 第三張提示翻哪個字是隨機的：兩個字的題目，第一個字和最後一個字都要翻得到 */
+  const picked = new Set();
+  for (let i = 0; i < 40; i++) {
+    const hs = makeState({ seed: 'HINTPOS' + i });
+    Rules.start(hs, 0);
+    hs.choices[0] = 'rabbit';
+    Rules.pickWord(hs, hs.drawerId, 'rabbit', 0);
+    picked.add(hs.hintPlan[0]);
+  }
+  check('一個字提示不固定翻第一個字，最後一個字也翻得到', picked.has(0) && picked.has(1), [...picked].join(','));
+  const one = makeState({ seed: 'HINTONE' });
+  Rules.start(one, 0);
+  one.choices[0] = 'cat';
+  Rules.pickWord(one, one.drawerId, 'cat', 0);
+  check('單字題沒有一個字提示（翻了就是答案）', one.hintPlan.length === 0, one.hintPlan.join(','));
 
   /* 選字清單只有畫家看得到 */
   const picking = makeState({ seed: 'HIDE02' });

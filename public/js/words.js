@@ -1282,7 +1282,7 @@
       2: [
         '仙女 狼人@dog 殭屍 巫婆@hat 騎士 王子 女王 忍者 超人 惡魔 魔法棒@star 藏寶圖@book 寶箱@book',
         '飛馬@giraffe 火龍@dinosaur 魔法師|巫師@hat 鳳凰@bird 時光機@clock 魔毯@book 小精靈',
-        '獨角獸@giraffe 吸血鬼 小矮人 木乃伊 水晶球@clock 飛天掃帚@broom 神燈@coffee 龍蛋@egg',
+        '獨角獸@giraffe 吸血鬼 小矮人 木乃伊 水晶球@clock 飛天掃帚@broom 神燈@coffee 龍蛋@egg 飛碟|ufo@balloon',
         '孫悟空 嫦娥@moon 巨人 雪怪 財神 月老'
       ],
       3: [
@@ -1376,7 +1376,7 @@
       hard: true,
       icons: ['island', 'mountain', 'sea'],
       3: [
-        '日本 韓國 泰國 越南 新加坡 印度 埃及 法國 英國 德國 義大利 西班牙 荷蘭 瑞士 希臘',
+        '台灣|臺灣 日本 韓國 泰國 越南 新加坡 印度 埃及 法國 英國 德國 義大利 西班牙 荷蘭 瑞士 希臘',
         '俄羅斯 美國 加拿大 墨西哥 巴西 阿根廷 澳洲 紐西蘭 肯亞 南非 冰島 芬蘭 土耳其 蒙古',
         '富士山@mountain 喜馬拉雅山@mountain 聖母峰@mountain 撒哈拉沙漠@desert 亞馬遜河@sea',
         '尼羅河@sea 長江@sea 黃河@sea 密西西比河@sea 大峽谷@mountain 尼加拉瀑布@waterfall 死海@sea',
@@ -1412,7 +1412,7 @@
       3: [
         '太陽系@sun 銀河系|銀河 黑洞 超新星 星座 北斗七星 獵戶座 北極星 火星 金星 木星 水星 土星',
         '天王星 海王星 冥王星 月相@moon 隕石坑@moon 太空站@rocket 太空衣|太空裝@rocket 登月@moon',
-        '人造衛星|衛星@rocket 哈雷彗星 天文台@house 太空望遠鏡 宇宙 小行星 月球車@car 火箭發射@rocket',
+        '人造衛星|衛星@rocket 哈雷彗星 天文台@house 太空望遠鏡 小行星 月球車@car 火箭發射@rocket',
         '無重力 天狼星 織女星 牛郎星 星象儀 火星車@car 太空垃圾 星系 太陽黑子@sun'
       ]
     },
@@ -1464,7 +1464,7 @@
     },
     taiwan: {
       icons: ['mountain', 'house'],
-      2: ['台灣|臺灣@island 台北101|101@house 玉山@mountain 阿里山@mountain 日月潭@sea 日月光@sun 檳榔@grape'],
+      2: ['台北101|101@house 玉山@mountain 阿里山@mountain 日月潭@sea 日月光@sun 檳榔@grape'],
       3: ['太魯閣@mountain 墾丁@sea 澎湖@island 蘭嶼@island 媽祖遶境@person 鹽水蜂炮@star']
     },
     festival: {
@@ -1757,27 +1757,26 @@
     for (i = 0; i < names.length; i++) {
       if (normalize(names[i]) === g) return 'hit';
     }
-    /* 差一個字（多打、少打、寫錯）算「很接近」，只私下提示猜的人 */
+    /* 猜中題目至少一半的字，才算「很接近」，只私下提示猜的人。
+       門檻看題目本身的字數：1～2 字中 1 個、3～4 字中 2 個、5～6 字中 3 個，
+       長題目不會只猜中一個字就說接近。別名也照同一個門檻比，
+       否則「珍珠奶茶」的別名「珍奶」只有兩個字，猜「奶昔」中一個字就算接近了。 */
+    var need = Math.ceil(normalize(word.text).length / 2);
     for (i = 0; i < names.length; i++) {
-      if (editDistance(normalize(names[i]), g) === 1) return 'close';
+      if (sharedChars(normalize(names[i]), g) >= need) return 'close';
     }
     return 'miss';
   }
 
-  function editDistance(a, b) {
-    if (Math.abs(a.length - b.length) > 1) return 9;
-    var m = a.length, n2 = b.length;
-    var prev = new Array(n2 + 1);
-    var cur = new Array(n2 + 1);
-    for (var j = 0; j <= n2; j++) prev[j] = j;
-    for (var i = 1; i <= m; i++) {
-      cur[0] = i;
-      for (var k = 1; k <= n2; k++) {
-        cur[k] = Math.min(prev[k] + 1, cur[k - 1] + 1, prev[k - 1] + (a[i - 1] === b[k - 1] ? 0 : 1));
-      }
-      for (var c = 0; c <= n2; c++) prev[c] = cur[c];
+  /** 兩串字共有幾個字；同一個字要兩邊都出現幾次才算幾次（「咪咪」對「貓咪」只算 1） */
+  function sharedChars(a, b) {
+    var left = b.split('');
+    var count = 0;
+    for (var i = 0; i < a.length; i++) {
+      var at = left.indexOf(a.charAt(i));
+      if (at >= 0) { count += 1; left.splice(at, 1); }
     }
-    return prev[n2];
+    return count;
   }
 
   /* 「混合」不是整池亂抽 —— 題庫裡困難題比簡單題多，整池亂抽會變成大部分都很難。
@@ -1869,7 +1868,6 @@
     distance: distance,
     normalize: normalize,
     match: match,
-    editDistance: editDistance,
     pick: pick,
     publicInfo: publicInfo,
     maskOf: maskOf

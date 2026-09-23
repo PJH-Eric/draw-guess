@@ -241,11 +241,11 @@
     state.deadline = now + state.drawMs;
     state.startedAt = now;
 
-    /* 第三張提示要揭哪一個字也吃種子，重播才會一樣；答案最後一個字永遠留著 */
+    /* 第三張提示要揭哪一個字也吃種子，重播才會一樣。每個字都可能被翻開（包含最後一個字），
+       否則兩個字的題目只剩第一個字可翻，永遠都是翻第一個字。單字題翻了就等於公布答案，沒有這張。 */
     var rng = RNG.createRng(state.seed + ':hint:' + state.turnNo);
-    var idx = [];
-    for (var i = 0; i < w.text.length - 1; i++) idx.push(i);
-    state.hintPlan = idx.length ? [idx[Math.floor(rng() * idx.length) % idx.length]] : [];
+    var len = w.text.length;
+    state.hintPlan = len >= 2 ? [Math.floor(rng() * len) % len] : [];
     state.hints = 0;
     state.revealed = [];
     return ok({ state: state, wordId: id, auto: !!auto });
@@ -364,7 +364,7 @@
    * 猜一次。
    * @returns {{ok, verdict:'hit'|'close'|'miss', points?, allDone?}}
    *   hit   猜中（不會把答案廣播出去，由呼叫端只公布「某某猜對了」）
-   *   close 只差一個字，僅私下提示猜的人
+   *   close 猜中答案一半以上的字，僅私下提示猜的人
    *   miss  沒猜中，呼叫端把它寫進猜題紀錄讓大家看到
    */
   function guess(state, playerId, text, now) {

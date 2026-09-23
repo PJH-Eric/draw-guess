@@ -330,7 +330,11 @@ async function run() {
     check('猜題者看不到候選題目', guesser.view.game.choices.length === 0, guesser.view.game.choices.length);
     check('觀戰者看不到候選題目', watcher.view.game.choices.length === 0, watcher.view.game.choices.length);
 
-    const pick = drawer.view.game.choices[0];
+    /* 下面用「整包資料裡找不到答案字串」檢查有沒有洩題。選題前別人就看得到的字
+       （暱稱「觀眾」、房名「畫畫測試房」、系統訊息「開始！種子…」「某某當畫家」）
+       剛好是題目時會誤判，所以挑一個還沒出現在任何人畫面上的候選題。 */
+    const seen = JSON.stringify(guesser.view) + JSON.stringify(watcher.view);
+    const pick = drawer.view.game.choices.find((c) => seen.indexOf(c.text) < 0) || drawer.view.game.choices[0];
     guesser.clearErrors();
     guesser.emit('room:pick', { wordId: pick.id });
     check('別人不能替畫家選題', await guesser.until((c) => !!c.lastError()), guesser.lastError());
