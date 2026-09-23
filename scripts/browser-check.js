@@ -524,6 +524,9 @@ async function main() {
        所以工具、顏色、筆寬那些按鈕的命中區從來沒被驗到。 */
     await cdp.eval(`var a = window.DrawGuessApp, st = a.solo.state;
       if (st.drawerId !== 'me') { st.drawerId = 'me'; st.order = ['me'].concat(st.order.filter(function(x){return x!=='me';})); }
+      /* 固定畫單字題「貓」：題目越短，抬頭越容易只剩一行、比右上角設定鈕矮，
+         工具欄第一排就會鑽到設定鈕底下。隨機抽題時只有偶爾抽到短題才測得到。 */
+      st.choices[0] = 'cat';
       window.Rules.pickWord(st, 'me', st.choices[0], Date.now());
       return 1;`);
     await cdp.waitFor('window.DrawGuessApp.view && window.DrawGuessApp.view.you.can.draw', 8000, '進入作畫');

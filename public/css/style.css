@@ -509,7 +509,11 @@ body.big-tools .fillbox{min-height:56px}
   :root{--topbtn:48px}
   .game-top .btn3d.icononly,.btn3d.settings-fab{min-width:48px;min-height:48px;padding:8px 10px calc(8px + var(--d))}
   .game-main{padding-top:calc(2px + var(--safe-t));padding-bottom:calc(2px + var(--safe-b))}
-  .game-head{flex-direction:row;flex-wrap:wrap;align-items:center;gap:4px 8px;padding-right:var(--hud-reserve)}
+  /* 右側工具欄緊接在抬頭下面、延伸到畫面最右邊，正上方就是固定的設定鈕。
+     抬頭只有一行時（題目很短）會比設定鈕矮，工具欄第一排就鑽到設定鈕底下；
+     所以抬頭至少要高過設定鈕底緣：鈕距頂 10px、高 --topbtn，扣掉主區上方 2px 再留 4px。 */
+  .game-head{flex-direction:row;flex-wrap:wrap;align-items:center;gap:4px 8px;padding-right:var(--hud-reserve);
+    min-height:calc(var(--topbtn) + 12px)}
   .game-top{flex:0 0 auto;padding-right:0}
   .statusbar{flex:0 0 auto;flex-wrap:nowrap}
   /* 題目列的理想寬度跟著螢幕走：窄螢幕不要因為 basis 太大而被擠到下一行 */
