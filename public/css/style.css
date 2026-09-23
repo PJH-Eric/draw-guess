@@ -1057,7 +1057,8 @@ input,textarea,select{user-select:text;-webkit-user-select:text}
 
 /* iOS 對 font-size < 16px 的欄位聚焦時會自動放大整頁，放大後輸入框常被推出畫面 */
 @media (pointer:coarse){
-  #guess-input,#lobby-nick,#lobby-code{font-size:16px}
+  /* 聊天欄也一樣：字小於 16px 的話，iPhone 一點進去整頁就被放大 */
+  #guess-input,#lobby-nick,#lobby-code,#chat-input{font-size:16px}
 }
 body.kb-open .game-aside{bottom:var(--kb,0px)}
 

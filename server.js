@@ -23,7 +23,7 @@ const { Server } = require('socket.io');
 
 const Rules = require('./public/js/rules.js');
 const Words = require('./public/js/words.js');
-const { RoomStore, sanitizeName } = require('./lib/rooms.js');
+const { RoomStore, sanitizeName, str, num } = require('./lib/rooms.js');
 
 const PORT = Number(process.env.PORT || 3030);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -102,6 +102,18 @@ const roomSockets = new Map();
 const lobbySockets = new Set();
 
 const now = () => Date.now();
+
+/*
+ * 公開 id 與私密 clientId 分開：
+ * 用戶端存在本機的 clientId 是「憑證」——拿它重新連線就能回到原本的座位。
+ * 以前房間投影裡直接送每個人的 clientId，同房的人抄下房主的 id 另開一條連線，
+ * 就能以房主身分「重新連線」、頂替他的座位。現在房間裡所有地方用的都是
+ * HMAC(clientId) 算出來的公開 id：看得到公開 id 也推不回 clientId，沒辦法冒用。
+ */
+const ID_SALT = crypto.randomBytes(16);
+function publicIdOf(secret) {
+  return crypto.createHmac('sha256', ID_SALT).update(secret).digest('hex').slice(0, 20);
+}
 
 function presenceSnapshot() {
   let players = 0;
@@ -237,13 +249,29 @@ io.on('connection', (socket) => {
   socket.data.name = sanitizeName('', '');
   socket.data.roomCode = null;
 
+  /* 所有事件處理都包一層 try/catch：就算哪裡漏了檢查，也只是這一個動作失敗，
+     不會因為一個怪封包讓整台伺服器（跟所有房間）一起掛掉。 */
+  const rawOn = socket.on.bind(socket);
+  socket.on = (event, handler) => rawOn(event, (...args) => {
+    try {
+      return handler(...args);
+    } catch (e) {
+      console.error('[socket ' + event + ']', e && e.stack ? e.stack : e);
+      fail(socket, '伺服器處理這個動作時出了點問題，請再試一次。', 'server');
+      const ack = args[args.length - 1];
+      if (typeof ack === 'function') ack({ ok: false, error: '伺服器處理這個動作時出了點問題。', code: 'server' });
+      return undefined;
+    }
+  });
+
   socket.on('hello', (payload, ack) => {
-    const p = payload || {};
-    let id = String(p.clientId || '').trim();
-    if (!/^[A-Za-z0-9_-]{8,64}$/.test(id)) id = crypto.randomBytes(12).toString('hex');
-    socket.data.clientId = id;
+    const p = (payload && typeof payload === 'object') ? payload : {};
+    let secret = str(p.clientId).trim();
+    if (!/^[A-Za-z0-9_-]{8,64}$/.test(secret)) secret = crypto.randomBytes(12).toString('hex');
+    /* 房間裡只用公開 id，私密的 clientId 不會出現在任何廣播裡 */
+    socket.data.clientId = publicIdOf(secret);
     socket.data.name = sanitizeName(p.name, '');
-    if (typeof ack === 'function') ack({ ok: true, clientId: id, name: socket.data.name, serverTime: now() });
+    if (typeof ack === 'function') ack({ ok: true, id: socket.data.clientId, name: socket.data.name, serverTime: now() });
   });
 
   socket.on('lobby:subscribe', () => {
@@ -288,8 +316,8 @@ io.on('connection', (socket) => {
     socket.data.name = sanitizeName(p.name, socket.data.name);
     const res = room.join(socket.data.clientId, {
       name: socket.data.name,
-      role: p.role,
-      token: p.token ? String(p.token) : null,
+      role: str(p.role),
+      token: str(p.token) || null,
       now: now()
     });
     if (!res.ok) { fail(socket, res.error, res.code); if (typeof ack === 'function') ack(res); return; }
@@ -311,7 +339,7 @@ io.on('connection', (socket) => {
     if (!room) {
       return typeof ack === 'function' && ack({ ok: false, error: '這個邀請連結指向的房間已經不存在或已經結束了。', code: 'gone' });
     }
-    const res = room.checkInvite(String(p.token || ''), now());
+    const res = room.checkInvite(str(p.token), now());
     if (typeof ack === 'function') {
       ack(res.ok ? { ok: true, role: res.invite.role, note: res.note || null, room: room.brief() } : res);
     }
@@ -323,7 +351,7 @@ io.on('connection', (socket) => {
     return (payload, ack) => {
       const room = store.get(socket.data.roomCode);
       if (!room) return fail(socket, '你已經不在任何房間裡了。', 'gone');
-      handler(room, payload || {}, ack);
+      handler(room, (payload && typeof payload === 'object') ? payload : {}, ack);
     };
   }
 
@@ -338,6 +366,7 @@ io.on('connection', (socket) => {
   socket.on('room:becomeSpectator', withRoom((room) => {
     const res = room.becomeSpectator(socket.data.clientId);
     if (!res.ok) return fail(socket, res.error, res.code);
+    if (res.newHost) room.system('房主改成觀戰，房主交給 ' + res.newHost + '。', now());
     syncRoom(room);
     if (enforceLifecycle(room, now())) return;
     syncLobby();
@@ -363,7 +392,7 @@ io.on('connection', (socket) => {
   }));
 
   socket.on('room:pick', withRoom((room, p) => {
-    const res = room.pickWord(socket.data.clientId, String(p.wordId || ''), now());
+    const res = room.pickWord(socket.data.clientId, str(p.wordId), now());
     if (!res.ok) return fail(socket, res.error, res.code);
     syncRoom(room, true);
   }));
@@ -438,19 +467,17 @@ io.on('connection', (socket) => {
     syncRoom(room);
   }));
 
-  socket.on('room:rematch', withRoom((room) => {
-    const res = room.voteRematch(socket.data.clientId, now());
+  /* 結算完，房主帶大家回到等待畫面（可以聊天、改規則、重新準備），再按開始 */
+  socket.on('room:return', withRoom((room) => {
+    const res = room.returnToRoom(socket.data.clientId, now());
     if (!res.ok) return fail(socket, res.error, res.code);
-    const m = room.member(socket.data.clientId);
-    room.system(res.started
-      ? '大家都同意，新的一局開始了！'
-      : m.name + ' 想再來一局（' + res.votes + '/' + res.need + '）。', now());
+    room.system('房主帶大家回到房間，準備好就能再開一局。', now());
     syncRoom(room, true); syncLobby();
   }));
 
   socket.on('room:invite', withRoom((room, p, ack) => {
     const res = room.createInvite(socket.data.clientId, {
-      role: p.role, ttlMs: Number(p.ttlMinutes) * 60000, maxUses: p.maxUses, now: now()
+      role: str(p.role), ttlMs: num(p.ttlMinutes) * 60000, maxUses: p.maxUses, now: now()
     });
     if (!res.ok) { fail(socket, res.error, res.code); return typeof ack === 'function' && ack(res); }
     syncRoom(room);
@@ -459,13 +486,25 @@ io.on('connection', (socket) => {
     }
   }));
 
-  socket.on('room:revokeInvite', withRoom((room, p) => {
-    const res = room.revokeInvite(socket.data.clientId, String(p.token || ''));
+  socket.on('room:revokeInvite', withRoom((room, p, ack) => {
+    const res = room.revokeInvite(socket.data.clientId, str(p.token));
+    /* 一定要回 ack：以前沒回，用戶端的回呼永遠不會執行，按了「撤銷」畫面沒有任何反應 */
+    if (typeof ack === 'function') ack(res);
     if (!res.ok) return fail(socket, res.error, res.code);
     syncRoom(room);
   }));
 
-  socket.on('room:leave', withRoom((room) => {
+  socket.on('room:leave', (payload, ack) => {
+    /* 房間已經關了（或早就不在房裡）：直接回「離開成功」，不要跳紅色錯誤 */
+    if (!store.get(socket.data.roomCode)) {
+      detach(socket);
+      socket.emit('room:left', { ok: true });
+      return;
+    }
+    withRoom(leaveRoom)(payload, ack);
+  });
+
+  const leaveRoom = (room) => {
     const t = now();
     const res = room.leave(socket.data.clientId, t);
     detach(socket);
@@ -474,7 +513,7 @@ io.on('connection', (socket) => {
     if (enforceLifecycle(room, t)) return;
     syncRoom(room, true);
     syncLobby();
-  }));
+  };
 
   socket.on('disconnect', () => {
     lobbySockets.delete(socket);
@@ -483,10 +522,18 @@ io.on('connection', (socket) => {
     if (!room || room.closed) return;
     const member = room.member(socket.data.clientId);
     if (!member) return;
+    /* 同一個人還有別條連線在房裡（網路閃一下先重連成功、舊連線晚一點才斷；或開了兩個分頁）：
+       舊連線斷掉不代表人走了，不能標成離線，不然 60 秒後會被當成斷線太久踢出去。 */
+    const live = roomSockets.get(room.code);
+    if (live && [...live].some((s) => s.data.clientId === socket.data.clientId)) return;
     /* 先標記斷線並保留座位，讓重新整理的人可以憑 clientId 回到原位；
        超過保留時間還沒回來，定時工作才會把他踢掉並檢查房間要不要關。 */
     room.disconnect(socket.data.clientId, now());
-    room.system(member.name + ' 斷線了，座位會先保留一分鐘。', now());
+    const isDrawer = !!(room.state && room.phase === 'playing' && room.state.drawerId === member.id &&
+      (room.state.phase === 'picking' || room.state.phase === 'drawing'));
+    room.system(isDrawer
+      ? '畫家 ' + member.name + ' 斷線了，等他 15 秒，沒回來就先跳過這一題。'
+      : member.name + ' 斷線了，座位會先保留一分鐘。', now());
     syncRoom(room);
     syncLobby();
   });
@@ -495,6 +542,10 @@ io.on('connection', (socket) => {
 /* ------------------------------------------------------------ 定時工作 */
 
 setInterval(() => {
+  try { sweepTick(); } catch (e) { console.error('[sweep]', e && e.stack ? e.stack : e); }
+}, TICK_MS);
+
+function sweepTick() {
   const t = now();
   const res = store.sweep(t);
 
@@ -512,7 +563,7 @@ setInterval(() => {
   for (const room of res.forget) roomSockets.delete(room.code);
 
   if (res.changed.length || res.closed.length || res.ticked.length) syncLobby();
-}, TICK_MS);
+}
 
 /* ------------------------------------------------------------ 啟動 */
 

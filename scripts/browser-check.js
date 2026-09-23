@@ -820,6 +820,8 @@ async function main() {
     await mateTab.eval('return window.DrawGuessApp.view.you.name === "新名字";'),
     await mateTab.eval('return window.DrawGuessApp.view.you.name;'));
   check('改暱稱不影響自己選的身分', mateView.role === 'player');
+  check('用過的邀請連結參數會從網址拿掉（離開房間回大廳不會又跳出邀請卡）',
+    await mateTab.eval('return !/[?&]invite=/.test(location.search);'), await mateTab.eval('return location.search;'));
 
   /* 第三個分頁：同一種連結（不綁身分），這次自己選觀戰 */
   const t3 = await (await fetch('http://127.0.0.1:' + DEBUG_PORT + '/json/new?' + encodeURIComponent('about:blank'), { method: 'PUT' })).json();
@@ -844,6 +846,9 @@ async function main() {
   await hostTab.waitFor('window.DrawGuessApp.view.room.settings.rounds === 4', 4000, '下拉選單套用設定');
   check('下拉選單可以改規則', await hostTab.eval('return window.DrawGuessApp.view.room.settings.rounds === 4;'));
   check('選完之後清單自己收起來', await hostTab.eval('return !document.querySelector("#overlay-card .ruledd-list");'));
+  check('選完之後鍵盤焦點回到這個欄位的按鈕（不會掉到整頁最上面）',
+    await hostTab.eval('var a=document.activeElement; return !!a && a.classList.contains("ruledd-btn") && a.getAttribute("data-field")==="set-rounds";'),
+    await hostTab.eval('var a=document.activeElement; return a ? a.tagName + "." + a.className : "null";'));
   check('按鈕上顯示的目前值不是空的（純數字選項跟 {v,label} 選項都要顯示出字）',
     await hostTab.eval('var t=document.querySelector("#overlay-card .ruledd-btn[data-field=set-rounds] .ruledd-val").textContent.trim(); var s=document.querySelector("#overlay-card .ruledd-btn[data-field=set-drawsec] .ruledd-val").textContent.trim(); return t === "4" && s.length > 0;'),
     await hostTab.eval('return document.querySelector("#overlay-card .ruledd-btn[data-field=set-rounds] .ruledd-val").textContent;'));
@@ -898,8 +903,18 @@ async function main() {
   /* 準備 → 開始：房主不用按準備，其他玩家準備好了房主就能直接開始 */
   check('其他玩家還沒準備時房主的「開始！」是停用的',
     await hostTab.eval('var b=document.querySelector("#overlay-card [data-act=start]"); return !!b && b.disabled;'));
+  /* 房主在聊天室打字打到一半，別人按了準備：輸入框必須是同一個元素、字跟焦點都還在
+     （以前整張卡重建，注音會被打斷、iPhone 鍵盤會收起來） */
+  await hostTab.eval('var i=document.getElementById("chat-input"); i.focus(); i.value="打到一半"; i.dispatchEvent(new Event("input",{bubbles:true})); window.__ci=i; return 1;');
   await mateTab.eval('window.__probe.click("[data-act=ready]"); return 1;');
   await hostTab.waitFor('(function(){var b=document.querySelector("#overlay-card [data-act=start]"); return !!b && !b.disabled;})()', 4000, '開始鈕可按');
+  check('別人按準備時，房主的聊天輸入框沒有被換掉（字跟焦點都還在）',
+    await hostTab.eval('var i=document.getElementById("chat-input"); return i===window.__ci && i.value==="打到一半" && document.activeElement===i;'));
+  /* 撤銷邀請：畫面要跟著更新（以前伺服器沒回 ack，按了沒反應） */
+  await hostTab.eval('window.__probe.click("[data-act=invite-revoke]"); return 1;');
+  await hostTab.waitFor('document.getElementById("invite-url").value === ""', 4000, '撤銷後網址清空');
+  check('按「撤銷」後網址清空、撤銷鈕停用',
+    await hostTab.eval('var b=document.querySelector("[data-act=invite-revoke]"); return document.getElementById("invite-url").value==="" && !!b && b.disabled;'));
   check('房主沒按準備，其他玩家準備好了就能開始',
     await hostTab.eval('var b=document.querySelector("#overlay-card [data-act=start]"); return !!b && !b.disabled;'));
   await hostTab.eval('window.__probe.click("[data-act=start]"); return 1;');
@@ -924,11 +939,19 @@ async function main() {
     await watchTab.eval('var c = window.DrawGuessApp.view.game.choices; return Array.isArray(c) && c.length === 0;'));
   await shot('線上-觀戰者', watchTab);
   await shot('線上-玩家', mateTab);
+  /* 畫家順序是亂數：看這一題是誰在選題、誰在猜 */
+  const hostIsDrawer = await hostTab.eval('return !!window.DrawGuessApp.view.game.you.isDrawer;');
+  const drawerTab = hostIsDrawer ? hostTab : mateTab;
+  const guesserTab = hostIsDrawer ? mateTab : hostTab;
+  const ps1 = await drawerTab.eval('var e=document.querySelector("#overlay-card .pick-secs"); return e ? e.textContent : null;');
+  await sleep(2200);
+  const ps2 = await drawerTab.eval('var e=document.querySelector("#overlay-card .pick-secs"); return e ? e.textContent : null;');
+  check('選題卡上的「N 秒內沒選」會跟著倒數', ps1 !== null && ps2 !== null && Number(ps2) < Number(ps1), ps1 + ' → ' + ps2);
   await shot('線上-房主對局');
 
-  /* 房主這一題是猜題者（平板橫向）：沒有工具列，右側那一欄要收掉、畫布置中，不能偏左 */
+  /* 這一題的猜題者（平板橫向）：沒有工具列，右側那一欄要收掉、畫布置中，不能偏左 */
   await sleep(300);
-  const hc = await hostTab.json('(function(){var c=document.getElementById("stage-canvas").getBoundingClientRect(), m=document.querySelector(".game-main").getBoundingClientRect(); return {canvasCenter:(c.left+c.right)/2, mainCenter:(m.left+m.right)/2, playbarW:document.getElementById("playbar").getBoundingClientRect().width, drawer:window.DrawGuessApp.view.game.you.isDrawer};})()');
+  const hc = await guesserTab.json('(function(){var c=document.getElementById("stage-canvas").getBoundingClientRect(), m=document.querySelector(".game-main").getBoundingClientRect(); return {canvasCenter:(c.left+c.right)/2, mainCenter:(m.left+m.right)/2, playbarW:document.getElementById("playbar").getBoundingClientRect().width, drawer:window.DrawGuessApp.view.game.you.isDrawer};})()');
   check('猜題者（橫向）沒有工具列：右側那欄收掉、畫布置中',
     !hc.drawer && hc.playbarW < 2 && Math.abs(hc.canvasCenter - hc.mainCenter) < 12, JSON.stringify(hc));
 

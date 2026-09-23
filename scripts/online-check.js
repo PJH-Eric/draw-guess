@@ -88,7 +88,8 @@ class Client {
       };
       const timer = setTimeout(() => finish(new Error(this.label + ' 連線逾時')), 10000);
       this.socket.once('connect', () => {
-        this.socket.emit('hello', { clientId: this.clientId, name: this.name }, () => finish());
+        /* 伺服器回的是「公開 id」：房間投影裡看到的 id 都是這個，私密的 clientId 不會出現 */
+        this.socket.emit('hello', { clientId: this.clientId, name: this.name }, (res) => { this.id = res && res.id; finish(); });
       });
       this.socket.once('connect_error', (error) => finish(error));
       this.socket.connect();
@@ -189,6 +190,39 @@ async function run() {
   check('房主收到房間投影', !!host.view && host.view.room.code === code);
   check('房主是玩家而且是房主', host.view.you.role === 'player' && host.view.you.isHost === true);
 
+  section('安全：私密 clientId 不外流、抄公開 id 也冒用不了、怪封包打不掛伺服器');
+  check('房間投影裡看不到私密的 clientId（只有公開 id）',
+    JSON.stringify(host.view).indexOf(host.clientId) < 0 && host.view.you.id === host.id && host.id !== host.clientId,
+    host.view.you.id);
+  {
+    /* 抄下房主在投影裡的公開 id，拿去當自己的 clientId 連線：只會變成一個新的人，不會變成房主 */
+    const evil = new Client('evil', host.view.you.id, '冒牌貨');
+    await evil.connect();
+    const ej = await evil.ask('room:join', { code, name: '冒牌貨' });
+    await evil.until((c) => !!c.view, 3000);
+    check('抄公開 id 連線不會被當成房主重新連線', ej.ok && !ej.reconnected && evil.view && !evil.view.you.isHost,
+      JSON.stringify({ ej, isHost: evil.view && evil.view.you.isHost }));
+    check('房主還是原本那個人', await host.until((c) => c.view.you.isHost === true, 2000));
+    evil.emit('room:leave', {});
+    await sleep(200);
+    evil.close();
+
+    /* toString／valueOf 不是函式的物件：以前 String() 一碰就丟例外，整台伺服器直接掛掉 */
+    const bad = new Client('bad', 'client-bad-00001', '壞壞');
+    await bad.connect();
+    const obj = { toString: 1, valueOf: 1 };
+    bad.emit('hello', { clientId: obj, name: obj });
+    bad.emit('room:join', { code: obj, token: obj, name: obj });
+    bad.emit('invite:check', { code: obj, token: obj });
+    bad.emit('room:chat', { text: obj });
+    bad.emit('room:settings', { rounds: obj });
+    bad.emit('room:stroke', { stroke: { t: obj, p: [obj, obj] } });
+    await sleep(400);
+    const alive = await mate.ask('invite:check', { code, token: 'f'.repeat(32) });
+    check('收到一堆怪封包之後伺服器還活著', alive && alive.error !== 'timeout' && alive.error !== 'no-ack', JSON.stringify(alive));
+    bad.close();
+  }
+
   const invPlayer = await host.ask('room:invite', { role: 'player', ttlMinutes: 60, maxUses: 5 });
   check('可以產生玩家邀請連結', invPlayer.ok === true && !!invPlayer.token, JSON.stringify(invPlayer).slice(0, 80));
   check('邀請 token 猜不到（32 個十六進位字元）', /^[0-9a-f]{32}$/.test(invPlayer.token || ''), invPlayer.token);
@@ -284,10 +318,10 @@ async function run() {
   section('選題與隱藏資訊');
 
   /* 線上房間只有真人，第一位畫家一定是其中一個人 */
-  const humans = { [host.clientId]: host, [mate.clientId]: mate };
+  const humans = { [host.id]: host, [mate.id]: mate };
   const drawerId = host.view.game.drawerId;
   const drawer = humans[drawerId] || null;
-  const guesser = drawer ? (drawerId === host.clientId ? mate : host) : null;
+  const guesser = drawer ? (drawerId === host.id ? mate : host) : null;
   check('畫家是真人', !!drawer, drawer ? drawer.label : drawerId);
 
   if (drawer) {
@@ -421,7 +455,7 @@ async function run() {
     check('猜錯的內容大家都看得到', lastGuess.text === '一定不是這個答案');
     /* 猜題紀錄要看得出「誰」猜的：沒有名字的話大家都長一樣 */
     check('猜錯的紀錄帶著猜的人的名字',
-      !!lastGuess.from && lastGuess.from !== '玩家' && lastGuess.fromId === guesser.clientId,
+      !!lastGuess.from && lastGuess.from !== '玩家' && lastGuess.fromId === guesser.id,
       JSON.stringify({ from: lastGuess.from, fromId: lastGuess.fromId }));
 
     guesser.privates = [];
@@ -494,8 +528,8 @@ async function run() {
 
   /* -------------------------------------------- 邀請撤銷與滿房 */
   section('邀請撤銷與對局中途加入');
-  host.emit('room:revokeInvite', { token: invPlayer.token });
-  await sleep(300);
+  const rv = await host.ask('room:revokeInvite', { token: invPlayer.token });
+  check('撤銷邀請會回覆結果（畫面才會跟著更新）', rv && rv.ok === true, JSON.stringify(rv));
   const revoked = await watcher.ask('invite:check', { code, token: invPlayer.token });
   check('撤銷後的邀請連結不能再用', revoked.ok === false, revoked.error);
 
@@ -525,6 +559,16 @@ async function run() {
   check('重連後角色沒變', mate2.view.you.role === 'player', mate2.view.you.role);
   check('重連後名字沒變', mate2.view.you.name === beforeName, mate2.view.you.name);
   check('重連後還在同一局', !!mate2.view.game && mate2.view.game.turnNo >= 1, mate2.view.game && mate2.view.game.turnNo);
+
+  /* 同一個人多開一條連線（或網路閃一下先重連成功），晚一點斷掉的那條不能把他標成離線：
+     標成離線 60 秒後就會被當成斷線太久踢出去。 */
+  const mate3 = new Client('mate3', 'client-mate-0001', '小華改名');
+  await mate3.connect();
+  await mate3.ask('room:join', { code, name: '小華改名' });
+  mate3.close();
+  await sleep(500);
+  const meRow = (host.view.room.members || []).find((m) => m.id === mate2.id);
+  check('多出來的那條連線斷掉，人還是算在線上（不會 60 秒後被踢）', !!meRow && meRow.connected === true, JSON.stringify(meRow));
 
   /* -------------------------------------------- 房間自動關閉 */
   section('零實體玩家自動關閉');

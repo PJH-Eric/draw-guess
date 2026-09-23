@@ -824,11 +824,15 @@ section('房主設定與再玩一局');
   check('房間對局可以跑到結束', room.phase === 'finished', 'guard=' + guard);
   check('結束後有結算訊息', room.feed.some((f) => f.text.indexOf('🏆') >= 0));
 
-  check('觀戰者不能投再玩一局', !room.voteRematch('zzz', now).ok);
-  const v1 = room.voteRematch('a', now);
-  check('一個人投票還不會開始', v1.ok && v1.started === false, JSON.stringify(v1));
-  const v2 = room.voteRematch('b', now);
-  check('大家都投票就重新開始', v2.ok && v2.started === true && room.phase === 'playing');
+  /* 結算完不再是「全員投票直接開新局」，而是房主帶大家回到等待畫面 */
+  check('結算畫面可以聊天（答案都公布了）', room.chat('b', '好好玩！', now).ok);
+  check('結算畫面不能直接開始新的一局', !room.start('a', now).ok);
+  check('只有房主可以帶大家回房間', !room.returnToRoom('b', now).ok);
+  check('房主可以帶大家回房間', room.returnToRoom('a', now).ok && room.phase === 'waiting' && room.state === null);
+  check('回房間後大家要重新準備', !room.member('b').ready);
+  check('回房間後可以改規則', room.setSettings('a', { rounds: 2 }).ok && room.settings.rounds === 2);
+  room.setReady('b', true);
+  check('其他人準備好就能再開一局', room.start('a', now).ok && room.phase === 'playing');
 }
 
 section('一直有人中途加入，最後順位就一直往後移');
@@ -900,13 +904,207 @@ section('中途加入的玩家可以順利再玩一局');
   check('三個人的對局可以跑到結束', room.phase === 'finished', 'guard=' + guard);
   check('中途加入的玩家有被算進最終名單', !!Rules.player(room.state, 'c'));
 
-  check('中途加入的玩家不用手動下場就能投票', room.voteRematch('c', now).ok);
-  check('原本的玩家投票', room.voteRematch('a', now).ok);
-  const started = room.voteRematch('b', now);
-  check('三個人都投了就重新開始，不會卡住', started.ok && started.started === true && room.phase === 'playing',
-    JSON.stringify(started));
+  check('房主帶大家回房間', room.returnToRoom('a', now).ok);
+  check('中途加入的玩家回房間後還是玩家', room.member('c').role === 'player');
+  room.setReady('b', true);
+  room.setReady('c', true);
+  const started = room.start('a', now);
+  check('三個人都準備好就能再開一局，不會卡住', started.ok && room.phase === 'playing', JSON.stringify(started.error || ''));
   check('新的一局三個人都在名單裡', ['a', 'b', 'c'].every((id) => !!Rules.player(room.state, id)),
     room.state.players.map((p) => p.id).join(','));
+}
+
+/* ================================================================
+   排查出來的 bug：一個一個釘住，以後不會再壞
+   ================================================================ */
+
+/** 開一間房、n 個人、跑到開局；回傳 room */
+function startedRoom(ids, rounds) {
+  const store = new RoomStore({});
+  const room = store.create(ids[0], { name: ids[0].toUpperCase(), now: 1000 }).room;
+  for (const id of ids.slice(1)) room.join(id, { name: id.toUpperCase(), role: 'player', now: 1000 });
+  room.setSettings(ids[0], { rounds: rounds || 1, drawSec: 60 });
+  for (const id of ids) room.setReady(id, true);
+  room.start(ids[0], 1000);
+  return room;
+}
+/** 把目前這一題收掉（畫家跳過），推進到下一題的選題階段 */
+function finishTurn(room, now) {
+  if (room.state.phase === 'picking') room.pickWord(room.state.drawerId, room.state.choices[0], now);
+  room.skipTurn(room.state.drawerId, now);
+  room.tick(now + 8000);
+  return now + 8000;
+}
+
+section('有人離開時畫家順序不會跳過或重複');
+{
+  /* 畫家本人在作畫中離開：下一位不能被跳過 */
+  const room = startedRoom(['a', 'b', 'c', 'd'], 1);
+  const order = room.state.order.slice();
+  let now = 2000;
+  now = finishTurn(room, now);                       // 第 1 位畫完
+  const second = room.state.drawerId;
+  room.pickWord(second, room.state.choices[0], now);
+  room.leave(second, now);                           // 第 2 位畫到一半離開
+  room.tick(now + 8000); now += 8000;
+  const expectThird = order[order.indexOf(second) + 1];
+  check('畫家離開後輪到原本的下一位（不跳過）', room.state.drawerId === expectThird, room.state.drawerId + ' vs ' + expectThird);
+
+  /* 跑完整局：每個還在的人都剛好畫 1 次 */
+  let guard = 0;
+  while (room.phase === 'playing' && guard++ < 50) now = finishTurn(room, now);
+  const drew = room.state.players.map((p) => p.id + ':' + p.drew).join(',');
+  check('每個還在的人都剛好畫滿（沒人少畫、沒人多畫）', room.state.players.every((p) => p.drew === 1), drew);
+}
+{
+  /* 順位最後一個人在作畫中離開：不能讓第一位連畫兩次、也不能提早結束 */
+  const room = startedRoom(['a', 'b', 'c'], 2);
+  let now = 2000;
+  now = finishTurn(room, now);
+  now = finishTurn(room, now);                       // 前兩位畫完，輪到順位最後一位
+  const last = room.state.drawerId;
+  room.leave(last, now);
+  room.tick(now + 8000); now += 8000;
+  let guard = 0;
+  while (room.phase === 'playing' && guard++ < 50) now = finishTurn(room, now);
+  const drew = room.state.players.map((p) => p.id + ':' + p.drew).join(',');
+  check('最後一位離開後，剩下的人還是各畫滿 2 次', room.state.players.every((p) => p.drew === 2), drew);
+}
+{
+  /* 後段有人離開：總題數不能掉到目前題號以下而讓整局提早結束 */
+  const room = startedRoom(['a', 'b', 'c'], 2);
+  let now = 2000;
+  for (let i = 0; i < 3; i++) now = finishTurn(room, now);
+  const guesser = room.state.order.find((id) => id !== room.state.drawerId);
+  room.leave(guesser, now);
+  check('後段有人離開不會提早結束', room.phase === 'playing', room.phase);
+  let guard = 0;
+  while (room.phase === 'playing' && guard++ < 50) now = finishTurn(room, now);
+  check('剩下的人都畫滿 2 次才結束', room.state.players.every((p) => p.drew === 2),
+    room.state.players.map((p) => p.id + ':' + p.drew).join(','));
+}
+{
+  /* 最後一輪才加入的人：總題數要跟著加，最後題號也不會超過總題數 */
+  const room = startedRoom(['a', 'b'], 1);
+  let now = finishTurn(room, 2000);
+  room.join('late', { name: 'LATE', role: 'player', now });
+  let guard = 0;
+  while (room.phase === 'playing' && guard++ < 50) now = finishTurn(room, now);
+  check('最後一輪才加入的人也畫到了', Rules.player(room.state, 'late').drew === 1);
+  check('結束時題號沒有超過總題數', room.state.turnNo <= room.state.totalTurns, room.state.turnNo + '/' + room.state.totalTurns);
+}
+
+section('最後一個猜題者離開時，答案照樣公布');
+{
+  const room = startedRoom(['a', 'b', 'c'], 1);
+  const d = room.state.drawerId;
+  room.pickWord(d, room.state.choices[0], 2000);
+  const guessers = room.state.order.filter((id) => id !== d);
+  const w = Words.byId(room.state.wordId).text;
+  room.guess(guessers[0], w, 3000);
+  room.leave(guessers[1], 3500);
+  check('全部猜中而收掉的這一題有寫出答案', room.summary.some((n) => n.text.indexOf('答案是「' + w + '」') >= 0),
+    room.summary.map((n) => n.text).slice(-3).join(' | '));
+}
+
+section('房主改成觀戰／離開：房主交給玩家，不會卡住');
+{
+  const store = new RoomStore({});
+  const room = store.create('h', { name: 'H', now: 1000 }).room;
+  room.join('s', { name: 'S', role: 'spectator', now: 1100 });
+  check('房間只剩房主一個玩家時，房主不能改成觀戰', !room.becomeSpectator('h').ok && room.phase === 'waiting');
+  room.join('b', { name: 'B', role: 'player', now: 1200 });
+  room.join('c', { name: 'C', role: 'player', now: 1300 });
+  const r = room.becomeSpectator('h');
+  check('房主改成觀戰後，房主交給最早進房的玩家（不是觀戰者）', r.ok && room.hostId === 'b', room.hostId);
+  room.becomePlayer('h', 1400);
+  room.leave('b', 1500);
+  check('房主離開時優先交給玩家，不交給比較早進來的觀戰者', room.hostId !== 's' && room.member(room.hostId).role === 'player', room.hostId);
+}
+
+section('改規則要嘛全套用、要嘛都不改');
+{
+  const store = new RoomStore({});
+  const room = store.create('a', { name: 'A', now: 1000 }).room;
+  room.setSettings('a', { rounds: 2 });
+  check('一項不合法時其他項也不會被偷偷改掉', !room.setSettings('a', { rounds: 4, drawSec: 5 }).ok && room.settings.rounds === 2,
+    room.settings.rounds);
+  check('布林值不算數字', !room.setSettings('a', { rounds: true }).ok);
+  check('陣列不算數字', !room.setSettings('a', { rounds: [3] }).ok);
+  check('數字字串可以', room.setSettings('a', { rounds: '3' }).ok && room.settings.rounds === 3);
+}
+
+section('同一局裡離開又回來：分數跟畫過的次數接回去');
+{
+  const room = startedRoom(['a', 'b', 'c'], 1);
+  let now = 2000;
+  const d = room.state.drawerId;
+  room.pickWord(d, room.state.choices[0], now);
+  const g = room.state.order.find((id) => id !== d);
+  room.guess(g, Words.byId(room.state.wordId).text, now + 1000);
+  room.skipTurn(d, now + 1500);
+  const before = Rules.player(room.state, d);
+  const scoreBefore = before.score;
+  room.leave(d, now + 2000);
+  room.join(d, { name: d.toUpperCase(), role: 'player', now: now + 3000 });
+  const after = Rules.player(room.state, d);
+  check('回來後分數還在', after && after.score === scoreBefore && scoreBefore > 0, after && after.score + ' vs ' + scoreBefore);
+  check('回來後已畫次數也還在，不會再被排去畫', after && after.drew === 1);
+  room.tick(now + 20000);
+  check('下一題不會又輪到他', room.state.drawerId !== d);
+}
+
+section('畫家斷線 15 秒沒回來就先跳過這一題');
+{
+  const room = startedRoom(['a', 'b', 'c'], 1);
+  const d = room.state.drawerId;
+  room.pickWord(d, room.state.choices[0], 2000);
+  room.disconnect(d, 3000);
+  check('斷線中投影會帶「等到幾點」', room.viewFor('a', 3100).room.drawerAwayUntil === 3000 + 15000);
+  room.tick(3000 + 10000);
+  check('15 秒內還在等他', room.state.phase === 'drawing' && room.state.drawerId === d);
+  room.tick(3000 + 15000);
+  check('15 秒到了就跳過這一題', room.state.phase === 'reveal', room.state.phase);
+  check('沒畫到的這一題不算他畫過', Rules.player(room.state, d).drew === 0);
+  check('座位還在（還沒被踢）', !!room.member(d));
+}
+{
+  const room = startedRoom(['a', 'b', 'c'], 1);
+  const d = room.state.drawerId;
+  room.pickWord(d, room.state.choices[0], 2000);
+  room.disconnect(d, 3000);
+  room.join(d, { name: d.toUpperCase(), role: 'player', now: 8000 });
+  room.tick(3000 + 20000);
+  check('15 秒內回來就繼續畫（時間到之前不會被跳過）', room.state.drawerId === d);
+}
+
+section('用戶端亂送東西不會讓伺服器當掉');
+{
+  const evil = { toString: 1, valueOf: 1 };
+  let threw = false;
+  try {
+    const store = new RoomStore({});
+    store.get(evil);
+    store.getAny(evil);
+    const room = store.create('a', { name: evil, roomName: evil, now: 1000 }).room;
+    room.join('b', { name: 'B', role: 'player', now: 1000 });
+    room.chat('a', evil, 2000);
+    room.setSettings('a', { rounds: evil, drawSec: evil });
+    room.createInvite('a', { role: evil, ttlMs: evil, maxUses: evil, now: 1000 });
+    room.checkInvite(evil, 1000);
+    room.setReady('a', true); room.setReady('b', true); room.start('a', 1000);
+    room.stroke(room.state.drawerId, { t: evil, p: [evil, evil], c: evil, w: evil }, 1100);
+    room.guess('b', evil, 1200);
+  } catch (e) { threw = e.message; }
+  check('怪物件（toString 不是函式）不會讓任何方法丟例外', threw === false, threw);
+}
+
+section('邀請提示文字跟實際行為一致');
+{
+  const room = startedRoom(['a', 'b'], 1);
+  const inv = room.createInvite('a', { now: 1500 }).invite;
+  const chk = room.checkInvite(inv.token, 1600);
+  check('對局中的提示不再說「會先以觀戰身分進入」', chk.ok && chk.note && chk.note.indexOf('觀戰身分進入') < 0, chk.note);
 }
 
 /* ================================================================

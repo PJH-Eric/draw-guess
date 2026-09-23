@@ -256,7 +256,9 @@
   /** 把用戶端送來的筆畫洗乾淨；不合法就回 null（伺服器據此拒絕） */
   function sanitizeStroke(raw) {
     if (!raw || typeof raw !== 'object') return null;
-    var tool = TOOLS[String(raw.t || 'pen')] ? String(raw.t || 'pen') : 'pen';
+    /* 只接受字串／數字：物件的 toString 可以被亂塞，String()／Number() 碰到會直接丟例外 */
+    var num = function (x) { return typeof x === 'number' ? x : (typeof x === 'string' ? Number(x) : NaN); };
+    var tool = (typeof raw.t === 'string' && TOOLS[raw.t]) ? raw.t : 'pen';
     var spec = TOOLS[tool];
 
     var pts = raw.p;
@@ -269,12 +271,12 @@
 
     var out = new Array(pts.length);
     for (var i = 0; i < pts.length; i++) {
-      var v = Number(pts[i]);
+      var v = num(pts[i]);
       if (!isFinite(v)) return null;
       out[i] = Math.round(clamp(v, 0, CONST.BOX));
     }
-    var c = Math.round(Number(raw.c));
-    var w = Math.round(Number(raw.w));
+    var c = Math.round(num(raw.c));
+    var w = Math.round(num(raw.w));
     return {
       t: tool,
       c: isFinite(c) ? clamp(c, 0, COLORS.length - 1) : 0,
@@ -432,18 +434,46 @@
     return ok({ entry: entry });
   }
 
-  /** 公布完就換下一位畫家；全部畫完就分出勝負 */
+  /** 這個人還欠幾次沒畫（每人要畫 rounds 次） */
+  function owes(state, id) {
+    var p = player(state, id);
+    return p ? Math.max(0, state.rounds - p.drew) : 0;
+  }
+
+  /**
+   * 重算「這一場總共幾題」：已經結束的題數 + 每個人還欠的次數。
+   * 以前是 rounds × 人數 直接乘，一有人中途離開或加入就算錯
+   * （離開時總題數掉到目前題號以下 → 整局提早結束；最後一輪才加入 → 題號超過總題數）。
+   * 作畫中那一題的畫家還沒算進 drew，所以這一題本身已經包含在「還欠的」裡面。
+   */
+  function recount(state) {
+    var owed = 0;
+    for (var i = 0; i < state.players.length; i++) owed += Math.max(0, state.rounds - state.players[i].drew);
+    var inProgress = state.phase === 'picking' || state.phase === 'drawing';
+    state.totalTurns = Math.max(state.turnNo, state.turnNo - (inProgress ? 1 : 0) + owed);
+    return state.totalTurns;
+  }
+
+  /**
+   * 公布完就換下一位畫家；全部畫完就分出勝負。
+   * 結束的判定是「每個人都畫滿 rounds 次」，不是「輪到第幾輪」：
+   * 中途有人加入或離開時，順位一直在變，只看輪次會讓人少畫或多畫。
+   * 往下找的時候跳過已經畫滿的人（例如離開又回來、已經畫滿的人不會再被排到）。
+   */
   function nextTurn(state, now) {
     if (state.phase !== 'reveal') return err('現在不是換人的時候。', 'phase');
-    state.turn += 1;
-    if (state.turn >= state.order.length) {
-      state.turn = 0;
-      state.round += 1;
-    }
-    if (state.round > state.rounds || state.turnNo >= state.totalTurns) {
-      return finish(state, now);
+    var anyOwed = state.order.some(function (id) { return owes(state, id) > 0; });
+    if (!anyOwed) return finish(state, now);
+    for (var guard = 0; guard <= state.order.length * 2; guard++) {
+      state.turn += 1;
+      if (state.turn >= state.order.length) {
+        state.turn = 0;
+        state.round += 1;
+      }
+      if (owes(state, state.order[state.turn]) > 0) break;
     }
     beginTurn(state, now);
+    recount(state);
     return ok({ state: state });
   }
 
@@ -579,22 +609,25 @@
     var oi = state.order.indexOf(id);
     if (oi >= 0) {
       state.order.splice(oi, 1);
-      if (oi < state.turn) state.turn -= 1;
+      /* 目前順位（turn）指的就是這一題的畫家。拿掉的人排在他前面，或就是他本人，
+         都要往回退一格：這樣 nextTurn 的「+1」才會剛好落在原本的下一位，
+         不會跳過人（以前拿掉畫家本人時沒退，下一位就被跳過了）。 */
+      if (oi <= state.turn) state.turn -= 1;
     }
     state.guessed = state.guessed.filter(function (g) { return g.id !== id; });
     delete state.wrong[id];
-    state.totalTurns = state.rounds * Math.max(1, state.order.length);
 
-    if (state.over) return ok({ removed: id });
+    if (state.over) { recount(state); return ok({ removed: id }); }
     if (state.players.length < CONST.MULTIPLAYER_MIN) {
       finish(state, now);
       return ok({ removed: id, finished: true });
     }
     if (state.drawerId === id && (state.phase === 'picking' || state.phase === 'drawing')) {
       var e = endTurn(state, now, 'drawerleft');
-      if (state.turn >= state.order.length) state.turn = 0;
+      recount(state);
       return ok({ removed: id, turnEnded: e.ok ? e.entry : null });
     }
+    recount(state);
     if (state.phase === 'drawing') {
       /* 少一個猜題者，可能剛好湊齊「全部猜中」 */
       var t = tick(state, now);
@@ -609,16 +642,18 @@
     if (state.over) return err('這一局已經結束了。', 'over');
     if (player(state, p.id)) return ok({ state: state, already: true });
     if (state.players.length >= CONST.MAX_PLAYERS) return err('玩家席已經滿了。', 'full');
+    /* 同一局裡離開又回來的人（呼叫端會把他離開前的分數與已畫次數帶進來）：
+       分數接回去，已經畫過的次數也算數，不會回來就歸零、又被多排一次。 */
     var entry = {
       id: String(p.id),
       name: String(p.name || ''),
       ai: p.ai || null,
-      score: 0,
-      drew: 0
+      score: Math.max(0, Number(p.score) || 0),
+      drew: Math.max(0, Math.floor(Number(p.drew) || 0))
     };
     state.players.push(entry);
     state.order.push(entry.id);
-    state.totalTurns = state.rounds * state.order.length;
+    recount(state);
     return ok({ state: state, player: entry });
   }
 
@@ -750,6 +785,8 @@
     finish: finish,
     removePlayer: removePlayer,
     addPlayer: addPlayer,
+    recount: recount,
+    owes: owes,
     toPublic: toPublic,
     describe: describe,
     maskOf: maskOf,

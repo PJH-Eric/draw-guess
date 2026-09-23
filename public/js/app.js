@@ -41,11 +41,13 @@
     inviteUrl: '',
     chatDraft: '',                  // 聊天室打到一半的字，投影更新時用來保留輸入框內容
     ruleMenuOpen: null,              // 遊戲規則自訂下拉選單：哪個欄位（set-rounds／set-drawsec／set-diff）展開中
+    ruleFocus: null,                 // 卡片更新完要把焦點放到哪：{ field, target: 'btn' | 'opt' }
     roomCreate: { roomName: '', rounds: 2, drawSec: 90, diff: 0 },
     lastOverlayHtml: null,
     conn: { status: 'idle', message: '' },
     wideLayout: null,
-    recorded: false
+    recordedKey: '',
+    resumeRoom: null                 // 重新整理前所在的房號（sessionStorage），連上線後自動回去
   };
 
   /* ================================================================
@@ -441,7 +443,6 @@
     app.roomCode = null;
     app.feed = [];
     app.feedSeen = {};
-    app.recorded = false;
     app.lastTurnKey = '';
     app.lastPhase = '';
     app.lastMask = '';
@@ -1027,6 +1028,10 @@
       $('wordbar-meta').textContent = (g.phase === 'picking' ? '畫家正在挑題目…' : '等待開始') +
         '・' + turnLabel(g);
     }
+    /* 畫家斷線中：告訴大家不是當機，15 秒沒回來就會跳過這一題（伺服器算的） */
+    if (v.room && v.room.drawerAwayUntil && !wb.hidden) {
+      $('wordbar-meta').textContent = '畫家斷線了，最多等 15 秒・' + $('wordbar-meta').textContent;
+    }
 
     renderPlayers();
     renderOverlay();
@@ -1056,6 +1061,9 @@
     var s = secsLeft(g.deadline);
     chip.hidden = false;
     $('timer-text').textContent = s + ' 秒';
+    /* 選題卡上的「N 秒內沒選…」也跟著倒數（卡片本身只在收到投影時才更新） */
+    var ps = D.querySelector('#overlay-card .pick-secs');
+    if (ps && ps.textContent !== String(s)) ps.textContent = s;
     chip.setAttribute('data-urgent', String(g.phase === 'drawing' && s <= 10));
     var sum = $('sum-timer');
     if (sum) sum.textContent = s + ' 秒';
@@ -1137,17 +1145,94 @@
        重建會把邀請連結輸入框的選取與按鈕焦點洗掉。 */
     if (html === app.lastOverlayHtml) return;
     app.lastOverlayHtml = html;
-    /* 聊天室正在打字的時候，別人的訊息或房間投影也會讓這裡重建：
-       記住游標在不在聊天輸入框，重建完再把焦點（跟游標位置）放回去，
-       不然打到一半會被強制跳出輸入框。 */
-    var chatFocused = D.activeElement && D.activeElement.id === 'chat-input';
-    card.innerHTML = html;
+    /* 不再整張 innerHTML 重建，而是「就地更新」（morphOverlay）：只改有變的地方。
+       以前別人一聊天、一按準備，整張卡就重建一次，聊天輸入框被換成新的元素：
+       注音打到一半會中斷、游標跳到最後、iPhone 的鍵盤還會被收起來。
+       現在輸入框、按鈕這些節點都會留著，只有文字或屬性真的變了才動。 */
+    var list = card.querySelector('#chat-list');
+    var stick = !list || (list.scrollHeight - list.scrollTop - list.clientHeight < 30);
+    var tpl = D.createElement('div');
+    tpl.innerHTML = html;
+    morphChildren(card, tpl);
     S.decorateAll(card);
     paintIcons(card);
-    bindOverlay(card);
-    if (chatFocused) {
-      var ci = $('chat-input');
-      if (ci) { ci.focus(); var L = ci.value.length; try { ci.setSelectionRange(L, L); } catch (e) {} }
+    afterOverlayRender(card, stick);
+  }
+
+  /* ---------------------------------------------------- 卡片就地更新 */
+
+  /** 兩個節點算不算「同一個東西」：同標籤、同 id、同 data-act／data-field（按鈕的身分） */
+  function sameKind(a, b) {
+    if (a.nodeType !== b.nodeType) return false;
+    if (a.nodeType !== 1) return true;
+    if (a.tagName !== b.tagName) return false;
+    return (a.id || '') === (b.id || '') &&
+      (a.getAttribute('data-act') || '') === (b.getAttribute('data-act') || '') &&
+      (a.getAttribute('data-field') || '') === (b.getAttribute('data-field') || '');
+  }
+
+  /* 這幾個屬性是畫面自己加上去的（立體按鈕、圖示），新的 HTML 裡本來就沒有，不能被清掉 */
+  var MORPH_KEEP = { 'data-b3': 1, 'data-ico-done': 1 };
+
+  function syncAttrs(o, n) {
+    for (var i = o.attributes.length - 1; i >= 0; i--) {
+      var name = o.attributes[i].name;
+      if (!MORPH_KEEP[name] && !n.hasAttribute(name)) o.removeAttribute(name);
+    }
+    for (var j = 0; j < n.attributes.length; j++) {
+      var a = n.attributes[j];
+      var val = (a.name === 'class' && o.classList && o.classList.contains('press')) ? a.value + ' press' : a.value;
+      if (o.getAttribute(a.name) !== val) o.setAttribute(a.name, val);
+    }
+  }
+
+  function morphNode(o, n) {
+    if (o.nodeType !== 1) { if (o.nodeValue !== n.nodeValue) o.nodeValue = n.nodeValue; return; }
+    var colorBefore = o.getAttribute('data-color');
+    var icoBefore = o.getAttribute('data-ico');
+    syncAttrs(o, n);
+    /* 已經裝飾過的立體按鈕：裡面是 svgui 畫的外框＋標籤，只換標籤文字，換色就請它重畫 */
+    if (o.getAttribute('data-b3')) {
+      var lbl = o.querySelector('.b3-lbl');
+      if (lbl && lbl.innerHTML !== n.innerHTML) lbl.innerHTML = n.innerHTML;
+      if (o.getAttribute('data-color') !== colorBefore) S.setColor(o, o.getAttribute('data-color'));
+      return;
+    }
+    if (o.getAttribute('data-ico-done') && icoBefore === o.getAttribute('data-ico')) return;
+    if (o.getAttribute('data-ico-done')) o.removeAttribute('data-ico-done');
+    if (o.tagName === 'INPUT' || o.tagName === 'TEXTAREA') {
+      /* 唯讀的（邀請網址）跟著新值換；使用者正在打的字（聊天）完全不動 */
+      if (o.readOnly && o.value !== n.value) o.value = n.value;
+      return;
+    }
+    morphChildren(o, n);
+  }
+
+  function morphChildren(o, n) {
+    var oldKids = Array.prototype.slice.call(o.childNodes);
+    var newKids = Array.prototype.slice.call(n.childNodes);
+    for (var i = 0; i < newKids.length; i++) {
+      var nk = newKids[i], ok = oldKids[i];
+      if (!ok) o.appendChild(nk);
+      else if (sameKind(ok, nk)) morphNode(ok, nk);
+      else o.replaceChild(nk, ok);
+    }
+    for (var k = newKids.length; k < oldKids.length; k++) o.removeChild(oldKids[k]);
+  }
+
+  /** 卡片更新完之後：聊天捲到最新、帶回打到一半的字、規則下拉選單的焦點 */
+  function afterOverlayRender(card, stick) {
+    var list = card.querySelector('#chat-list');
+    if (list && stick) list.scrollTop = list.scrollHeight;
+    var ci = card.querySelector('#chat-input');
+    if (ci && !ci.value && app.chatDraft && D.activeElement !== ci) ci.value = app.chatDraft;
+    var f = app.ruleFocus;
+    app.ruleFocus = null;
+    if (f) {
+      var el = f.target === 'opt'
+        ? (card.querySelector('.ruledd-opt.on[data-field="' + f.field + '"]') || card.querySelector('.ruledd-opt[data-field="' + f.field + '"]'))
+        : card.querySelector('.ruledd-btn[data-field="' + f.field + '"]');
+      if (el) el.focus();
     }
   }
 
@@ -1267,6 +1352,24 @@
   }
 
   /** 房間設定：房主在這裡調規則、產生邀請連結；線上房間只有真人，沒有電腦對手 */
+  /** 聊天室區塊（等待畫面、結算畫面共用）。輸入框刻意不帶 value：它的內容交給使用者，
+      卡片就地更新時不會去動它（打到一半的字另外存在 app.chatDraft）。 */
+  function chatBlockHtml(v) {
+    if (!v.you || !v.you.can.chat) return '';
+    var chatMsgs = (v.room.chat || []).map(function (c) {
+      var mine = c.fromId === v.you.id;
+      return '<li class="chatmsg' + (mine ? ' mine' : '') + '">' +
+        '<b class="chatfrom">' + esc(c.from) + '</b>' +
+        '<span class="chattext">' + esc(c.text) + '</span></li>';
+    }).join('');
+    return '<div class="setupblock chatblock"><h4>聊天室</h4>' +
+      '<ol class="chatlist" id="chat-list">' +
+      (chatMsgs || '<li class="chatempty">' + (v.room.phase === 'finished' ? '聊聊剛剛那一局吧！' : '開始之前先聊聊吧！') + '</li>') + '</ol>' +
+      '<div class="chatrow"><label class="sr-only" for="chat-input">聊天訊息</label>' +
+      '<input id="chat-input" maxlength="200" autocomplete="off" enterkeyhint="send" placeholder="說點什麼…">' +
+      '<button type="button" class="btn3d small" data-color="sky" data-act="chat-send">送出</button></div></div>';
+  }
+
   function roomSetupHtml(v) {
     var r = v.room;
     var seats = '';
@@ -1315,31 +1418,16 @@
     }
 
     /* ---- 聊天室 ----
-       刻意放在「邀請朋友」下面：只在等待畫面才有，開始對局後 v.room.phase 就不是
-       'waiting'，這個 if 分支整塊不會被畫出來，聊天室也就跟著收起來，
-       不需要另外判斷「遊戲中」——這張卡本來就只在等待畫面才會出現。 */
-    var chatHtml = '';
-    if (v.you.can.chat) {
-      var chatMsgs = (r.chat || []).map(function (c) {
-        var mine = c.fromId === v.you.id;
-        return '<li class="chatmsg' + (mine ? ' mine' : '') + '">' +
-          '<b class="chatfrom">' + esc(c.from) + '</b>' +
-          '<span class="chattext">' + esc(c.text) + '</span></li>';
-      }).join('');
-      chatHtml = '<div class="setupblock chatblock"><h4>聊天室</h4>' +
-        '<ol class="chatlist" id="chat-list">' +
-        (chatMsgs || '<li class="chatempty">開始之前先聊聊吧！</li>') + '</ol>' +
-        '<div class="chatrow"><label class="sr-only" for="chat-input">聊天訊息</label>' +
-        '<input id="chat-input" maxlength="200" autocomplete="off" placeholder="說點什麼…" value="' + esc(app.chatDraft || '') + '">' +
-        '<button type="button" class="btn3d small" data-color="sky" data-act="chat-send">送出</button></div></div>';
-    }
+       刻意放在「邀請朋友」下面：只在等待畫面（跟結算畫面）才有，開始對局後 v.you.can.chat 就是 false，
+       聊天室也就跟著收起來。 */
+    var chatHtml = chatBlockHtml(v);
 
     /* ---- 主要按鈕 ----
        每個人只有一顆主要按鈕：房主是「開始！」（房主不用另外按準備，按開始就代表他準備好了，
        伺服器 canStart 也不等房主）、其他玩家是「準備好了」、觀戰者是「下場一起玩」。
        「改成觀戰」「離開房間」是次要動作，縮小一號（.sub）排在後面，手機上才排得進一行。 */
     var btns = '';
-    if (v.you.isHost && v.you.role === 'player') {
+    if (v.you.isHost) {
       btns += '<button class="btn3d" data-color="grape" data-act="start"' +
         (v.you.can.start ? '' : ' disabled') + '>開始！</button>';
     } else if (v.you.role === 'player') {
@@ -1372,7 +1460,7 @@
         return '<button class="wordchoice" data-act="pick" data-word="' + esc(c.id) + '">' +
           '<b>' + esc(c.text) + '</b><span class="s">' + esc(c.catLabel) + '・' + esc(c.diffLabel) + '</span></button>';
       }).join('');
-      return '<h3>挑一個來畫</h3><p>' + secsLeft(g.deadline) + ' 秒內沒選的話，系統會幫你挑第一個。</p>' +
+      return '<h3>挑一個來畫</h3><p><b class="pick-secs">' + secsLeft(g.deadline) + '</b> 秒內沒選的話，系統會幫你挑第一個。</p>' +
         '<div class="wordchoices">' + cards + '</div>';
     }
     var drawer = drawerName(g);
@@ -1415,12 +1503,20 @@
         '<span class="rname">' + (win ? '🏆 ' : (i + 1) + '. ') + esc(p.name) + '</span>' +
         '<span class="rpts">' + p.score + ' 分</span></li>';
     }).join('');
+    /* 線上：結算完由房主按「回房間」，大家回到等待畫面（可以聊天、改規則、重新準備）再開一局；
+       不再是全員投票直接開新局（有一個人掛機就全部卡住）。單機維持「再玩一局」。 */
     var btns = '';
-    if (v.you.can.rematch) btns += '<button class="btn3d" data-color="mint" data-act="rematch">再玩一局</button>';
-    btns += '<button class="btn3d small" data-color="cream" data-act="' + (app.mode === 'online' ? 'lobby' : 'home') + '">' +
-      (app.mode === 'online' ? '回大廳' : '回主選單') + '</button>';
-    return '<h3>結算</h3><ul class="resultlist">' + rows + '</ul>' +
-      (v.room && v.room.rematchVotes ? '<p>已經有 ' + v.room.rematchVotes + ' 個人想再玩一局。</p>' : '') +
+    var note = '';
+    if (app.mode === 'online') {
+      if (v.you.can.returnToRoom) btns += '<button class="btn3d" data-color="mint" data-act="return-room">回房間</button>';
+      else note = '<p>等房主帶大家回房間，就能再開一局。</p>';
+      btns += '<button class="btn3d small sub" data-color="cream" data-act="lobby">回大廳</button>';
+    } else {
+      if (v.you.can.rematch) btns += '<button class="btn3d" data-color="mint" data-act="rematch">再玩一局</button>';
+      btns += '<button class="btn3d small" data-color="cream" data-act="home">回主選單</button>';
+    }
+    return '<h3>結算</h3><ul class="resultlist">' + rows + '</ul>' + note +
+      (app.mode === 'online' ? chatBlockHtml(v) : '') +
       '<div class="overlay-btns">' + btns + '</div>';
   }
 
@@ -1429,76 +1525,106 @@
     return 0;
   }
 
-  function bindOverlay(card) {
-    var list = card.querySelectorAll('button[data-act]');
-    for (var i = 0; i < list.length; i++) {
-      (function (el) {
-        el.addEventListener('click', function () {
-          var act = el.getAttribute('data-act');
-          Sound.play('click');
-          if (act === 'pick') {
-            var wid = el.getAttribute('data-word');
-            if (app.mode === 'solo') {
-              var r = Rules.pickWord(app.solo.state, ME, wid, Date.now());
-              if (!r.ok) return toast(r.error, 'error');
-              app.paint.clearLocal();
-              soloRefresh();
-            } else w.Online.send('room:pick', { wordId: wid });
-          } else if (act === 'invite-new') newInvite();
-          else if (act === 'invite-copy') copyText(app.inviteUrl);
-          else if (act === 'invite-revoke') revokeInvite();
-          else if (act === 'ready') w.Online.send('room:ready', { ready: !app.view.you.ready });
-          else if (act === 'start') w.Online.send('room:start', {});
-          else if (act === 'become-player') w.Online.send('room:becomePlayer', {});
-          else if (act === 'become-spectator') w.Online.send('room:becomeSpectator', {});
-          else if (act === 'leave-room') askLeaveRoom();
-          else if (act === 'settings') gameModal.open();
-          else if (act === 'chat-send') sendChatMessage();
-          else if (act === 'rematch') {
-            if (app.mode === 'solo') startSolo();
-            else w.Online.send('room:rematch', {});
-          } else if (act === 'lobby') leaveGame('s-lobby');
-          else if (act === 'home') leaveGame('s-home');
-          else if (act === 'rule-toggle') {
-            var field = el.getAttribute('data-field');
-            app.ruleMenuOpen = (app.ruleMenuOpen === field) ? null : field;
-            app.lastOverlayHtml = null;
-            renderOverlay();
-          } else if (act === 'rule-opt') {
-            var optField = el.getAttribute('data-field');
-            var optValue = Number(el.getAttribute('data-v'));
-            var key = optField === 'set-rounds' ? 'rounds' : optField === 'set-drawsec' ? 'drawSec' : optField === 'set-diff' ? 'diff' : null;
-            if (key) {
-              var payload = {};
-              payload[key] = optValue;
-              w.Online.send('room:settings', payload);
-            }
-            app.ruleMenuOpen = null;
-            app.lastOverlayHtml = null;
-            renderOverlay();
-          }
-        });
-      }(list[i]));
-    }
+  /* 卡片上的按鈕用「事件委派」：監聽器只在 init 掛一次在卡片本身，
+     卡片內容就地更新（見 morphChildren）時不用重綁，也不會越綁越多。 */
+  function setupOverlayEvents() {
+    var card = $('overlay-card');
+    card.addEventListener('click', function (ev) {
+      var el = ev.target && ev.target.closest ? ev.target.closest('button[data-act]') : null;
+      if (!el || !card.contains(el) || el.disabled) return;
+      onOverlayAct(el);
+    });
+    card.addEventListener('input', function (ev) {
+      if (ev.target && ev.target.id === 'chat-input') app.chatDraft = ev.target.value;
+    });
+    card.addEventListener('keydown', function (ev) {
+      var t = ev.target;
+      if (!t) return;
+      if (t.id === 'chat-input' && ev.key === 'Enter') {
+        /* 注音／拼音選字時按的 Enter 是「確定這個字」，不是送出 */
+        if (ev.isComposing || ev.keyCode === 229) return;
+        ev.preventDefault();
+        sendChatMessage();
+        return;
+      }
+      ruleMenuKey(ev);
+    });
+  }
 
-    /* 規則下拉選單展開時，把焦點放回它自己的按鈕：卡片整塊重畫（bindOverlay 每次都重綁），
-       不然按鍵盤 Tab／方向鍵操作到一半，焦點會被丟回卡片最上面。 */
-    if (app.ruleMenuOpen) {
-      var openBtn = card.querySelector('.ruledd-btn[data-field="' + app.ruleMenuOpen + '"]');
-      if (openBtn) openBtn.focus();
+  /** 規則下拉選單的鍵盤操作：↓ 打開、↑↓ 在選項間移動、Home／End 跳到頭尾（Esc 見 setupRuleMenuClose） */
+  function ruleMenuKey(ev) {
+    var t = ev.target;
+    var field = t.getAttribute && t.getAttribute('data-field');
+    if (!field) return;
+    if (t.classList.contains('ruledd-btn') && (ev.key === 'ArrowDown' || ev.key === 'ArrowUp')) {
+      ev.preventDefault();
+      if (app.ruleMenuOpen !== field) {
+        app.ruleMenuOpen = field;
+        app.ruleFocus = { field: field, target: 'opt' };
+        app.lastOverlayHtml = null;
+        renderOverlay();
+      }
+      return;
     }
+    if (!t.classList.contains('ruledd-opt')) return;
+    var opts = Array.prototype.slice.call(t.parentNode.querySelectorAll('.ruledd-opt'));
+    var i = opts.indexOf(t);
+    var next = null;
+    if (ev.key === 'ArrowDown') next = opts[Math.min(opts.length - 1, i + 1)];
+    else if (ev.key === 'ArrowUp') next = opts[Math.max(0, i - 1)];
+    else if (ev.key === 'Home') next = opts[0];
+    else if (ev.key === 'End') next = opts[opts.length - 1];
+    if (next) { ev.preventDefault(); next.focus(); }
+  }
 
-    var chatInput = card.querySelector('#chat-input');
-    if (chatInput) {
-      /* 值也存一份在 app.chatDraft：就算投影更新把輸入框整個重建掉，
-         下一次畫面重繪時 roomSetupHtml 還是會把打到一半的字帶回來。 */
-      chatInput.addEventListener('input', function () { app.chatDraft = chatInput.value; });
-      chatInput.addEventListener('keydown', function (ev) {
-        if (ev.key === 'Enter') { ev.preventDefault(); sendChatMessage(); }
-      });
+  function onOverlayAct(el) {
+    var act = el.getAttribute('data-act');
+    Sound.play('click');
+    if (act === 'pick') {
+      var wid = el.getAttribute('data-word');
+      if (app.mode === 'solo') {
+        var r = Rules.pickWord(app.solo.state, ME, wid, Date.now());
+        if (!r.ok) return toast(r.error, 'error');
+        app.paint.clearLocal();
+        soloRefresh();
+      } else w.Online.send('room:pick', { wordId: wid });
+    } else if (act === 'invite-new') newInvite();
+    else if (act === 'invite-copy') copyText(app.inviteUrl);
+    else if (act === 'invite-revoke') revokeInvite();
+    else if (act === 'ready') w.Online.send('room:ready', { ready: !app.view.you.ready });
+    else if (act === 'start') w.Online.send('room:start', {});
+    else if (act === 'become-player') w.Online.send('room:becomePlayer', {});
+    else if (act === 'become-spectator') w.Online.send('room:becomeSpectator', {});
+    else if (act === 'leave-room') askLeaveRoom();
+    else if (act === 'settings') gameModal.open();
+    else if (act === 'chat-send') sendChatMessage();
+    else if (act === 'rematch') startSolo();
+    else if (act === 'return-room') w.Online.send('room:return', {});
+    else if (act === 'lobby') leaveGame('s-lobby');
+    else if (act === 'home') leaveGame('s-home');
+    else if (act === 'rule-toggle') {
+      var field = el.getAttribute('data-field');
+      var opening = app.ruleMenuOpen !== field;
+      app.ruleMenuOpen = opening ? field : null;
+      /* 打開時焦點移到目前選中的那一項（鍵盤可以直接上下選），收起來就留在按鈕上 */
+      app.ruleFocus = { field: field, target: opening ? 'opt' : 'btn' };
+      app.lastOverlayHtml = null;
+      renderOverlay();
+    } else if (act === 'rule-opt') {
+      var optField = el.getAttribute('data-field');
+      var optValue = Number(el.getAttribute('data-v'));
+      var key = optField === 'set-rounds' ? 'rounds' : optField === 'set-drawsec' ? 'drawSec' : optField === 'set-diff' ? 'diff' : null;
+      if (key) {
+        var payload = {};
+        payload[key] = optValue;
+        w.Online.send('room:settings', payload);
+      }
+      app.ruleMenuOpen = null;
+      /* 選完焦點回到這個欄位的按鈕（以前選項被拿掉，焦點就掉到整頁最上面） */
+      app.ruleFocus = { field: optField, target: 'btn' };
+      app.lastOverlayHtml = null;
+      renderOverlay();
     }
-    var chatList = card.querySelector('#chat-list');
-    if (chatList) chatList.scrollTop = chatList.scrollHeight;
   }
 
   /** 送出聊天室訊息；空白的不送，送出後立刻清空輸入框（不等伺服器回應） */
@@ -1619,8 +1745,9 @@
   function canDoText(v, g) {
     if (v.room && v.room.closed) return '房間已結束，回大廳再開一間吧。';
     if (v.room && v.room.phase === 'waiting') {
-      return v.you.role === 'spectator' ? '等這一局開始，你會以觀戰身分看畫。'
-        : (v.you.ready ? '已準備，等房主按開始。' : '按「準備好了」讓房主可以開始。');
+      if (v.you.role === 'spectator') return '等這一局開始，你會以觀戰身分看畫。';
+      if (v.you.isHost) return '其他人都按「準備好了」之後，按「開始！」就能開局。';
+      return v.you.ready ? '已準備，等房主按開始。' : '按「準備好了」讓房主可以開始。';
     }
     if (!g) return '—';
     if (v.you.role === 'spectator') return '觀戰中：可以看畫與猜題紀錄，不能畫也不能猜。';
@@ -1631,7 +1758,7 @@
       return '把答案打進下面的猜題框，猜錯不扣分。';
     }
     if (g.phase === 'reveal') return '看一下答案，馬上換下一位畫家。';
-    return '這一局結束了，可以再玩一局或離開。';
+    return app.mode === 'online' ? '這一局結束了，房主可以帶大家回房間再開一局。' : '這一局結束了，可以再玩一局或離開。';
   }
 
   /* ================================================================
@@ -1751,6 +1878,10 @@
       if (code.length !== 4) return toast('房號是 4 個英數字。', 'error');
       joinRoom(code, null, 'player');
     });
+    /* 房號打完直接按 Enter 就加入 */
+    $('lobby-code').addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter' && !ev.isComposing) { ev.preventDefault(); $('b-lobby-join').click(); }
+    });
     $('b-lobby-refresh').addEventListener('click', function () { w.Online.send('lobby:subscribe', {}); });
     $('b-lobby-retry').addEventListener('click', connectOnline);
     /* 邀請連結不綁身分：對方自己按「加入當玩家」或「加入觀戰」，見 checkPendingInvite。 */
@@ -1766,18 +1897,60 @@
     });
     $('b-lobby-invite-cancel').addEventListener('click', function () {
       app.pendingInvite = null;
+      clearInviteParams();
       $('lobby-invite').hidden = true;
     });
   }
 
-  function joinRoom(code, token, role) {
+  /**
+   * @param {object} [opts]
+   *   rejoin  斷線重連：已經在這間房的畫面上，成功就只要求重新同步，不要把邀請連結、聊天草稿清掉；
+   *           失敗（房間關了、座位被收回）就直接顯示「房間已經結束」，不要停在凍住的舊畫面
+   *   resume  重新整理頁面後自動回到原本的房間：失敗就留在大廳並說明原因
+   */
+  function joinRoom(code, token, role, opts) {
+    opts = opts || {};
     w.Online.send('room:join', { code: code, token: token, role: role, name: Store.ensureNick() }, function (res) {
-      if (!res || !res.ok) return toast((res && res.error) || '加入失敗。', 'error');
+      if (!res || !res.ok) {
+        var why = (res && res.error) || '加入失敗。';
+        if (opts.rejoin && app.mode === 'online' && app.view) {
+          forgetRoom();
+          app.view.room.closed = true;
+          app.view.room.closedReason = '回不到原本的房間了：' + why;
+          app.lastOverlayHtml = null;
+          render();
+          return;
+        }
+        if (opts.resume) { forgetRoom(); return toast('原本的房間回不去了：' + why, 'error'); }
+        return toast(why, 'error');
+      }
       if (res.downgraded) toast('位子滿了（或對局進行中），你先以觀戰身分進來。', 'info');
       app.pendingInvite = null;
       $('lobby-invite').hidden = true;
+      if (token) clearInviteParams();
+      if (opts.rejoin && app.mode === 'online' && app.roomCode === res.code) {
+        w.Online.send('room:resync', {});
+        return;
+      }
       enterOnlineRoom(res.code);
     });
+  }
+
+  /* 重新整理頁面後自動回到房間：房號只記在這個分頁（sessionStorage），按「離開房間」就忘掉 */
+  function rememberRoom(code) { try { w.sessionStorage.setItem('dg_room', code); } catch (e) { /* 存不了就算了 */ } }
+  function forgetRoom() { try { w.sessionStorage.removeItem('dg_room'); } catch (e) { /* 同上 */ } }
+  function savedRoom() { try { return w.sessionStorage.getItem('dg_room') || null; } catch (e) { return null; } }
+
+  /* 邀請連結用過（或確定不能用）之後，把網址上的 ?room=&invite= 拿掉：
+     不然離開房間回到大廳時又會跳出同一張「收到房間邀請」 */
+  function clearInviteParams() {
+    try {
+      var u = new URL(w.location.href);
+      if (!u.searchParams.has('invite') && !u.searchParams.has('room')) return;
+      u.searchParams.delete('invite');
+      u.searchParams.delete('room');
+      w.history.replaceState(null, '', u.pathname + (u.search || '') + u.hash);
+    } catch (e) { /* 舊瀏覽器就維持原樣 */ }
   }
 
   function enterOnlineRoom(code) {
@@ -1786,7 +1959,6 @@
     app.view = null;
     app.feed = [];
     app.feedSeen = {};
-    app.recorded = false;
     app.lastTurnKey = '';
     app.lastPhase = '';
     app.lastGuessedCount = 0;
@@ -1795,6 +1967,7 @@
     app.chatDraft = '';
     app.ruleMenuOpen = null;
     app.lastOverlayHtml = null;
+    rememberRoom(code);
     show('s-game');
     ensurePaint();
     app.paint.clearLocal();
@@ -1807,6 +1980,7 @@
 
   function leaveGame(target) {
     if (app.mode === 'online') w.Online.send('room:leave', {});
+    forgetRoom();
     stopLoop();
     app.mode = null;
     app.solo = null;
@@ -1845,6 +2019,14 @@
         w.Online.send('lobby:subscribe', {});
         $('lobby-state').textContent = '已連線。';
         checkPendingInvite();
+        /* 重新整理前在房間裡：自動回去（有邀請連結的話以邀請為準） */
+        var entry = Cfg.entry();
+        if (app.resumeRoom && !(entry.room && entry.invite) && app.mode !== 'online') {
+          var code = app.resumeRoom;
+          app.resumeRoom = null;
+          $('lobby-state').textContent = '正在回到房間 ' + code + '…';
+          joinRoom(code, null, null, { resume: true });
+        }
       })
       .catch(function (e) {
         setLobbyEnabled(false);
@@ -1867,6 +2049,7 @@
         $('lobby-invite-note').textContent = (res && res.error) || '連結無效。';
         $('b-lobby-invite-player').hidden = true;
         $('b-lobby-invite-spectator').hidden = true;
+        clearInviteParams();
         return;
       }
       /* 連結不綁身分，玩家還是觀戰由對方自己按下面兩顆鈕決定；
@@ -1993,6 +2176,7 @@
 
     O.on('room:closed', function (p) {
       if (app.mode !== 'online') return;
+      forgetRoom();
       if (app.view) {
         app.view.room.closed = true;
         app.view.room.closedReason = p.reason;
@@ -2008,14 +2192,26 @@
 
     O.on('reconnected', function () {
       if (app.mode === 'online' && app.roomCode) {
-        joinRoom(app.roomCode, null, null);
+        joinRoom(app.roomCode, null, null, { rejoin: true });
       }
     });
   }
 
+  /**
+   * 戰績只記一次：用「這一局」本身當鑰匙（種子＋開局時間），不是用一個會被重設的旗標。
+   * 以前在結算畫面斷線重連會重設旗標 → 同一局記兩次；線上「再開一局」又沒重設 → 下一局完全沒記到。
+   * 鑰匙存在 sessionStorage，重新整理頁面自動回到房間時也不會重記。
+   */
+  function recordedKeys() {
+    try { return JSON.parse(w.sessionStorage.getItem('dg_recorded') || '[]'); } catch (e) { return []; }
+  }
   function recordResult(v) {
-    if (app.recorded || !v.game) return;
-    app.recorded = true;
+    if (!v.game) return;
+    var gameKey = app.mode + ':' + v.game.seed + ':' + v.game.startedAt;
+    var keys = recordedKeys();
+    if (app.recordedKey === gameKey || keys.indexOf(gameKey) >= 0) return;
+    app.recordedKey = gameKey;
+    try { w.sessionStorage.setItem('dg_recorded', JSON.stringify(keys.concat(gameKey).slice(-20))); } catch (e) { /* 私密模式存不了就算了，記憶體裡的鑰匙還是擋得住 */ }
     var me = null;
     for (var i = 0; i < v.game.players.length; i++) if (v.game.players[i].id === v.you.id) me = v.game.players[i];
     if (!me) return;
@@ -2041,7 +2237,7 @@
       if (app.screen !== 's-game') return;
       var tag = (ev.target && ev.target.tagName) || '';
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-      if (settingsModal.isOpen() || gameModal.isOpen()) return;
+      if (settingsModal.isOpen() || gameModal.isOpen() || (confirmModal && confirmModal.isOpen())) return;
       if (!app.view || !app.view.you.can.draw) return;
 
       var k = ev.key.toLowerCase();
@@ -2053,7 +2249,7 @@
   }
 
   /* 房間設定卡片裡「遊戲規則」的自訂下拉選單：點清單以外的地方，或按 Escape，就收起來。
-     只掛一次在 document 上（不是每次 bindOverlay 都掛，卡片每次重畫都會重新拿一批 DOM，
+     只掛一次在 document 上（跟卡片的事件委派一樣，不會越掛越多，
      掛在卡片本身的話舊的監聽器會一直留著、越掛越多）。 */
   function setupRuleMenuClose() {
     D.addEventListener('click', function (ev) {
@@ -2065,6 +2261,7 @@
     }, true);
     D.addEventListener('keydown', function (ev) {
       if (ev.key === 'Escape' && app.ruleMenuOpen) {
+        app.ruleFocus = { field: app.ruleMenuOpen, target: 'btn' };
         app.ruleMenuOpen = null;
         app.lastOverlayHtml = null;
         renderOverlay();
@@ -2094,6 +2291,7 @@
     setupOnlineEvents();
     setupKeys();
     setupRuleMenuClose();
+    setupOverlayEvents();
     buildToolbar();
     ensurePaint();
     syncToolbar();
@@ -2136,7 +2334,9 @@
 
     /* 帶著邀請連結進來：直接停在大廳讓使用者確認暱稱 */
     var entry = Cfg.entry();
+    var resume = savedRoom();
     if (entry.room && entry.invite) { show('s-lobby'); connectOnline(); }
+    else if (resume && Cfg.isOnlineEnabled()) { app.resumeRoom = resume; show('s-lobby'); connectOnline(); }
     else if (!Store.tutorialDone()) { tutIndex = 0; show('s-help'); renderTutorial(); }
   }
 
