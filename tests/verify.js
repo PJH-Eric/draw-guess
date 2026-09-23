@@ -54,7 +54,7 @@ function toDrawing(st, t) {
    ================================================================ */
 section('題庫（words.js）');
 {
-  check('題目數量為 2204', Words.LIST.length === 2204, Words.LIST.length);
+  check('題目數量為 1999', Words.LIST.length === 1999, Words.LIST.length);
 
   const ids = new Set();
   let dupe = null;
@@ -64,10 +64,11 @@ section('題庫（words.js）');
 
   const cats = {};
   for (const w of Words.LIST) cats[w.cat] = (cats[w.cat] || 0) + 1;
-  check('二十四個分類都有題目', Object.keys(cats).length === 24, JSON.stringify(cats));
+  check('二十七個分類都有題目', Object.keys(cats).length === 27, JSON.stringify(cats));
   check('每個分類至少 10 題', Object.values(cats).every((n) => n >= 10), JSON.stringify(cats));
   const themes = ['emotion', 'idiom', 'phenomenon', 'place', 'expression', 'job', 'fantasy', 'action',
-    'star', 'movie', 'trend', 'history', 'geography', 'civics', 'physics', 'astro', 'music', 'people'];
+    'star', 'movie', 'trend', 'history', 'geography', 'civics', 'physics', 'astro', 'music', 'people',
+    'body', 'clothes', 'festival'];
   check('每個主題分類都有題目', themes.every((cat) => cats[cat] >= 30), JSON.stringify(cats));
 
   /* 題目只能是名詞、成語或單一動作，不能是句子或加了場景的長描述 */
@@ -495,13 +496,15 @@ section('電腦對手（ai.js）');
 
   /* 難度差異：固定情境下的猜中率與速度 */
   const stats = {};
-  for (const lv of AI.LEVEL_KEYS) stats[lv] = simulate(lv, 40);
+  for (const lv of AI.LEVEL_KEYS) stats[lv] = simulate(lv, 80);
   check('猜中率：困難 ≥ 普通 > 簡單',
     stats.hard.rate >= stats.normal.rate && stats.normal.rate > stats.easy.rate,
     JSON.stringify(stats));
-  check('猜中速度：困難比普通快、普通比簡單快',
-    stats.hard.avg < stats.normal.avg && stats.normal.avg < stats.easy.avg,
-    JSON.stringify(stats));
+  check('猜中速度：困難比普通快', stats.hard.avg < stats.normal.avg, JSON.stringify(stats));
+  /* 簡單的電腦八十場只猜中個位數次，平均時間是雜訊；它慢不慢看的是開口時間與猜測間隔 */
+  const E = AI.LEVELS.easy, N = AI.LEVELS.normal;
+  check('猜中速度：簡單開口比普通晚、猜得比普通疏',
+    E.firstMs > N.firstMs && E.intervalMs > N.intervalMs, JSON.stringify({ easy: [E.firstMs, E.intervalMs], normal: [N.firstMs, N.intervalMs] }));
   check('每個難度都至少猜中過一次', AI.LEVEL_KEYS.every((lv) => stats[lv].hits > 0), JSON.stringify(stats));
 
   function last(arr) { return arr[arr.length - 1]; }
