@@ -58,7 +58,7 @@
     var list = D.querySelectorAll('.screen');
     for (var i = 0; i < list.length; i++) list[i].classList.toggle('active', list[i].id === id);
     app.screen = id;
-    if (id !== 's-game') D.body.classList.remove('setup-open');
+    if (id !== 's-game') { D.body.classList.remove('setup-open'); D.body.classList.remove('solo-mode'); }
     if (id === 's-game') { layoutStage(); if (app.paint) app.paint.resize(); }
     Sound.setTrack(id === 's-game' ? 'draw' : 'menu');
   }
@@ -433,6 +433,7 @@
       players: players,
       rounds: Rules.CONST.ROUNDS_MAX,
       drawSec: Rules.CONST.DRAW_SEC_MAX,
+      unlimited: true,               // 真的不限時、不限次：不會逾時、不會跳結算（見 rules.js createState）
       diff: Store.diff()
     });
     var r = Rules.start(state, Date.now());
@@ -440,6 +441,9 @@
 
     app.mode = 'solo';
     app.solo = { state: state, seed: seed };
+    /* 單機只有自己一個人：左側操作摘要、玩家分數列、給別人看的三張提示都用不到，
+       整塊拿掉，空出來的高度全部給畫布（CSS 見 body.solo-mode） */
+    D.body.classList.add('solo-mode');
     app.roomCode = null;
     app.feed = [];
     app.feedSeen = {};
@@ -1460,7 +1464,9 @@
         return '<button class="wordchoice" data-act="pick" data-word="' + esc(c.id) + '">' +
           '<b>' + esc(c.text) + '</b><span class="s">' + esc(c.catLabel) + '・' + esc(c.diffLabel) + '</span></button>';
       }).join('');
-      return '<h3>挑一個來畫</h3><p><b class="pick-secs">' + secsLeft(g.deadline) + '</b> 秒內沒選的話，系統會幫你挑第一個。</p>' +
+      return '<h3>挑一個來畫</h3>' + (g.unlimited
+        ? '<p>不限時間，慢慢挑。</p>'
+        : '<p><b class="pick-secs">' + secsLeft(g.deadline) + '</b> 秒內沒選的話，系統會幫你挑第一個。</p>') +
         '<div class="wordchoices">' + cards + '</div>';
     }
     var drawer = drawerName(g);
@@ -1484,6 +1490,12 @@
       rows += '<li><span class="rface" aria-hidden="true">' + S.face(7, last.drawerPoints > 0 ? 'happy' : 'sad') + '</span>' +
         '<span class="rname">' + esc(last.drawerName) + '（畫家）</span>' +
         '<span class="rpts">+' + last.drawerPoints + '</span></li>';
+    }
+    /* 單機練習只有自己：不用列「你（畫家）+0」這種比分，公布答案就好，
+       想馬上畫下一題可以直接按「下一題」，不用等倒數。 */
+    if (app.mode === 'solo') {
+      return '<h3>答案是</h3><div class="revealword">' + esc(g.answer || (last ? last.word : '—')) + '</div>' +
+        '<div class="overlay-btns"><button class="btn3d" data-color="mint" data-act="solo-next">下一題</button></div>';
     }
     /* 單機自己練習沒有其他人猜題（total===0），不顯示「0 / 0 人猜中」；
        換下一位畫家的措辭在單機也怪（永遠是同一個你），改成「換下一題」。 */
@@ -1599,6 +1611,10 @@
     else if (act === 'settings') gameModal.open();
     else if (act === 'chat-send') sendChatMessage();
     else if (act === 'rematch') startSolo();
+    else if (act === 'solo-next') {
+      /* 公布答案的倒數直接歸零，下一次推進就換題 */
+      if (app.mode === 'solo' && app.solo && app.solo.state.phase === 'reveal') { app.solo.state.deadline = Date.now(); soloStep(); }
+    }
     else if (act === 'return-room') w.Online.send('room:return', {});
     else if (act === 'lobby') leaveGame('s-lobby');
     else if (act === 'home') leaveGame('s-home');
@@ -1651,7 +1667,9 @@
     $('toolbar').hidden = !canDraw;
     /* 沒有工具列的人（猜題者、觀戰者、還在選題的畫家）：橫向時右側那一欄收掉，
        畫布回到正中間，不然右邊會空著一整欄、畫布偏左。舞台有 ResizeObserver，畫布會自己重算。 */
-    D.body.classList.toggle('no-tools', !canDraw);
+    /* 單機永遠是自己在畫，選題那幾秒工具列暫時收著也不要收掉右欄：
+       右欄上面還放著返回鈕跟題目，收掉的話返回鈕會被擠出畫面、畫布也會跳一下 */
+    D.body.classList.toggle('no-tools', !canDraw && app.mode !== 'solo');
     $('guessbar').hidden = canDraw || isDrawer || spectator || !g ||
       g.phase === 'over' || (v.room && v.room.closed);
 
@@ -1967,6 +1985,7 @@
     app.chatDraft = '';
     app.ruleMenuOpen = null;
     app.lastOverlayHtml = null;
+    D.body.classList.remove('solo-mode');
     rememberRoom(code);
     show('s-game');
     ensurePaint();
@@ -1981,6 +2000,7 @@
   function leaveGame(target) {
     if (app.mode === 'online') w.Online.send('room:leave', {});
     forgetRoom();
+    D.body.classList.remove('solo-mode');
     stopLoop();
     app.mode = null;
     app.solo = null;

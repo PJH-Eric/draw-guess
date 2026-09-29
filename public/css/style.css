@@ -1111,3 +1111,48 @@ body.kb-open .game-aside{bottom:var(--kb,0px)}
   .widthgroup{gap:8px}
   .toolscroll{gap:8px}
 }
+
+/* ================================================================
+ * 單機練習（body.solo-mode）：只有自己一個人
+ * 左側操作摘要、玩家分數列、給別人看的三張提示、階段／倒數標籤都用不到（不限時、不限次、不計分），
+ * 整塊拿掉；上排只留「返回」跟題目，跟右上角兩顆鈕排在同一列，空出來的高度全部給畫布。
+ * ================================================================ */
+body.solo-mode{--hud-reserve:calc(var(--topedge) + 2 * var(--topbtn) + var(--topgap) + 8px)}
+body.solo-mode .game-aside,
+body.solo-mode .aside-toggle,
+body.solo-mode .canvastop,
+body.solo-mode .statusbar{display:none!important}
+body.solo-mode .game-head{
+  flex-direction:row;flex-wrap:nowrap;align-items:center;gap:6px;
+  padding-right:var(--hud-reserve);min-height:calc(var(--topbtn) + 12px);
+}
+body.solo-mode .game-top{flex:0 0 auto;padding-right:0}
+body.solo-mode .wordbar{flex:1 1 auto;min-width:0;margin:0}
+body.solo-mode .wordbar-mask{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:620px){
+  /* 手機上題目跟返回鈕擠同一列：「你要畫的是」這幾個字拿掉，題目本身留大字 */
+  body.solo-mode .wordbar-label{display:none}
+}
+
+/* 單機＋橫向：畫布是被「高度」卡住的，上面那一列抬頭（返回＋題目）等於直接吃掉畫布的邊長。
+   單機的抬頭東西很少，所以整列搬進右側工具欄的最上面，畫布從最上面一路畫到最下面：
+   左欄只有畫布（跨兩列），右欄上面是抬頭、下面是工具列。
+   實測畫布邊長：手機橫向 272 → 約 380、平板橫向約 606 → 約 750、桌機約 740 → 約 880。 */
+@media (orientation:landscape) and (min-width:560px){
+  body.solo-mode .game-main{
+    display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto minmax(0,1fr);
+    column-gap:6px;row-gap:4px;
+  }
+  body.solo-mode .playarea{display:contents}
+  body.solo-mode .stage{grid-column:1;grid-row:1 / span 2;min-height:0}
+  body.solo-mode .playbar{grid-column:2;grid-row:2;min-height:0}
+  /* 抬頭寬度跟著工具欄走，不能反過來把右欄撐寬（contain:inline-size 讓它不參與欄寬計算） */
+  body.solo-mode .game-head{
+    grid-column:2;grid-row:1;contain:inline-size;
+    flex-direction:row;flex-wrap:wrap;align-items:center;gap:4px;padding-right:0;min-height:0;
+  }
+  /* 第一行：左邊返回鈕，右邊是固定的對局設定＋系統設定鈕；第二行：題目撐滿整欄 */
+  body.solo-mode .game-top{flex:1 1 100%;min-height:var(--topbtn)}
+  body.solo-mode .wordbar{flex:1 1 100%;flex-wrap:wrap;justify-content:center;padding:2px 8px}
+  body.solo-mode .wordbar-label{display:none}
+}

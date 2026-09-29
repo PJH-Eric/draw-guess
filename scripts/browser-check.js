@@ -466,10 +466,11 @@ async function main() {
     check(v.name + '：進入對局畫面', info.activeScreen === 's-game', info.activeScreen);
     assertLayout('對局中', v, info);
     if (v.width <= 620) {
+      /* 單機沒有左側摘要，只剩「對局設定」一顆，一樣要靠攏在系統設定鈕左邊 */
       const topActions = await cdp.json('window.__probe.topActions()');
       check(v.name + '：上方對局按鈕靠攏且不被設定鈕拉開',
         topActions.group.width <= 132 &&
-        topActions.settings.left - topActions.aside.right <= 8 &&
+        topActions.fab.left - topActions.settings.right <= 8 &&
         topActions.group.right <= topActions.fab.left + 1,
         JSON.stringify(topActions));
     }
@@ -486,39 +487,13 @@ async function main() {
       stage.canvas.w >= limit - 10, stage.canvas.w + ' / ' + limit);
     await shot(v.name + '-5-對局中');
 
-    /* 左側資訊欄：寬版常駐左欄、窄版是可收合的浮層 */
-    const wide = v.width >= 1100;
-    const start = await cdp.json('window.__probe.stage()');
-    check(v.name + '：' + (wide ? '寬版摘要預設常駐左欄' : '窄版摘要預設收起來'),
-      start.asideOpen === wide, 'asideOpen=' + start.asideOpen);
-
-    await cdp.eval('window.__probe.click("#b-aside-toggle"); return 1;');
-    await sleep(420);
-    const toggled = await cdp.json('window.__probe.stage()');
-    check(v.name + '：摘要按鈕可以切換', toggled.asideOpen === !wide, 'asideOpen=' + toggled.asideOpen);
-    const asideInfo = await cdp.json('window.__probe.layout()');
-    check(v.name + '：切換摘要後仍沒有水平溢出',
-      asideInfo.scrollWidth <= v.width + 2 && asideInfo.overflowing.length === 0,
-      JSON.stringify(asideInfo.overflowing));
-    check(v.name + '：切換摘要後畫布仍在舞台範圍內',
-      toggled.canvas.w <= toggled.stage.w + 2 && toggled.canvas.h <= toggled.stage.h + 2,
-      JSON.stringify(toggled));
-    await shot(v.name + '-6-操作摘要');
-
-    /* 猜題紀錄一律併進左側操作摘要，畫面上不該再有任何浮動的紀錄面板 */
+    /* 單機只有自己一個人：左側操作摘要、玩家分數列、三張提示、階段與倒數標籤都拿掉，空間全部給畫布 */
+    const solo = await cdp.json('(function(){function vis(id){var e=document.getElementById(id);if(!e)return false;var r=e.getBoundingClientRect();return getComputedStyle(e).display!=="none"&&r.width>0&&r.height>0;}return {aside:vis("game-aside"),toggle:vis("b-aside-toggle"),strip:vis("canvastop"),status:vis("phase-chip")||vis("timer-chip")};})()');
+    check(v.name + '：單機沒有左側操作摘要（也沒有開它的按鈕）', !solo.aside && !solo.toggle, JSON.stringify(solo));
+    check(v.name + '：單機畫布上方不再佔一列玩家分數／提示', !solo.strip, JSON.stringify(solo));
+    check(v.name + '：單機上排不顯示階段與倒數（不限時）', !solo.status, JSON.stringify(solo));
     check(v.name + '：沒有猜題紀錄浮層',
       await cdp.eval('return !document.getElementById("feeddock") && !document.getElementById("feed-panel");'));
-    check(v.name + '：猜題紀錄有內容', toggled.recentCount > 0, 'recentCount=' + toggled.recentCount);
-
-    if (wide) {
-      check(v.name + '：寬版收起左欄後遊戲主區變寬',
-        toggled.stage.w > start.stage.w, start.stage.w + ' → ' + toggled.stage.w);
-    } else {
-      check(v.name + '：窄版摘要是浮層，不會壓縮遊戲主區',
-        Math.abs(toggled.stage.w - start.stage.w) <= 2, start.stage.w + ' → ' + toggled.stage.w);
-    }
-    await cdp.eval('window.__probe.click("#b-aside-toggle"); return 1;');
-    await sleep(300);
 
     /* 工具列展開時再量一次：之前的檢查都在「選題中」，工具列是收著的，
        所以工具、顏色、筆寬那些按鈕的命中區從來沒被驗到。 */
@@ -640,13 +615,11 @@ async function main() {
   const barShown = await cdp.json('window.__probe.stage()');
   check('畫家看到工具列、看不到猜題框', barShown.toolbarShown === true && barShown.guessbarShown === false, JSON.stringify(barShown));
 
-  /* 提示區塊：畫家專屬，橫式擺在畫布正上方，不在工具列裡，也不可以蓋住畫布 */
-  const hd = await cdp.json('(function(){var h=document.getElementById("hintrow");var r=h.getBoundingClientRect();var b=document.getElementById("board").getBoundingClientRect();var t=document.getElementById("toolbar");return {hidden:h.hidden,inToolbar:t.contains(h),left:Math.round(r.left),right:Math.round(r.right),top:Math.round(r.top),bottom:Math.round(r.bottom),w:Math.round(r.width),h:Math.round(r.height),boardTop:Math.round(b.top),vw:window.innerWidth,btn1:!document.getElementById("b-hint-1").disabled,btn2:!document.getElementById("b-hint-2").disabled};})()');
-  check('畫家看得到提示區塊', hd.hidden === false, JSON.stringify(hd));
-  check('提示區塊不在工具列裡', hd.inToolbar === false, JSON.stringify(hd));
-  check('提示區塊是橫的（寬大於高）', hd.w > hd.h, JSON.stringify(hd));
-  check('提示區塊在畫布上方、沒有蓋住畫布', hd.bottom <= hd.boardTop + 1 && hd.left >= -1, JSON.stringify(hd));
-  check('三張提示只有第一張能按', hd.btn1 === true && hd.btn2 === false, JSON.stringify(hd));
+  /* 提示是給「別人」猜用的，單機只有自己，三張提示整塊不顯示（線上的提示區塊另外在線上流程裡驗） */
+  check('單機不顯示提示區塊（只有自己一個人，用不到）',
+    await cdp.eval('var h=document.getElementById("hintrow"); return h.getBoundingClientRect().height === 0;'));
+  check('單機不限時：作畫中沒有倒數',
+    await cdp.eval('return window.DrawGuessApp.solo.state.deadline === 0 && getComputedStyle(document.getElementById("timer-chip")).display === "none";'));
 
   /* 單機沒有電腦對手、只有你自己，「畫完了」沒有其他人可以通知，整顆鈕藏起來；
      只留「跳過這題」，按下去會直接結束這一題並公布答案。 */
@@ -660,8 +633,14 @@ async function main() {
   check('按「跳過這題」直接結束這一題並公布答案',
     afterSkip.turnNo === beforeSkip.turnNo && afterSkip.phase === 'reveal', JSON.stringify(afterSkip));
 
-  /* 公布完會自動換下一題，回到 drawing 讓你繼續練習 */
-  await cdp.waitFor('window.DrawGuessApp.view.game.phase === "drawing" || window.DrawGuessApp.view.game.phase === "picking"', 10000, '換下一題');
+  /* 公布答案時有「下一題」可以馬上換題，不用等倒數 */
+  check('公布答案時有「下一題」按鈕', await cdp.eval('return !!document.querySelector("#overlay-card [data-act=solo-next]");'));
+  await cdp.eval('window.__probe.click("#overlay-card [data-act=solo-next]"); return 1;');
+  await cdp.waitFor('window.DrawGuessApp.view.game.phase === "drawing" || window.DrawGuessApp.view.game.phase === "picking"', 3000, '換下一題');
+  check('按「下一題」馬上換題', true);
+  check('單機不限時：選題不會倒數自動挑',
+    await cdp.eval('var c=document.getElementById("overlay-card").textContent; return c.indexOf("不限時間") >= 0 && c.indexOf("秒內沒選") < 0;'),
+    await cdp.eval('return document.getElementById("overlay-card").textContent;'));
   if ((await cdp.json('window.DrawGuessApp.view.game.phase')) === 'picking') {
     await cdp.eval('document.querySelectorAll(".wordchoice")[0].click(); return 1;');
     await cdp.waitFor('window.DrawGuessApp.view.game.phase === "drawing"', 6000, '再次進入作畫');
@@ -738,32 +717,23 @@ async function main() {
   check('單機看不到猜題框', soloStage.guessbarShown === false, JSON.stringify(soloStage));
   await shot('單機-作畫中沒有猜題框');
 
-  /* 跑到結算：單機預設就是給到上限的練習次數（不用設定、想練多久都可以），
-     測試沒必要真的跑 999 輪，直接把這一局的輪數壓低，確定「跑到結束」這條路沒壞掉就好。 */
+  /* 不限次：畫再多題也不會跳出結算（以前畫滿 999 題會跳一張「你 0 分」的結算） */
   await cdp.eval(`
     var st = window.DrawGuessApp.solo.state;
-    st.rounds = 1;
-    st.totalTurns = st.rounds * st.order.length;
-    var guard = 0;
-    while (!st.over && guard < 200) {
-      guard++;
+    for (var i = 0; i < 40; i++) {
       if (st.phase === 'picking') window.Rules.pickWord(st, st.drawerId, st.choices[0], Date.now());
-      else if (st.phase === 'drawing') window.Rules.endTurn(st, Date.now(), 'skipped');
-      else if (st.phase === 'reveal') window.Rules.nextTurn(st, Date.now());
+      if (st.phase === 'drawing') window.Rules.giveUp(st, st.drawerId, Date.now());
+      if (st.phase === 'reveal') window.Rules.nextTurn(st, Date.now());
     }
-    return st.over;
+    st.players[0].drew = 5000;
+    if (st.phase === 'picking') window.Rules.pickWord(st, st.drawerId, st.choices[0], Date.now());
+    window.Rules.giveUp(st, st.drawerId, Date.now());
+    window.Rules.nextTurn(st, Date.now());
+    return 1;
   `);
-  await cdp.waitFor('window.DrawGuessApp.view.game.over', 8000, '對局結束');
   await sleep(400);
-  const over = await cdp.json('window.__probe.game()');
-  check('對局可以跑到結算', over.over === true, JSON.stringify(over));
-  check('結算畫面有排名與再玩一局',
-    await cdp.eval('return document.querySelectorAll(".resultlist li").length > 0 && !!document.querySelector("[data-act=rematch]");'));
-  await shot('單機-結算');
-
-  await cdp.eval('window.__probe.click("[data-act=rematch]"); return 1;');
-  await cdp.waitFor('window.DrawGuessApp.view && !window.DrawGuessApp.view.game.over', 8000, '再玩一局');
-  check('可以再玩一局', (await cdp.json('window.__probe.game()')).turnNo === 1);
+  const endless = await cdp.json('(function(){var st=window.DrawGuessApp.solo.state;return {over:st.over,phase:st.phase,drew:st.players[0].drew,result:document.querySelectorAll(".resultlist li").length};})()');
+  check('單機不限次：畫了幾千題也不會跳結算，繼續出下一題', endless.over === false && endless.phase === 'picking' && endless.result === 0, JSON.stringify(endless));
   check('單機流程沒有主控台錯誤', cdp.errors.length === 0, cdp.errors.slice(0, 2).join(' | '));
   cdp.errors.length = 0;
 

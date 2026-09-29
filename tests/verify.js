@@ -428,6 +428,24 @@ section('單機自己一個人練習（沒有電腦對手）');
     Rules.tick(st2, t2);
   }
   check('不按任何按鈕、光靠時間到也能結束', st2.over, 'guard=' + guard2);
+
+  /* 單機練習（unlimited）：真的不限時、不限次 —— 不會逾時自動挑題、不會時間到、不會跳結算 */
+  const u = Rules.createState({ seed: 'SOLO03', players: [{ id: 'you', name: '你' }], rounds: 1, drawSec: 30, unlimited: true });
+  Rules.start(u, 0);
+  Rules.tick(u, 10 * 60 * 1000);
+  check('不限時：選題放著十分鐘也不會自動挑', u.phase === 'picking' && u.deadline === 0, u.phase);
+  Rules.pickWord(u, 'you', u.choices[0], 10 * 60 * 1000);
+  Rules.tick(u, 50 * 60 * 60 * 1000);
+  check('不限時：作畫放著五十個小時也不會時間到', u.phase === 'drawing' && u.deadline === 0, u.phase);
+  let tu = 50 * 60 * 60 * 1000;
+  for (let i = 0; i < 30; i++) {
+    if (u.phase === 'picking') Rules.pickWord(u, 'you', u.choices[0], tu);
+    if (u.phase === 'drawing') Rules.giveUp(u, 'you', tu);
+    tu += 8000;
+    Rules.tick(u, tu);
+  }
+  check('不限次：畫超過「每人畫幾次」也不會結束', !u.over && Rules.player(u, 'you').drew >= 15, Rules.player(u, 'you').drew);
+  check('投影會告訴畫面這是不限時的練習', Rules.toPublic(u, 'you').unlimited === true);
 }
 
 section('成員中途離開');

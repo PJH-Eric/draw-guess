@@ -118,6 +118,10 @@
 
     return {
       seed: seed,
+      /* 單機練習：真的不限時、不限次。選題不會逾時自動挑、作畫不會時間到、也永遠不會跳結算，
+         練夠了自己離開就好。以前是拿引擎上限（999 次、99999 秒）假裝不限，
+         結果選題還是 15 秒倒數、畫滿 999 題還會跳出一張「你 0 分」的結算。 */
+      unlimited: !!o.unlimited,
       rounds: rounds,
       drawMs: drawMs,
       pickMs: CONST.PICK_MS,
@@ -207,7 +211,7 @@
     state.pointCount = 0;
     state.guessed = [];
     state.wrong = {};
-    state.deadline = now + state.pickMs;
+    state.deadline = state.unlimited ? 0 : now + state.pickMs;
 
     var rng = RNG.createRng(state.seed + ':turn:' + state.turnNo);
     state.choices = Words.pick(rng, CONST.CHOICES, {
@@ -238,7 +242,7 @@
     state.usedWords.push(id);
     if (state.usedWords.length > 200) state.usedWords.splice(0, 100);
     state.phase = 'drawing';
-    state.deadline = now + state.drawMs;
+    state.deadline = state.unlimited ? 0 : now + state.drawMs;
     state.startedAt = now;
 
     /* 第三張提示要揭哪一個字也吃種子，重播才會一樣。每個字都可能被翻開（包含最後一個字），
@@ -447,6 +451,7 @@
    * 作畫中那一題的畫家還沒算進 drew，所以這一題本身已經包含在「還欠的」裡面。
    */
   function recount(state) {
+    if (state.unlimited) { state.totalTurns = state.turnNo; return state.totalTurns; }
     var owed = 0;
     for (var i = 0; i < state.players.length; i++) owed += Math.max(0, state.rounds - state.players[i].drew);
     var inProgress = state.phase === 'picking' || state.phase === 'drawing';
@@ -462,7 +467,7 @@
    */
   function nextTurn(state, now) {
     if (state.phase !== 'reveal') return err('現在不是換人的時候。', 'phase');
-    var anyOwed = state.order.some(function (id) { return owes(state, id) > 0; });
+    var anyOwed = state.unlimited || state.order.some(function (id) { return owes(state, id) > 0; });
     if (!anyOwed) return finish(state, now);
     for (var guard = 0; guard <= state.order.length * 2; guard++) {
       state.turn += 1;
@@ -470,7 +475,7 @@
         state.turn = 0;
         state.round += 1;
       }
-      if (owes(state, state.order[state.turn]) > 0) break;
+      if (state.unlimited || owes(state, state.order[state.turn]) > 0) break;
     }
     beginTurn(state, now);
     recount(state);
@@ -502,7 +507,7 @@
       if (state.phase === 'over') break;
 
       if (state.phase === 'picking') {
-        if (now < state.deadline) break;
+        if (state.unlimited || now < state.deadline) break;    // 不限時：不會逾時自動挑
         var auto = commitWord(state, state.choices[0], now, true);
         if (!auto.ok) break;
         events.push({ type: 'autopick', wordId: state.choices[0], drawerId: state.drawerId });
@@ -517,7 +522,7 @@
           if (e1.ok) events.push({ type: 'turnend', entry: e1.entry });
           continue;
         }
-        if (now >= state.deadline) {
+        if (!state.unlimited && now >= state.deadline) {
           var e2 = endTurn(state, now, 'timeup');
           if (e2.ok) events.push({ type: 'turnend', entry: e2.entry });
           continue;
@@ -678,6 +683,7 @@
 
     return {
       seed: state.seed,
+      unlimited: !!state.unlimited,
       phase: state.phase,
       round: state.round,
       rounds: state.rounds,
