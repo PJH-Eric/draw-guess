@@ -249,6 +249,8 @@ io.on('connection', (socket) => {
   socket.data.name = sanitizeName('', '');
   socket.data.roomCode = null;
 
+  socket.on('latency:ping', (_sentAt, ack) => { if (typeof ack === 'function') ack(); });
+
   /* 所有事件處理都包一層 try/catch：就算哪裡漏了檢查，也只是這一個動作失敗，
      不會因為一個怪封包讓整台伺服器（跟所有房間）一起掛掉。 */
   const rawOn = socket.on.bind(socket);

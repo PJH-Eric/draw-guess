@@ -58,6 +58,7 @@
     var list = D.querySelectorAll('.screen');
     for (var i = 0; i < list.length; i++) list[i].classList.toggle('active', list[i].id === id);
     app.screen = id;
+    if (id !== 's-game' && w.NetworkLatency) w.NetworkLatency.setActive(false);
     if (id !== 's-game') { D.body.classList.remove('setup-open'); D.body.classList.remove('solo-mode'); }
     if (id === 's-game') { layoutStage(); if (app.paint) app.paint.resize(); }
     Sound.setTrack(id === 's-game' ? 'draw' : 'menu');
@@ -986,6 +987,7 @@
     if (!v) return;
     var g = v.game;
     var closed = v.room && v.room.closed;
+    if (w.NetworkLatency) w.NetworkLatency.setActive(app.screen === 's-game' && app.mode === 'online' && !!v.room && v.room.phase === 'playing' && !!g && g.phase !== 'over');
 
     /* ---- 上排狀態 ---- */
     var phaseChip = $('phase-chip');
