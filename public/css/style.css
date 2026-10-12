@@ -258,7 +258,7 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 }
 @keyframes timer-beat{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 .game-top-actions{
-  position:absolute;z-index:69;top:calc(10px + var(--safe-t));
+  position:fixed;z-index:69;top:calc(10px + var(--safe-t));
   right:calc(var(--topedge) + var(--topbtn) + var(--topgap) + var(--safe-r));
   width:max-content;
   display:inline-flex;align-items:center;gap:var(--topgap);flex:0 0 auto;
@@ -1210,7 +1210,9 @@ body.solo-mode.big-tools .fillbox{min-height:56px}
     flex-direction:row;flex-wrap:wrap;align-items:center;gap:4px;padding-right:0;min-height:0;
   }
   /* 第一行：左邊返回鈕，右邊是固定的對局設定＋系統設定鈕；第二行：題目撐滿整欄 */
-  body.solo-mode .game-top{flex:1 1 100%;min-height:var(--topbtn)}
+  body.solo-mode .game-top{flex:1 1 100%;min-height:calc(var(--topbtn) + 8px)}
+  /* 返回鍵和兩個設定鍵共用視窗安全區，避免側欄內距造成上下錯位。 */
+  body.solo-mode #b-game-back{position:fixed;top:calc(10px + var(--safe-t))}
   body.solo-mode .wordbar{flex:1 1 100%;flex-wrap:wrap;justify-content:center;padding:2px 8px}
   body.solo-mode .wordbar-label{display:none}
 }

@@ -465,6 +465,10 @@ async function main() {
     info = await cdp.json('window.__probe.layout()');
     check(v.name + '：進入對局畫面', info.activeScreen === 's-game', info.activeScreen);
     assertLayout('對局中', v, info);
+    const topAlignment = await cdp.json('(function(){return ["b-game-back","b-game-settings","b-settings"].map(function(id){return document.getElementById(id).getBoundingClientRect().top;});})()');
+    check(v.name + '：返回、對局設定與系統設定在同一水平線',
+      Math.max.apply(null, topAlignment) - Math.min.apply(null, topAlignment) <= 1,
+      JSON.stringify(topAlignment));
     if (v.width <= 620) {
       /* 單機沒有左側摘要，只剩「對局設定」一顆，一樣要靠攏在系統設定鈕左邊 */
       const topActions = await cdp.json('window.__probe.topActions()');
