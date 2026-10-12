@@ -1117,6 +1117,8 @@ body.kb-open .game-aside{bottom:var(--kb,0px)}
  * 左側操作摘要、玩家分數列、給別人看的三張提示、階段／倒數標籤都用不到（不限時、不限次、不計分），
  * 整塊拿掉；上排只留「返回」跟題目，跟右上角兩顆鈕排在同一列，空出來的高度全部給畫布。
  * ================================================================ */
+.solo-file-actions{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+.solo-file-actions .btn3d{flex:1 1 auto;min-height:44px}
 body.solo-mode{--hud-reserve:calc(var(--topedge) + 2 * var(--topbtn) + var(--topgap) + 8px)}
 body.solo-mode .game-aside,
 body.solo-mode .aside-toggle,

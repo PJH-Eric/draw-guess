@@ -411,6 +411,10 @@
       toDataURL: function () {
         try { return layer.toDataURL('image/png'); } catch (e) { return ''; }
       },
+      toBlob: function (callback) {
+        try { layer.toBlob(callback, 'image/png'); }
+        catch (e) { callback(null); }
+      },
 
       resize: function () { resize(); invalidate(); },
       invalidate: invalidate,

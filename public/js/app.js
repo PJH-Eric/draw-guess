@@ -791,9 +791,90 @@
     $('b-clear').addEventListener('click', doClear);
     $('b-done').addEventListener('click', doDone);
     $('b-skip').addEventListener('click', doSkip);
+    $('b-solo-save').addEventListener('click', saveSoloDrawing);
+    $('b-solo-image').addEventListener('click', downloadSoloImage);
+    $('b-solo-load').addEventListener('click', chooseSoloFile);
+    $('b-solo-load-home').addEventListener('click', chooseSoloFile);
+    $('solo-file-input').addEventListener('change', loadSoloFile);
     $('b-hint-1').addEventListener('click', doHint);
     $('b-hint-2').addEventListener('click', doHint);
     $('b-hint-3').addEventListener('click', doHint);
+  }
+
+  function soloDrawingReady() {
+    return app.mode === 'solo' && app.solo && app.solo.state.phase === 'drawing';
+  }
+
+  function drawingFilename(extension) {
+    return '你畫我猜-' + Rules.word(app.solo.state).text + extension;
+  }
+
+  function downloadBlob(blob, filename) {
+    var url = URL.createObjectURL(blob);
+    var link = D.createElement('a');
+    link.href = url;
+    link.download = filename;
+    D.body.appendChild(link);
+    link.click();
+    link.remove();
+    w.setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+  }
+
+  function saveSoloDrawing() {
+    if (!soloDrawingReady()) return;
+    var text = w.DrawingFile.encode(app.solo.state);
+    downloadBlob(new Blob([text], { type: 'application/json;charset=utf-8' }), drawingFilename('.drawguess.json'));
+    toast('作品存檔已送出下載，可用「載入」繼續編輯。', 'ok');
+  }
+
+  function downloadSoloImage() {
+    if (!soloDrawingReady()) return;
+    var filename = drawingFilename('.png');
+    app.paint.toBlob(function (blob) {
+      if (!blob) { toast('圖片匯出失敗，請再試一次。', 'error'); return; }
+      downloadBlob(blob, filename);
+      toast('PNG 圖片已送出下載。', 'ok');
+    });
+  }
+
+  function chooseSoloFile() {
+    if (app.screen !== 's-solo' && !soloDrawingReady()) return;
+    var input = $('solo-file-input');
+    input.value = '';
+    input.click();
+  }
+
+  function loadSoloFile() {
+    var file = this.files && this.files[0];
+    if (!file) return;
+    var screen = app.screen, solo = app.solo;
+    if (screen !== 's-solo' && !soloDrawingReady()) return;
+    var reader = new FileReader();
+    reader.onerror = function () { toast('讀取檔案失敗，請再試一次。', 'error'); };
+    reader.onload = function () {
+      if (app.screen !== screen || app.solo !== solo) return;
+      var state;
+      try { state = w.DrawingFile.decode(reader.result, { id: ME, name: '你' }, Date.now()); }
+      catch (e) { toast(e.message, 'error'); return; }
+      var replace = function () {
+        if (app.screen !== screen || app.solo !== solo) return;
+        if (screen === 's-solo') startSolo();
+        app.solo.state = state;
+        app.solo.seed = state.seed;
+        app.paint.setStrokes(state.strokes);
+        app.paint.clearRedo();
+        soloRefresh();
+        toast('作品已載入，可以繼續畫。', 'ok');
+      };
+      if (screen === 's-game' && solo.state.strokes.length) {
+        askConfirm({
+          title: '載入作品？',
+          text: '載入會取代目前畫布。尚未存檔的筆畫會被取代，請先存檔再載入。',
+          ok: '載入作品', cancel: '保留目前作品'
+        }, replace);
+      } else replace();
+    };
+    reader.readAsText(file, 'UTF-8');
   }
 
   function chooseTool(key) {
@@ -1667,6 +1748,7 @@
     /* 畫家（含選題階段）不需要猜題框，觀戰者也沒有 */
     var isDrawer = !!(g && g.you.isDrawer);
     $('toolbar').hidden = !canDraw;
+    $('solo-file-actions').hidden = app.mode !== 'solo' || !canDraw;
     /* 沒有工具列的人（猜題者、觀戰者、還在選題的畫家）：橫向時右側那一欄收掉，
        畫布回到正中間，不然右邊會空著一整欄、畫布偏左。舞台有 ResizeObserver，畫布會自己重算。 */
     /* 單機永遠是自己在畫，選題那幾秒工具列暫時收著也不要收掉右欄：

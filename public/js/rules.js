@@ -325,8 +325,9 @@
     if (playerId !== state.drawerId) return err('只有這一回合的畫家可以畫。', 'forbidden');
     var stroke = sanitizeStroke(raw);
     if (!stroke) return err('這一筆的資料不正確。', 'stroke');
-    if (state.strokes.length >= CONST.MAX_STROKES) return err('這一題的筆畫太多了，先清除或擦掉一些吧。', 'limit');
-    if (state.pointCount + stroke.p.length / 2 > CONST.MAX_TOTAL_POINTS) {
+    /* 單機不限時練習會持續累積手繪分段，不套用線上對局的防洪上限。 */
+    if (!state.unlimited && state.strokes.length >= CONST.MAX_STROKES) return err('這一題的筆畫太多了，先清除或擦掉一些吧。', 'limit');
+    if (!state.unlimited && state.pointCount + stroke.p.length / 2 > CONST.MAX_TOTAL_POINTS) {
       return err('這一題畫得太滿了，先清除畫布再繼續。', 'limit');
     }
     stroke.n = state.strokes.length + 1;

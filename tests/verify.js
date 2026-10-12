@@ -10,6 +10,7 @@
 
 const Words = require('../public/js/words.js');
 const Rules = require('../public/js/rules.js');
+const DrawingFile = require('../public/js/drawing-file.js');
 const AI = require('../public/js/ai.js');
 const RNG = require('../public/js/rng.js');
 const { RoomStore } = require('../lib/rooms.js');
@@ -446,6 +447,76 @@ section('單機自己一個人練習（沒有電腦對手）');
   }
   check('不限次：畫超過「每人畫幾次」也不會結束', !u.over && Rules.player(u, 'you').drew >= 15, Rules.player(u, 'you').drew);
   check('投影會告訴畫面這是不限時的練習', Rules.toPublic(u, 'you').unlimited === true);
+}
+
+section('長時間單機作畫不會被線上防洪上限擋住');
+{
+  const segment = { t: 'pen', c: 0, w: 1, p: Array.from({ length: 24 * 2 }, (_, i) => i * 4) };
+  const longStroke = { t: 'pen', c: 0, w: 1, p: Array.from({ length: Rules.CONST.MAX_STROKE_POINTS * 2 }, (_, i) => i) };
+
+  function drawRepeated(unlimited, stroke, count) {
+    const state = toDrawing(Rules.createState({
+      seed: 'SOLO-LONG', players: [{ id: 'you', name: '你' }], unlimited: unlimited
+    }), 0);
+    let result;
+    for (let i = 0; i < count; i++) {
+      if (unlimited) Rules.tick(state, (i + 1) * 220);
+      result = Rules.addStroke(state, 'you', stroke);
+      if (!result.ok) break;
+    }
+    return { state, result };
+  }
+
+  const solo = drawRepeated(true, segment, Rules.CONST.MAX_STROKES + 2);
+  check('單機持續送出手繪分段，超過 600 段仍可作畫',
+    solo.result.ok && solo.state.strokes.length === Rules.CONST.MAX_STROKES + 2, solo.result.error);
+  check('超過原筆畫上限後復原仍更新點數',
+    Rules.undoStroke(solo.state, 'you').ok && solo.state.pointCount === (Rules.CONST.MAX_STROKES + 1) * 24);
+
+  const pointSegments = Math.floor(Rules.CONST.MAX_TOTAL_POINTS / Rules.CONST.MAX_STROKE_POINTS) + 1;
+  const soloPoints = drawRepeated(true, longStroke, pointSegments);
+  check('單機超過 30000 個累積點仍可作畫',
+    soloPoints.result.ok && soloPoints.state.pointCount > Rules.CONST.MAX_TOTAL_POINTS, soloPoints.result.error);
+  check('長時間作畫後仍可清除並重新畫',
+    Rules.clearBoard(soloPoints.state, 'you').ok && soloPoints.state.pointCount === 0 &&
+    soloPoints.state.strokes.length === 0 && Rules.addStroke(soloPoints.state, 'you', segment).ok);
+
+  const limited = drawRepeated(false, segment, Rules.CONST.MAX_STROKES + 1);
+  check('有限時對局仍保留筆畫防洪上限',
+    limited.result.code === 'limit' && limited.state.strokes.length === Rules.CONST.MAX_STROKES);
+  const limitedPoints = drawRepeated(false, longStroke, pointSegments);
+  check('有限時對局仍保留累積點數防洪上限',
+    limitedPoints.result.code === 'limit' && limitedPoints.state.pointCount <= Rules.CONST.MAX_TOTAL_POINTS);
+}
+
+section('單機作品存檔與載入');
+{
+  const original = toDrawing(Rules.createState({ seed: 'SAVE01', players: [{ id: 'me' }], unlimited: true }), 0);
+  for (const t of Rules.TOOL_KEYS) {
+    Rules.addStroke(original, 'me', { t, c: 2, w: 1, f: 1, p: t === 'fill' ? [500, 500] : [100, 100, 800, 800] });
+  }
+  const long = { t: 'pen', c: 3, w: 2, p: Array.from({ length: 800 }, (_, i) => i) };
+  for (let i = 0; i < 80; i++) Rules.addStroke(original, 'me', long);
+  for (let i = 0; i < 610; i++) Rules.addStroke(original, 'me', { t: 'pen', p: [300, 300, 400, 400] });
+  const text = DrawingFile.encode(original);
+  const restored = DrawingFile.decode(text, { id: 'me', name: '你' }, 500000);
+  check('所有工具與超過原上限的筆畫可完整存檔往返',
+    JSON.stringify(restored.strokes) === JSON.stringify(original.strokes) && restored.pointCount === original.pointCount);
+  check('載入保留題目與不限時作畫狀態',
+    restored.wordId === original.wordId && restored.phase === 'drawing' && restored.deadline === 0 && restored.unlimited);
+  check('載入後仍可復原並繼續作畫',
+    Rules.undoStroke(restored, 'me').ok && Rules.addStroke(restored, 'me', { t: 'rect', p: [0, 0, 50, 50] }).ok);
+  check('載入建立獨立狀態，不會改掉原作品', original.strokes[original.strokes.length - 1].t === 'pen');
+
+  function rejects(value) {
+    try { DrawingFile.decode(value, { id: 'me' }, 0); return false; }
+    catch (e) { return true; }
+  }
+  const data = JSON.parse(text);
+  check('無效 JSON 與其他格式檔案會被拒絕', rejects('{') && rejects('{}'));
+  check('不支援的存檔版本會被拒絕', rejects(JSON.stringify(Object.assign({}, data, { version: 2 }))));
+  check('不存在的題目會被拒絕', rejects(JSON.stringify(Object.assign({}, data, { wordId: 'missing-word' }))));
+  check('損壞的筆畫會被拒絕', rejects(JSON.stringify(Object.assign({}, data, { strokes: [{ t: 'pen', p: [1] }] }))));
 }
 
 section('成員中途離開');

@@ -54,6 +54,7 @@
 
       <div class="panel-foot">
         <button class="btn3d big" data-color="grape" id="b-solo-start">開始畫！ ▶</button>
+        <button class="btn3d" data-color="sky" id="b-solo-load-home" type="button">載入作品</button>
       </div>
     </div>
   </section>
@@ -308,6 +309,11 @@
                       title="直接結束這一題並公布答案">跳過這題</button>
             </div>
           </div>
+          <div class="solo-file-actions" id="solo-file-actions" role="group" aria-label="作品檔案" hidden>
+            <button class="btn3d small" data-color="mint" id="b-solo-save" type="button" title="下載可繼續編輯的作品存檔">存檔</button>
+            <button class="btn3d small" data-color="lemon" id="b-solo-image" type="button">下載圖片</button>
+            <button class="btn3d small" data-color="sky" id="b-solo-load" type="button">載入</button>
+          </div>
           <p class="tool-hint" id="tool-hint" role="status" aria-live="polite"></p>
         </div>
         </div><!-- /.playbar -->
@@ -488,6 +494,7 @@
   </div>
 
   <!-- 全域提示（送出中、錯誤、成功） -->
+  <input id="solo-file-input" type="file" accept=".json,application/json" hidden aria-label="選擇作品存檔">
   <div class="toast" id="toast" role="status" aria-live="assertive" hidden></div>
 </div>
 
@@ -496,6 +503,7 @@
 <script src="js/rng.js"></script>
 <script src="js/words.js"></script>
 <script src="js/rules.js"></script>
+<script src="js/drawing-file.js"></script>
 <!-- js/ai.js 刻意不載入：單機已經沒有電腦對手，遊戲裡沒有任何程式用到它。
      演算法保留在檔案裡供未來需要時取用，但不讓每個玩家白載一份。 -->
 <script src="js/storage.js"></script>
