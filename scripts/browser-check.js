@@ -527,22 +527,28 @@ async function main() {
       return {
         roundChip: getComputedStyle(document.getElementById('round-chip')).display,
         undo:R(document.getElementById('b-undo')), redo:R(document.getElementById('b-redo')), clear:R(document.getElementById('b-clear')),
-        skip:R(document.getElementById('b-skip')),
+        skip:R(document.getElementById('b-solo-next')),
+        colorsHeight: colors.querySelector('button').getBoundingClientRect().height,
+        filesVisible: [].slice.call(document.querySelectorAll('#solo-file-actions button')).every(function(e){
+          var r=e.getBoundingClientRect(), hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
+          return r.top>=0 && r.bottom<=innerHeight+1 && r.right<=innerWidth+1 && e.contains(hit);
+        }),
         colorsOverflow: colors.scrollWidth - colors.clientWidth,
         scrollOverflow: scroll.scrollWidth - scroll.clientWidth,
         minTool: Math.min.apply(null, tools)
       };
     })()`);
     check(v.name + '：題號只顯示在題目列（上排不再重複一個「第 N 題」）', tb.roundChip === 'none', tb.roundChip);
+    check(v.name + '：存檔、圖片、載入與換題可直接操作，不被遮擋', tb.filesVisible);
     const portrait = v.height > v.width;
     if (!portrait && v.width >= 560) {
       check(v.name + '：橫向工具列的復原／重做／清除排在同一排',
         Math.abs(tb.undo.t - tb.redo.t) < 3 && Math.abs(tb.undo.t - tb.clear.t) < 3, JSON.stringify([tb.undo, tb.redo, tb.clear]));
     }
     if (portrait && v.width <= 620 && v.height >= 740) {
-      check(v.name + '：較高的手機直向顏色全部顯示、不用左右滑', tb.colorsOverflow <= 1, 'overflow=' + tb.colorsOverflow);
+      check(v.name + '：手機直向色盤維持 44px 觸控高度', tb.colorsHeight >= 44, 'height=' + tb.colorsHeight);
       check(v.name + '：較高的手機直向粗細與復原鍵不用左右滑', tb.scrollOverflow <= 1, 'overflow=' + tb.scrollOverflow);
-      check(v.name + '：清除鍵沒有被「跳過這題」擋住',
+      check(v.name + '：清除鍵沒有被「換題」擋住',
         tb.clear.r <= tb.skip.l + 1 || tb.clear.b <= tb.skip.t + 1 || tb.clear.t >= tb.skip.b - 1, JSON.stringify([tb.clear, tb.skip]));
     }
     if (portrait && v.width >= 621) {
@@ -622,15 +628,15 @@ async function main() {
     await cdp.eval('return window.DrawGuessApp.solo.state.deadline === 0 && getComputedStyle(document.getElementById("timer-chip")).display === "none";'));
 
   /* 單機沒有電腦對手、只有你自己，「畫完了」沒有其他人可以通知，整顆鈕藏起來；
-     只留「跳過這題」，按下去會直接結束這一題並公布答案。 */
+     改用「換題」，按下去會直接結束這一題並公布答案。 */
   const doneBtn = await cdp.json('(function(){var b=document.getElementById("b-done");return {hidden:b.hidden};})()');
   check('單機沒有「畫完了」鈕（藏起來）', doneBtn.hidden === true, JSON.stringify(doneBtn));
 
   const beforeSkip = await cdp.json('(function(){var g=window.DrawGuessApp.view.game;return {turnNo:g.turnNo,phase:g.phase};})()');
-  await cdp.eval('window.__probe.click("#b-skip"); return 1;');
+  await cdp.eval('window.__probe.click("#b-solo-next"); return 1;');
   await sleep(300);
   const afterSkip = await cdp.json('(function(){var g=window.DrawGuessApp.view.game;return {turnNo:g.turnNo,phase:g.phase};})()');
-  check('按「跳過這題」直接結束這一題並公布答案',
+  check('按「換題」直接結束這一題並公布答案',
     afterSkip.turnNo === beforeSkip.turnNo && afterSkip.phase === 'reveal', JSON.stringify(afterSkip));
 
   /* 公布答案時有「下一題」可以馬上換題，不用等倒數 */

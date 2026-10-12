@@ -311,7 +311,7 @@
     { h: '當畫家：不能做的事', b:
       '<p>這個遊戲刻意<b>沒有文字工具，也沒有聊天室</b>——畫家沒有任何可以打字的地方，所以不可能把答案寫出來。</p>' +
       '<p>線上房間裡，畫好了按<b>「畫完了」</b>——那只是告訴大家可以猜了，這一題還會繼續，你也還能補幾筆。（單機自己練習只有你一個人，沒有其他人要通知，看不到這顆鈕。）</p>' +
-      '<p>只能用線條和顏色表達。真的畫不出來就按<b>「跳過這題」</b>（或右上角 🎮 的「跳過這一題」），會直接公布答案、換下一題。</p>' +
+      '<p>只能用線條和顏色表達。真的畫不出來就按<b>「跳過這題」</b>（單機時是「換題」，也可用右上角 🎮 的「跳過這一題」），會直接公布答案、換下一題。</p>' +
       '<p>線上房間裡，畫得越多人猜中，你這一題拿的分數越高；全部人都猜中還有額外加分。</p>' },
     { h: '當猜題者：把答案打進去', b:
       '<p>輪到別人畫的時候，畫布下方會出現猜題框。想到什麼就直接打進去按「猜！」，答錯不扣分，可以一直猜。</p>' +
@@ -332,7 +332,7 @@
       '<p>右上角的倒數就是這一題剩下的時間。時間到、或所有人都猜中了，這一題就結束並公布答案。</p>' },
     { h: '單機自己練習', b:
       '<p>單機練習就你自己一個人，沒有電腦對手、也不計分，單純練習下筆用的。</p>' +
-      '<p>挑一個題目開始畫，畫完（或不想畫了）按「跳過這題」就換下一題，想練幾次、每次想畫多久都能自己調整。</p>' +
+      '<p>挑一個題目開始畫，畫完（或不想畫了）按「換題」就換下一題，想練幾次、每次想畫多久都能自己調整。</p>' +
       '<p>因為只有你自己，猜題、提示、分數這些跟別人比賽的東西在單機裡都用不到，重點是練習下筆。</p>' },
     { h: '線上一起玩', b:
       '<p>在主選單按「線上對戰」可以開房間或用房號加入，2 到 8 個人都行（線上只有真人，沒有電腦對手）。</p>' +
@@ -453,7 +453,7 @@
     app.lastMask = '';
     app.lastGuessedCount = 0;
     /* 不設限＝上限吃滿，寫出「畫 999 次」只會讓人困惑，直接講怎麼換題 */
-    pushFeed({ kind: 'system', from: '系統', text: '練習開始，想畫幾題就畫幾題，按「跳過這題」換下一題。', at: Date.now() });
+    pushFeed({ kind: 'system', from: '系統', text: '練習開始，想畫幾題就畫幾題，按「換題」換下一題。', at: Date.now() });
 
     show('s-game');
     ensurePaint();
@@ -794,6 +794,7 @@
     $('b-solo-save').addEventListener('click', saveSoloDrawing);
     $('b-solo-image').addEventListener('click', downloadSoloImage);
     $('b-solo-load').addEventListener('click', chooseSoloFile);
+    $('b-solo-next').addEventListener('click', doSkip);
     $('b-solo-load-home').addEventListener('click', chooseSoloFile);
     $('solo-file-input').addEventListener('change', loadSoloFile);
     $('b-hint-1').addEventListener('click', doHint);
@@ -892,10 +893,11 @@
     var v = app.view, g = v && v.game;
     var drawing = !!(g && g.phase === 'drawing' && g.you.isDrawer);
     /* 單機自己練習只有你一個人，沒有其他人可以通知，「畫完了」這顆鈕整個用不到，
-       直接藏起來，只留下「跳過這題」換下一題。 */
+       改用作品操作列裡的「換題」換下一題。 */
     if (app.mode === 'solo') {
       done.hidden = true;
       skip.disabled = !drawing;
+      $('b-solo-next').disabled = !drawing;
       return;
     }
     /* 線上房間：這顆鈕只要輪到你畫就一直能按，按過也不鎖、不改字 ——

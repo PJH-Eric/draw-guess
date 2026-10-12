@@ -47,7 +47,7 @@
         <span class="spacer"></span>
       </div>
 
-      <p class="hint-note">單機就你自己一個人：挑一個題目，盡情畫，畫完（或不想畫了）按「跳過這題」換下一題，想練幾次、每次想畫多久都不設限，練夠了直接離開就好。沒有電腦對手、也不計分，單純練習下筆用的。</p>
+      <p class="hint-note">挑一個題目，想畫多久都可以。按「換題」練習下一題，練夠了直接離開。只有你自己作畫，不限時，也不計分。</p>
 
       <h3 class="lbl">題目難度</h3>
       <div class="chiprow" id="opt-worddiff" role="radiogroup" aria-label="題目難度"></div>
@@ -286,33 +286,36 @@
 
         <!-- 工具列：只有輪到自己當畫家時才出現 -->
         <div class="toolbar" id="toolbar" hidden>
-          <div class="toolrow toolrow-tools" id="tool-list" role="radiogroup" aria-label="畫圖工具"></div>
-          <div class="toolrow toolrow-colors" id="color-list" role="radiogroup" aria-label="顏色"></div>
-          <!-- 粗細、填滿與編輯動作放同一條；窄版時這一條可以橫向捲動，
-               但「畫完了／跳過這題」固定在右邊不會被捲走。 -->
-          <div class="toolrow toolrow-misc">
-            <div class="toolscroll" id="toolscroll">
-              <div class="widthgroup" id="width-list" role="radiogroup" aria-label="筆的粗細"></div>
-              <label class="fillbox" id="fillbox">
-                <input type="checkbox" id="opt-filled">
-                <span>填滿</span>
-              </label>
-              <button class="toolbtn" id="b-undo" type="button" title="復原（Ctrl+Z）" aria-label="復原"><span class="ico" data-ico="undo"></span></button>
-              <button class="toolbtn" id="b-redo" type="button" title="重做（Ctrl+Y）" aria-label="重做"><span class="ico" data-ico="redo"></span></button>
-              <button class="toolbtn danger" id="b-clear" type="button" title="全部清除" aria-label="全部清除"><span class="ico" data-ico="trash"></span></button>
+          <div class="paint-controls">
+            <div class="toolrow toolrow-tools" id="tool-list" role="radiogroup" aria-label="畫圖工具"></div>
+            <div class="toolrow toolrow-colors" id="color-list" role="radiogroup" aria-label="顏色"></div>
+            <!-- 粗細、填滿與編輯動作放同一條；窄版時這一條可以橫向捲動，
+                 但「畫完了／跳過這題」固定在右邊不會被捲走。 -->
+            <div class="toolrow toolrow-misc">
+              <div class="toolscroll" id="toolscroll">
+                <div class="widthgroup" id="width-list" role="radiogroup" aria-label="筆的粗細"></div>
+                <label class="fillbox" id="fillbox">
+                  <input type="checkbox" id="opt-filled">
+                  <span>填滿</span>
+                </label>
+                <button class="toolbtn" id="b-undo" type="button" title="復原（Ctrl+Z）" aria-label="復原"><span class="ico" data-ico="undo"></span></button>
+                <button class="toolbtn" id="b-redo" type="button" title="重做（Ctrl+Y）" aria-label="重做"><span class="ico" data-ico="redo"></span></button>
+                <button class="toolbtn danger" id="b-clear" type="button" title="全部清除" aria-label="全部清除"><span class="ico" data-ico="trash"></span></button>
+              </div>
+              <!-- 「畫完了」只是告訴大家可以猜了，不會結束這一題；真的要結束是下面的「跳過這題」 -->
+              <div class="donebox">
+                <button class="btn3d small tool-done" data-color="lemon" id="b-done" type="button"
+                        title="告訴大家你畫完了（這一題還會繼續，時間也照跑）">畫完了</button>
+                <button class="btn3d small tool-skip" data-color="peach" id="b-skip" type="button"
+                        title="直接結束這一題並公布答案">跳過這題</button>
+              </div>
             </div>
-            <!-- 「畫完了」只是告訴大家可以猜了，不會結束這一題；真的要結束是下面的「跳過這題」 -->
-            <div class="donebox">
-              <button class="btn3d small tool-done" data-color="lemon" id="b-done" type="button"
-                      title="告訴大家你畫完了（這一題還會繼續，時間也照跑）">畫完了</button>
-              <button class="btn3d small tool-skip" data-color="peach" id="b-skip" type="button"
-                      title="直接結束這一題並公布答案">跳過這題</button>
-            </div>
-          </div>
-          <div class="solo-file-actions" id="solo-file-actions" role="group" aria-label="作品檔案" hidden>
+          </div><!-- /.paint-controls -->
+          <div class="solo-file-actions" id="solo-file-actions" role="group" aria-label="作品與題目操作" hidden>
             <button class="btn3d small" data-color="mint" id="b-solo-save" type="button" title="下載可繼續編輯的作品存檔">存檔</button>
             <button class="btn3d small" data-color="lemon" id="b-solo-image" type="button">下載圖片</button>
             <button class="btn3d small" data-color="sky" id="b-solo-load" type="button">載入</button>
+            <button class="btn3d small" data-color="peach" id="b-solo-next" type="button" title="跳過這題，換一個題目">換題</button>
           </div>
           <p class="tool-hint" id="tool-hint" role="status" aria-live="polite"></p>
         </div>
