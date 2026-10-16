@@ -21,10 +21,10 @@
   function decode(text, player, now) {
     var data;
     try { data = JSON.parse(text); }
-    catch (e) { throw new Error('無法讀取存檔，請選擇你畫我猜的作品存檔。'); }
+    catch (e) { throw new Error((globalThis.I18N ? globalThis.I18N.t("text.295") : "無法讀取存檔，請選擇你畫我猜的作品存檔。")); }
     if (!data || data.format !== 'draw-guess-drawing' || data.version !== 1 ||
         typeof data.wordId !== 'string' || !Array.isArray(data.strokes)) {
-      throw new Error('這不是支援的你畫我猜作品存檔。');
+      throw new Error((globalThis.I18N ? globalThis.I18N.t("text.294") : "這不是支援的你畫我猜作品存檔。"));
     }
 
     var state = Rules.createState({
@@ -36,15 +36,15 @@
     Rules.start(state, now);
     state.choices = [data.wordId];
     var picked = Rules.pickWord(state, player.id, data.wordId, now);
-    if (!picked.ok) throw new Error('存檔中的題目不存在。');
+    if (!picked.ok) throw new Error((globalThis.I18N ? globalThis.I18N.t("text.293") : "存檔中的題目不存在。"));
     for (var i = 0; i < data.strokes.length; i++) {
       var raw = data.strokes[i];
       if (!raw || Rules.TOOL_KEYS.indexOf(raw.t) < 0 || !Array.isArray(raw.p) ||
           raw.p.length > Rules.CONST.MAX_STROKE_POINTS * 2) {
-        throw new Error('存檔中的筆畫資料不完整。');
+        throw new Error((globalThis.I18N ? globalThis.I18N.t("text.292") : "存檔中的筆畫資料不完整。"));
       }
       var result = Rules.addStroke(state, player.id, raw);
-      if (!result.ok) throw new Error('存檔中的筆畫資料不完整。');
+      if (!result.ok) throw new Error((globalThis.I18N ? globalThis.I18N.t("text.292") : "存檔中的筆畫資料不完整。"));
     }
     return state;
   }

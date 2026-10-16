@@ -282,7 +282,7 @@ section('隱藏資訊（toPublic 投影）');
   check('其他玩家看不到答案', guesserView.answer === null, guesserView.answer);
   check('觀戰者看不到答案', spectatorView.answer === null, spectatorView.answer);
   check('畫家還沒給提示時沒有遮罩', guesserView.hint.mask === '' && guesserView.hint.len === 0, guesserView.hint.mask);
-  check('畫家還沒給提示時也沒有種類', guesserView.hint.catLabel === null && spectatorView.hint.catLabel === null);
+  check('畫家還沒給提示時也沒有種類', guesserView.hint.cat === null && spectatorView.hint.cat === null);
   check('整份投影字串裡沒有答案', JSON.stringify(guesserView).indexOf(answer) < 0);
   check('觀戰者的投影裡也沒有答案', JSON.stringify(spectatorView).indexOf(answer) < 0);
   /* 給了第一張提示：字數（底線）才會出現 */
@@ -291,9 +291,9 @@ section('隱藏資訊（toPublic 投影）');
   check('第一張提示公開字數', afterLen.hint.len === answer.length &&
     afterLen.hint.mask.length === answer.length &&
     afterLen.hint.mask.indexOf(Words.MASK_CHAR) >= 0, afterLen.hint.mask);
-  check('第一張提示還沒公開種類', afterLen.hint.catLabel === null);
+  check('第一張提示還沒公開種類', afterLen.hint.cat === null);
   Rules.giveHint(st, drawerId, 2);
-  check('第二張提示公開種類', Rules.toPublic(st, other).hint.catLabel === Words.CATEGORIES[Words.byId(st.wordId).cat].label);
+  check('第二張提示公開種類', Rules.toPublic(st, other).hint.cat === Words.byId(st.wordId).cat);
 
   /* 第三張提示翻哪個字是隨機的：兩個字的題目，第一個字和最後一個字都要翻得到 */
   const picked = new Set();
@@ -780,8 +780,8 @@ section('房間狀態機（lib/rooms.js）');
   const hit = room.guess(humanGuesser, answer, t);
   check('猜對回 hit', hit.ok && hit.kind === 'hit', JSON.stringify(hit).slice(0, 60));
   check('猜對的內容不會出現在紀錄裡', !room.feed.some((f) => f.kind === 'guess' && f.text === answer));
-  check('紀錄裡只公布「某某猜對了」', room.feed.some((f) => f.kind === 'correct' && f.text.indexOf('猜對了') >= 0));
-  check('摘要在揭曉前不會寫出答案', room.summary.every((s) => s.kind === 'reveal' || s.text.indexOf(answer) < 0));
+  check('紀錄裡只公布「某某猜對了」', room.feed.some((f) => f.kind === 'correct' && f.key === 'srv.feed.correct' && f.params.name));
+  check('摘要在揭曉前不會寫出答案', room.summary.every((s) => s.kind === 'reveal' || !JSON.stringify(s.params || {}).includes(answer)));
   check('猜對的人不能再猜', !room.guess(humanGuesser, answer, t + 2000).ok);
 
   /* 邀請連結 */
@@ -813,7 +813,7 @@ section('房間生命週期：沒有實體玩家就關閉');
   check('最後一個真人離開後就該關閉', room.shouldClose());
   const swept = store.sweep(t + 1);
   check('定時工作會把它關掉', swept.closed.length === 1 && room.closed, swept.closed.length);
-  check('關閉原因講清楚只剩觀戰者', room.closedReason.indexOf('觀戰') >= 0, room.closedReason);
+  check('關閉原因講清楚只剩觀戰者', room.closedReason === 'srv.closed.onlySpectators', room.closedReason);
   check('關閉後邀請全部失效', [...room.invites.values()].every((i) => i.revoked));
   check('關閉後對局狀態被清掉（計時器停工）', room.state === null);
   check('關閉的房間不會出現在大廳列表', store.list().every((r) => r.code !== room.code));
@@ -944,7 +944,7 @@ section('房主設定與再玩一局');
     room.tick(now);
   }
   check('房間對局可以跑到結束', room.phase === 'finished', 'guard=' + guard);
-  check('結束後有結算訊息', room.feed.some((f) => f.text.indexOf('🏆') >= 0));
+  check('結束後有結算訊息', room.feed.some((f) => f.key === 'srv.feed.win' || f.key === 'srv.feed.tie'));
 
   /* 結算完不再是「全員投票直接開新局」，而是房主帶大家回到等待畫面 */
   check('結算畫面可以聊天（答案都公布了）', room.chat('b', '好好玩！', now).ok);
@@ -1125,7 +1125,7 @@ section('最後一個猜題者離開時，答案照樣公布');
   const w = Words.byId(room.state.wordId).text;
   room.guess(guessers[0], w, 3000);
   room.leave(guessers[1], 3500);
-  check('全部猜中而收掉的這一題有寫出答案', room.summary.some((n) => n.text.indexOf('答案是「' + w + '」') >= 0),
+  check('全部猜中而收掉的這一題有寫出答案', room.summary.some((n) => n.key === 'srv.sum.reveal' && n.params.word === w),
     room.summary.map((n) => n.text).slice(-3).join(' | '));
 }
 

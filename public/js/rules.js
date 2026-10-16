@@ -48,7 +48,7 @@
     MAX_STROKES: 600,        // 一題最多幾筆（防洪）
     MAX_STROKE_POINTS: 400,  // 單筆最多幾個點
     MAX_TOTAL_POINTS: 30000, // 一題全部點數上限
-    GUESS_MAX: 24,           // 猜測字數上限
+    GUESS_MAX: 40,           // 猜測字數上限（英文題目最長 32 個字元，要放得下）
     HINTS: 3,                      // 畫家手上的提示張數：字數 → 種類 → 揭一個字
     AI_HINT_AT: [0.18, 0.40, 0.62],// 電腦當畫家時，依已用時間比例自動按提示
     BOX: Words.BOX
@@ -78,7 +78,9 @@
 
   var PHASES = ['picking', 'drawing', 'reveal', 'over'];
 
-  var err = function (message, code) { return { ok: false, error: message, code: code || 'invalid' }; };
+
+  /* 錯誤訊息一律是字典代碼（srv.err.＊）加參數，由畫面端依語系翻譯 */
+  var err = function (key, code, params) { return { ok: false, error: key, params: params || null, code: code || 'invalid' }; };
   var ok = function (extra) { return Object.assign({ ok: true }, extra || {}); };
 
   var clamp = function (v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); };
@@ -99,7 +101,7 @@
     var players = (o.players || []).slice(0, CONST.MAX_PLAYERS).map(function (p, i) {
       return {
         id: String(p.id),
-        name: String(p.name || ('玩家' + (i + 1))),
+        name: String(p.name || ('P' + (i + 1))),
         ai: p.ai || null,
         score: 0,
         drew: 0
@@ -118,6 +120,8 @@
 
     return {
       seed: seed,
+      /* 題庫語言（zh-Hant／en）：題目、答案、字數、遮罩與猜測比對都跟著它走 */
+      lang: Words.normLang(o.lang),
       /* 單機練習：真的不限時、不限次。選題不會逾時自動挑、作畫不會時間到、也永遠不會跳結算，
          練夠了自己離開就好。以前是拿引擎上限（999 次、99999 秒）假裝不限，
          結果選題還是 15 秒倒數、畫滿 999 題還會跳出一張「你 0 分」的結算。 */
@@ -173,14 +177,14 @@
     return false;
   }
 
-  function word(state) { return state.wordId ? Words.byId(state.wordId) : null; }
+  function word(state) { return state.wordId ? Words.byId(state.wordId, state.lang) : null; }
 
   /* ------------------------------------------------------------ 開局 */
 
   /** 開始整局：安排第一位畫家並進入選字 */
   function start(state, now) {
     if (state.players.length < CONST.MIN_PLAYERS) {
-      return err('至少要 ' + CONST.MIN_PLAYERS + ' 個人才能開始。', 'players');
+      return err('srv.err.minPlayers', 'players', { n: CONST.MIN_PLAYERS });
     }
     state.round = 1;
     state.turn = 0;
@@ -228,16 +232,16 @@
 
   /** 畫家選定題目，進入作畫階段 */
   function pickWord(state, playerId, wordId, now) {
-    if (state.phase !== 'picking') return err('現在不是選題目的時候。', 'phase');
-    if (playerId !== state.drawerId) return err('只有這一回合的畫家可以選題目。', 'forbidden');
+    if (state.phase !== 'picking') return err('srv.err.notPicking', 'phase');
+    if (playerId !== state.drawerId) return err('srv.err.onlyDrawerPick', 'forbidden');
     var id = String(wordId || '');
-    if (state.choices.indexOf(id) < 0) return err('只能從畫面上那三個題目裡挑一個。', 'choice');
+    if (state.choices.indexOf(id) < 0) return err('srv.err.pickFromThree', 'choice');
     return commitWord(state, id, now, false);
   }
 
   function commitWord(state, id, now, auto) {
-    var w = Words.byId(id);
-    if (!w) return err('找不到這個題目。', 'choice');
+    var w = Words.byId(id, state.lang);
+    if (!w) return err('srv.err.wordMissing', 'choice');
     state.wordId = id;
     state.usedWords.push(id);
     if (state.usedWords.length > 200) state.usedWords.splice(0, 100);
@@ -248,8 +252,8 @@
     /* 第三張提示要揭哪一個字也吃種子，重播才會一樣。每個字都可能被翻開（包含最後一個字），
        否則兩個字的題目只剩第一個字可翻，永遠都是翻第一個字。單字題翻了就等於公布答案，沒有這張。 */
     var rng = RNG.createRng(state.seed + ':hint:' + state.turnNo);
-    var len = w.text.length;
-    state.hintPlan = len >= 2 ? [Math.floor(rng() * len) % len] : [];
+    var slots = Words.revealable(w);
+    state.hintPlan = slots.length >= 2 ? [slots[Math.floor(rng() * slots.length) % slots.length]] : [];
     state.hints = 0;
     state.revealed = [];
     return ok({ state: state, wordId: id, auto: !!auto });
@@ -321,14 +325,14 @@
   }
 
   function addStroke(state, playerId, raw) {
-    if (state.phase !== 'drawing') return err('現在還不能畫。', 'phase');
-    if (playerId !== state.drawerId) return err('只有這一回合的畫家可以畫。', 'forbidden');
+    if (state.phase !== 'drawing') return err('srv.err.cantDrawYet', 'phase');
+    if (playerId !== state.drawerId) return err('srv.err.onlyDrawerDraw', 'forbidden');
     var stroke = sanitizeStroke(raw);
-    if (!stroke) return err('這一筆的資料不正確。', 'stroke');
+    if (!stroke) return err('srv.err.badStroke', 'stroke');
     /* 單機不限時練習會持續累積手繪分段，不套用線上對局的防洪上限。 */
-    if (!state.unlimited && state.strokes.length >= CONST.MAX_STROKES) return err('這一題的筆畫太多了，先清除或擦掉一些吧。', 'limit');
+    if (!state.unlimited && state.strokes.length >= CONST.MAX_STROKES) return err('srv.err.tooManyStrokes', 'limit');
     if (!state.unlimited && state.pointCount + stroke.p.length / 2 > CONST.MAX_TOTAL_POINTS) {
-      return err('這一題畫得太滿了，先清除畫布再繼續。', 'limit');
+      return err('srv.err.tooFull', 'limit');
     }
     stroke.n = state.strokes.length + 1;
     state.strokes.push(stroke);
@@ -337,17 +341,17 @@
   }
 
   function undoStroke(state, playerId) {
-    if (state.phase !== 'drawing') return err('現在沒有可以復原的筆畫。', 'phase');
-    if (playerId !== state.drawerId) return err('只有畫家可以復原筆畫。', 'forbidden');
-    if (!state.strokes.length) return err('畫布上還沒有任何一筆。', 'empty');
+    if (state.phase !== 'drawing') return err('srv.err.nothingToUndo', 'phase');
+    if (playerId !== state.drawerId) return err('srv.err.onlyDrawerUndo', 'forbidden');
+    if (!state.strokes.length) return err('srv.err.boardEmpty', 'empty');
     var removed = state.strokes.pop();
     state.pointCount -= removed.p.length / 2;
     return ok({ removed: removed });
   }
 
   function clearBoard(state, playerId) {
-    if (state.phase !== 'drawing') return err('現在不能清除畫布。', 'phase');
-    if (playerId !== state.drawerId) return err('只有畫家可以清除畫布。', 'forbidden');
+    if (state.phase !== 'drawing') return err('srv.err.cantClear', 'phase');
+    if (playerId !== state.drawerId) return err('srv.err.onlyDrawerClear', 'forbidden');
     state.strokes = [];
     state.pointCount = 0;
     return ok();
@@ -373,13 +377,13 @@
    *   miss  沒猜中，呼叫端把它寫進猜題紀錄讓大家看到
    */
   function guess(state, playerId, text, now) {
-    if (state.phase !== 'drawing') return err('現在不是猜題時間。', 'phase');
+    if (state.phase !== 'drawing') return err('srv.err.notGuessTime', 'phase');
     var p = player(state, playerId);
-    if (!p) return err('你不在這一局裡。', 'forbidden');
-    if (playerId === state.drawerId) return err('你是這一回合的畫家，不能猜自己的題目。', 'forbidden');
-    if (hasGuessed(state, playerId)) return err('你已經猜中了，先讓其他人猜。', 'done');
+    if (!p) return err('srv.err.notInGame', 'forbidden');
+    if (playerId === state.drawerId) return err('srv.err.drawerCantGuess', 'forbidden');
+    if (hasGuessed(state, playerId)) return err('srv.err.alreadyGuessed', 'done');
     var clean = String(text === undefined || text === null ? '' : text).slice(0, CONST.GUESS_MAX);
-    if (!Words.normalize(clean)) return err('猜測是空的。', 'empty');
+    if (!Words.normalize(clean, state.lang)) return err('srv.err.emptyGuess', 'empty');
 
     var w = word(state);
     var verdict = Words.match(w, clean);
@@ -402,7 +406,7 @@
 
   /** 收掉這一回合：算畫家分數、寫進紀錄、進入公布答案 */
   function endTurn(state, now, reason) {
-    if (state.phase !== 'drawing' && state.phase !== 'picking') return err('這一回合已經結束了。', 'phase');
+    if (state.phase !== 'drawing' && state.phase !== 'picking') return err('srv.err.turnEnded', 'phase');
     var w = word(state);
     var total = guesserIds(state).length;
     var correct = state.guessed.length;
@@ -467,7 +471,7 @@
    * 往下找的時候跳過已經畫滿的人（例如離開又回來、已經畫滿的人不會再被排到）。
    */
   function nextTurn(state, now) {
-    if (state.phase !== 'reveal') return err('現在不是換人的時候。', 'phase');
+    if (state.phase !== 'reveal') return err('srv.err.notChangeTurn', 'phase');
     var anyOwed = state.unlimited || state.order.some(function (id) { return owes(state, id) > 0; });
     if (!anyOwed) return finish(state, now);
     for (var guard = 0; guard <= state.order.length * 2; guard++) {
@@ -556,10 +560,8 @@
   function hintTotal(state) {
     var w = word(state);
     if (!w) return 0;
-    return w.text.length > 1 ? CONST.HINTS : CONST.HINTS - 1;
+    return Words.glyphCount(w) > 1 ? CONST.HINTS : CONST.HINTS - 1;
   }
-
-  var HINT_LABEL = ['字數', '種類', '一個字'];
 
   /** 三張提示現在各自的狀態，畫面直接拿去畫按鈕 */
   function hintSteps(state) {
@@ -568,7 +570,6 @@
     for (var i = 0; i < CONST.HINTS; i++) {
       out.push({
         step: i + 1,
-        label: HINT_LABEL[i],
         done: state.hints > i,
         /* 只能依序給：下一張才是可按的那一張 */
         available: i + 1 <= total && state.hints === i,
@@ -580,17 +581,17 @@
 
   /** 畫家給出下一張提示 */
   function giveHint(state, playerId, now) {
-    if (state.phase !== 'drawing') return err('現在沒有進行中的題目。', 'phase');
-    if (playerId !== state.drawerId) return err('只有畫家可以給提示。', 'forbidden');
+    if (state.phase !== 'drawing') return err('srv.err.noWordNow', 'phase');
+    if (playerId !== state.drawerId) return err('srv.err.onlyDrawerHint', 'forbidden');
     var total = hintTotal(state);
     var next = state.hints + 1;
     if (next > total) {
-      return err(total < CONST.HINTS ? '這是單字題，沒有「一個字」這張提示了。' : '三張提示都給完了。', 'hint');
+      return err(total < CONST.HINTS ? 'srv.err.noThirdHint' : 'srv.err.allHintsGiven', 'hint');
     }
     state.hints = next;
     if (next === 3 && state.hintPlan.length) state.revealed = [state.hintPlan[0]];
     return ok({
-      state: state, step: next, label: HINT_LABEL[next - 1],
+      state: state, step: next,
       mask: next >= 1 ? maskOf(state) : '',
       index: next === 3 ? state.revealed[0] : -1,
       at: now
@@ -599,8 +600,8 @@
 
   /** 畫家提前宣告畫完（或其他人都猜中了）時手動收掉這一回合 */
   function giveUp(state, playerId, now) {
-    if (state.phase !== 'drawing') return err('現在沒有進行中的題目。', 'phase');
-    if (playerId !== state.drawerId) return err('只有畫家可以結束這一題。', 'forbidden');
+    if (state.phase !== 'drawing') return err('srv.err.noWordNow', 'phase');
+    if (playerId !== state.drawerId) return err('srv.err.onlyDrawerEnd', 'forbidden');
     return endTurn(state, now, 'skipped');
   }
 
@@ -610,7 +611,7 @@
   function removePlayer(state, id, now) {
     var idx = -1;
     for (var i = 0; i < state.players.length; i++) if (state.players[i].id === id) idx = i;
-    if (idx < 0) return err('沒有這個玩家。', 'gone');
+    if (idx < 0) return err('srv.err.noSuchPlayer', 'gone');
     state.players.splice(idx, 1);
     var oi = state.order.indexOf(id);
     if (oi >= 0) {
@@ -645,9 +646,9 @@
   /** 對局進行中有人加入：排在目前順位的最後一位，這一輪還沒排到他就會排進去。
    *  總題數（rounds × 人數）跟著重算，所以人一直加，遊戲就一直往後延。 */
   function addPlayer(state, p) {
-    if (state.over) return err('這一局已經結束了。', 'over');
+    if (state.over) return err('srv.err.gameOver', 'over');
     if (player(state, p.id)) return ok({ state: state, already: true });
-    if (state.players.length >= CONST.MAX_PLAYERS) return err('玩家席已經滿了。', 'full');
+    if (state.players.length >= CONST.MAX_PLAYERS) return err('srv.err.seatsFull', 'full');
     /* 同一局裡離開又回來的人（呼叫端會把他離開前的分數與已畫次數帶進來）：
        分數接回去，已經畫過的次數也算數，不會回來就歸零、又被多排一次。 */
     var entry = {
@@ -684,6 +685,7 @@
 
     return {
       seed: state.seed,
+      lang: state.lang,
       unlimited: !!state.unlimited,
       phase: state.phase,
       round: state.round,
@@ -713,9 +715,8 @@
         lenShown: state.hints >= 1,
         catShown: state.hints >= 2,
         cat: state.hints >= 2 ? info.cat : null,
-        catLabel: state.hints >= 2 ? info.catLabel : null,
         catEmoji: state.hints >= 2 ? info.catEmoji : null,
-        diff: info.diff, diffLabel: info.diffLabel,
+        diff: info.diff,
         len: state.hints >= 1 ? info.len : 0,
         mask: state.hints >= 1 ? maskOf(state) : '',
         revealed: state.revealed.length
@@ -724,8 +725,8 @@
       /* 選字清單只有畫家看得到，否則等於把三個候選答案送給所有人 */
       choices: (isDrawer && state.phase === 'picking')
         ? state.choices.map(function (id) {
-          var c = Words.byId(id);
-          return { id: id, text: c.text, cat: c.cat, catLabel: Words.CATEGORIES[c.cat].label, diff: c.diff, diffLabel: Words.DIFFICULTY[c.diff].label };
+          var c = Words.byId(id, state.lang);
+          return { id: id, text: c.text, cat: c.cat, catEmoji: Words.CATEGORIES[c.cat].emoji, diff: c.diff };
         })
         : [],
       guessed: state.guessed.map(function (g) {
@@ -747,22 +748,21 @@
     };
   }
 
-  /** 一句話描述目前狀態，操作摘要與純文字教學都用同一份措辭 */
+  /** 一句話描述目前狀態：回傳字典代碼與參數（srv.desc.＊），畫面端依語系翻譯 */
   function describe(state, viewerId) {
     var drawer = player(state, state.drawerId);
     var dn = drawer ? drawer.name : '—';
     var isDrawer = viewerId === state.drawerId;
-    if (state.phase === 'over') return '這一局結束了。';
+    var d = function (key, params) { return { key: 'srv.desc.' + key, params: params || {} }; };
+    if (state.phase === 'over') return d('over');
     if (state.phase === 'reveal') {
       var w = word(state);
-      return '答案是「' + (w ? w.text : '—') + '」，' + state.guessed.length + ' 個人猜中。';
+      return d('reveal', { word: w ? w.text : '—', n: state.guessed.length });
     }
-    if (state.phase === 'picking') {
-      return isDrawer ? '輪到你了，從三個題目裡挑一個來畫。' : dn + ' 正在挑題目，等一下就開始。';
-    }
-    if (isDrawer) return '你正在畫「' + (word(state) ? word(state).text + '」' : '—」') + '，用線條讓大家猜出來。';
-    if (hasGuessed(state, viewerId)) return '你已經猜中了，等其他人或時間結束。';
-    return dn + ' 正在畫，把你的答案打進猜題框。';
+    if (state.phase === 'picking') return isDrawer ? d('pickMine') : d('pickOther', { name: dn });
+    if (isDrawer) return d('drawing', { word: word(state) ? word(state).text : '—' });
+    if (hasGuessed(state, viewerId)) return d('guessed');
+    return d('guessing', { name: dn });
   }
 
   return {

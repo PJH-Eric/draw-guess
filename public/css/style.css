@@ -1216,3 +1216,10 @@ body.solo-mode.big-tools .fillbox{min-height:56px}
   body.solo-mode .wordbar{flex:1 1 100%;flex-wrap:wrap;justify-content:center;padding:2px 8px}
   body.solo-mode .wordbar-label{display:none}
 }
+
+/* Keep the language switch beside settings, including narrow English layouts. */
+.lang-toggle { position: fixed; top: calc(10px + env(safe-area-inset-top)); right: calc(70px + env(safe-area-inset-right)); min-width: 48px; min-height: 48px; padding: 8px; border: 2px solid #4a3b55; border-radius: 14px; background: #fff0de; color: #4a3b55; font: 800 16px/1.2 system-ui, sans-serif; cursor: pointer; box-shadow: 0 4px 0 #cfb99f; z-index: 1001; }
+.lang-toggle:focus-visible { outline: 3px solid #287dac; outline-offset: 3px; }
+.settings-fab { min-width: 48px; min-height: 48px; }
+.panel-head h2, .setrow label, .rule-field, .modal-head h2 { min-width: 0; overflow-wrap: anywhere; }
+html[lang="en"] .home-btns .btn3d, html[lang="en"] .btn-wide { white-space: normal; overflow-wrap: anywhere; }

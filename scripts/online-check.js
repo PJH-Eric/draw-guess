@@ -349,8 +349,8 @@ async function run() {
     check('猜題者收到的整包資料裡沒有答案', JSON.stringify(guesser.view).indexOf(answer) < 0);
     check('觀戰者收到的整包資料裡沒有答案', JSON.stringify(watcher.view).indexOf(answer) < 0);
     check('畫家還沒給提示時，猜題者看不到字數與種類',
-      guesser.view.game.hint.mask === '' && guesser.view.game.hint.catLabel === null,
-      guesser.view.game.hint.mask + '/' + guesser.view.game.hint.catLabel);
+      guesser.view.game.hint.mask === '' && guesser.view.game.hint.cat === null,
+      guesser.view.game.hint.mask + '/' + guesser.view.game.hint.cat);
 
     /* 三張提示：字數 → 種類 → 一個字，由畫家主動按 */
     drawer.emit('room:hint', {});
@@ -358,11 +358,11 @@ async function run() {
       await guesser.until((c) => (c.view.game.hint.mask || '').length === answer.length, 6000),
       guesser.view.game.hint.mask);
     check('第一張提示只有底線', (guesser.view.game.hint.mask || '').indexOf('＿') >= 0 &&
-      guesser.view.game.hint.catLabel === null, guesser.view.game.hint.mask);
+      guesser.view.game.hint.cat === null, guesser.view.game.hint.mask);
     drawer.emit('room:hint', {});
     check('第二張提示公開種類',
-      await guesser.until((c) => !!c.view.game.hint.catLabel, 6000),
-      guesser.view.game.hint.catLabel);
+      await guesser.until((c) => !!c.view.game.hint.cat, 6000),
+      guesser.view.game.hint.cat);
     if (answer.length > 1) {
       drawer.emit('room:hint', {});
       check('第三張提示翻開一個字',
@@ -374,7 +374,7 @@ async function run() {
     check('猜題者不能替畫家給提示',
       !(await guesser.until((c) => c.view.game.hint.step > 3, 600)), guesser.view.game.hint.step);
     check('操作摘要在揭曉前不含答案',
-      host.view.room.summary.every((s) => s.text.indexOf(answer) < 0),
+      host.view.room.summary.every((s) => !JSON.stringify(s.params || {}).includes(answer)),
       JSON.stringify(host.view.room.summary.slice(-2)));
 
     /* -------------------------------------------- 畫布同步 */
@@ -435,13 +435,13 @@ async function run() {
     await sleep(300);
     check('連按兩下不會被擋下（沒有收到任何錯誤）', !drawer.lastError(), JSON.stringify(drawer.lastError()));
     check('連按兩下會廣播兩次通知（這顆鈕不鎖）',
-      watcher.view.room.summary.filter((n, i) => i >= summaryBefore && n.text.indexOf('說畫完了') >= 0).length === 2,
+      watcher.view.room.summary.filter((n, i) => i >= summaryBefore && n.key === 'srv.sum.done').length === 2,
       JSON.stringify(watcher.view.room.summary.slice(summaryBefore)));
     check('說完畫完了這一題還在繼續',
       watcher.view.game.phase === 'drawing' && watcher.view.game.turnNo === drawer.view.game.turnNo,
       watcher.view.game.phase);
     check('紀錄裡看得到「某某說畫完了」',
-      (watcher.view.room.summary || []).some((n) => n.text.indexOf('說畫完了') >= 0),
+      (watcher.view.room.summary || []).some((n) => n.key === 'srv.sum.done'),
       JSON.stringify((watcher.view.room.summary || []).slice(-2)));
     const summaryBefore2 = watcher.view.room.summary.length;
     drawer.clearErrors();
@@ -484,20 +484,20 @@ async function run() {
     check('猜對有給分', guesser.privates.some((p) => p.kind === 'hit' && p.points > 0));
     await sleep(400);
     check('猜對的內容不會被廣播出去',
-      watcher.feed.slice(watchFeedBefore).every((f) => f.text.indexOf(answer) < 0) ||
+      watcher.feed.slice(watchFeedBefore).every((f) => !JSON.stringify(f.params || f.text || '').includes(answer)) ||
       watcher.feed.slice(watchFeedBefore).every((f) => f.kind !== 'guess'),
       JSON.stringify(watcher.feed.slice(watchFeedBefore)));
     /* 「某某猜對了」是系統訊息，跟著房間投影一起送（room:sync 裡的 room.feed），
        猜錯才走 room:feed 增量頻道。這裡驗證觀戰者確實收得到，而且沒有答案。 */
     check('紀錄裡只公布「某某猜對了」',
-      await watcher.until((c) => (c.view.room.feed || []).some((f) => f.kind === 'correct' && f.text.indexOf('猜對了') >= 0), 4000),
+      await watcher.until((c) => (c.view.room.feed || []).some((f) => f.kind === 'correct' && f.key === 'srv.feed.correct'), 4000),
       JSON.stringify((watcher.view.room.feed || []).slice(-3)));
     /* 兩個真人時，最後一位猜中就等於「全部猜中」，這一題會立刻結束並公布答案（kind=reveal），
        所以只檢查「還在進行中」的那些訊息（猜題與猜對）不外流答案。 */
     check('公布訊息裡不含答案',
       (watcher.view.room.feed || [])
         .filter((f) => f.kind === 'guess' || f.kind === 'correct')
-        .every((f) => f.text.indexOf(answer) < 0),
+        .every((f) => !JSON.stringify(f.params || f.text || '').includes(answer)),
       JSON.stringify((watcher.view.room.feed || []).slice(-3)));
     check('分數有反映到投影上',
       await watcher.until((c) => c.view.game.players.some((p) => p.score > 0), 4000),
@@ -526,7 +526,7 @@ async function run() {
       JSON.stringify(host.view.room.summary.slice(-3)));
     check('觀戰者也收得到摘要', watcher.view.room.summary.length > 0, watcher.view.room.summary.length);
     check('觀戰者的摘要在公布前沒有答案',
-      watcher.view.room.summary.filter((s) => s.kind !== 'reveal').every((s) => s.text.indexOf(answer) < 0),
+      watcher.view.room.summary.filter((s) => s.kind !== 'reveal').every((s) => !JSON.stringify(s.params || {}).includes(answer)),
       JSON.stringify(watcher.view.room.summary.slice(-3)));
   }
 
@@ -547,7 +547,7 @@ async function run() {
     await extra.until((c) => !!c.view && !!c.view.game && !!c.view.you && c.view.you.inGame, 3000),
     extra.view && extra.view.you);
   check('大家都看得到「路人中途加入」的紀錄',
-    await host.until((c) => (c.view.room.summary || []).some((s) => s.text.indexOf('中途加入') >= 0), 3000),
+    await host.until((c) => (c.view.room.summary || []).some((s) => s.key === 'srv.sum.joinedMid' && s.params.name === '路人'), 3000),
     JSON.stringify(host.view.room.summary.slice(-3)));
 
   /* -------------------------------------------- 斷線重連 */

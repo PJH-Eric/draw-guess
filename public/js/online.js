@@ -60,7 +60,7 @@
     if (w.io) return Promise.resolve();
     if (loading) return loading;
     var src = Config.url('/socket.io/socket.io.js');
-    if (!src) return Promise.reject(new Error('沒有設定遊戲伺服器位址。'));
+    if (!src) return Promise.reject(new Error((globalThis.I18N ? globalThis.I18N.t("text.311") : "沒有設定遊戲伺服器位址。")));
     setStatus('loading');
     loading = new Promise(function (resolve, reject) {
       var s = document.createElement('script');
@@ -68,7 +68,7 @@
       s.async = true;
       s.onload = function () { resolve(); };
       s.onerror = function () {
-        reject(new Error('連不到遊戲伺服器（' + Config.describe() + '），請確認伺服器有開著。'));
+        reject(new Error((globalThis.I18N ? globalThis.I18N.t("text.310") : "連不到遊戲伺服器（") + Config.describe() + (globalThis.I18N ? globalThis.I18N.t("text.309") : "），請確認伺服器有開著。")));
       };
       document.head.appendChild(s);
     });
@@ -81,7 +81,7 @@
    */
   function connect(identity) {
     if (!Config.isOnlineEnabled()) {
-      setStatus('offline', Config.error || '目前沒有可用的遊戲伺服器，只能玩單機。');
+      setStatus('offline', Config.error || (globalThis.I18N ? globalThis.I18N.t("text.308") : "目前沒有可用的遊戲伺服器，只能玩單機。"));
       return Promise.reject(new Error(lastError));
     }
     if (socket && socket.connected) return Promise.resolve(socket);
@@ -104,10 +104,10 @@
         emitLocal('reconnected', {});
       });
       socket.on('disconnect', function (reason) {
-        setStatus('connecting', '連線中斷（' + reason + '），正在重試…');
+        setStatus('connecting', (globalThis.I18N ? globalThis.I18N.t("text.307") : "連線中斷（") + reason + (globalThis.I18N ? globalThis.I18N.t("text.306") : "），正在重試…"));
       });
       socket.on('connect_error', function (err) {
-        setStatus('error', '連不上伺服器：' + (err && err.message ? err.message : '未知錯誤'));
+        setStatus('error', (globalThis.I18N ? globalThis.I18N.t("text.305") : "連不上伺服器：") + (err && err.message ? err.message : (globalThis.I18N ? globalThis.I18N.t("text.304") : "未知錯誤")));
       });
 
       SERVER_EVENTS.forEach(function (evt) {
@@ -132,7 +132,7 @@
       var timer = setTimeout(function () {
         if (done) return;
         done = true;
-        reject(new Error('伺服器沒有回應（免費方案冷啟動可能要十幾秒，請再試一次）。'));
+        reject(new Error((globalThis.I18N ? globalThis.I18N.t("text.303") : "伺服器沒有回應（免費方案冷啟動可能要十幾秒，請再試一次）。")));
       }, 15000);
       var finish = function () {
         if (done) return;
@@ -145,7 +145,7 @@
             setStatus('connected');
             resolve(socket);
           }
-          else reject(new Error('伺服器拒絕連線。'));
+          else reject(new Error((globalThis.I18N ? globalThis.I18N.t("text.302") : "伺服器拒絕連線。")));
         });
       };
       if (socket.connected) finish();
@@ -155,7 +155,7 @@
 
   function send(evt, payload, ack) {
     if (!socket || !socket.connected) {
-      emitLocal('room:error', { message: '目前沒有連線，動作沒有送出去。請等重新連線後再試。', code: 'offline' });
+      emitLocal('room:error', { message: (globalThis.I18N ? globalThis.I18N.t("text.301") : "目前沒有連線，動作沒有送出去。請等重新連線後再試。"), code: 'offline' });
       return false;
     }
     if (ack) socket.emit(evt, payload || {}, ack);

@@ -200,8 +200,8 @@
     const quality = ms === null ? 'unknown' : ms <= 30 ? 'good' : ms < 100 ? 'warn' : 'bad';
     el.classList.add('is-' + quality);
     el.querySelector('.latency-meter__value').textContent = ms === null ? '--' : String(ms);
-    el.setAttribute('aria-label', ms === null ? '連線延遲，等待回應' : '連線延遲 ' + ms + ' 毫秒');
-    el.title = ms === null ? '連線延遲：等待回應' : '連線延遲：' + ms + ' ms';
+    el.setAttribute('aria-label', ms === null ? (globalThis.I18N ? globalThis.I18N.t("text.300") : "連線延遲，等待回應") : (globalThis.I18N ? globalThis.I18N.t("text.299") : "連線延遲 ") + ms + (globalThis.I18N ? globalThis.I18N.t("text.298") : " 毫秒"));
+    el.title = ms === null ? (globalThis.I18N ? globalThis.I18N.t("text.297") : "連線延遲：等待回應") : (globalThis.I18N ? globalThis.I18N.t("text.296") : "連線延遲：") + ms + ' ms';
     dock();
   }
 

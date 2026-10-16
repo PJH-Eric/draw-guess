@@ -82,6 +82,7 @@
     '樹懶', '鸚鵡', '松鼠', '山羊', '袋鼠', '海豹', '章魚', '蜜蜂', '烏龜', '羊駝'
   ];
   function randomNick() {
+    if (globalThis.I18N && globalThis.I18N.lang === 'en') return ['Cozy', 'Brave', 'Happy', 'Quick'][Math.floor(Math.random() * 4)] + ' ' + ['Artist', 'Bunny', 'Otter', 'Fox'][Math.floor(Math.random() * 4)];
     return NICK_ADJ[Math.floor(Math.random() * NICK_ADJ.length)] +
       NICK_ANIMAL[Math.floor(Math.random() * NICK_ANIMAL.length)];
   }

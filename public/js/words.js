@@ -1735,10 +1735,132 @@
   var index = {};
   for (var n = 0; n < LIST.length; n++) index[LIST[n].id] = LIST[n];
 
-  function byId(id) { return index[id] || null; }
+  /* ================================================================
+     多語系題庫：題目文字跟著「題庫語言」走。
+     zh-Hant（預設）用上面的 LIST；en 用 words.en.js，同一個 id 對應同一題
+     （同一份配方、分類與難度），只換題目文字與別名。
+     ================================================================ */
 
-  /** 正規化玩家輸入：去掉空白、標點、全形轉半形，方便比對 */
-  function normalize(text) {
+  var LANGS = ['zh-Hant', 'en'];
+  function normLang(lang) { return lang === 'en' ? 'en' : 'zh-Hant'; }
+
+  var EN_DATA = null;
+  function enData() {
+    if (EN_DATA) return EN_DATA;
+    var src = null;
+    if (typeof module === 'object' && module.exports && typeof require === 'function') {
+      try { src = require('./words.en.js'); } catch (e) { src = null; }
+    } else if (typeof globalThis !== 'undefined') {
+      src = globalThis.WordsEN || null;
+    }
+    if (src) EN_DATA = src;
+    return src || {};
+  }
+
+  var enViews = {};
+
+  /** 把中文題目換成指定語言的題目物件（text／alt 換掉，其餘共用）；找不到對應就維持中文 */
+  function localize(word, lang) {
+    if (!word || normLang(lang) !== 'en') return word;
+    if (enViews[word.id]) return enViews[word.id];
+    var raw = enData()[word.id];
+    if (!raw) return word;
+    var names = String(raw).split('|');
+    var view = {
+      id: word.id, text: names[0], alt: names.slice(1),
+      cat: word.cat, diff: word.diff, draw: word.draw, lang: 'en'
+    };
+    enViews[word.id] = view;
+    return view;
+  }
+
+  function byId(id, lang) { return localize(index[id] || null, lang); }
+
+  /** 這個字元算不算「一格」：中文每個字都算；英文只算字母與數字（空白、連字號、撇號不算） */
+  var GLYPH_RE = /[\p{L}\p{N}]/u;
+  function isGlyph(word, ch) { return word.lang === 'en' ? GLYPH_RE.test(ch) : true; }
+
+  /** 可以被「翻開一個字」的位置（字元索引） */
+  function revealable(word) {
+    var out = [];
+    for (var i = 0; i < word.text.length; i++) if (isGlyph(word, word.text.charAt(i))) out.push(i);
+    return out;
+  }
+
+  /** 字數（中文是字數，英文是字母數） */
+  function glyphCount(word) { return revealable(word).length; }
+
+  /* ---- 英文比對：不分大小寫、容忍前後空白與標點、去掉重音、單複數與冠詞 ---- */
+  var EN_STOP = { a: 1, an: 1, the: 1, of: 1, and: 1, to: 1, in: 1, on: 1, with: 1, for: 1, at: 1 };
+
+  function singular(t) {
+    var n = t.length;
+    if (n > 4 && t.slice(-3) === 'ies') return t.slice(0, -3) + 'y';
+    if (n > 4 && /(ses|xes|zes|ches|shes)$/.test(t)) return t.slice(0, -2);
+    if (n > 3 && t.charAt(n - 1) === 's' && !/(ss|us|is)$/.test(t)) return t.slice(0, -1);
+    return t;
+  }
+
+  function enTokens(text) {
+    var s = String(text === undefined || text === null ? '' : text);
+    try { s = s.normalize('NFD'); } catch (e) { /* 舊瀏覽器沒有 normalize 就算了 */ }
+    s = s.replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/['\u2018\u2019`\u00b4]/g, '');
+    var tokens = s.split(/[^\p{L}\p{N}]+/u).filter(function (t) { return t.length > 0; });
+    if (tokens.length > 1 && (tokens[0] === 'a' || tokens[0] === 'an' || tokens[0] === 'the')) tokens.shift();
+    return tokens.map(singular);
+  }
+
+  /** 編輯距離是否在 k 以內（只用在很短的字串上，不需要最佳化） */
+  function editWithin(a, b, k) {
+    if (Math.abs(a.length - b.length) > k) return false;
+    var prev = [], cur, i, j;
+    for (j = 0; j <= b.length; j++) prev.push(j);
+    for (i = 1; i <= a.length; i++) {
+      cur = [i];
+      var best = i;
+      for (j = 1; j <= b.length; j++) {
+        cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1));
+        if (cur[j] < best) best = cur[j];
+      }
+      if (best > k) return false;
+      prev = cur;
+    }
+    return prev[b.length] <= k;
+  }
+
+  function matchEn(word, guess) {
+    var gt = enTokens(guess);
+    if (!gt.length) return 'miss';
+    var gk = gt.join('');
+    var names = [word.text].concat(word.alt || []);
+    var i;
+    for (i = 0; i < names.length; i++) {
+      if (enTokens(names[i]).join('') === gk) return 'hit';
+    }
+    /* 「很接近」：打錯一兩個字母、或猜中多字題目的一半以上單字、或只差一截 */
+    for (i = 0; i < names.length; i++) {
+      var nt = enTokens(names[i]);
+      var nk = nt.join('');
+      if (nk.length >= 4 && editWithin(gk, nk, nk.length >= 9 ? 2 : 1)) return 'close';
+      var content = nt.filter(function (t) { return !EN_STOP[t]; });
+      if (content.length >= 2) {
+        var pool = content.slice();
+        var shared = 0;
+        gt.forEach(function (t) {
+          var at = pool.indexOf(t);
+          if (at >= 0) { shared += 1; pool.splice(at, 1); }
+        });
+        if (shared >= Math.ceil(content.length / 2)) return 'close';
+      }
+      var lo = Math.min(gk.length, nk.length), hi = Math.max(gk.length, nk.length);
+      if (lo >= 4 && lo / hi >= 0.6 && (nk.indexOf(gk) >= 0 || gk.indexOf(nk) >= 0)) return 'close';
+    }
+    return 'miss';
+  }
+
+  /** 正規化玩家輸入：中文去掉空白、標點、全形轉半形；英文不分大小寫、忽略空白與標點、單複數 */
+  function normalize(text, lang) {
+    if (normLang(lang) === 'en') return enTokens(text).join('');
     var s = String(text === undefined || text === null ? '' : text);
     s = s.replace(/[\s　]+/g, '');
     s = s.replace(/[，。！？、,.!?~～·「」『』（）()\[\]【】:：;；"'`]/g, '');
@@ -1750,6 +1872,7 @@
 
   /** 猜測是否命中；回傳 'hit' | 'close' | 'miss' */
   function match(word, guess) {
+    if (word && word.lang === 'en') return matchEn(word, guess);
     var g = normalize(guess);
     if (!g) return 'miss';
     var names = [word.text].concat(word.alt || []);
@@ -1830,24 +1953,26 @@
     return out;
   }
 
-  /** 一題公開可見的部分（類別、字數）；答案本身永遠不在裡面 */
+  /** 一題公開可見的部分（分類代碼、字數）；答案本身永遠不在裡面。
+   *  分類與難度只給代碼，畫面依各自的語系翻成文字（cat.＊、diff.＊）。 */
   function publicInfo(word) {
     return {
       id: word.id,
       cat: word.cat,
-      catLabel: CATEGORIES[word.cat].label,
       catEmoji: CATEGORIES[word.cat].emoji,
       diff: word.diff,
-      diffLabel: DIFFICULTY[word.diff].label,
-      len: word.text.length
+      len: glyphCount(word)
     };
   }
 
-  /** 遮罩後的提示字串，例如「太○」 */
+  /** 遮罩後的提示字串。中文：「太＿」；英文：「_ _ _」每個字母一格，空白與連字號照樣顯示 */
   function maskOf(word, revealed) {
     var out = '';
+    var en = word.lang === 'en';
     for (var i = 0; i < word.text.length; i++) {
-      out += (revealed && revealed.indexOf(i) >= 0) ? word.text.charAt(i) : MASK_CHAR;
+      var ch = word.text.charAt(i);
+      if (en && !isGlyph(word, ch)) { out += ch; continue; }
+      out += (revealed && revealed.indexOf(i) >= 0) ? ch : (en ? '_' : MASK_CHAR);
     }
     return out;
   }
@@ -1860,6 +1985,11 @@
     DIFFICULTY: DIFFICULTY,
     LIST: LIST,
     byId: byId,
+    LANGS: LANGS,
+    normLang: normLang,
+    localize: localize,
+    revealable: revealable,
+    glyphCount: glyphCount,
     all: function () { return LIST.slice(); },
     inCategory: function (cat) { return LIST.filter(function (w) { return w.cat === cat; }); },
     strokesOf: strokesOf,

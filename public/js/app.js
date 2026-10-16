@@ -186,12 +186,12 @@
   function askLeaveGame() {
     var online = app.mode === 'online';
     askConfirm({
-      title: online ? '要離開這間房嗎？' : '要離開這一局嗎？',
-      text: online
-        ? '離開後你的座位會釋出，房間裡的對局會繼續進行。想再回來的話要重新從大廳加入。'
-        : '目前這一局的進度與分數不會保留。',
-      ok: online ? '離開房間' : '離開這一局',
-      cancel: online ? '留下來' : '繼續玩'
+      get title() { return online ? (globalThis.I18N ? globalThis.I18N.t("text.276") : "要離開這間房嗎？") : (globalThis.I18N ? globalThis.I18N.t("text.282") : "要離開這一局嗎？"); },
+      get text() { return online
+        ? (globalThis.I18N ? globalThis.I18N.t("text.281") : "離開後你的座位會釋出，房間裡的對局會繼續進行。想再回來的話要重新從大廳加入。")
+        : (globalThis.I18N ? globalThis.I18N.t("text.280") : "目前這一局的進度與分數不會保留。"); },
+      get ok() { return online ? (globalThis.I18N ? globalThis.I18N.t("text.104") : "離開房間") : (globalThis.I18N ? globalThis.I18N.t("text.279") : "離開這一局"); },
+      get cancel() { return online ? (globalThis.I18N ? globalThis.I18N.t("text.272") : "留下來") : (globalThis.I18N ? globalThis.I18N.t("text.278") : "繼續玩"); }
     }, function () {
       leaveGame(online ? 's-lobby' : 's-home');
     });
@@ -203,14 +203,14 @@
     var isHost = !!(v && v.you && v.you.isHost);
     var alone = !!(v && v.room && v.room.members && v.room.members.length <= 1);
     askConfirm({
-      title: isHost ? '要退出這間房嗎？' : '要離開這間房嗎？',
-      text: isHost
+      get title() { return isHost ? (globalThis.I18N ? globalThis.I18N.t("text.277") : "要退出這間房嗎？") : (globalThis.I18N ? globalThis.I18N.t("text.276") : "要離開這間房嗎？"); },
+      get text() { return isHost
         ? (alone
-          ? '房間裡只剩你，退出之後這間房會直接關掉，邀請連結也會失效。'
-          : '退出之後房主會交給下一位，房間會繼續留著。想再回來的話要重新從大廳加入。')
-        : '離開後你的座位會釋出，房間會繼續留著。想再回來的話要重新從大廳加入。',
-      ok: isHost ? '退出房間' : '離開房間',
-      cancel: '留下來'
+          ? (globalThis.I18N ? globalThis.I18N.t("text.275") : "房間裡只剩你，退出之後這間房會直接關掉，邀請連結也會失效。")
+          : (globalThis.I18N ? globalThis.I18N.t("text.274") : "退出之後房主會交給下一位，房間會繼續留著。想再回來的話要重新從大廳加入。"))
+        : (globalThis.I18N ? globalThis.I18N.t("text.273") : "離開後你的座位會釋出，房間會繼續留著。想再回來的話要重新從大廳加入。"); },
+      get ok() { return isHost ? (globalThis.I18N ? globalThis.I18N.t("text.105") : "退出房間") : (globalThis.I18N ? globalThis.I18N.t("text.104") : "離開房間"); },
+      get cancel() { return globalThis.I18N ? globalThis.I18N.t("text.272") : "留下來"; }
     }, function () {
       leaveGame('s-lobby');
     });
@@ -259,22 +259,22 @@
       Store.resetDefaults();
       applyDisplaySettings();
       syncSettingsUI();
-      toast('已恢復預設設定。', 'ok');
+      toast((globalThis.I18N ? globalThis.I18N.t("text.271") : "已恢復預設設定。"), 'ok');
     });
   }
 
   function setServerPill(state) {
     var pill = $('settings-server-pill');
-    var text = { unset: '未設定', invalid: '設定有誤', checking: '檢查中…', ok: '連得到', fail: '連不到' };
+    var text = { get unset() { return globalThis.I18N ? globalThis.I18N.t("text.270") : "未設定"; }, get invalid() { return globalThis.I18N ? globalThis.I18N.t("text.269") : "設定有誤"; }, get checking() { return globalThis.I18N ? globalThis.I18N.t("text.268") : "檢查中…"; }, get ok() { return globalThis.I18N ? globalThis.I18N.t("text.267") : "連得到"; }, get fail() { return globalThis.I18N ? globalThis.I18N.t("text.266") : "連不到"; } };
     pill.setAttribute('data-state', state);
     pill.textContent = text[state] || state;
   }
 
   function syncSettingsUI() {
     $('settings-music').checked = Sound.isMusicOn();
-    $('settings-music-status').textContent = Sound.isMusicOn() ? '開啟' : '靜音';
+    $('settings-music-status').textContent = Sound.isMusicOn() ? (globalThis.I18N ? globalThis.I18N.t("text.265") : "開啟") : (globalThis.I18N ? globalThis.I18N.t("text.264") : "靜音");
     $('settings-sfx').checked = Sound.isSfxOn();
-    $('settings-sfx-status').textContent = Sound.isSfxOn() ? '開啟' : '靜音';
+    $('settings-sfx-status').textContent = Sound.isSfxOn() ? (globalThis.I18N ? globalThis.I18N.t("text.265") : "開啟") : (globalThis.I18N ? globalThis.I18N.t("text.264") : "靜音");
     $('settings-music-volume').value = Math.round(Sound.getMusicVolume() * 100);
     $('settings-music-volume-value').textContent = Math.round(Sound.getMusicVolume() * 100) + '%';
     $('settings-sfx-volume').value = Math.round(Sound.getSfxVolume() * 100);
@@ -294,61 +294,54 @@
      ================================================================ */
 
   var TUTORIAL = [
-    { h: '這個遊戲在玩什麼', b:
-      '<p>大家輪流當「畫家」。輪到你當畫家時，你會從三個題目裡挑一個，把它畫在畫布上；其他人看著你的線條，把答案打進下面的猜題框。</p>' +
-      '<p>一局裡每個人都會當到畫家。全部畫完之後，分數最高的人獲勝。</p>' +
-      '<p>下一段會說明畫家可以用哪些工具。</p>' },
-    { h: '當畫家：小畫家式的工具列', b:
-      '<p>輪到你畫的時候，畫布下面會出現工具列，用法跟小畫家一樣：</p>' +
+    { get h() { return globalThis.I18N ? globalThis.I18N.t("text.263") : "這個遊戲在玩什麼"; }, get b() { return (globalThis.I18N ? globalThis.I18N.t("text.262") : "<p>大家輪流當「畫家」。輪到你當畫家時，你會從三個題目裡挑一個，把它畫在畫布上；其他人看著你的線條，把答案打進下面的猜題框。</p>") +
+      (globalThis.I18N ? globalThis.I18N.t("text.261") : "<p>一局裡每個人都會當到畫家。全部畫完之後，分數最高的人獲勝。</p>") +
+      (globalThis.I18N ? globalThis.I18N.t("text.260") : "<p>下一段會說明畫家可以用哪些工具。</p>"); } },
+    { get h() { return globalThis.I18N ? globalThis.I18N.t("text.259") : "當畫家：小畫家式的工具列"; }, get b() { return (globalThis.I18N ? globalThis.I18N.t("text.258") : "<p>輪到你畫的時候，畫布下面會出現工具列，用法跟小畫家一樣：</p>") +
       '<ul>' +
-      '<li><b>鉛筆</b>：按住拖曳就畫線，最常用。</li>' +
-      '<li><b>筆刷</b>：跟鉛筆一樣，但線比較粗。</li>' +
-      '<li><b>直線／矩形／橢圓</b>：從一點按住拖到另一點，放開才會定形。</li>' +
-      '<li><b>橡皮擦</b>：擦掉畫錯的地方。</li>' +
-      '<li><b>油漆桶</b>：點一下就把那一塊封閉區域填成目前的顏色。要先把輪廓連起來，不然顏色會流到整張紙。</li>' +
+      (globalThis.I18N ? globalThis.I18N.t("text.257") : "<li><b>鉛筆</b>：按住拖曳就畫線，最常用。</li>") +
+      (globalThis.I18N ? globalThis.I18N.t("text.256") : "<li><b>筆刷</b>：跟鉛筆一樣，但線比較粗。</li>") +
+      (globalThis.I18N ? globalThis.I18N.t("text.255") : "<li><b>直線／矩形／橢圓</b>：從一點按住拖到另一點，放開才會定形。</li>") +
+      (globalThis.I18N ? globalThis.I18N.t("text.254") : "<li><b>橡皮擦</b>：擦掉畫錯的地方。</li>") +
+      (globalThis.I18N ? globalThis.I18N.t("text.253") : "<li><b>油漆桶</b>：點一下就把那一塊封閉區域填成目前的顏色。要先把輪廓連起來，不然顏色會流到整張紙。</li>") +
       '</ul>' +
-      '<p>右邊還有<b>復原</b>、<b>重做</b>、<b>全部清除</b>。顏色和粗細在工具列上直接點選；矩形和橢圓可以勾「填滿」畫成實心。</p>' },
-    { h: '當畫家：不能做的事', b:
-      '<p>這個遊戲刻意<b>沒有文字工具，也沒有聊天室</b>——畫家沒有任何可以打字的地方，所以不可能把答案寫出來。</p>' +
-      '<p>線上房間裡，畫好了按<b>「畫完了」</b>——那只是告訴大家可以猜了，這一題還會繼續，你也還能補幾筆。（單機自己練習只有你一個人，沒有其他人要通知，看不到這顆鈕。）</p>' +
-      '<p>只能用線條和顏色表達。真的畫不出來就按<b>「跳過這題」</b>（單機時是「換題」，也可用右上角 🎮 的「跳過這一題」），會直接公布答案、換下一題。</p>' +
-      '<p>線上房間裡，畫得越多人猜中，你這一題拿的分數越高；全部人都猜中還有額外加分。</p>' },
-    { h: '當猜題者：把答案打進去', b:
-      '<p>輪到別人畫的時候，畫布下方會出現猜題框。想到什麼就直接打進去按「猜！」，答錯不扣分，可以一直猜。</p>' +
-      '<p>三種回應：</p>' +
+      (globalThis.I18N ? globalThis.I18N.t("text.252") : "<p>右邊還有<b>復原</b>、<b>重做</b>、<b>全部清除</b>。顏色和粗細在工具列上直接點選；矩形和橢圓可以勾「填滿」畫成實心。</p>"); } },
+    { get h() { return globalThis.I18N ? globalThis.I18N.t("text.251") : "當畫家：不能做的事"; }, get b() { return (globalThis.I18N ? globalThis.I18N.t("text.250") : "<p>這個遊戲刻意<b>沒有文字工具，也沒有聊天室</b>——畫家沒有任何可以打字的地方，所以不可能把答案寫出來。</p>") +
+      (globalThis.I18N ? globalThis.I18N.t("text.249") : "<p>線上房間裡，畫好了按<b>「畫完了」</b>——那只是告訴大家可以猜了，這一題還會繼續，你也還能補幾筆。（單機自己練習只有你一個人，沒有其他人要通知，看不到這顆鈕。）</p>") +
+      (globalThis.I18N ? globalThis.I18N.t("text.248") : "<p>只能用線條和顏色表達。真的畫不出來就按<b>「跳過這題」</b>（單機時是「換題」，也可用右上角 🎮 的「跳過這一題」），會直接公布答案、換下一題。</p>") +
+      (globalThis.I18N ? globalThis.I18N.t("text.247") : "<p>線上房間裡，畫得越多人猜中，你這一題拿的分數越高；全部人都猜中還有額外加分。</p>"); } },
+    { get h() { return globalThis.I18N ? globalThis.I18N.t("text.246") : "當猜題者：把答案打進去"; }, get b() { return (globalThis.I18N ? globalThis.I18N.t("text.245") : "<p>輪到別人畫的時候，畫布下方會出現猜題框。想到什麼就直接打進去按「猜！」，答錯不扣分，可以一直猜。</p>") +
+      (globalThis.I18N ? globalThis.I18N.t("text.244") : "<p>三種回應：</p>") +
       '<ul>' +
-      '<li><b>猜對了</b>：加分，而且你猜的內容不會被別人看到。</li>' +
-      '<li><b>很接近了</b>：猜中答案一半以上的字（兩個字的題目中一個、四個字的中兩個），這個提示只有你看得到。</li>' +
-      '<li><b>沒猜中</b>：會出現在操作摘要的「猜題紀錄」裡，讓大家知道這個答案已經有人試過了。</li>' +
+      (globalThis.I18N ? globalThis.I18N.t("text.243") : "<li><b>猜對了</b>：加分，而且你猜的內容不會被別人看到。</li>") +
+      (globalThis.I18N ? globalThis.I18N.t("text.242") : "<li><b>很接近了</b>：猜中答案一半以上的字（兩個字的題目中一個、四個字的中兩個），這個提示只有你看得到。</li>") +
+      (globalThis.I18N ? globalThis.I18N.t("text.241") : "<li><b>沒猜中</b>：會出現在操作摘要的「猜題紀錄」裡，讓大家知道這個答案已經有人試過了。</li>") +
       '</ul>' +
-      '<p>猜得越早、名次越前面，分數越高。</p>' },
-    { h: '題目提示怎麼看', b:
-      '<p>畫布上方那一條就是提示。提示不會自己出現，要等畫家按，而且依序給：</p>' +
+      (globalThis.I18N ? globalThis.I18N.t("text.240") : "<p>猜得越早、名次越前面，分數越高。</p>"); } },
+    { get h() { return globalThis.I18N ? globalThis.I18N.t("text.239") : "題目提示怎麼看"; }, get b() { return (globalThis.I18N ? globalThis.I18N.t("text.238") : "<p>畫布上方那一條就是提示。提示不會自己出現，要等畫家按，而且依序給：</p>") +
       '<ul>' +
-      '<li><b>字數</b>：答案有幾個字就出現幾條底線，例如 <b>＿＿</b>。</li>' +
-      '<li><b>種類</b>：題目的分類，例如動物、食物、台灣在地。</li>' +
-      '<li><b>一個字</b>：隨機翻開答案裡的其中一個字，例如 <b>＿陽</b>。只有一個字的題目沒有這張。</li>' +
+      (globalThis.I18N ? globalThis.I18N.t("text.237") : "<li><b>字數</b>：答案有幾個字就出現幾條底線，例如 <b>＿＿</b>。</li>") +
+      (globalThis.I18N ? globalThis.I18N.t("text.236") : "<li><b>種類</b>：題目的分類，例如動物、食物、台灣在地。</li>") +
+      (globalThis.I18N ? globalThis.I18N.t("text.235") : "<li><b>一個字</b>：隨機翻開答案裡的其中一個字，例如 <b>＿陽</b>。只有一個字的題目沒有這張。</li>") +
       '</ul>' +
-      '<p>右上角的倒數就是這一題剩下的時間。時間到、或所有人都猜中了，這一題就結束並公布答案。</p>' },
-    { h: '單機自己練習', b:
-      '<p>單機練習就你自己一個人，沒有電腦對手、也不計分，單純練習下筆用的。</p>' +
-      '<p>挑一個題目開始畫，畫完（或不想畫了）按「換題」就換下一題，想練幾次、每次想畫多久都能自己調整。</p>' +
-      '<p>因為只有你自己，猜題、提示、分數這些跟別人比賽的東西在單機裡都用不到，重點是練習下筆。</p>' },
-    { h: '線上一起玩', b:
-      '<p>在主選單按「線上對戰」可以開房間或用房號加入，2 到 8 個人都行（線上只有真人，沒有電腦對手）。</p>' +
-      '<p>房主可以在對局設定裡產生<b>邀請連結</b>，對方開啟後會先停在大廳確認暱稱，按下按鈕才會真的進房。</p>' +
-      '<p>位子滿了或對局已經開始時，新來的人會變成<b>觀戰者</b>：可以看畫、看紀錄，但不能畫也不能猜。</p>' +
-      '<p>右上角的 📋 打開操作摘要：目前階段、你能做什麼、比分，還有「猜題紀錄」——每一則猜題（含猜錯的）與對局事件都在那裡。房間裡沒有任何真人玩家時會立刻關閉。</p>' +
-      '<p>等待畫面的「房間設定」最下面有<b>離開房間</b>（房主是<b>退出房間</b>）：房主退出會把房主交給下一位，最後一個人退出房間就會關掉。</p>' }
+      (globalThis.I18N ? globalThis.I18N.t("text.234") : "<p>右上角的倒數就是這一題剩下的時間。時間到、或所有人都猜中了，這一題就結束並公布答案。</p>"); } },
+    { get h() { return globalThis.I18N ? globalThis.I18N.t("text.233") : "單機自己練習"; }, get b() { return (globalThis.I18N ? globalThis.I18N.t("text.232") : "<p>單機練習就你自己一個人，沒有電腦對手、也不計分，單純練習下筆用的。</p>") +
+      (globalThis.I18N ? globalThis.I18N.t("text.231") : "<p>挑一個題目開始畫，畫完（或不想畫了）按「換題」就換下一題，想練幾次、每次想畫多久都能自己調整。</p>") +
+      (globalThis.I18N ? globalThis.I18N.t("text.230") : "<p>因為只有你自己，猜題、提示、分數這些跟別人比賽的東西在單機裡都用不到，重點是練習下筆。</p>"); } },
+    { get h() { return globalThis.I18N ? globalThis.I18N.t("text.229") : "線上一起玩"; }, get b() { return (globalThis.I18N ? globalThis.I18N.t("text.228") : "<p>在主選單按「線上對戰」可以開房間或用房號加入，2 到 8 個人都行（線上只有真人，沒有電腦對手）。</p>") +
+      (globalThis.I18N ? globalThis.I18N.t("text.227") : "<p>房主可以在對局設定裡產生<b>邀請連結</b>，對方開啟後會先停在大廳確認暱稱，按下按鈕才會真的進房。</p>") +
+      (globalThis.I18N ? globalThis.I18N.t("text.226") : "<p>位子滿了或對局已經開始時，新來的人會變成<b>觀戰者</b>：可以看畫、看紀錄，但不能畫也不能猜。</p>") +
+      (globalThis.I18N ? globalThis.I18N.t("text.225") : "<p>右上角的 📋 打開操作摘要：目前階段、你能做什麼、比分，還有「猜題紀錄」——每一則猜題（含猜錯的）與對局事件都在那裡。房間裡沒有任何真人玩家時會立刻關閉。</p>") +
+      (globalThis.I18N ? globalThis.I18N.t("text.224") : "<p>等待畫面的「房間設定」最下面有<b>離開房間</b>（房主是<b>退出房間</b>）：房主退出會把房主交給下一位，最後一個人退出房間就會關掉。</p>"); } }
   ];
 
   var tutIndex = 0;
   function renderTutorial() {
     var t = TUTORIAL[tutIndex];
-    $('tut-progress').textContent = '第 ' + (tutIndex + 1) + ' 段 / 共 ' + TUTORIAL.length + ' 段';
+    $('tut-progress').textContent = (globalThis.I18N ? globalThis.I18N.t("text.162") : "第 ") + (tutIndex + 1) + (globalThis.I18N ? globalThis.I18N.t("text.223") : " 段 / 共 ") + TUTORIAL.length + (globalThis.I18N ? globalThis.I18N.t("text.222") : " 段");
     $('tut-box').innerHTML = '<h3>' + t.h + '</h3>' + t.b;
     $('b-tut-prev').disabled = tutIndex === 0;
-    S.setLabel($('b-tut-next'), tutIndex === TUTORIAL.length - 1 ? '看完了 ✓' : '下一段 ▶');
+    S.setLabel($('b-tut-next'), tutIndex === TUTORIAL.length - 1 ? (globalThis.I18N ? globalThis.I18N.t("text.221") : "看完了 ✓") : (globalThis.I18N ? globalThis.I18N.t("text.220") : "下一段 ▶"));
     $('tut-box').focus();
   }
 
@@ -375,14 +368,14 @@
     var s = Store.stats();
     var card = function (title, b) {
       return '<div class="statcard"><h3>' + title + '</h3>' +
-        '<div class="statrow"><span>玩過幾局</span><b>' + b.games + '</b></div>' +
-        '<div class="statrow"><span>拿第一</span><b>' + b.win + '</b></div>' +
-        '<div class="statrow"><span>總共猜對</span><b>' + b.correct + ' 題</b></div>' +
-        '<div class="statrow"><span>當過畫家</span><b>' + b.drawn + ' 次</b></div>' +
-        '<div class="statrow"><span>單局最高分</span><b>' + b.best + '</b></div>' +
+        (globalThis.I18N ? globalThis.I18N.t("text.219") : "<div class=\"statrow\"><span>玩過幾局</span><b>") + b.games + '</b></div>' +
+        (globalThis.I18N ? globalThis.I18N.t("text.218") : "<div class=\"statrow\"><span>拿第一</span><b>") + b.win + '</b></div>' +
+        (globalThis.I18N ? globalThis.I18N.t("text.217") : "<div class=\"statrow\"><span>總共猜對</span><b>") + b.correct + (globalThis.I18N ? globalThis.I18N.t("text.216") : " 題</b></div>") +
+        (globalThis.I18N ? globalThis.I18N.t("text.215") : "<div class=\"statrow\"><span>當過畫家</span><b>") + b.drawn + (globalThis.I18N ? globalThis.I18N.t("text.214") : " 次</b></div>") +
+        (globalThis.I18N ? globalThis.I18N.t("text.213") : "<div class=\"statrow\"><span>單局最高分</span><b>") + b.best + '</b></div>' +
         '</div>';
     };
-    $('statgrid').innerHTML = card('單機練習', s.solo) + card('線上對戰', s.online);
+    $('statgrid').innerHTML = card((globalThis.I18N ? globalThis.I18N.t("text.212") : "單機練習"), s.solo) + card((globalThis.I18N ? globalThis.I18N.t("text.211") : "線上對戰"), s.online);
   }
 
   /* ================================================================
@@ -409,13 +402,16 @@
     });
   }
 
-  function setupSoloScreen() {
+  function renderSoloOptions() {
     /* 單機只剩「題目難度」要選：練幾次、每題畫多久都不設限（見 startSolo） */
     buildChips('opt-worddiff', [
-      { value: 0, label: '混合' }, { value: 1, label: '簡單' },
-      { value: 2, label: '普通' }, { value: 3, label: '困難' }
+      { value: 0, get label() { return globalThis.I18N ? globalThis.I18N.t("text.119") : "混合"; } }, { value: 1, get label() { return globalThis.I18N ? globalThis.I18N.t("text.140") : "簡單"; } },
+      { value: 2, get label() { return globalThis.I18N ? globalThis.I18N.t("text.139") : "普通"; } }, { value: 3, get label() { return globalThis.I18N ? globalThis.I18N.t("text.138") : "困難"; } }
     ], Store.diff, Store.diff);
+  }
 
+  function setupSoloScreen() {
+    renderSoloOptions();
     $('b-solo-start').addEventListener('click', startSolo);
   }
 
@@ -424,12 +420,12 @@
      ================================================================ */
 
   function startSolo() {
-    var players = [{ id: ME, name: '你', ai: null }];
+    var players = [{ id: ME, get name() { return globalThis.I18N ? globalThis.I18N.t("text.166") : "你"; }, ai: null }];
     var seed = RNG.randomSeed(null, 6);
     /* 單機練習不設限：沒有別人在等，所以直接把引擎上限吃滿 ——
        練幾次、每題畫多久都不用先決定，練夠了直接離開就好。
        （引擎需要一個有限數字才跑得動，所以用 CONST 的極限值當「不設限」。） */
-    var state = Rules.createState({
+    var state = Rules.createState({ lang: w.I18N.lang,
       seed: seed,
       players: players,
       rounds: Rules.CONST.ROUNDS_MAX,
@@ -453,7 +449,7 @@
     app.lastMask = '';
     app.lastGuessedCount = 0;
     /* 不設限＝上限吃滿，寫出「畫 999 次」只會讓人困惑，直接講怎麼換題 */
-    pushFeed({ kind: 'system', from: '系統', text: '練習開始，想畫幾題就畫幾題，按「換題」換下一題。', at: Date.now() });
+    pushFeed({ kind: 'system', get from() { return globalThis.I18N ? globalThis.I18N.t("text.173") : "系統"; }, get text() { return globalThis.I18N ? globalThis.I18N.t("text.210") : "練習開始，想畫幾題就畫幾題，按「換題」換下一題。"; }, at: Date.now() });
 
     show('s-game');
     ensurePaint();
@@ -465,16 +461,28 @@
   }
 
   /** 把單機的完整狀態投影成跟線上一樣形狀的 view */
+
+  /** Project category codes into the current UI language without revealing hidden hints. */
+  function localizeGame(game) {
+    if (!game) return game;
+    if (game.hint) Object.defineProperty(game.hint, 'catLabel', { configurable: true, get: function () { return game.hint.cat ? w.I18N.t('category.' + game.hint.cat) : null; } });
+    (game.choices || []).forEach(function (choice) {
+      Object.defineProperty(choice, 'catLabel', { configurable: true, get: function () { return w.I18N.t('category.' + choice.cat); } });
+      Object.defineProperty(choice, 'diffLabel', { configurable: true, get: function () { return w.I18N.t('difficulty.' + choice.diff); } });
+    });
+    return game;
+  }
+
   function soloRefresh() {
     var st = app.solo.state;
     var wasDrawer = !!(app.view && app.view.game && app.view.game.you.isDrawer);
-    var game = Rules.toPublic(st, ME);
+    var game = localizeGame(Rules.toPublic(st, ME));
     app.view = {
       room: null,
       game: game,
       you: {
         id: ME,
-        name: '你',
+        get name() { return globalThis.I18N ? globalThis.I18N.t("text.166") : "你"; },
         role: 'player',
         ready: true,
         isHost: true,
@@ -519,26 +527,26 @@
 
   /** 提示要怎麼寫進猜題紀錄（單機與線上共用同一套措辭） */
   function hintFeedText(ev) {
-    if (ev.step === 1) return '畫家給了提示：題目有 ' + (ev.mask || '').length + ' 個字。';
-    if (ev.step === 2) return '畫家給了提示：題目的種類。';
-    return '畫家給了提示：' + (ev.mask || '');
+    if (ev.step === 1) return (globalThis.I18N ? globalThis.I18N.t("text.209") : "畫家給了提示：題目有 ") + (ev.mask || '').length + (globalThis.I18N ? globalThis.I18N.t("text.176") : " 個字。");
+    if (ev.step === 2) return (globalThis.I18N ? globalThis.I18N.t("text.208") : "畫家給了提示：題目的種類。");
+    return (globalThis.I18N ? globalThis.I18N.t("text.207") : "畫家給了提示：") + (ev.mask || '');
   }
 
   function handleGameEvents(events) {
     for (var i = 0; i < events.length; i++) {
       var ev = events[i];
       if (ev.type === 'autopick') {
-        pushFeed({ kind: 'system', from: '系統', text: '時間到，系統幫畫家挑了題目。', at: Date.now() });
+        pushFeed({ kind: 'system', get from() { return globalThis.I18N ? globalThis.I18N.t("text.173") : "系統"; }, get text() { return globalThis.I18N ? globalThis.I18N.t("text.206") : "時間到，系統幫畫家挑了題目。"; }, at: Date.now() });
       } else if (ev.type === 'hint') {
-        pushFeed({ kind: 'system', from: '系統', text: hintFeedText(ev), at: Date.now() });
+        pushFeed({ kind: 'system', get from() { return globalThis.I18N ? globalThis.I18N.t("text.173") : "系統"; }, text: hintFeedText(ev), at: Date.now() });
         Sound.play('hint');
       } else if (ev.type === 'turnend') {
         /* 單機自己練習沒有其他人猜題，total 會是 0——這時候不要顯示「0/0 人猜中」，
            畫完（或跳過）就直接換下一題。 */
         var turnendText = ev.entry.total > 0
-          ? '答案是「' + ev.entry.word + '」，' + ev.entry.correct + '/' + ev.entry.total + ' 人猜中。'
-          : '答案是「' + ev.entry.word + '」，換下一題。';
-        pushFeed({ kind: 'system', from: '系統', text: turnendText, at: Date.now() });
+          ? (globalThis.I18N ? globalThis.I18N.t("text.204") : "答案是「") + ev.entry.word + '」，' + ev.entry.correct + '/' + ev.entry.total + (globalThis.I18N ? globalThis.I18N.t("text.205") : " 人猜中。")
+          : (globalThis.I18N ? globalThis.I18N.t("text.204") : "答案是「") + ev.entry.word + (globalThis.I18N ? globalThis.I18N.t("text.203") : "」，換下一題。");
+        pushFeed({ kind: 'system', get from() { return globalThis.I18N ? globalThis.I18N.t("text.173") : "系統"; }, text: turnendText, at: Date.now() });
         Sound.play(ev.entry.correct > 0 ? 'turn' : 'timeup');
         if (app.paint) { app.paint.clearRedo(); }
       } else if (ev.type === 'turnstart') {
@@ -587,7 +595,7 @@
     if (hasSummary) {
       for (i = 0; i < v.room.summary.length; i++) {
         n = v.room.summary[i];
-        out.push({ at: n.at || 0, kind: n.kind || 'info', text: n.text });
+        out.push({ at: n.at || 0, kind: n.kind || 'info', text: n.key ? w.I18N.message(n.key, n.params) : n.text });
       }
     }
     for (i = 0; i < app.feed.length; i++) {
@@ -596,7 +604,7 @@
       out.push({
         at: m.at || 0,
         kind: m.kind === 'guess' ? 'guess' : (m.kind || 'info'),
-        text: m.kind === 'guess' ? (m.from + ' 猜「' + m.text + '」') : m.text,
+        get text() { return m.kind === 'guess' ? (m.from + (globalThis.I18N ? globalThis.I18N.t("text.202") : " 猜「") + m.text + '」') : m.text; },
         mine: !!(m.fromId && v && v.you && m.fromId === v.you.id)
       });
     }
@@ -653,8 +661,8 @@
         var v = app.view;
         if (!v || !v.game) return;
         toolHint(v.you && v.you.role === 'spectator'
-          ? '你是觀戰者，不能畫也不能猜。'
-          : (v.game.you.isDrawer ? '還不能畫，先挑一個題目。' : '現在不是你畫，換你猜猜看！'), 'error');
+          ? (globalThis.I18N ? globalThis.I18N.t("text.201") : "你是觀戰者，不能畫也不能猜。")
+          : (v.game.you.isDrawer ? (globalThis.I18N ? globalThis.I18N.t("text.200") : "還不能畫，先挑一個題目。") : (globalThis.I18N ? globalThis.I18N.t("text.199") : "現在不是你畫，換你猜猜看！")), 'error');
         Sound.play('blocked');
       }
     });
@@ -719,13 +727,13 @@
   var TOOL_ORDER = ['pen', 'brush', 'line', 'rect', 'ellipse', 'erase', 'fill'];
   var TOOL_ICON = { pen: 'pen', brush: 'brush', line: 'line', rect: 'rect', ellipse: 'ellipse', erase: 'erase', fill: 'fill' };
   var TOOL_TIP = {
-    pen: '鉛筆：按住拖曳畫線',
-    brush: '筆刷：比鉛筆粗一級',
-    line: '直線：按住拖到終點放開',
-    rect: '矩形：拖出對角線',
-    ellipse: '橢圓：拖出外框',
-    erase: '橡皮擦：擦掉畫錯的地方',
-    fill: '油漆桶：點一下填滿封閉區域'
+    get pen() { return globalThis.I18N ? globalThis.I18N.t("text.198") : "鉛筆：按住拖曳畫線"; },
+    get brush() { return globalThis.I18N ? globalThis.I18N.t("text.197") : "筆刷：比鉛筆粗一級"; },
+    get line() { return globalThis.I18N ? globalThis.I18N.t("text.196") : "直線：按住拖到終點放開"; },
+    get rect() { return globalThis.I18N ? globalThis.I18N.t("text.195") : "矩形：拖出對角線"; },
+    get ellipse() { return globalThis.I18N ? globalThis.I18N.t("text.194") : "橢圓：拖出外框"; },
+    get erase() { return globalThis.I18N ? globalThis.I18N.t("text.193") : "橡皮擦：擦掉畫錯的地方"; },
+    get fill() { return globalThis.I18N ? globalThis.I18N.t("text.192") : "油漆桶：點一下填滿封閉區域"; }
   };
 
   function buildToolbar() {
@@ -753,8 +761,8 @@
       b.setAttribute('role', 'radio');
       b.setAttribute('data-color-index', String(i));
       b.style.background = hex;
-      b.setAttribute('aria-label', '顏色 ' + (i + 1));
-      b.title = '顏色 ' + (i + 1);
+      b.setAttribute('aria-label', (globalThis.I18N ? globalThis.I18N.t("text.191") : "顏色 ") + (i + 1));
+      b.title = (globalThis.I18N ? globalThis.I18N.t("text.191") : "顏色 ") + (i + 1);
       b.addEventListener('click', function () {
         app.paint.setColor(i); Store.color(i); Sound.play('click'); syncToolbar();
       });
@@ -769,8 +777,8 @@
       b.className = 'widthbtn';
       b.setAttribute('role', 'radio');
       b.setAttribute('data-width-index', String(i));
-      b.setAttribute('aria-label', '筆寬 ' + (i + 1));
-      b.title = '筆寬 ' + (i + 1);
+      b.setAttribute('aria-label', (globalThis.I18N ? globalThis.I18N.t("text.190") : "筆寬 ") + (i + 1));
+      b.title = (globalThis.I18N ? globalThis.I18N.t("text.190") : "筆寬 ") + (i + 1);
       var dot = D.createElement('i');
       var size = Math.max(5, Math.round(px / 3.2));
       dot.style.width = size + 'px';
@@ -807,7 +815,7 @@
   }
 
   function drawingFilename(extension) {
-    return '你畫我猜-' + Rules.word(app.solo.state).text + extension;
+    return (globalThis.I18N ? globalThis.I18N.t("text.189") : "你畫我猜-") + Rules.word(app.solo.state).text + extension;
   }
 
   function downloadBlob(blob, filename) {
@@ -825,16 +833,16 @@
     if (!soloDrawingReady()) return;
     var text = w.DrawingFile.encode(app.solo.state);
     downloadBlob(new Blob([text], { type: 'application/json;charset=utf-8' }), drawingFilename('.drawguess.json'));
-    toast('作品存檔已送出下載，可用「載入」繼續編輯。', 'ok');
+    toast((globalThis.I18N ? globalThis.I18N.t("text.188") : "作品存檔已送出下載，可用「載入」繼續編輯。"), 'ok');
   }
 
   function downloadSoloImage() {
     if (!soloDrawingReady()) return;
     var filename = drawingFilename('.png');
     app.paint.toBlob(function (blob) {
-      if (!blob) { toast('圖片匯出失敗，請再試一次。', 'error'); return; }
+      if (!blob) { toast((globalThis.I18N ? globalThis.I18N.t("text.187") : "圖片匯出失敗，請再試一次。"), 'error'); return; }
       downloadBlob(blob, filename);
-      toast('PNG 圖片已送出下載。', 'ok');
+      toast((globalThis.I18N ? globalThis.I18N.t("text.186") : "PNG 圖片已送出下載。"), 'ok');
     });
   }
 
@@ -851,11 +859,11 @@
     var screen = app.screen, solo = app.solo;
     if (screen !== 's-solo' && !soloDrawingReady()) return;
     var reader = new FileReader();
-    reader.onerror = function () { toast('讀取檔案失敗，請再試一次。', 'error'); };
+    reader.onerror = function () { toast((globalThis.I18N ? globalThis.I18N.t("text.185") : "讀取檔案失敗，請再試一次。"), 'error'); };
     reader.onload = function () {
       if (app.screen !== screen || app.solo !== solo) return;
       var state;
-      try { state = w.DrawingFile.decode(reader.result, { id: ME, name: '你' }, Date.now()); }
+      try { state = w.DrawingFile.decode(reader.result, { id: ME, get name() { return globalThis.I18N ? globalThis.I18N.t("text.166") : "你"; } }, Date.now()); }
       catch (e) { toast(e.message, 'error'); return; }
       var replace = function () {
         if (app.screen !== screen || app.solo !== solo) return;
@@ -865,13 +873,13 @@
         app.paint.setStrokes(state.strokes);
         app.paint.clearRedo();
         soloRefresh();
-        toast('作品已載入，可以繼續畫。', 'ok');
+        toast((globalThis.I18N ? globalThis.I18N.t("text.184") : "作品已載入，可以繼續畫。"), 'ok');
       };
       if (screen === 's-game' && solo.state.strokes.length) {
         askConfirm({
-          title: '載入作品？',
-          text: '載入會取代目前畫布。尚未存檔的筆畫會被取代，請先存檔再載入。',
-          ok: '載入作品', cancel: '保留目前作品'
+          get title() { return globalThis.I18N ? globalThis.I18N.t("text.183") : "載入作品？"; },
+          get text() { return globalThis.I18N ? globalThis.I18N.t("text.182") : "載入會取代目前畫布。尚未存檔的筆畫會被取代，請先存檔再載入。"; },
+          get ok() { return globalThis.I18N ? globalThis.I18N.t("text.181") : "載入作品"; }, get cancel() { return globalThis.I18N ? globalThis.I18N.t("text.180") : "保留目前作品"; }
         }, replace);
       } else replace();
     };
@@ -905,7 +913,7 @@
     done.hidden = false;
     done.disabled = !drawing;
     var lbl = done.querySelector('.b3-lbl') || done;
-    lbl.textContent = '畫完了';
+    lbl.textContent = (globalThis.I18N ? globalThis.I18N.t("text.179") : "畫完了");
     skip.disabled = !drawing;
   }
 
@@ -951,7 +959,7 @@
 
   function doRedo() {
     var st = app.paint.popRedo();
-    if (!st) { toolHint('沒有可以重做的筆畫了。'); return; }
+    if (!st) { toolHint((globalThis.I18N ? globalThis.I18N.t("text.178") : "沒有可以重做的筆畫了。")); return; }
     sendStroke({ t: st.t, c: st.c, w: st.w, f: st.f, p: st.p.slice() });
     Sound.play('shape');
     syncToolbar();
@@ -985,10 +993,10 @@
   }
 
   function noteHint(r) {
-    var text = r.step === 1 ? '你給了提示：題目有 ' + r.mask.length + ' 個字。'
-      : r.step === 2 ? '你給了提示：題目的種類。'
-        : '你給了提示：' + r.mask;
-    pushFeed({ kind: 'system', from: '系統', text: text, at: Date.now() });
+    var text = r.step === 1 ? (globalThis.I18N ? globalThis.I18N.t("text.177") : "你給了提示：題目有 ") + r.mask.length + (globalThis.I18N ? globalThis.I18N.t("text.176") : " 個字。")
+      : r.step === 2 ? (globalThis.I18N ? globalThis.I18N.t("text.175") : "你給了提示：題目的種類。")
+        : (globalThis.I18N ? globalThis.I18N.t("text.174") : "你給了提示：") + r.mask;
+    pushFeed({ kind: 'system', get from() { return globalThis.I18N ? globalThis.I18N.t("text.173") : "系統"; }, text: text, at: Date.now() });
   }
 
   /**
@@ -1036,14 +1044,14 @@
       var r = Rules.guess(app.solo.state, ME, text, now);
       if (!r.ok) { toast(r.error, 'error'); Sound.play('blocked'); return; }
       if (r.verdict === 'hit') {
-        pushFeed({ kind: 'correct', from: '系統', text: '你猜對了！（第 ' + r.order + ' 個，+' + r.points + ' 分）', at: now });
+        pushFeed({ kind: 'correct', get from() { return globalThis.I18N ? globalThis.I18N.t("text.173") : "系統"; }, get text() { return (globalThis.I18N ? globalThis.I18N.t("text.172") : "你猜對了！（第 ") + r.order + (globalThis.I18N ? globalThis.I18N.t("text.171") : " 個，+") + r.points + (globalThis.I18N ? globalThis.I18N.t("text.170") : " 分）"); }, at: now });
         Sound.play('correct'); Sound.vibrate([12, 40, 12]);
-        toast('猜對了！+' + r.points + ' 分', 'ok');
+        toast((globalThis.I18N ? globalThis.I18N.t("text.169") : "猜對了！+") + r.points + (globalThis.I18N ? globalThis.I18N.t("text.168") : " 分"), 'ok');
       } else if (r.verdict === 'close') {
-        toast('「' + text + '」很接近了，再想一下！', 'ok');
+        toast('「' + text + (globalThis.I18N ? globalThis.I18N.t("text.167") : "」很接近了，再想一下！"), 'ok');
         Sound.play('close');
       } else {
-        pushFeed({ kind: 'guess', from: '你', fromId: ME, role: 'player', text: text, at: now });
+        pushFeed({ kind: 'guess', get from() { return globalThis.I18N ? globalThis.I18N.t("text.166") : "你"; }, fromId: ME, role: 'player', text: text, at: now });
         Sound.play('wrong');
       }
       soloRefresh();
@@ -1056,13 +1064,13 @@
      畫面渲染（單機與線上共用）
      ================================================================ */
 
-  var PHASE_LABEL = { picking: '選題目', drawing: '作畫中', reveal: '公布答案', over: '結算' };
+  var PHASE_LABEL = { get picking() { return globalThis.I18N ? globalThis.I18N.t("text.165") : "選題目"; }, get drawing() { return globalThis.I18N ? globalThis.I18N.t("text.150") : "作畫中"; }, get reveal() { return globalThis.I18N ? globalThis.I18N.t("text.164") : "公布答案"; }, get over() { return globalThis.I18N ? globalThis.I18N.t("text.163") : "結算"; } };
 
   /* 只顯示目前第幾題，不顯示「/ 總題數」：
      線上房間對局中可以一直有人中途加入，總題數在結束前其實還會變，
      顯示分母反而是誤導；單機沒有這回事，但兩邊乾脆都只看目前題號就好，簡單清楚。 */
   function turnLabel(g) {
-    return '第 ' + g.turnNo + ' 題';
+    return (globalThis.I18N ? globalThis.I18N.t("text.162") : "第 ") + g.turnNo + (globalThis.I18N ? globalThis.I18N.t("text.161") : " 題");
   }
 
   function render() {
@@ -1075,16 +1083,16 @@
     /* ---- 上排狀態 ---- */
     var phaseChip = $('phase-chip');
     if (closed) {
-      phaseChip.textContent = '房間已結束';
+      phaseChip.textContent = (globalThis.I18N ? globalThis.I18N.t("text.071") : "房間已結束");
       phaseChip.setAttribute('data-p', 'over');
     } else if (v.room && v.room.phase === 'waiting') {
-      phaseChip.textContent = '等待開始';
+      phaseChip.textContent = (globalThis.I18N ? globalThis.I18N.t("text.070") : "等待開始");
       phaseChip.setAttribute('data-p', 'picking');
     } else if (g) {
       phaseChip.textContent = PHASE_LABEL[g.phase] || g.phase;
       phaseChip.setAttribute('data-p', g.phase);
     }
-    $('round-chip').textContent = g ? turnLabel(g) : '尚未開始';
+    $('round-chip').textContent = g ? turnLabel(g) : (globalThis.I18N ? globalThis.I18N.t("text.160") : "尚未開始");
 
     updateTimers();
 
@@ -1098,28 +1106,28 @@
       var h = g.hint;
       wb.hidden = false;
       wb.setAttribute('data-mine', String(mine));
-      $('wordbar-label').textContent = mine ? '你要畫的是' : '題目';
+      $('wordbar-label').textContent = mine ? (globalThis.I18N ? globalThis.I18N.t("text.159") : "你要畫的是") : (globalThis.I18N ? globalThis.I18N.t("text.156") : "題目");
       /* 猜題者要等畫家按提示：還沒按就連幾個字都不知道 */
       $('wordbar-mask').textContent = (mine || g.answer) ? (g.answer || '')
         : (h.lenShown ? h.mask : '？');
       var meta = [];
       if (h.catShown) meta.push(h.catLabel);
-      if (h.lenShown) meta.push(h.len + ' 個字');
-      if (!mine && !h.lenShown && !h.catShown) meta.push('畫家還沒給提示');
-      if (!mine && h.revealed) meta.push('翻開了 1 個字');
+      if (h.lenShown) meta.push(h.len + (globalThis.I18N ? globalThis.I18N.t("text.158") : " 個字"));
+      if (!mine && !h.lenShown && !h.catShown) meta.push((globalThis.I18N ? globalThis.I18N.t("text.069") : "畫家還沒給提示"));
+      if (!mine && h.revealed) meta.push((globalThis.I18N ? globalThis.I18N.t("text.157") : "翻開了 1 個字"));
       meta.push(turnLabel(g));
       $('wordbar-meta').textContent = meta.join('・');
     } else {
       wb.hidden = false;
       wb.setAttribute('data-mine', 'false');
-      $('wordbar-label').textContent = '題目';
+      $('wordbar-label').textContent = (globalThis.I18N ? globalThis.I18N.t("text.156") : "題目");
       $('wordbar-mask').textContent = '—';
-      $('wordbar-meta').textContent = (g.phase === 'picking' ? '畫家正在挑題目…' : '等待開始') +
+      $('wordbar-meta').textContent = (g.phase === 'picking' ? (globalThis.I18N ? globalThis.I18N.t("text.155") : "畫家正在挑題目…") : (globalThis.I18N ? globalThis.I18N.t("text.070") : "等待開始")) +
         '・' + turnLabel(g);
     }
     /* 畫家斷線中：告訴大家不是當機，15 秒沒回來就會跳過這一題（伺服器算的） */
     if (v.room && v.room.drawerAwayUntil && !wb.hidden) {
-      $('wordbar-meta').textContent = '畫家斷線了，最多等 15 秒・' + $('wordbar-meta').textContent;
+      $('wordbar-meta').textContent = (globalThis.I18N ? globalThis.I18N.t("text.154") : "畫家斷線了，最多等 15 秒・") + $('wordbar-meta').textContent;
     }
 
     renderPlayers();
@@ -1142,20 +1150,20 @@
     if (app.mode === 'solo' && g.phase === 'drawing') {
       chip.hidden = false;
       chip.setAttribute('data-urgent', 'false');
-      $('timer-text').textContent = '不限時';
+      $('timer-text').textContent = (globalThis.I18N ? globalThis.I18N.t("text.153") : "不限時");
       var soloSum = $('sum-timer');
-      if (soloSum) soloSum.textContent = '不限時';
+      if (soloSum) soloSum.textContent = (globalThis.I18N ? globalThis.I18N.t("text.153") : "不限時");
       return;
     }
     var s = secsLeft(g.deadline);
     chip.hidden = false;
-    $('timer-text').textContent = s + ' 秒';
+    $('timer-text').textContent = s + (globalThis.I18N ? globalThis.I18N.t("text.152") : " 秒");
     /* 選題卡上的「N 秒內沒選…」也跟著倒數（卡片本身只在收到投影時才更新） */
     var ps = D.querySelector('#overlay-card .pick-secs');
     if (ps && ps.textContent !== String(s)) ps.textContent = s;
     chip.setAttribute('data-urgent', String(g.phase === 'drawing' && s <= 10));
     var sum = $('sum-timer');
-    if (sum) sum.textContent = s + ' 秒';
+    if (sum) sum.textContent = s + (globalThis.I18N ? globalThis.I18N.t("text.152") : " 秒");
   }
 
   function moodOf(p, g) {
@@ -1166,10 +1174,10 @@
   }
 
   function stateOf(p, g) {
-    if (p.isDrawer) return g.phase === 'picking' ? '選題目中' : '作畫中';
-    if (p.guessed) return '已猜中';
-    if (g.phase === 'drawing') return p.wrong ? ('猜了 ' + p.wrong + ' 次') : '思考中';
-    return p.ai ? '電腦' : '等待中';
+    if (p.isDrawer) return g.phase === 'picking' ? (globalThis.I18N ? globalThis.I18N.t("text.151") : "選題目中") : (globalThis.I18N ? globalThis.I18N.t("text.150") : "作畫中");
+    if (p.guessed) return (globalThis.I18N ? globalThis.I18N.t("text.149") : "已猜中");
+    if (g.phase === 'drawing') return p.wrong ? ((globalThis.I18N ? globalThis.I18N.t("text.148") : "猜了 ") + p.wrong + (globalThis.I18N ? globalThis.I18N.t("text.147") : " 次")) : (globalThis.I18N ? globalThis.I18N.t("text.146") : "思考中");
+    return p.ai ? (globalThis.I18N ? globalThis.I18N.t("text.145") : "電腦") : (globalThis.I18N ? globalThis.I18N.t("text.008") : "等待中");
   }
 
   function renderPlayers() {
@@ -1204,9 +1212,9 @@
     if (!v.room || v.room.phase !== 'waiting') app.ruleMenuOpen = null;
 
     if (v.room && v.room.closed) {
-      html = '<h3>房間已經結束</h3><p>' + esc(v.room.closedReason || '房間裡已經沒有玩家了。') + '</p>' +
-        '<div class="overlay-btns"><button class="btn3d" data-color="grape" data-act="lobby">回大廳</button>' +
-        '<button class="btn3d small" data-color="cream" data-act="home">回主選單</button></div>';
+      html = (globalThis.I18N ? globalThis.I18N.t("text.144") : "<h3>房間已經結束</h3><p>") + esc(w.I18N.message(v.room.closedReason) || (globalThis.I18N ? globalThis.I18N.t("text.143") : "房間裡已經沒有玩家了。")) + '</p>' +
+        (globalThis.I18N ? globalThis.I18N.t("text.142") : "<div class=\"overlay-btns\"><button class=\"btn3d\" data-color=\"grape\" data-act=\"lobby\">回大廳</button>") +
+        (globalThis.I18N ? globalThis.I18N.t("text.141") : "<button class=\"btn3d small\" data-color=\"cream\" data-act=\"home\">回主選單</button></div>");
     } else if (v.room && v.room.phase === 'waiting') {
       html = roomSetupHtml(v);
     } else if (g && g.phase === 'picking') {
@@ -1330,8 +1338,8 @@
   var ROUND_CHOICES = [1, 2, 3, 4, 5];
   var SEC_CHOICES = [60, 90, 120];
   var DIFF_CHOICES = [
-    { v: 0, label: '混合' }, { v: 1, label: '簡單' },
-    { v: 2, label: '普通' }, { v: 3, label: '困難' }
+    { v: 0, get label() { return globalThis.I18N ? globalThis.I18N.t("text.119") : "混合"; } }, { v: 1, get label() { return globalThis.I18N ? globalThis.I18N.t("text.140") : "簡單"; } },
+    { v: 2, get label() { return globalThis.I18N ? globalThis.I18N.t("text.139") : "普通"; } }, { v: 3, get label() { return globalThis.I18N ? globalThis.I18N.t("text.138") : "困難"; } }
   ];
   function chips(act, list, current) {
     return '<div class="chiprow">' + list.map(function (o) {
@@ -1413,7 +1421,7 @@
 
   function openRoomCreate() {
     app.roomCreate = {
-      roomName: (Store.nick() || '大家') + ' 的房間',
+      get roomName() { return (Store.nick() || (globalThis.I18N ? globalThis.I18N.t("text.137") : "大家")) + (globalThis.I18N ? globalThis.I18N.t("text.136") : " 的房間"); },
       rounds: 2,
       drawSec: 90,
       diff: 0
@@ -1424,17 +1432,17 @@
 
   function createRoomFromSettings() {
     var c = app.roomCreate;
-    var roomName = $('lobby-room-name').value.trim().slice(0, 16) || '畫畫小房間';
+    var roomName = $('lobby-room-name').value.trim().slice(0, 16) || (globalThis.I18N ? globalThis.I18N.t("text.135") : "畫畫小房間");
     c.roomName = roomName;
     saveNick($('lobby-nick'));
     $('room-create-submit').disabled = true;
     w.Online.send('room:create', {
       name: Store.ensureNick(),
       roomName: roomName,
-      settings: { rounds: c.rounds, drawSec: c.drawSec, diff: c.diff }
+      settings: { wordLang: w.I18N.lang, rounds: c.rounds, drawSec: c.drawSec, diff: c.diff }
     }, function (res) {
       $('room-create-submit').disabled = false;
-      if (!res || !res.ok) return toast((res && res.error) || '開房失敗。', 'error');
+      if (!res || !res.ok) return toast((res && w.I18N.message(res.error, res.params)) || (globalThis.I18N ? globalThis.I18N.t("text.134") : "開房失敗。"), 'error');
       roomCreateModal.close();
       enterOnlineRoom(res.code);
     });
@@ -1451,12 +1459,12 @@
         '<b class="chatfrom">' + esc(c.from) + '</b>' +
         '<span class="chattext">' + esc(c.text) + '</span></li>';
     }).join('');
-    return '<div class="setupblock chatblock"><h4>聊天室</h4>' +
+    return (globalThis.I18N ? globalThis.I18N.t("text.133") : "<div class=\"setupblock chatblock\"><h4>聊天室</h4>") +
       '<ol class="chatlist" id="chat-list">' +
-      (chatMsgs || '<li class="chatempty">' + (v.room.phase === 'finished' ? '聊聊剛剛那一局吧！' : '開始之前先聊聊吧！') + '</li>') + '</ol>' +
-      '<div class="chatrow"><label class="sr-only" for="chat-input">聊天訊息</label>' +
-      '<input id="chat-input" maxlength="200" autocomplete="off" enterkeyhint="send" placeholder="說點什麼…">' +
-      '<button type="button" class="btn3d small" data-color="sky" data-act="chat-send">送出</button></div></div>';
+      (chatMsgs || '<li class="chatempty">' + (v.room.phase === 'finished' ? (globalThis.I18N ? globalThis.I18N.t("text.132") : "聊聊剛剛那一局吧！") : (globalThis.I18N ? globalThis.I18N.t("text.131") : "開始之前先聊聊吧！")) + '</li>') + '</ol>' +
+      (globalThis.I18N ? globalThis.I18N.t("text.130") : "<div class=\"chatrow\"><label class=\"sr-only\" for=\"chat-input\">聊天訊息</label>") +
+      (globalThis.I18N ? globalThis.I18N.t("text.129") : "<input id=\"chat-input\" maxlength=\"200\" autocomplete=\"off\" enterkeyhint=\"send\" placeholder=\"說點什麼…\">") +
+      (globalThis.I18N ? globalThis.I18N.t("text.128") : "<button type=\"button\" class=\"btn3d small\" data-color=\"sky\" data-act=\"chat-send\">送出</button></div></div>");
   }
 
   function roomSetupHtml(v) {
@@ -1467,7 +1475,7 @@
       if (m.role !== 'player') continue;
       seats += '<div class="seatrow' + (m.ready ? ' ready' : '') + '">' +
         '<span class="sface" aria-hidden="true">' + S.face(i, m.ready ? 'happy' : 'idle') + '</span>' +
-        '<span class="seatname">' + esc(m.name) + (m.host ? '（房主）' : '') + (m.ready ? ' ✓' : '') + '</span></div>';
+        '<span class="seatname">' + esc(m.name) + (m.host ? (globalThis.I18N ? globalThis.I18N.t("text.127") : "（房主）") : '') + (m.ready ? ' ✓' : '') + '</span></div>';
     }
     var specs = r.members.filter(function (x) { return x.role === 'spectator'; });
     var host = v.you.can.setSettings;
@@ -1475,17 +1483,17 @@
     /* ---- 遊戲規則 ---- */
     var rules;
     if (host) {
-      rules = '<div class="setupblock"><h4>遊戲規則</h4>' +
+      rules = (globalThis.I18N ? globalThis.I18N.t("text.123") : "<div class=\"setupblock\"><h4>遊戲規則</h4>") +
         '<div class="rules-row">' +
-        '<div class="rule-field"><span>畫幾次</span>' + ruleDropdown('set-rounds', ROUND_CHOICES, r.settings.rounds) + '</div>' +
-        '<div class="rule-field"><span>秒數</span>' + ruleDropdown('set-drawsec', SEC_CHOICES, r.settings.drawSec) + '</div>' +
-        '<div class="rule-field"><span>題型</span>' + ruleDropdown('set-diff', DIFF_CHOICES, r.settings.diff) + '</div>' +
+        (globalThis.I18N ? globalThis.I18N.t("text.126") : "<div class=\"rule-field\"><span>畫幾次</span>") + ruleDropdown('set-rounds', ROUND_CHOICES, r.settings.rounds) + '</div>' +
+        (globalThis.I18N ? globalThis.I18N.t("text.125") : "<div class=\"rule-field\"><span>秒數</span>") + ruleDropdown('set-drawsec', SEC_CHOICES, r.settings.drawSec) + '</div>' +
+        (globalThis.I18N ? globalThis.I18N.t("text.124") : "<div class=\"rule-field\"><span>題型</span>") + ruleDropdown('set-diff', DIFF_CHOICES, r.settings.diff) + '</div>' +
         '</div></div>';
     } else {
       var dl = DIFF_CHOICES.filter(function (d) { return d.v === r.settings.diff; })[0];
-      rules = '<div class="setupblock"><h4>遊戲規則</h4>' +
-        '<p class="setupnote">每人畫 ' + r.settings.rounds + ' 次・每題 ' + r.settings.drawSec + ' 秒・' +
-        esc(dl ? dl.label : '混合') + '難度（由房主決定）</p></div>';
+      rules = (globalThis.I18N ? globalThis.I18N.t("text.123") : "<div class=\"setupblock\"><h4>遊戲規則</h4>") +
+        (globalThis.I18N ? globalThis.I18N.t("text.122") : "<p class=\"setupnote\">每人畫 ") + r.settings.rounds + (globalThis.I18N ? globalThis.I18N.t("text.121") : " 次・每題 ") + r.settings.drawSec + (globalThis.I18N ? globalThis.I18N.t("text.120") : " 秒・") +
+        esc(dl ? dl.label : (globalThis.I18N ? globalThis.I18N.t("text.119") : "混合")) + (globalThis.I18N ? globalThis.I18N.t("text.118") : "難度（由房主決定）</p></div>");
     }
 
     /* ---- 邀請連結 ----
@@ -1496,14 +1504,14 @@
        這一區矮下來。 */
     var invite = '';
     if (v.you.can.invite) {
-      invite = '<div class="setupblock"><h4>邀請朋友</h4>' +
-        '<div class="inviterow"><label class="sr-only" for="invite-url">邀請連結</label>' +
-        '<input id="invite-url" readonly placeholder="按「產生連結」" value="' + esc(app.inviteUrl) + '">' +
-        '<button type="button" class="pillbtn" data-act="invite-new">產生連結</button>' +
-        '<button type="button" class="pillbtn" data-act="invite-copy"' + (app.inviteUrl ? '' : ' disabled') + '>複製</button>' +
-        '<button type="button" class="pillbtn" data-act="invite-revoke"' + (app.inviteToken ? '' : ' disabled') + '>撤銷</button>' +
+      invite = (globalThis.I18N ? globalThis.I18N.t("text.117") : "<div class=\"setupblock\"><h4>邀請朋友</h4>") +
+        (globalThis.I18N ? globalThis.I18N.t("text.116") : "<div class=\"inviterow\"><label class=\"sr-only\" for=\"invite-url\">邀請連結</label>") +
+        (globalThis.I18N ? globalThis.I18N.t("text.115") : "<input id=\"invite-url\" readonly placeholder=\"按「產生連結」\" value=\"") + esc(app.inviteUrl) + '">' +
+        (globalThis.I18N ? globalThis.I18N.t("text.114") : "<button type=\"button\" class=\"pillbtn\" data-act=\"invite-new\">產生連結</button>") +
+        '<button type="button" class="pillbtn" data-act="invite-copy"' + (app.inviteUrl ? '' : ' disabled') + (globalThis.I18N ? globalThis.I18N.t("text.113") : ">複製</button>") +
+        '<button type="button" class="pillbtn" data-act="invite-revoke"' + (app.inviteToken ? '' : ' disabled') + (globalThis.I18N ? globalThis.I18N.t("text.112") : ">撤銷</button>") +
         '</div>' +
-        '<p class="setupnote">60 分鐘內有效・最多 20 人次・對方自己選身分</p></div>';
+        (globalThis.I18N ? globalThis.I18N.t("text.111") : "<p class=\"setupnote\">60 分鐘內有效・最多 20 人次・對方自己選身分</p></div>");
     }
 
     /* ---- 聊天室 ----
@@ -1518,28 +1526,28 @@
     var btns = '';
     if (v.you.isHost) {
       btns += '<button class="btn3d" data-color="grape" data-act="start"' +
-        (v.you.can.start ? '' : ' disabled') + '>開始！</button>';
+        (v.you.can.start ? '' : ' disabled') + (globalThis.I18N ? globalThis.I18N.t("text.110") : ">開始！</button>");
     } else if (v.you.role === 'player') {
       btns += '<button class="btn3d" data-color="' + (v.you.ready ? 'lemon' : 'mint') + '" data-act="ready">' +
-        (v.you.ready ? '取消準備' : '準備好了 ✓') + '</button>';
+        (v.you.ready ? (globalThis.I18N ? globalThis.I18N.t("text.109") : "取消準備") : (globalThis.I18N ? globalThis.I18N.t("text.108") : "準備好了 ✓")) + '</button>';
     }
-    if (v.you.can.becomePlayer) btns += '<button class="btn3d" data-color="mint" data-act="become-player">下場一起玩</button>';
-    if (v.you.can.becomeSpectator) btns += '<button class="btn3d small sub" data-color="cream" data-act="become-spectator">改成觀戰</button>';
+    if (v.you.can.becomePlayer) btns += (globalThis.I18N ? globalThis.I18N.t("text.107") : "<button class=\"btn3d\" data-color=\"mint\" data-act=\"become-player\">下場一起玩</button>");
+    if (v.you.can.becomeSpectator) btns += (globalThis.I18N ? globalThis.I18N.t("text.106") : "<button class=\"btn3d small sub\" data-color=\"cream\" data-act=\"become-spectator\">改成觀戰</button>");
     /* 進來之後要走得掉：房主退出會把房主交給下一位，最後一個人退出房間就關掉 */
     btns += '<button class="btn3d small sub" data-color="peach" data-act="leave-room">' +
-      (v.you.isHost ? '退出房間' : '離開房間') + '</button>';
+      (v.you.isHost ? (globalThis.I18N ? globalThis.I18N.t("text.105") : "退出房間") : (globalThis.I18N ? globalThis.I18N.t("text.104") : "離開房間")) + '</button>';
 
     /* 房號跟「x / y 位玩家」以前各佔一行；席位卡本身就數得出人數，
        那行字拿掉、房號也縮小，卡片才有地方放下面新的聊天室。
        內容分成兩欄（.setup-col）：寬螢幕並排（左：房號、名單、規則；右：邀請、聊天室），
        一個畫面就看得完不用捲；窄螢幕兩欄上下接著排，跟以前一樣是一欄。 */
-    return '<h3>房間設定</h3>' +
+    return (globalThis.I18N ? globalThis.I18N.t("text.103") : "<h3>房間設定</h3>") +
       '<div class="setup-cols"><div class="setup-col">' +
-      '<div class="roomcode"><b>' + esc(r.code) + '</b><span>把房號唸給朋友，或用邀請連結</span></div>' +
-      '<div class="seatlist">' + (seats || '<div class="seatrow">還沒有人入座</div>') +
-      (specs.length ? '<div class="seatrow spec">👀 ' + specs.length + ' 位觀戰</div>' : '') + '</div>' +
+      '<div class="roomcode"><b>' + esc(r.code) + (globalThis.I18N ? globalThis.I18N.t("text.102") : "</b><span>把房號唸給朋友，或用邀請連結</span></div>") +
+      '<div class="seatlist">' + (seats || (globalThis.I18N ? globalThis.I18N.t("text.101") : "<div class=\"seatrow\">還沒有人入座</div>")) +
+      (specs.length ? '<div class="seatrow spec">👀 ' + specs.length + (globalThis.I18N ? globalThis.I18N.t("text.100") : " 位觀戰</div>") : '') + '</div>' +
       rules + '</div><div class="setup-col">' + invite + chatHtml + '</div></div>' +
-      (v.you.can.start ? '' : '<p class="setup-blocked">' + esc(v.you.can.startBlockedBy || '等房主按開始。') + '</p>') +
+      (v.you.can.start ? '' : '<p class="setup-blocked">' + esc(v.you.can.startBlockedBy || (globalThis.I18N ? globalThis.I18N.t("text.099") : "等房主按開始。")) + '</p>') +
       '<div class="overlay-btns">' + btns + '</div>';
   }
 
@@ -1549,18 +1557,18 @@
         return '<button class="wordchoice" data-act="pick" data-word="' + esc(c.id) + '">' +
           '<b>' + esc(c.text) + '</b><span class="s">' + esc(c.catLabel) + '・' + esc(c.diffLabel) + '</span></button>';
       }).join('');
-      return '<h3>挑一個來畫</h3>' + (g.unlimited
-        ? '<p>不限時間，慢慢挑。</p>'
-        : '<p><b class="pick-secs">' + secsLeft(g.deadline) + '</b> 秒內沒選的話，系統會幫你挑第一個。</p>') +
+      return (globalThis.I18N ? globalThis.I18N.t("text.098") : "<h3>挑一個來畫</h3>") + (g.unlimited
+        ? (globalThis.I18N ? globalThis.I18N.t("text.097") : "<p>不限時間，慢慢挑。</p>")
+        : '<p><b class="pick-secs">' + secsLeft(g.deadline) + (globalThis.I18N ? globalThis.I18N.t("text.096") : "</b> 秒內沒選的話，系統會幫你挑第一個。</p>")) +
         '<div class="wordchoices">' + cards + '</div>';
     }
     var drawer = drawerName(g);
-    return '<h3>' + esc(drawer) + ' 正在挑題目</h3><p>準備好了嗎？等一下就要開始猜囉。</p>';
+    return '<h3>' + esc(drawer) + (globalThis.I18N ? globalThis.I18N.t("text.095") : " 正在挑題目</h3><p>準備好了嗎？等一下就要開始猜囉。</p>");
   }
 
   function drawerName(g) {
     for (var i = 0; i < g.players.length; i++) if (g.players[i].isDrawer) return g.players[i].name;
-    return '畫家';
+    return (globalThis.I18N ? globalThis.I18N.t("text.094") : "畫家");
   }
 
   function revealHtml(g) {
@@ -1573,22 +1581,22 @@
           '<span class="rname">' + esc(gg.name) + '</span><span class="rpts">+' + gg.points + '</span></li>';
       }
       rows += '<li><span class="rface" aria-hidden="true">' + S.face(7, last.drawerPoints > 0 ? 'happy' : 'sad') + '</span>' +
-        '<span class="rname">' + esc(last.drawerName) + '（畫家）</span>' +
+        '<span class="rname">' + esc(last.drawerName) + (globalThis.I18N ? globalThis.I18N.t("text.093") : "（畫家）</span>") +
         '<span class="rpts">+' + last.drawerPoints + '</span></li>';
     }
     /* 單機練習只有自己：不用列「你（畫家）+0」這種比分，公布答案就好，
        想馬上畫下一題可以直接按「下一題」，不用等倒數。 */
     if (app.mode === 'solo') {
-      return '<h3>答案是</h3><div class="revealword">' + esc(g.answer || (last ? last.word : '—')) + '</div>' +
-        '<div class="overlay-btns"><button class="btn3d" data-color="mint" data-act="solo-next">下一題</button></div>';
+      return (globalThis.I18N ? globalThis.I18N.t("text.089") : "<h3>答案是</h3><div class=\"revealword\">") + esc(g.answer || (last ? last.word : '—')) + '</div>' +
+        (globalThis.I18N ? globalThis.I18N.t("text.092") : "<div class=\"overlay-btns\"><button class=\"btn3d\" data-color=\"mint\" data-act=\"solo-next\">下一題</button></div>");
     }
     /* 單機自己練習沒有其他人猜題（total===0），不顯示「0 / 0 人猜中」；
        換下一位畫家的措辭在單機也怪（永遠是同一個你），改成「換下一題」。 */
-    var subline = last ? (last.total > 0 ? (last.correct + ' / ' + last.total + ' 人猜中') : '練習完成') : '';
-    return '<h3>答案是</h3><div class="revealword">' + esc(g.answer || (last ? last.word : '—')) + '</div>' +
+    var subline = last ? (last.total > 0 ? (last.correct + ' / ' + last.total + (globalThis.I18N ? globalThis.I18N.t("text.091") : " 人猜中")) : (globalThis.I18N ? globalThis.I18N.t("text.090") : "練習完成")) : '';
+    return (globalThis.I18N ? globalThis.I18N.t("text.089") : "<h3>答案是</h3><div class=\"revealword\">") + esc(g.answer || (last ? last.word : '—')) + '</div>' +
       '<p>' + subline + '</p>' +
-      '<ul class="resultlist">' + (rows || '<li><span class="rname">這一題沒有人猜中</span></li>') + '</ul>' +
-      '<p>' + (app.mode === 'solo' ? '馬上出下一題…' : '馬上換下一位畫家…') + '</p>';
+      '<ul class="resultlist">' + (rows || (globalThis.I18N ? globalThis.I18N.t("text.088") : "<li><span class=\"rname\">這一題沒有人猜中</span></li>")) + '</ul>' +
+      '<p>' + (app.mode === 'solo' ? (globalThis.I18N ? globalThis.I18N.t("text.087") : "馬上出下一題…") : (globalThis.I18N ? globalThis.I18N.t("text.086") : "馬上換下一位畫家…")) + '</p>';
   }
 
   function overHtml(v, g) {
@@ -1598,21 +1606,21 @@
       return '<li class="' + (win ? 'win' : '') + '">' +
         '<span class="rface" aria-hidden="true">' + S.face(indexOfPlayer(g, p.id), win ? 'win' : 'sad') + '</span>' +
         '<span class="rname">' + (win ? '🏆 ' : (i + 1) + '. ') + esc(p.name) + '</span>' +
-        '<span class="rpts">' + p.score + ' 分</span></li>';
+        '<span class="rpts">' + p.score + (globalThis.I18N ? globalThis.I18N.t("text.085") : " 分</span></li>");
     }).join('');
     /* 線上：結算完由房主按「回房間」，大家回到等待畫面（可以聊天、改規則、重新準備）再開一局；
        不再是全員投票直接開新局（有一個人掛機就全部卡住）。單機維持「再玩一局」。 */
     var btns = '';
     var note = '';
     if (app.mode === 'online') {
-      if (v.you.can.returnToRoom) btns += '<button class="btn3d" data-color="mint" data-act="return-room">回房間</button>';
-      else note = '<p>等房主帶大家回房間，就能再開一局。</p>';
-      btns += '<button class="btn3d small sub" data-color="cream" data-act="lobby">回大廳</button>';
+      if (v.you.can.returnToRoom) btns += (globalThis.I18N ? globalThis.I18N.t("text.084") : "<button class=\"btn3d\" data-color=\"mint\" data-act=\"return-room\">回房間</button>");
+      else note = (globalThis.I18N ? globalThis.I18N.t("text.083") : "<p>等房主帶大家回房間，就能再開一局。</p>");
+      btns += (globalThis.I18N ? globalThis.I18N.t("text.082") : "<button class=\"btn3d small sub\" data-color=\"cream\" data-act=\"lobby\">回大廳</button>");
     } else {
-      if (v.you.can.rematch) btns += '<button class="btn3d" data-color="mint" data-act="rematch">再玩一局</button>';
-      btns += '<button class="btn3d small" data-color="cream" data-act="home">回主選單</button>';
+      if (v.you.can.rematch) btns += (globalThis.I18N ? globalThis.I18N.t("text.081") : "<button class=\"btn3d\" data-color=\"mint\" data-act=\"rematch\">再玩一局</button>");
+      btns += (globalThis.I18N ? globalThis.I18N.t("text.080") : "<button class=\"btn3d small\" data-color=\"cream\" data-act=\"home\">回主選單</button>");
     }
-    return '<h3>結算</h3><ul class="resultlist">' + rows + '</ul>' + note +
+    return (globalThis.I18N ? globalThis.I18N.t("text.079") : "<h3>結算</h3><ul class=\"resultlist\">") + rows + '</ul>' + note +
       (app.mode === 'online' ? chatBlockHtml(v) : '') +
       '<div class="overlay-btns">' + btns + '</div>';
   }
@@ -1774,8 +1782,8 @@
       var guessed = g && g.you.guessed;
       input.disabled = !canGuess;
       $('b-guess').disabled = !canGuess;
-      input.placeholder = guessed ? '你已經猜對了，等其他人…'
-        : (g && g.phase === 'drawing' ? '猜猜看這是什麼？' : '等畫家開始畫…');
+      input.placeholder = guessed ? (globalThis.I18N ? globalThis.I18N.t("text.078") : "你已經猜對了，等其他人…")
+        : (g && g.phase === 'drawing' ? (globalThis.I18N ? globalThis.I18N.t("text.077") : "猜猜看這是什麼？") : (globalThis.I18N ? globalThis.I18N.t("text.076") : "等畫家開始畫…"));
     }
   }
 
@@ -1803,19 +1811,19 @@
       b.setAttribute('aria-pressed', String(!!st.done));
     }
     $('hintrow-note').textContent = g.hint.step >= g.hint.total
-      ? (g.hint.total < 3 ? '單字題沒有「一個字」這張提示。' : '提示都給完了。')
-      : '按下去就公開給所有人，收不回來。';
+      ? (g.hint.total < 3 ? (globalThis.I18N ? globalThis.I18N.t("text.075") : "單字題沒有「一個字」這張提示。") : (globalThis.I18N ? globalThis.I18N.t("text.074") : "提示都給完了。"))
+      : (globalThis.I18N ? globalThis.I18N.t("text.073") : "按下去就公開給所有人，收不回來。");
   }
 
   /* ------------------------------------------------------ 左側摘要 */
 
   function renderAside() {
     var v = app.view, g = v.game;
-    var youRole = v.you.role === 'spectator' ? '觀戰者'
-      : (g && g.you.isDrawer ? '這一題的畫家' : '猜題者');
+    var youRole = v.you.role === 'spectator' ? (globalThis.I18N ? globalThis.I18N.t("text.036") : "觀戰者")
+      : (g && g.you.isDrawer ? (globalThis.I18N ? globalThis.I18N.t("text.035") : "這一題的畫家") : (globalThis.I18N ? globalThis.I18N.t("text.072") : "猜題者"));
 
-    $('sum-phase').textContent = (v.room && v.room.closed) ? '房間已結束'
-      : (v.room && v.room.phase === 'waiting' ? '等待開始'
+    $('sum-phase').textContent = (v.room && v.room.closed) ? (globalThis.I18N ? globalThis.I18N.t("text.071") : "房間已結束")
+      : (v.room && v.room.phase === 'waiting' ? (globalThis.I18N ? globalThis.I18N.t("text.070") : "等待開始")
         : (g ? (PHASE_LABEL[g.phase] || g.phase) : '—'));
     $('sum-drawer').textContent = g ? drawerName(g) : '—';
     $('sum-role').textContent = youRole;
@@ -1823,11 +1831,11 @@
     $('sum-hint').textContent = g && g.hint
       ? ((g.you.isDrawer || g.answer)
         ? (g.answer || '') + (g.hint.catLabel ? '（' + g.hint.catLabel + '）' : '')
-        : (g.hint.lenShown ? g.hint.mask : '畫家還沒給提示') +
+        : (g.hint.lenShown ? g.hint.mask : (globalThis.I18N ? globalThis.I18N.t("text.069") : "畫家還沒給提示")) +
           (g.hint.catLabel ? '（' + g.hint.catLabel + '）' : ''))
       : '—';
-    $('sum-conn').textContent = app.mode === 'solo' ? '單機（不需要連線）'
-      : ({ connected: '已連線', connecting: '重新連線中…', loading: '載入中…', error: '連線錯誤', offline: '無伺服器', idle: '未連線' }[app.conn.status] || app.conn.status);
+    $('sum-conn').textContent = app.mode === 'solo' ? (globalThis.I18N ? globalThis.I18N.t("text.068") : "單機（不需要連線）")
+      : ({ get connected() { return globalThis.I18N ? globalThis.I18N.t("text.067") : "已連線"; }, get connecting() { return globalThis.I18N ? globalThis.I18N.t("text.066") : "重新連線中…"; }, get loading() { return globalThis.I18N ? globalThis.I18N.t("text.065") : "載入中…"; }, get error() { return globalThis.I18N ? globalThis.I18N.t("text.064") : "連線錯誤"; }, get offline() { return globalThis.I18N ? globalThis.I18N.t("text.063") : "無伺服器"; }, get idle() { return globalThis.I18N ? globalThis.I18N.t("text.062") : "未連線"; } }[app.conn.status] || app.conn.status);
 
     /* 比分 */
     var sl = $('scorelist');
@@ -1837,7 +1845,7 @@
         var cls = ['', p.isDrawer ? 'drawer' : '', p.id === v.you.id ? 'me' : ''].join(' ').trim();
         return '<li class="' + cls + '"><span class="sface" aria-hidden="true">' +
           S.face(indexOfPlayer(g, p.id), moodOf(p, g)) + '</span>' +
-          '<span class="sname">' + esc(p.name) + (p.ai ? '（電腦）' : '') + '</span>' +
+          '<span class="sname">' + esc(p.name) + (p.ai ? (globalThis.I18N ? globalThis.I18N.t("text.061") : "（電腦）") : '') + '</span>' +
           '<span class="spts">' + p.score + '</span></li>';
       }).join('');
     } else sl.innerHTML = '';
@@ -1847,22 +1855,22 @@
   }
 
   function canDoText(v, g) {
-    if (v.room && v.room.closed) return '房間已結束，回大廳再開一間吧。';
+    if (v.room && v.room.closed) return (globalThis.I18N ? globalThis.I18N.t("text.060") : "房間已結束，回大廳再開一間吧。");
     if (v.room && v.room.phase === 'waiting') {
-      if (v.you.role === 'spectator') return '等這一局開始，你會以觀戰身分看畫。';
-      if (v.you.isHost) return '其他人都按「準備好了」之後，按「開始！」就能開局。';
-      return v.you.ready ? '已準備，等房主按開始。' : '按「準備好了」讓房主可以開始。';
+      if (v.you.role === 'spectator') return (globalThis.I18N ? globalThis.I18N.t("text.059") : "等這一局開始，你會以觀戰身分看畫。");
+      if (v.you.isHost) return (globalThis.I18N ? globalThis.I18N.t("text.058") : "其他人都按「準備好了」之後，按「開始！」就能開局。");
+      return v.you.ready ? (globalThis.I18N ? globalThis.I18N.t("text.057") : "已準備，等房主按開始。") : (globalThis.I18N ? globalThis.I18N.t("text.056") : "按「準備好了」讓房主可以開始。");
     }
     if (!g) return '—';
-    if (v.you.role === 'spectator') return '觀戰中：可以看畫與猜題紀錄，不能畫也不能猜。';
-    if (g.phase === 'picking') return g.you.canPick ? '從三個題目裡挑一個。' : '等畫家挑題目。';
+    if (v.you.role === 'spectator') return (globalThis.I18N ? globalThis.I18N.t("text.055") : "觀戰中：可以看畫與猜題紀錄，不能畫也不能猜。");
+    if (g.phase === 'picking') return g.you.canPick ? (globalThis.I18N ? globalThis.I18N.t("text.054") : "從三個題目裡挑一個。") : (globalThis.I18N ? globalThis.I18N.t("text.053") : "等畫家挑題目。");
     if (g.phase === 'drawing') {
-      if (g.you.isDrawer) return '用工具列把題目畫出來；畫好了按「畫完了」告訴大家（這一題不會因此結束）。';
-      if (g.you.guessed) return '你已經猜中了，等其他人或時間結束。';
-      return '把答案打進下面的猜題框，猜錯不扣分。';
+      if (g.you.isDrawer) return (globalThis.I18N ? globalThis.I18N.t("text.052") : "用工具列把題目畫出來；畫好了按「畫完了」告訴大家（這一題不會因此結束）。");
+      if (g.you.guessed) return (globalThis.I18N ? globalThis.I18N.t("text.051") : "你已經猜中了，等其他人或時間結束。");
+      return (globalThis.I18N ? globalThis.I18N.t("text.050") : "把答案打進下面的猜題框，猜錯不扣分。");
     }
-    if (g.phase === 'reveal') return '看一下答案，馬上換下一位畫家。';
-    return app.mode === 'online' ? '這一局結束了，房主可以帶大家回房間再開一局。' : '這一局結束了，可以再玩一局或離開。';
+    if (g.phase === 'reveal') return (globalThis.I18N ? globalThis.I18N.t("text.049") : "看一下答案，馬上換下一位畫家。");
+    return app.mode === 'online' ? (globalThis.I18N ? globalThis.I18N.t("text.048") : "這一局結束了，房主可以帶大家回房間再開一局。") : (globalThis.I18N ? globalThis.I18N.t("text.047") : "這一局結束了，可以再玩一局或離開。");
   }
 
   /* ================================================================
@@ -1885,46 +1893,46 @@
   }
 
   function newInvite() {
-    if (app.mode !== 'online' || !app.roomCode) return toast('目前不在可邀請的房間裡。', 'error');
+    if (app.mode !== 'online' || !app.roomCode) return toast((globalThis.I18N ? globalThis.I18N.t("text.046") : "目前不在可邀請的房間裡。"), 'error');
     /* 不指定 role：伺服器端 createInvite 沒收到合法值就會當成 'any'，
        由拿到連結的人自己選要當玩家還是觀戰（見 checkPendingInvite／setupLobby）。 */
     w.Online.send('room:invite', {
       ttlMinutes: 60,
       maxUses: 20
     }, function (res) {
-      if (!res || !res.ok) return toast((res && res.error) || '邀請連結產生失敗。', 'error');
+      if (!res || !res.ok) return toast((res && w.I18N.message(res.error, res.params)) || (globalThis.I18N ? globalThis.I18N.t("text.045") : "邀請連結產生失敗。"), 'error');
       app.inviteToken = res.token;
       app.inviteUrl = Cfg.inviteUrl(app.roomCode, res.token);
       app.lastOverlayHtml = null;
       renderOverlay();
-      toast('邀請連結好了，按「複製」傳給朋友。', 'ok');
+      toast((globalThis.I18N ? globalThis.I18N.t("text.044") : "邀請連結好了，按「複製」傳給朋友。"), 'ok');
     });
   }
 
   function revokeInvite() {
     if (!app.inviteToken) return;
     w.Online.send('room:revokeInvite', { token: app.inviteToken }, function (res) {
-      if (res && res.ok === false) return toast(res.error || '撤銷失敗。', 'error');
+      if (res && res.ok === false) return toast(res.error || (globalThis.I18N ? globalThis.I18N.t("text.043") : "撤銷失敗。"), 'error');
       app.inviteToken = null;
       app.inviteUrl = '';
       app.lastOverlayHtml = null;
       renderOverlay();
-      toast('邀請連結已撤銷。', 'ok');
+      toast((globalThis.I18N ? globalThis.I18N.t("text.042") : "邀請連結已撤銷。"), 'ok');
     });
   }
 
   function copyText(text) {
-    if (!text) return toast('先按「產生連結」。', 'error');
-    var done = function () { toast('已複製到剪貼簿。', 'ok'); };
+    if (!text) return toast((globalThis.I18N ? globalThis.I18N.t("text.041") : "先按「產生連結」。"), 'error');
+    var done = function () { toast((globalThis.I18N ? globalThis.I18N.t("text.040") : "已複製到剪貼簿。"), 'ok'); };
     if (w.navigator && w.navigator.clipboard && w.navigator.clipboard.writeText) {
       w.navigator.clipboard.writeText(text).then(done).catch(function () { fallback(); });
     } else fallback();
     function fallback() {
       var el = $('invite-url');
-      if (!el) return toast('複製失敗，請手動選取連結。', 'error');
+      if (!el) return toast((globalThis.I18N ? globalThis.I18N.t("text.039") : "複製失敗，請手動選取連結。"), 'error');
       el.removeAttribute('readonly');
       el.select();
-      try { D.execCommand('copy'); done(); } catch (e) { toast('複製失敗，請手動選取。', 'error'); }
+      try { D.execCommand('copy'); done(); } catch (e) { toast((globalThis.I18N ? globalThis.I18N.t("text.038") : "複製失敗，請手動選取。"), 'error'); }
       el.setAttribute('readonly', 'readonly');
     }
   }
@@ -1933,17 +1941,17 @@
     var v = app.view;
     var online = app.mode === 'online' && v && v.room;
 
-    $('gs-code').textContent = online ? v.room.code : '單機';
+    $('gs-code').textContent = online ? v.room.code : (globalThis.I18N ? globalThis.I18N.t("text.037") : "單機");
     $('gs-role').textContent = !v ? '—'
-      : (v.you.role === 'spectator' ? '觀戰者' : (v.game && v.game.you.isDrawer ? '這一題的畫家' : '玩家'));
+      : (v.you.role === 'spectator' ? (globalThis.I18N ? globalThis.I18N.t("text.036") : "觀戰者") : (v.game && v.game.you.isDrawer ? (globalThis.I18N ? globalThis.I18N.t("text.035") : "這一題的畫家") : (globalThis.I18N ? globalThis.I18N.t("text.034") : "玩家")));
     $('gs-role-note').textContent = !v ? '—'
-      : (v.you.role === 'spectator' ? '可以看畫與猜題紀錄，不能畫也不能猜'
-        : '可以畫、可以猜' + (v.you.isHost ? '，而且是房主' : ''));
+      : (v.you.role === 'spectator' ? (globalThis.I18N ? globalThis.I18N.t("text.033") : "可以看畫與猜題紀錄，不能畫也不能猜")
+        : (globalThis.I18N ? globalThis.I18N.t("text.032") : "可以畫、可以猜") + (v.you.isHost ? (globalThis.I18N ? globalThis.I18N.t("text.031") : "，而且是房主") : ''));
 
     var rb = $('gs-role-btns');
     rb.innerHTML = '';
-    if (online && v.you.can.becomePlayer) rb.innerHTML = '<button class="btn3d small" data-color="mint" id="gs-become-player">下場一起玩</button>';
-    else if (online && v.you.can.becomeSpectator) rb.innerHTML = '<button class="btn3d small" data-color="cream" id="gs-become-spectator">改成觀戰</button>';
+    if (online && v.you.can.becomePlayer) rb.innerHTML = (globalThis.I18N ? globalThis.I18N.t("text.030") : "<button class=\"btn3d small\" data-color=\"mint\" id=\"gs-become-player\">下場一起玩</button>");
+    else if (online && v.you.can.becomeSpectator) rb.innerHTML = (globalThis.I18N ? globalThis.I18N.t("text.029") : "<button class=\"btn3d small\" data-color=\"cream\" id=\"gs-become-spectator\">改成觀戰</button>");
     S.decorateAll(rb);
     if ($('gs-become-player')) $('gs-become-player').addEventListener('click', function () { w.Online.send('room:becomePlayer', {}); gameModal.close(); });
     if ($('gs-become-spectator')) $('gs-become-spectator').addEventListener('click', function () { w.Online.send('room:becomeSpectator', {}); gameModal.close(); });
@@ -1951,8 +1959,8 @@
     var canSkip = v && v.you && v.you.can.skip;
     $('gs-skip').disabled = !canSkip;
     $('gs-note').textContent = canSkip
-      ? '跳過會直接結束這一題，公布答案，沒有人得分。'
-      : (v && v.game ? '只有輪到你當畫家時才能跳過。' : '目前沒有進行中的對局。');
+      ? (globalThis.I18N ? globalThis.I18N.t("text.028") : "跳過會直接結束這一題，公布答案，沒有人得分。")
+      : (v && v.game ? (globalThis.I18N ? globalThis.I18N.t("text.027") : "只有輪到你當畫家時才能跳過。") : (globalThis.I18N ? globalThis.I18N.t("text.026") : "目前沒有進行中的對局。"));
   }
 
   /* ================================================================
@@ -1979,7 +1987,7 @@
     });
     $('b-lobby-join').addEventListener('click', function () {
       var code = $('lobby-code').value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
-      if (code.length !== 4) return toast('房號是 4 個英數字。', 'error');
+      if (code.length !== 4) return toast((globalThis.I18N ? globalThis.I18N.t("text.025") : "房號是 4 個英數字。"), 'error');
       joinRoom(code, null, 'player');
     });
     /* 房號打完直接按 Enter 就加入 */
@@ -2016,19 +2024,19 @@
     opts = opts || {};
     w.Online.send('room:join', { code: code, token: token, role: role, name: Store.ensureNick() }, function (res) {
       if (!res || !res.ok) {
-        var why = (res && res.error) || '加入失敗。';
+        var why = (res && w.I18N.message(res.error, res.params)) || (globalThis.I18N ? globalThis.I18N.t("text.024") : "加入失敗。");
         if (opts.rejoin && app.mode === 'online' && app.view) {
           forgetRoom();
           app.view.room.closed = true;
-          app.view.room.closedReason = '回不到原本的房間了：' + why;
+          app.view.room.closedReason = (globalThis.I18N ? globalThis.I18N.t("text.023") : "回不到原本的房間了：") + why;
           app.lastOverlayHtml = null;
           render();
           return;
         }
-        if (opts.resume) { forgetRoom(); return toast('原本的房間回不去了：' + why, 'error'); }
+        if (opts.resume) { forgetRoom(); return toast((globalThis.I18N ? globalThis.I18N.t("text.022") : "原本的房間回不去了：") + why, 'error'); }
         return toast(why, 'error');
       }
-      if (res.downgraded) toast('位子滿了（或對局進行中），你先以觀戰身分進來。', 'info');
+      if (res.downgraded) toast((globalThis.I18N ? globalThis.I18N.t("text.021") : "位子滿了（或對局進行中），你先以觀戰身分進來。"), 'info');
       app.pendingInvite = null;
       $('lobby-invite').hidden = true;
       if (token) clearInviteParams();
@@ -2112,25 +2120,25 @@
       $('lobby-off').hidden = false;
       $('lobby-live').hidden = true;
       $('lobby-off-note').textContent = Cfg.status === 'invalid'
-        ? ('伺服器設定有問題：' + Cfg.error)
-        : '線上對戰需要一台開著的伺服器。單機練習完全不受影響，可以直接玩。';
+        ? ((globalThis.I18N ? globalThis.I18N.t("text.020") : "伺服器設定有問題：") + Cfg.error)
+        : (globalThis.I18N ? globalThis.I18N.t("text.019") : "線上對戰需要一台開著的伺服器。單機練習完全不受影響，可以直接玩。");
       return;
     }
-    $('lobby-state').textContent = '正在連線…';
+    $('lobby-state').textContent = (globalThis.I18N ? globalThis.I18N.t("text.018") : "正在連線…");
     w.Online.connect({ clientId: Store.clientId(), name: Store.ensureNick() })
       .then(function () {
         $('lobby-off').hidden = true;
         $('lobby-live').hidden = false;
         setLobbyEnabled(true);
         w.Online.send('lobby:subscribe', {});
-        $('lobby-state').textContent = '已連線。';
+        $('lobby-state').textContent = (globalThis.I18N ? globalThis.I18N.t("text.017") : "已連線。");
         checkPendingInvite();
         /* 重新整理前在房間裡：自動回去（有邀請連結的話以邀請為準） */
         var entry = Cfg.entry();
         if (app.resumeRoom && !(entry.room && entry.invite) && app.mode !== 'online') {
           var code = app.resumeRoom;
           app.resumeRoom = null;
-          $('lobby-state').textContent = '正在回到房間 ' + code + '…';
+          $('lobby-state').textContent = (globalThis.I18N ? globalThis.I18N.t("text.016") : "正在回到房間 ") + code + '…';
           joinRoom(code, null, null, { resume: true });
         }
       })
@@ -2138,7 +2146,7 @@
         setLobbyEnabled(false);
         $('lobby-off').hidden = false;
         $('lobby-live').hidden = true;
-        $('lobby-off-note').textContent = e.message || '連不到伺服器。';
+        $('lobby-off-note').textContent = e.message || (globalThis.I18N ? globalThis.I18N.t("text.015") : "連不到伺服器。");
       });
   }
 
@@ -2151,8 +2159,8 @@
       box.hidden = false;
       if (!res || !res.ok) {
         app.pendingInvite = null;
-        $('lobby-invite-title').textContent = '這個邀請連結不能用了';
-        $('lobby-invite-note').textContent = (res && res.error) || '連結無效。';
+        $('lobby-invite-title').textContent = (globalThis.I18N ? globalThis.I18N.t("text.014") : "這個邀請連結不能用了");
+        $('lobby-invite-note').textContent = (res && w.I18N.message(res.error, res.params)) || (globalThis.I18N ? globalThis.I18N.t("text.013") : "連結無效。");
         $('b-lobby-invite-player').hidden = true;
         $('b-lobby-invite-spectator').hidden = true;
         clearInviteParams();
@@ -2163,29 +2171,30 @@
       app.pendingInvite = { code: entry.room, token: entry.invite };
       $('b-lobby-invite-player').hidden = false;
       $('b-lobby-invite-spectator').hidden = false;
-      $('lobby-invite-title').textContent = '收到房間 ' + entry.room + ' 的邀請';
+      $('lobby-invite-title').textContent = (globalThis.I18N ? globalThis.I18N.t("text.012") : "收到房間 ") + entry.room + (globalThis.I18N ? globalThis.I18N.t("text.011") : " 的邀請");
       $('lobby-invite-note').textContent =
-        '可以先改上面的暱稱，再選要當玩家還是觀戰。' + (res.note ? '（' + res.note + '）' : '');
+        (globalThis.I18N ? globalThis.I18N.t("text.010") : "可以先改上面的暱稱，再選要當玩家還是觀戰。") + (res.note ? '（' + res.note + '）' : '');
     });
   }
 
   function renderRoomList(rooms) {
+    app.rooms = rooms;
     var host = $('roomlist');
     if (!rooms || !rooms.length) {
-      host.innerHTML = '<p class="hint-note">目前沒有公開房間。按「開一間房」自己開一間，把房號或邀請連結傳給朋友。</p>';
+      host.innerHTML = (globalThis.I18N ? globalThis.I18N.t("text.009") : "<p class=\"hint-note\">目前沒有公開房間。按「開一間房」自己開一間，把房號或邀請連結傳給朋友。</p>");
       return;
     }
     host.innerHTML = rooms.map(function (r) {
-      var phase = { waiting: '等待中', playing: '進行中', finished: '已結束' }[r.phase] || r.phase;
+      var phase = { get waiting() { return globalThis.I18N ? globalThis.I18N.t("text.008") : "等待中"; }, get playing() { return globalThis.I18N ? globalThis.I18N.t("text.007") : "進行中"; }, get finished() { return globalThis.I18N ? globalThis.I18N.t("text.006") : "已結束"; } }[r.phase] || r.phase;
       return '<div class="roomcard"><span class="rc-code">' + esc(r.code) + '</span>' +
         '<span class="rc-main"><b class="rc-name">' + esc(r.name) + '</b>' +
         '<span class="rc-sub"><span class="rc-badge" data-p="' + r.phase + '">' + phase + '</span>' +
-        r.players + '/' + r.maxPlayers + ' 位玩家' +
-        (r.spectators ? '・' + r.spectators + ' 觀戰' : '') +
-        '・房主 ' + esc(r.host) + '</span></span>' +
+        r.players + '/' + r.maxPlayers + (globalThis.I18N ? globalThis.I18N.t("text.005") : " 位玩家") +
+        (r.spectators ? '・' + r.spectators + (globalThis.I18N ? globalThis.I18N.t("text.004") : " 觀戰") : '') +
+        (globalThis.I18N ? globalThis.I18N.t("text.003") : "・房主 ") + esc(r.host) + '</span></span>' +
         '<span class="rc-btns">' +
-        '<button class="btn3d small" data-color="mint" data-join="' + esc(r.code) + '">加入</button>' +
-        '<button class="btn3d small" data-color="sky" data-watch="' + esc(r.code) + '">觀戰</button>' +
+        '<button class="btn3d small" data-color="mint" data-join="' + esc(r.code) + (globalThis.I18N ? globalThis.I18N.t("text.002") : "\">加入</button>") +
+        '<button class="btn3d small" data-color="sky" data-watch="' + esc(r.code) + (globalThis.I18N ? globalThis.I18N.t("text.001") : "\">觀戰</button>") +
         '</span></div>';
     }).join('');
     S.decorateAll(host);
@@ -2216,6 +2225,7 @@
     O.on('lobby:rooms', function (p) { renderRoomList(p.rooms); });
 
     O.on('room:sync', function (v) {
+      localizeGame(v.game);
       if (app.mode !== 'online') return;
       var prev = app.view;
       app.view = v;
@@ -2272,13 +2282,13 @@
     });
 
     O.on('room:private', function (p) {
-      if (p.kind === 'hit') { toast(p.message, 'ok'); Sound.play('correct'); Sound.vibrate([12, 40, 12]); }
-      else if (p.kind === 'close') { toast(p.message, 'ok'); Sound.play('close'); }
+      if (p.kind === 'hit') { toast(w.I18N.message(p.message, p.params), 'ok'); Sound.play('correct'); Sound.vibrate([12, 40, 12]); }
+      else if (p.kind === 'close') { toast(w.I18N.message(p.message, p.params), 'ok'); Sound.play('close'); }
       else if (p.kind === 'miss') { Sound.play('wrong'); }
-      else if (p.kind === 'rejected') { toast(p.message, 'error'); Sound.play('blocked'); }
+      else if (p.kind === 'rejected') { toast(w.I18N.message(p.message, p.params), 'error'); Sound.play('blocked'); }
     });
 
-    O.on('room:error', function (p) { toast(p.message, 'error'); Sound.play('blocked'); });
+    O.on('room:error', function (p) { toast(w.I18N.message(p.message, p.params), 'error'); Sound.play('blocked'); });
 
     O.on('room:closed', function (p) {
       if (app.mode !== 'online') return;
@@ -2288,7 +2298,7 @@
         app.view.room.closedReason = p.reason;
         render();
       }
-      toast(p.reason, 'error');
+      toast(w.I18N.message(p.reason), 'error');
       Sound.play('leave');
     });
 
@@ -2380,6 +2390,22 @@
      ================================================================ */
 
   function init() {
+    w.I18N.mountToggle({ after: $('b-settings') });
+    w.I18N.onChange(function () {
+      app.lastOverlayHtml = null;
+      $('logo').innerHTML = S.logo();
+      renderSoloOptions();
+      syncSettingsUI();
+      if (app.rooms) renderRoomList(app.rooms);
+      if (gameModal && gameModal.isOpen()) renderGameSettings();
+      if (roomCreateModal && roomCreateModal.isOpen()) renderRoomCreateOptions();
+      if (app.screen === 's-help') renderTutorial();
+      if (app.screen === 's-stats') renderStats();
+      render(); syncToolbar(); renderRecent();
+      var link = D.querySelector('.lobby-home-link');
+      if (link) link.href = w.I18N.withLang(link.href);
+    });
+
     $('logo').innerHTML = S.logo();
     paintIcons();
     S.decorateAll();

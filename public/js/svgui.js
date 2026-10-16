@@ -138,7 +138,7 @@
         '</g>';
     }
 
-    return '<svg viewBox="0 0 100 100" role="img" aria-label="' + (label || '玩家頭像') + '">' +
+    return '<svg viewBox="0 0 100 100" role="img" aria-label="' + (label || (globalThis.I18N ? globalThis.I18N.t("text.331") : "玩家頭像")) + '">' +
       '<circle cx="50" cy="55" r="40" fill="' + c.dark + '"/>' +
       '<circle cx="50" cy="52" r="40" fill="' + c.body + '" stroke="' + INK + '" stroke-width="5"/>' +
       '<path d="M18 34 q14 -18 32 -18 q18 0 32 18 q-16 -8 -32 -8 q-16 0 -32 8 Z" fill="' + c.dark + '" stroke="' + INK + '" stroke-width="4" stroke-linejoin="round"/>' +
@@ -160,46 +160,46 @@
     pen: function () {
       return ico('<path d="M22 78 L30 58 L68 20 L80 32 L42 70 Z" fill="#FFE3A0" ' + S + '/>' +
         '<path d="M30 58 L42 70" ' + S + ' fill="none"/>' +
-        '<path d="M22 78 L28 72" ' + S + ' fill="none"/>', '鉛筆');
+        '<path d="M22 78 L28 72" ' + S + ' fill="none"/>', (globalThis.I18N ? globalThis.I18N.t("text.330") : "鉛筆"));
     },
     brush: function () {
       return ico('<path d="M20 80 q4 -22 18 -26 q10 -3 12 8 q2 12 -12 16 q-12 4 -18 2 Z" fill="#FFB8CF" ' + S + '/>' +
-        '<path d="M46 58 L82 22 L70 12 L38 46 Z" fill="#AED9F5" ' + S + '/>', '筆刷');
+        '<path d="M46 58 L82 22 L70 12 L38 46 Z" fill="#AED9F5" ' + S + '/>', (globalThis.I18N ? globalThis.I18N.t("text.329") : "筆刷"));
     },
     erase: function () {
       return ico('<path d="M18 68 L50 36 q6 -6 12 0 L84 58 q6 6 0 12 L66 88 L34 88 Z" fill="#FFC2B4" ' + S + '/>' +
         '<path d="M40 46 L74 76" ' + S + ' fill="none"/>' +
-        '<path d="M22 88 L88 88" ' + S + ' fill="none"/>', '橡皮擦');
+        '<path d="M22 88 L88 88" ' + S + ' fill="none"/>', (globalThis.I18N ? globalThis.I18N.t("text.328") : "橡皮擦"));
     },
     line: function () {
       return ico('<path d="M20 80 L80 20" ' + S + ' fill="none"/>' +
         '<circle cx="20" cy="80" r="9" fill="#A9E7D2" ' + S + '/>' +
-        '<circle cx="80" cy="20" r="9" fill="#A9E7D2" ' + S + '/>', '直線');
+        '<circle cx="80" cy="20" r="9" fill="#A9E7D2" ' + S + '/>', (globalThis.I18N ? globalThis.I18N.t("text.327") : "直線"));
     },
     rect: function () {
-      return ico('<rect x="18" y="26" width="64" height="48" rx="4" fill="#AED9F5" ' + S + '/>', '矩形');
+      return ico('<rect x="18" y="26" width="64" height="48" rx="4" fill="#AED9F5" ' + S + '/>', (globalThis.I18N ? globalThis.I18N.t("text.326") : "矩形"));
     },
     ellipse: function () {
-      return ico('<ellipse cx="50" cy="50" rx="34" ry="26" fill="#C9B6F5" ' + S + '/>', '橢圓');
+      return ico('<ellipse cx="50" cy="50" rx="34" ry="26" fill="#C9B6F5" ' + S + '/>', (globalThis.I18N ? globalThis.I18N.t("text.325") : "橢圓"));
     },
     fill: function () {
       return ico('<path d="M30 26 L66 62 L44 84 q-6 6 -12 0 L14 66 q-6 -6 0 -12 Z" fill="#A9E7D2" ' + S + '/>' +
         '<path d="M30 26 L24 16" ' + S + ' fill="none"/>' +
-        '<path d="M80 46 q10 16 10 22 a10 10 0 0 1 -20 0 q0 -6 10 -22 Z" fill="#7FB4DA" ' + S + '/>', '油漆桶');
+        '<path d="M80 46 q10 16 10 22 a10 10 0 0 1 -20 0 q0 -6 10 -22 Z" fill="#7FB4DA" ' + S + '/>', (globalThis.I18N ? globalThis.I18N.t("text.324") : "油漆桶"));
     },
     undo: function () {
       return ico('<path d="M30 42 H62 a20 20 0 0 1 0 40 H40" fill="none" ' + S + '/>' +
-        '<path d="M44 26 L26 42 L44 58" fill="none" ' + S + '/>', '復原');
+        '<path d="M44 26 L26 42 L44 58" fill="none" ' + S + '/>', (globalThis.I18N ? globalThis.I18N.t("text.323") : "復原"));
     },
     redo: function () {
       return ico('<path d="M70 42 H38 a20 20 0 0 0 0 40 H60" fill="none" ' + S + '/>' +
-        '<path d="M56 26 L74 42 L56 58" fill="none" ' + S + '/>', '重做');
+        '<path d="M56 26 L74 42 L56 58" fill="none" ' + S + '/>', (globalThis.I18N ? globalThis.I18N.t("text.322") : "重做"));
     },
     trash: function () {
       return ico('<path d="M24 30 H76" ' + S + ' fill="none"/>' +
         '<path d="M40 30 V20 H60 V30" fill="#FFC2B4" ' + S + '/>' +
         '<path d="M30 30 L34 84 H66 L70 30 Z" fill="#FFF0DE" ' + S + '/>' +
-        '<path d="M44 42 V72 M56 42 V72" ' + S + ' fill="none"/>', '全部清除');
+        '<path d="M44 42 V72 M56 42 V72" ' + S + ' fill="none"/>', (globalThis.I18N ? globalThis.I18N.t("text.321") : "全部清除"));
     },
     gear: function () {
       var teeth = '';
@@ -209,40 +209,40 @@
       }
       return ico(teeth +
         '<circle cx="50" cy="50" r="28" fill="#FFF0DE" ' + S + '/>' +
-        '<circle cx="50" cy="50" r="11" fill="#C9B6F5" ' + S + '/>', '設定');
+        '<circle cx="50" cy="50" r="11" fill="#C9B6F5" ' + S + '/>', (globalThis.I18N ? globalThis.I18N.t("text.320") : "設定"));
     },
     palette: function () {
       return ico('<path d="M50 14 a36 36 0 1 0 0 72 q10 0 10 -8 q0 -8 6 -8 h10 a14 14 0 0 0 14 -14 A36 36 0 0 0 50 14 Z" fill="#FFF0DE" ' + S + '/>' +
         '<circle cx="34" cy="38" r="7" fill="#D2444F"/><circle cx="56" cy="30" r="7" fill="#5FBF95"/>' +
-        '<circle cx="72" cy="46" r="7" fill="#7FB4DA"/><circle cx="32" cy="62" r="7" fill="#E7C263"/>', '調色盤');
+        '<circle cx="72" cy="46" r="7" fill="#7FB4DA"/><circle cx="32" cy="62" r="7" fill="#E7C263"/>', (globalThis.I18N ? globalThis.I18N.t("text.319") : "調色盤"));
     },
     trophy: function () {
       return ico('<path d="M32 18 H68 V44 a18 18 0 0 1 -36 0 Z" fill="#FFE3A0" ' + S + '/>' +
         '<path d="M32 24 H20 a12 12 0 0 0 12 14 M68 24 H80 a12 12 0 0 1 -12 14" fill="none" ' + S + '/>' +
-        '<path d="M50 62 V74 M36 74 H64 M30 86 H70 V74 H30 Z" fill="#E7C263" ' + S + '/>', '獎盃');
+        '<path d="M50 62 V74 M36 74 H64 M30 86 H70 V74 H30 Z" fill="#E7C263" ' + S + '/>', (globalThis.I18N ? globalThis.I18N.t("text.318") : "獎盃"));
     },
     eye: function () {
       return ico('<path d="M10 50 q40 -34 80 0 q-40 34 -80 0 Z" fill="#FFF0DE" ' + S + '/>' +
-        '<circle cx="50" cy="50" r="14" fill="#AED9F5" ' + S + '/>', '觀戰');
+        '<circle cx="50" cy="50" r="14" fill="#AED9F5" ' + S + '/>', (globalThis.I18N ? globalThis.I18N.t("text.317") : "觀戰"));
     },
     clock: function () {
       return ico('<circle cx="50" cy="52" r="34" fill="#FFF0DE" ' + S + '/>' +
-        '<path d="M50 52 V32 M50 52 L66 60" ' + S + ' fill="none"/>', '倒數');
+        '<path d="M50 52 V32 M50 52 L66 60" ' + S + ' fill="none"/>', (globalThis.I18N ? globalThis.I18N.t("text.316") : "倒數"));
     },
     chat: function () {
       return ico('<path d="M16 26 H84 V66 H50 L32 82 V66 H16 Z" fill="#AED9F5" ' + S + '/>' +
-        '<circle cx="36" cy="46" r="4.5" fill="' + INK + '"/><circle cx="50" cy="46" r="4.5" fill="' + INK + '"/><circle cx="64" cy="46" r="4.5" fill="' + INK + '"/>', '猜題紀錄');
+        '<circle cx="36" cy="46" r="4.5" fill="' + INK + '"/><circle cx="50" cy="46" r="4.5" fill="' + INK + '"/><circle cx="64" cy="46" r="4.5" fill="' + INK + '"/>', (globalThis.I18N ? globalThis.I18N.t("text.315") : "猜題紀錄"));
     },
     board: function () {
       return ico('<rect x="14" y="18" width="72" height="56" rx="6" fill="#FFFDF8" ' + S + '/>' +
         '<path d="M26 60 q12 -26 22 -14 q8 10 16 -6" fill="none" stroke="#E88CAA" stroke-width="6" stroke-linecap="round"/>' +
-        '<path d="M40 74 V86 M60 74 V86 M32 86 H68" ' + S + ' fill="none"/>', '畫板');
+        '<path d="M40 74 V86 M60 74 V86 M32 86 H68" ' + S + ' fill="none"/>', (globalThis.I18N ? globalThis.I18N.t("text.314") : "畫板"));
     },
     people: function () {
       return ico('<circle cx="36" cy="36" r="16" fill="#FFE3A0" ' + S + '/>' +
         '<circle cx="68" cy="42" r="12" fill="#AED9F5" ' + S + '/>' +
         '<path d="M12 84 q4 -24 24 -24 q20 0 24 24 Z" fill="#FFE3A0" ' + S + '/>' +
-        '<path d="M60 84 q4 -18 16 -18 q12 0 14 18 Z" fill="#AED9F5" ' + S + '/>', '玩家');
+        '<path d="M60 84 q4 -18 16 -18 q12 0 14 18 Z" fill="#AED9F5" ' + S + '/>', (globalThis.I18N ? globalThis.I18N.t("text.034") : "玩家"));
     }
   };
 
@@ -254,7 +254,7 @@
   /* ---------------------------------------------------------- LOGO */
 
   function logo() {
-    return '<svg viewBox="0 0 520 190" role="img" aria-label="你畫我猜">' +
+    return (globalThis.I18N ? globalThis.I18N.t("text.313") : "<svg viewBox=\"0 0 520 190\" role=\"img\" aria-label=\"你畫我猜\">") +
       '<defs>' +
       '<linearGradient id="dgSky" x1="0" y1="0" x2="0" y2="1">' +
       '<stop offset="0" stop-color="#FFF6E8"/><stop offset="1" stop-color="#FFE9F2"/>' +
@@ -272,7 +272,7 @@
       /* 文字 */
       '<text x="288" y="118" text-anchor="middle" font-size="70" font-weight="900" fill="#6E4FBF" ' +
       'stroke="' + INK + '" stroke-width="7" paint-order="stroke" ' +
-      'font-family="Yuanti TC, PingFang TC, Microsoft JhengHei, Noto Sans TC, sans-serif">你畫我猜</text>' +
+      (globalThis.I18N ? globalThis.I18N.t("text.312") : "font-family=\"Yuanti TC, PingFang TC, Microsoft JhengHei, Noto Sans TC, sans-serif\">你畫我猜</text>") +
       /* 右邊：問號泡泡 */
       '<path d="M406 44 H486 V96 H448 L430 112 V96 H406 Z" fill="#C9B6F5" stroke="' + INK + '" stroke-width="6" stroke-linejoin="round"/>' +
       '<text x="446" y="84" text-anchor="middle" font-size="40" font-weight="900" fill="#FFFDF8" ' +

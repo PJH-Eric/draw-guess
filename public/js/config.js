@@ -41,13 +41,13 @@
     try {
       parsed = new URL(raw);
     } catch (e) {
-      return { url: null, source: source, status: 'invalid', error: '不是合法的絕對網址：' + raw };
+      return { url: null, source: source, status: 'invalid', error: (globalThis.I18N ? globalThis.I18N.t("text.291") : "不是合法的絕對網址：") + raw };
     }
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-      return { url: null, source: source, status: 'invalid', error: '只接受 http 或 https：' + raw };
+      return { url: null, source: source, status: 'invalid', error: (globalThis.I18N ? globalThis.I18N.t("text.290") : "只接受 http 或 https：") + raw };
     }
     if (pageProtocol === 'https:' && parsed.protocol === 'http:') {
-      return { url: null, source: source, status: 'invalid', error: 'https 頁面不能連 http 伺服器（混合內容會被瀏覽器擋掉）：' + raw };
+      return { url: null, source: source, status: 'invalid', error: (globalThis.I18N ? globalThis.I18N.t("text.289") : "https 頁面不能連 http 伺服器（混合內容會被瀏覽器擋掉）：") + raw };
     }
     return {
       url: parsed.origin + parsed.pathname.replace(/\/+$/, ''),
@@ -67,7 +67,7 @@
   var r = resolve(INJECTED, queryParam(loc.search, 'server'), loc.protocol, loc.origin);
 
   if (r.status === 'invalid' && typeof console !== 'undefined' && console.warn) {
-    console.warn('[config] server URL 設定有問題，線上功能會停用：' + r.error);
+    console.warn((globalThis.I18N ? globalThis.I18N.t("text.288") : "[config] server URL 設定有問題，線上功能會停用：") + r.error);
   }
 
   var Config = {
@@ -111,11 +111,11 @@
 
     /** 給人看的一行說明，設定彈窗直接用 */
     describe: function () {
-      if (Config.status === 'invalid') return '設定有誤（線上已停用）';
-      if (!Config.serverUrl) return '未設定（只能玩單機）';
+      if (Config.status === 'invalid') return (globalThis.I18N ? globalThis.I18N.t("text.287") : "設定有誤（線上已停用）");
+      if (!Config.serverUrl) return (globalThis.I18N ? globalThis.I18N.t("text.286") : "未設定（只能玩單機）");
       var host = Config.serverUrl.replace(/^https?:\/\//, '');
-      var tag = Config.source === 'query' ? '（網址參數）'
-        : (Config.source === 'injected' ? '（建置注入）' : '（同源）');
+      var tag = Config.source === 'query' ? (globalThis.I18N ? globalThis.I18N.t("text.285") : "（網址參數）")
+        : (Config.source === 'injected' ? (globalThis.I18N ? globalThis.I18N.t("text.284") : "（建置注入）") : (globalThis.I18N ? globalThis.I18N.t("text.283") : "（同源）"));
       return host + tag;
     },
 
