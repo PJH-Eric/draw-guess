@@ -1422,7 +1422,7 @@
 
   function openRoomCreate() {
     app.roomCreate = {
-      get roomName() { return (Store.nick() || (globalThis.I18N ? globalThis.I18N.t("text.137") : "大家")) + (globalThis.I18N ? globalThis.I18N.t("text.136") : " 的房間"); },
+      roomName: (Store.nick() || (globalThis.I18N ? globalThis.I18N.t("text.137") : "大家")) + (globalThis.I18N ? globalThis.I18N.t("text.136") : " 的房間"),
       rounds: 2,
       drawSec: 90,
       diff: 0
