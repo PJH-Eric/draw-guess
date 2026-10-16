@@ -8,6 +8,8 @@
  */
 'use strict';
 
+require('./seo.js');
+
 const Words = require('../public/js/words.js');
 const Rules = require('../public/js/rules.js');
 const DrawingFile = require('../public/js/drawing-file.js');

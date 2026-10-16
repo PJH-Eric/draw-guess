@@ -436,6 +436,7 @@
     var r = Rules.start(state, Date.now());
     if (!r.ok) { toast(r.error, 'error'); return; }
 
+    GameAnalytics.start({ mode: 'solo', difficulty: Store.diff(), players: 1 });
     app.mode = 'solo';
     app.solo = { state: state, seed: seed };
     /* 單機只有自己一個人：左側操作摘要、玩家分數列、給別人看的三張提示都用不到，
@@ -2092,6 +2093,7 @@
   }
 
   function leaveGame(target) {
+    if (app.mode === 'solo') GameAnalytics.end({ result: 'complete' });
     if (app.mode === 'online') w.Online.send('room:leave', {});
     forgetRoom();
     D.body.classList.remove('solo-mode');
@@ -2229,6 +2231,9 @@
       if (app.mode !== 'online') return;
       var prev = app.view;
       app.view = v;
+      if (v.game) GameAnalytics.sync(v.room.phase, v.room.code + '|' + v.game.seed, {
+        mode: 'online', difficulty: v.game.diff, players: v.game.players.length, spectator: v.you.role !== 'player'
+      }, { result: v.game.winners && v.game.winners.indexOf(v.you.id) >= 0 ? 'win' : 'lose' });
       app.roomCode = v.room.code;
 
       /* 換題／換階段：清畫布、播音效 */

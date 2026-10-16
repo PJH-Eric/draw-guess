@@ -1238,4 +1238,7 @@ I18N.register("zh-Hant", {
   "difficulty.3": "Hard"
 });
 
-I18N.register("zh-Hant", { "meta.description": "你畫我猜：單機練習作畫，或與朋友線上畫圖猜謎。", "tool.undoTitle": "復原（Ctrl+Z）", "tool.redoTitle": "重做（Ctrl+Y）" }).register("en", { "meta.description": "Draw & Guess: practice drawing solo or draw and guess online with friends.", "tool.undoTitle": "Undo (Ctrl+Z)", "tool.redoTitle": "Redo (Ctrl+Y)" });
+I18N.register("zh-Hant", { "meta.description": "免費免下載的你畫我猜，輪流當畫家，用畫筆、形狀與油漆桶畫出題目，猜中答案搶積分。單機練習或開房間邀朋友同樂，支援觀戰與猜題紀錄，手機平板都能作畫。", "tool.undoTitle": "復原（Ctrl+Z）", "tool.redoTitle": "重做（Ctrl+Y）" }).register("en", { "meta.description": "Draw & Guess: practice drawing solo or draw and guess online with friends.", "tool.undoTitle": "Undo (Ctrl+Z)", "tool.redoTitle": "Redo (Ctrl+Y)" });
+
+I18N.register("zh-Hant", { "meta.title": "你畫我猜｜免費線上多人畫圖猜謎", "meta.desc": "免費免下載的你畫我猜，輪流當畫家，用畫筆、形狀與油漆桶畫出題目，猜中答案搶積分。單機練習或開房間邀朋友同樂，支援觀戰與猜題紀錄，手機平板都能作畫。" })
+  .register("en", { "meta.title": "Draw & Guess | Free Online Drawing Game", "meta.desc": "Draw clues and guess answers with friends online, or practice solo. Free to play on phones, tablets and computers." });
