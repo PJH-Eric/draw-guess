@@ -251,9 +251,6 @@
       Store.bigTools(this.checked); applyDisplaySettings(); layoutStage();
     });
     $('settings-nick').addEventListener('change', function () { saveNick(this); });
-    $('settings-server-check').addEventListener('click', function () {
-      Cfg.checkHealth(function (state) { setServerPill(state); });
-    });
     $('settings-reset').addEventListener('click', function () {
       Sound.resetDefaults();
       Store.resetDefaults();
@@ -261,13 +258,6 @@
       syncSettingsUI();
       toast((globalThis.I18N ? globalThis.I18N.t("text.271") : "已恢復預設設定。"), 'ok');
     });
-  }
-
-  function setServerPill(state) {
-    var pill = $('settings-server-pill');
-    var text = { get unset() { return globalThis.I18N ? globalThis.I18N.t("text.270") : "未設定"; }, get invalid() { return globalThis.I18N ? globalThis.I18N.t("text.269") : "設定有誤"; }, get checking() { return globalThis.I18N ? globalThis.I18N.t("text.268") : "檢查中…"; }, get ok() { return globalThis.I18N ? globalThis.I18N.t("text.267") : "連得到"; }, get fail() { return globalThis.I18N ? globalThis.I18N.t("text.266") : "連不到"; } };
-    pill.setAttribute('data-state', state);
-    pill.textContent = text[state] || state;
   }
 
   function syncSettingsUI() {
@@ -286,7 +276,6 @@
     $('settings-bigtools').checked = Store.bigTools();
     $('settings-nick').value = Store.nick();
     $('settings-server-url').textContent = Cfg.describe();
-    setServerPill(Cfg.status === 'ok' ? (w.Online && w.Online.isConnected() ? 'ok' : 'unset') : Cfg.status);
   }
 
   /* ================================================================

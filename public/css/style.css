@@ -809,8 +809,6 @@ body.setup-open .toast{bottom:auto;top:calc(10px + var(--topbtn) + 14px + var(--
 }
 .setting-text select{cursor:pointer}
 .setting-text input[type=text]:focus,.setting-text select:focus{border-color:var(--grape-d);box-shadow:0 0 0 3px rgba(164,143,219,.28)}
-.setting-btns{display:flex;gap:8px;flex-wrap:wrap;padding:4px}
-.setting-btns .btn3d{flex:1 1 auto}
 .create-choice{display:flex;align-items:center;justify-content:space-between;gap:12px;border-radius:14px;padding:7px 8px}
 .create-choice:hover{background:#FAF5FF}
 .create-choice>span{display:flex;flex-direction:column;gap:2px;min-width:140px;font-weight:800}

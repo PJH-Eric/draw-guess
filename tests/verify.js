@@ -1236,6 +1236,8 @@ section('邀請提示文字跟實際行為一致');
    ================================================================ */
 section('server URL 設定（config.js）');
 {
+  check('設定資訊不會主動探測或喚醒遊戲伺服器',
+    typeof GameConfig.checkHealth === 'undefined');
   const r = GameConfig._resolve;
   check('沒有設定且不是網頁環境 → 只能單機',
     r('', '', 'file:', '').status === 'unset');
