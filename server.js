@@ -115,33 +115,6 @@ function publicIdOf(secret) {
   return crypto.createHmac('sha256', ID_SALT).update(secret).digest('hex').slice(0, 20);
 }
 
-function presenceSnapshot() {
-  let players = 0;
-  let spectators = 0;
-  let rooms = 0;
-  for (const [code, sockets] of roomSockets) {
-    const room = store.getAny(code);
-    if (!room || !sockets.size) continue;
-    rooms += 1;
-    for (const socket of sockets) {
-      const member = room.member(socket.data.clientId);
-      if (member?.role === 'player') players += 1;
-      if (member?.role === 'spectator') spectators += 1;
-    }
-  }
-  return {
-    gameId: 'draw-guess',
-    online: io.engine.clientsCount,
-    players,
-    spectators,
-    lobby: lobbySockets.size,
-    rooms,
-    updatedAt: new Date().toISOString()
-  };
-}
-
-app.get('/api/presence', (_req, res) => res.json(presenceSnapshot()));
-
 function socketsOf(code) {
   let set = roomSockets.get(code);
   if (!set) { set = new Set(); roomSockets.set(code, set); }
