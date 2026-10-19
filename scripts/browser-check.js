@@ -556,9 +556,11 @@ async function main() {
       await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
       check(label + '：Escape 關閉並回到入口', await cdp.eval('return document.getElementById("reference-modal").getAttribute("aria-hidden")==="true" && document.activeElement.id==="b-reference";'));
     }
-    /* Test an actual Commons-derived, bundled image at every viewport and direction. */
+    /* Prefer an Openverse-derived local image, then fall back to a Commons image. */
     const imageReferenceId = await cdp.eval(`var ids=Object.keys(window.OfflineReferences||{});
-      return ids.find(function(id){return window.OfflineReferences[id].status==='ready';}) || null;`);
+      return ids.find(function(id){return window.OfflineReferences[id].status==='ready' &&
+        (window.OfflineReferences[id].sourceProvider||'').indexOf('Openverse / ')===0;}) ||
+        ids.find(function(id){return window.OfflineReferences[id].status==='ready';}) || null;`);
     check(v.name + '：題庫含可離線載入的圖片範本', !!imageReferenceId, '沒有已媒合的本機圖片');
     if (imageReferenceId) {
       await cdp.eval(
@@ -588,7 +590,7 @@ async function main() {
           overlaps:overlaps,src:img.src,local:imageUrl.origin===location.origin&&
             imageUrl.pathname.indexOf('/references/assets/')>=0&&imageUrl.pathname.endsWith('.png'),
           credit:!document.getElementById('reference-credit').hidden&&!!document.getElementById('reference-credit-text').textContent,
-          sourceLink:source.href.indexOf('https://commons.wikimedia.org/wiki/File:')===0,
+          sourceLink:source.href.indexOf('https://')===0,
           licenseLink:document.getElementById('reference-license').href.indexOf('https://')===0,
           strokes:JSON.stringify(window.DrawGuessApp.solo.state.strokes)};
       })()`);
@@ -610,6 +612,42 @@ async function main() {
       await cdp.waitFor('document.getElementById("reference-modal").getAttribute("aria-hidden")==="true"', 3000, '關閉圖片範本');
       await cdp.eval('window.DrawGuessApp.solo.state.wordId=window.__imageReferenceOriginal; return 1;');
       await cdp.waitFor('window.DrawGuessApp.view.game.referenceId === window.DrawGuessApp.solo.state.wordId', 3000, '還原範本題目');
+    }
+    const semanticReferenceId = await cdp.eval(`var ids=Object.keys(window.OfflineReferences||{});
+      return ids.find(function(id){return window.OfflineReferences[id].status==='semantic';}) || null;`);
+    check(v.name + '：題庫含離線語意組圖範本', !!semanticReferenceId, '沒有已收錄的語意組圖');
+    if (semanticReferenceId) {
+      await cdp.eval(
+        'window.__semanticReferenceOriginal=window.DrawGuessApp.solo.state.wordId; ' +
+        'window.DrawGuessApp.solo.state.wordId=' + JSON.stringify(semanticReferenceId) + '; return 1;'
+      );
+      await cdp.waitFor('window.DrawGuessApp.view.game.referenceId === ' + JSON.stringify(semanticReferenceId), 3000, '切換語意組圖範本');
+      await cdp.eval('document.getElementById("b-reference").click(); return 1;');
+      await cdp.waitFor('document.querySelectorAll("#reference-picture path").length > 0', 3000, '顯示離線語意組圖');
+      const semanticLayout = await cdp.json(`(function(){
+        var panel=document.getElementById('reference-panel'), r=panel.getBoundingClientRect();
+        var picture=document.getElementById('reference-picture'), b=picture.getBoundingClientRect();
+        return {open:document.getElementById('reference-modal').getAttribute('aria-hidden')==='false',
+          inView:r.left>=0&&r.top>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1,
+          pictureInView:b.left>=r.left&&b.top>=r.top&&b.right<=r.right+1&&b.bottom<=r.bottom+1,
+          svg:!!picture.querySelector('svg'),paths:picture.querySelectorAll('path').length,
+          noRemoteImage:!picture.querySelector('img'),creditHidden:document.getElementById('reference-credit').hidden,
+          strokes:JSON.stringify(window.DrawGuessApp.solo.state.strokes),word:document.getElementById('reference-word').textContent};
+      })()`);
+      check(v.name + '：語意組圖在螢幕內且不載入網路圖片',
+        semanticLayout.open && semanticLayout.inView && semanticLayout.pictureInView &&
+          semanticLayout.svg && semanticLayout.paths > 0 && semanticLayout.noRemoteImage && semanticLayout.creditHidden,
+        JSON.stringify(semanticLayout));
+      await shot(v.name + '-範本-離線語意圖');
+      await cdp.eval('document.querySelectorAll("[data-reference-step]")[0].click(); return 1;');
+      const firstSemanticPaths = await cdp.eval('return document.querySelectorAll("#reference-picture path").length;');
+      check(v.name + '：語意圖能切換起筆階段且作品不變',
+        firstSemanticPaths > 0 && firstSemanticPaths < semanticLayout.paths &&
+          await cdp.eval('return JSON.stringify(window.DrawGuessApp.solo.state.strokes) === ' + JSON.stringify(semanticLayout.strokes) + ';'));
+      await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+      await cdp.waitFor('document.getElementById("reference-modal").getAttribute("aria-hidden")==="true"', 3000, '關閉語意組圖');
+      await cdp.eval('window.DrawGuessApp.solo.state.wordId=window.__semanticReferenceOriginal; return 1;');
+      await cdp.waitFor('window.DrawGuessApp.view.game.referenceId === window.DrawGuessApp.solo.state.wordId', 3000, '還原語意組圖題目');
     }
     await cdp.eval('window.I18N.setLang("zh-Hant"); return 1;');
 

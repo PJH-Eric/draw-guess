@@ -188,7 +188,10 @@
     );
     var picture = $('reference-picture');
     $('reference-word').textContent = word.text;
-    picture.innerHTML = svg;
+    var semanticSvg = !svg && asset && asset.status === 'semantic' && w.MeaningReference
+      ? w.MeaningReference.svg(id, referenceStep)
+      : '';
+    picture.innerHTML = svg || semanticSvg;
     $('reference-credit').hidden = true;
     if (hasAsset) {
       var image = D.createElement('img');
@@ -205,7 +208,7 @@
       $('reference-license').href = asset.licenseUrl;
       credit.hidden = false;
     }
-    var hasPicture = !!svg || hasAsset;
+    var hasPicture = !!svg || hasAsset || !!semanticSvg;
     picture.setAttribute('aria-label', w.I18N.t('reference.image', { word: word.text, step: referenceStep }));
     picture.hidden = !hasPicture;
     $('reference-empty').hidden = hasPicture;
