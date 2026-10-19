@@ -3,11 +3,12 @@
   'use strict';
   var api = factory(
     typeof module === 'object' && module.exports ? require('./words.js') : root.Words,
-    typeof module === 'object' && module.exports ? require('./reference.js') : root.DrawingReference
+    typeof module === 'object' && module.exports ? require('./reference.js') : root.DrawingReference,
+    typeof module === 'object' && module.exports ? require('./reference-recipes.js') : root.ReferenceRecipes
   );
   if (typeof module === 'object' && module.exports) module.exports = api;
   root.MeaningReference = api;
-})(typeof globalThis !== 'undefined' ? globalThis : this, function (Words, DrawingReference) {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (Words, DrawingReference, Recipes) {
   'use strict';
 
   /* Each scene combines visible objects so an artist can infer the phrase. */
@@ -292,6 +293,8 @@
   }
 
   function get(id) {
+    // A hand-composed recipe for the topic replaces the generic composed scene.
+    if (Recipes && Recipes[id]) return null;
     if (cache[id]) return cache[id];
     var scene = scenes[id];
     if (!scene) return null;
@@ -332,7 +335,9 @@
   return {
     get: get,
     svg: svg,
-    ids: function () { return Object.keys(scenes); },
+    ids: function () {
+      return Object.keys(scenes).filter(function (id) { return !(Recipes && Recipes[id]); });
+    },
     components: function (id) {
       return (scenes[id] || []).map(function (name) {
         return { name: name, available: !!iconStrokes(name) };

@@ -4,11 +4,14 @@
   var api = factory(
     typeof module === 'object' && module.exports
       ? require('./words.js')
-      : root.Words
+      : root.Words,
+    typeof module === 'object' && module.exports
+      ? require('./reference-recipes.js')
+      : root.ReferenceRecipes
   );
   if (typeof module === 'object' && module.exports) module.exports = api;
   root.DrawingReference = api;
-})(typeof globalThis !== 'undefined' ? globalThis : this, function (Words) {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (Words, Recipes) {
   'use strict';
 
   // Each entry describes the named subject, rather than its category or a similar word.
@@ -381,11 +384,25 @@
       });
   }
 
+  // A composed op is a game shape op, or {c: paletteKey, o: op} to colour that part.
+  function composed(ops) {
+    return [].concat.apply(
+      [],
+      ops.map(function (op) {
+        var key = Array.isArray(op) ? null : op.c;
+        return pointsOf(key ? op.o : op).map(function (stroke) {
+          return key ? { p: stroke.p, c: key } : stroke;
+        });
+      })
+    );
+  }
+
   function get(id) {
     var word = Words.byId(id);
     if (!word) return null;
     if (recipes[word.text])
       return [].concat.apply([], recipes[word.text].map(pointsOf));
+    if (Recipes && Recipes[id]) return composed(Recipes[id]);
     var strokes = Words.strokesOf(id);
     // Expanded recipes end with a small topic-bank marker, not part of the drawing.
     if (id.indexOf('w-') === 0 && strokes.length > 3) return strokes.slice(0, -3);
@@ -434,7 +451,18 @@
     purple: ['#8E6BC9', '#B99AE0', '#5F4396', '#DCCBF2'],
     brown: ['#A06A42', '#C99A6B', '#6E4529', '#E2C29B'],
     dark: ['#4A4A55', '#7A7A88', '#26262E', '#B3B3C0'],
-    gold: ['#F2C14B', '#F8DE8C', '#C99425', '#FFF2C4']
+    gold: ['#F2C14B', '#F8DE8C', '#C99425', '#FFF2C4'],
+    white: ['#F1EEE8', '#FFFFFF', '#CFC9BE', '#FAF8F4'],
+    gray: ['#9AA0A8', '#C4C9CF', '#6B7078', '#E1E4E8'],
+    silver: ['#B8C2CC', '#E3E9EF', '#7F8C99', '#FFFFFF'],
+    pink: ['#F2A0B8', '#F9CBD8', '#D96A8B', '#FDE6EC'],
+    skin: ['#F0BE9A', '#F8D8C0', '#D99A78', '#FBE7D8'],
+    yellow: ['#F5D04A', '#FAE58C', '#D9A92A', '#FFF4C2'],
+    teal: ['#3FA8A0', '#8FD3CC', '#26746E', '#CBEDE9'],
+    sky: ['#7DBDEB', '#BFE0F6', '#4C8FC4', '#E6F3FC'],
+    black: ['#33333B', '#5A5A66', '#15151A', '#8C8C99'],
+    wood: ['#B07A4A', '#D2A574', '#7C512C', '#E8C9A0'],
+    cream: ['#F4E3BC', '#FBF1D8', '#D9BF86', '#FFF8E8']
   };
   var SUBJECTS = [
     [/太陽|陽光|香蕉|檸檬|黃色|向日葵|玉米|蜂蜜|蛋黃/, 'sun'],
@@ -638,5 +666,11 @@
     return render(strokes, step, paletteKeyOf(id));
   }
 
-  return { get: get, svg: svg, render: render, paletteKeyOf: paletteKeyOf };
+  return {
+    get: get,
+    svg: svg,
+    render: render,
+    paletteKeyOf: paletteKeyOf,
+    paletteKeys: function () { return Object.keys(PALETTES); }
+  };
 });
