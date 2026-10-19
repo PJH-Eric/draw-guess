@@ -272,13 +272,32 @@
     return strokes;
   }
 
+  var PEOPLE = /person|man|farmer|soldier|archer|visitor|student|parent|lord|expert|musician|hands|feet|face|eyes?|mouth|ears/;
+  var PRIMITIVE_PALETTES = [
+    [/fire|oil|sun/, 'orange'], [/water|drop|sea|river/, 'blue'], [/snow|ice/, 'ice'],
+    [/bamboo|seedling|willow|grass|tree|soil/, 'green'], [/heart|red/, 'red'],
+    [/stump|wall|fence|wheelbarrow|firewood|charcoal|stick|axe|spear|sword|shield|road|well/, 'brown'],
+    [/jade|box|paper|map|palette|bottle|cup|tower|bell|brush|weights|flute/, 'home'],
+    [/note|music/, 'music'], [/arrow|target|bubble/, 'gold']
+  ];
+
+  function paletteOf(name) {
+    var label = aliases[name] || name;
+    var word = wordsByText[label.toLowerCase()];
+    if (word) return DrawingReference.paletteKeyOf(word.id);
+    if (PEOPLE.test(name)) return 'people';
+    for (var i = 0; i < PRIMITIVE_PALETTES.length; i++)
+      if (PRIMITIVE_PALETTES[i][0].test(name)) return PRIMITIVE_PALETTES[i][1];
+    return 'nature';
+  }
+
   function get(id) {
     if (cache[id]) return cache[id];
     var scene = scenes[id];
     if (!scene) return null;
     var icons = scene.map(function (name) {
       var strokes = iconStrokes(name);
-      return strokes && strokes.length ? { name: name, strokes: strokes } : null;
+      return strokes && strokes.length ? { name: name, strokes: strokes, palette: paletteOf(name) } : null;
     }).filter(Boolean);
     if (!icons.length || icons.length !== scene.length) return null;
     var layouts = icons.length === 1
@@ -297,7 +316,7 @@
           var center = pointIndex % 2 === 0 ? layout[0] : layout[1];
           return Math.round((value - 500) * layout[2] + center);
         });
-        result.push({ p: transformed });
+        result.push({ p: transformed, c: icon.palette });
       });
     });
     cache[id] = result;
@@ -307,16 +326,7 @@
   function svg(id, step) {
     var strokes = get(id);
     if (!strokes) return '';
-    var count = Math.ceil(strokes.length * Math.max(1, Math.min(3, step || 3)) / 3);
-    var paths = strokes.slice(0, count).map(function (stroke) {
-      var points = stroke.p;
-      var data = 'M' + points[0] + ' ' + points[1];
-      for (var i = 2; i < points.length; i += 2) data += 'L' + points[i] + ' ' + points[i + 1];
-      return '<path d="' + data + '"/>';
-    }).join('');
-    return '<svg viewBox="-40 -40 1080 1080" aria-hidden="true" focusable="false">' +
-      '<g fill="none" stroke="#4A3B55" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">' +
-      paths + '</g></svg>';
+    return DrawingReference.render(strokes, step, 'idiom');
   }
 
   return {

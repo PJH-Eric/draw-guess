@@ -392,28 +392,251 @@
     return strokes;
   }
 
-  function svg(id, step) {
-    var strokes = get(id);
-    if (!strokes) return '';
-    var count = Math.ceil(
-      (strokes.length * Math.max(1, Math.min(3, step || 3))) / 3
-    );
-    var paths = strokes
-      .slice(0, count)
-      .map(function (stroke) {
-        var p = stroke.p;
-        var d = 'M' + p[0] + ' ' + p[1];
-        for (var i = 2; i < p.length; i += 2) d += 'L' + p[i] + ' ' + p[i + 1];
-        return '<path d="' + d + '"/>';
-      })
-      .join('');
+  /* ---------- Realistic rendering: colour, light and depth over the same strokes ---------- */
+
+  // Four related colours per palette: body, secondary, accent, highlight tone.
+  var PALETTES = {
+    animal: ['#C98F5B', '#F0D2A8', '#8A5A3B', '#F6A97A'],
+    food: ['#E8A04C', '#F6D56E', '#D9503F', '#8DBB5B'],
+    home: ['#8FA9C7', '#E7C98B', '#B6BCC6', '#D98C7A'],
+    vehicle: ['#D9544D', '#9DB7D1', '#5A6270', '#F1C94B'],
+    nature: ['#6FB35E', '#A6D6F0', '#C99A6B', '#F3D669'],
+    fun: ['#4F9BD9', '#F2B94B', '#E5604F', '#7BC47F'],
+    emotion: ['#F28FA8', '#FFD36B', '#9C8CE0', '#F7B8C8'],
+    idiom: ['#C89B5A', '#7FA68B', '#B85C50', '#EAD9AE'],
+    phenomenon: ['#7FA8D6', '#C9D6E6', '#F2C94C', '#5C6F94'],
+    place: ['#C98C6B', '#9DB7D1', '#8DB27A', '#E9D7B0'],
+    expression: ['#F5C26B', '#F28F7E', '#8E7CC3', '#FFE6B0'],
+    job: ['#5B87C2', '#F0C79A', '#E5604F', '#F2D24B'],
+    fantasy: ['#9B7FD6', '#F2A6D2', '#6FC3D9', '#F5D86B'],
+    action: ['#F29F5C', '#6FB3D9', '#8CC678', '#E9768B'],
+    star: ['#F2C14B', '#D96A8B', '#6C7FD1', '#F6E3A5'],
+    movie: ['#B04A4A', '#3F4A63', '#E5B94B', '#CFC7B8'],
+    trend: ['#4FA3B8', '#F28F5C', '#9B84D6', '#F2D36B'],
+    history: ['#B58A58', '#8D6E63', '#D8C08F', '#6E8B74'],
+    geography: ['#5AA469', '#5B9BD5', '#E2C27D', '#C27C5A'],
+    civics: ['#5878A8', '#D5B25C', '#B8505A', '#BFC7D1'],
+    physics: ['#4F8FD6', '#E55A4F', '#F2C94C', '#9AA6B5'],
+    astro: ['#5C6BC0', '#F2C94C', '#9575CD', '#7FB3E0'],
+    music: ['#B05AB0', '#F2B94B', '#4FA3D9', '#E5604F'],
+    people: ['#E3A57F', '#5B87C2', '#E5604F', '#F2D24B'],
+    body: ['#F0B493', '#E07A7A', '#C9856A', '#F6CDB8'],
+    clothes: ['#5B87C2', '#E5748B', '#F2C14B', '#8E7CC3'],
+    festival: ['#D9423E', '#F2B53B', '#E8745A', '#8E2E3A'],
+    taiwan: ['#3FA796', '#F2A541', '#D9544D', '#F4DDA0'],
+    // Subject colours override the category when the name says what it looks like.
+    sun: ['#F5C842', '#F9E08A', '#F29B30', '#FFF0B8'],
+    red: ['#D9423E', '#F27A6B', '#8E2E3A', '#F7B3A6'],
+    green: ['#5FAE5A', '#A5D67F', '#3E8048', '#D3EBA8'],
+    blue: ['#4F8FD6', '#9CC7EE', '#2F5E9E', '#D3E7F8'],
+    ice: ['#A9D4EE', '#E4F2FA', '#6FA6CC', '#FFFFFF'],
+    orange: ['#F28C38', '#F7B36B', '#D9622B', '#FBD9A8'],
+    purple: ['#8E6BC9', '#B99AE0', '#5F4396', '#DCCBF2'],
+    brown: ['#A06A42', '#C99A6B', '#6E4529', '#E2C29B'],
+    dark: ['#4A4A55', '#7A7A88', '#26262E', '#B3B3C0'],
+    gold: ['#F2C14B', '#F8DE8C', '#C99425', '#FFF2C4']
+  };
+  var SUBJECTS = [
+    [/太陽|陽光|香蕉|檸檬|黃色|向日葵|玉米|蜂蜜|蛋黃/, 'sun'],
+    [/月亮|星|金|皇冠|獎牌|獎盃|銅|寶藏/, 'gold'],
+    [/雪|冰|雲|牛奶|白|霜/, 'ice'],
+    [/紅蘿蔔|胡蘿蔔|橘|橙|南瓜|柿|火|辣椒|岩漿/, 'orange'],
+    [/紅|蘋果|草莓|番茄|櫻桃|玫瑰|愛心|心|血|消防|蝦|蟹/, 'red'],
+    [/綠|葉|草|樹|竹|菜|青蛙|西瓜|仙人掌|黃瓜|森林|蔬|瓜/, 'green'],
+    [/藍|海|水|雨|魚|鯨|海豚|企鵝|游泳|河|湖|浪|潛/, 'blue'],
+    [/紫|葡萄|茄子|薰衣草/, 'purple'],
+    [/黑|烏鴉|熊貓|夜|蝙蝠|影/, 'dark'],
+    [/巧克力|咖啡|木|熊|猴|土|泥|餅乾|可可|栗/, 'brown']
+  ];
+
+  function paletteKeyOf(id) {
+    var word = Words.byId(id);
+    if (!word) return 'nature';
+    for (var i = 0; i < SUBJECTS.length; i++)
+      if (SUBJECTS[i][0].test(word.text)) return SUBJECTS[i][1];
+    return PALETTES[word.cat] ? word.cat : 'nature';
+  }
+
+  function mix(a, b, t) {
+    var x = [1, 3, 5].map(function (i) { return parseInt(a.substr(i, 2), 16); });
+    var y = [1, 3, 5].map(function (i) { return parseInt(b.substr(i, 2), 16); });
     return (
-      '<svg viewBox="-40 -40 1080 1080" aria-hidden="true" focusable="false">' +
-      '<g fill="none" stroke="#4A3B55" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">' +
-      paths +
-      '</g></svg>'
+      '#' +
+      [0, 1, 2]
+        .map(function (i) {
+          var v = Math.round(x[i] + (y[i] - x[i]) * t);
+          return (v < 16 ? '0' : '') + v.toString(16);
+        })
+        .join('')
     );
   }
 
-  return { get: get, svg: svg };
+  function near(p, i, q, j) {
+    return Math.abs(p[i] - q[j]) < 8 && Math.abs(p[i + 1] - q[j + 1]) < 8;
+  }
+
+  function measure(p) {
+    var n = p.length;
+    var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    var area = 0;
+    for (var i = 0; i < n; i += 2) {
+      minX = Math.min(minX, p[i]);
+      maxX = Math.max(maxX, p[i]);
+      minY = Math.min(minY, p[i + 1]);
+      maxY = Math.max(maxY, p[i + 1]);
+      var j = (i + 2) % n;
+      area += p[i] * p[j + 1] - p[j] * p[i + 1];
+    }
+    var w = maxX - minX;
+    var h = maxY - minY;
+    var big = Math.max(w, h) > 70;
+    area = Math.abs(area) / 2;
+    return {
+      p: p, minX: minX, minY: minY, maxX: maxX, maxY: maxY,
+      cx: (minX + maxX) / 2, cy: (minY + maxY) / 2, area: area,
+      dot: !big,
+      fill: big && Math.min(w, h) >= 14 && area > w * h * 0.12,
+      tier: 0
+    };
+  }
+
+  function isClosed(p) {
+    var n = p.length;
+    return n >= 8 && near(p, 0, p, n - 2);
+  }
+
+  // Regions to paint: closed strokes, plus two open arcs that join end to end into a loop.
+  // idx is the last stroke needed, so a region only appears once all its strokes are drawn.
+  function regions(strokes) {
+    var out = [];
+    strokes.forEach(function (stroke, i) {
+      var p = stroke.p;
+      if (isClosed(p)) {
+        var r = measure(p);
+        r.idx = i;
+        out.push(r);
+        return;
+      }
+      for (var k = i + 1; k < strokes.length; k++) {
+        var q = strokes[k].p;
+        if (isClosed(q)) continue;
+        var end = p.length - 2;
+        var qend = q.length - 2;
+        var joined = null;
+        if (near(p, end, q, 0) && near(q, qend, p, 0)) joined = p.concat(q.slice(2));
+        else if (near(p, end, q, qend) && near(q, 0, p, 0)) {
+          var rev = [];
+          for (var m = qend; m >= 0; m -= 2) rev.push(q[m], q[m + 1]);
+          joined = p.concat(rev.slice(2));
+        }
+        if (joined) {
+          var loop = measure(joined);
+          loop.idx = k;
+          out.push(loop);
+          break;
+        }
+      }
+    });
+    // Nested regions get a lighter or contrasting colour tier.
+    out.forEach(function (a) {
+      if (!a.fill) return;
+      out.forEach(function (b) {
+        if (b !== a && b.fill && b.area > a.area &&
+            a.cx > b.minX && a.cx < b.maxX && a.cy > b.minY && a.cy < b.maxY) a.tier++;
+      });
+    });
+    return out.filter(function (r) { return r.fill || r.dot; });
+  }
+
+  function gradients(key) {
+    return PALETTES[key].map(function (color, i) {
+      return (
+        '<radialGradient id="g' + key + i + '" cx=".35" cy=".28" r=".85">' +
+        '<stop offset="0" stop-color="' + mix(color, '#ffffff', 0.5) + '"/>' +
+        '<stop offset=".5" stop-color="' + color + '"/>' +
+        '<stop offset="1" stop-color="' + mix(color, '#2a1a30', 0.38) + '"/></radialGradient>'
+      );
+    }).join('');
+  }
+
+  function pointsAttr(p) {
+    var out = [];
+    for (var i = 0; i < p.length; i += 2) out.push(p[i] + ',' + p[i + 1]);
+    return out.join(' ');
+  }
+
+  /** Strokes may carry `c` (palette key) so composed scenes can colour each object. */
+  function render(strokes, step, fallbackKey) {
+    if (!strokes || !strokes.length) return '';
+    var count = Math.ceil(
+      (strokes.length * Math.max(1, Math.min(3, step || 3))) / 3
+    );
+    var used = {};
+    var keyOf = function (i) {
+      var k = strokes[i].c || fallbackKey;
+      return PALETTES[k] ? k : 'nature';
+    };
+    var minX = Infinity, maxX = -Infinity, maxY = -Infinity;
+    var lines = '';
+    for (var s = 0; s < count; s++) {
+      var p = strokes[s].p;
+      var path = 'M' + p[0] + ' ' + p[1];
+      for (var q = 0; q < p.length; q += 2) {
+        minX = Math.min(minX, p[q]);
+        maxX = Math.max(maxX, p[q]);
+        maxY = Math.max(maxY, p[q + 1]);
+        if (q) path += 'L' + p[q] + ' ' + p[q + 1];
+      }
+      used[keyOf(s)] = 1;
+      lines += '<path d="' + path + '" stroke="' +
+        mix(PALETTES[keyOf(s)][0], '#1d1224', 0.7) + '"' +
+        (isClosed(p) ? '' : ' stroke-width="11"') + '/>';
+    }
+    var order = regions(strokes).filter(function (r) { return r.idx < count; });
+    order.sort(function (a, b) { return b.area - a.area; });
+
+    var first = keyOf(0);
+    var tint = PALETTES[first][0];
+    var body = '';
+    var glints = '';
+    order.forEach(function (r) {
+      var k = keyOf(r.idx);
+      var pts = pointsAttr(r.p);
+      if (r.dot) {
+        body += '<polygon points="' + pts + '" fill="' + mix(PALETTES[k][2], '#120a18', 0.72) + '"/>';
+        var gr = Math.max(4, (r.maxX - r.minX) * 0.14);
+        glints += '<circle cx="' + Math.round(r.cx - gr * 1.2) + '" cy="' +
+          Math.round(r.cy - gr * 1.4) + '" r="' + Math.round(gr) + '" fill="#fff" opacity=".85"/>';
+      } else {
+        body += '<polygon points="' + pts + '" fill="url(#g' + k + (r.tier % 4) + ')"/>';
+      }
+    });
+    return (
+      '<svg viewBox="-40 -40 1080 1080" aria-hidden="true" focusable="false">' +
+      '<defs>' +
+      Object.keys(used).map(gradients).join('') +
+      '<linearGradient id="bg' + first + '" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="' + mix(tint, '#ffffff', 0.93) + '"/>' +
+      '<stop offset="1" stop-color="' + mix(tint, '#ffffff', 0.78) + '"/></linearGradient>' +
+      '<radialGradient id="gr' + first + '"><stop offset="0" stop-color="#2a1a30" stop-opacity=".3"/>' +
+      '<stop offset="1" stop-color="#2a1a30" stop-opacity="0"/></radialGradient>' +
+      '<filter id="sh' + first + '" x="-10%" y="-10%" width="120%" height="125%">' +
+      '<feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#2a1a30" flood-opacity=".25"/></filter>' +
+      '</defs>' +
+      '<rect x="-40" y="-40" width="1080" height="1080" rx="64" fill="url(#bg' + first + ')"/>' +
+      '<ellipse cx="' + Math.round((minX + maxX) / 2) + '" cy="' + Math.round(Math.min(985, maxY + 22)) +
+      '" rx="' + Math.round(Math.max(120, (maxX - minX) * 0.5)) + '" ry="34" fill="url(#gr' + first + ')"/>' +
+      '<g filter="url(#sh' + first + ')">' + body + '</g>' + glints +
+      '<g fill="none" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">' +
+      lines + '</g></svg>'
+    );
+  }
+
+  function svg(id, step) {
+    var strokes = get(id);
+    if (!strokes) return '';
+    return render(strokes, step, paletteKeyOf(id));
+  }
+
+  return { get: get, svg: svg, render: render, paletteKeyOf: paletteKeyOf };
 });
