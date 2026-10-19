@@ -556,65 +556,47 @@ async function main() {
       await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
       check(label + '：Escape 關閉並回到入口', await cdp.eval('return document.getElementById("reference-modal").getAttribute("aria-hidden")==="true" && document.activeElement.id==="b-reference";'));
     }
-    /* Prefer an Openverse-derived local image, then fall back to a Commons image. */
-    const imageReferenceId = await cdp.eval(`var ids=Object.keys(window.OfflineReferences||{});
-      return ids.find(function(id){return window.OfflineReferences[id].status==='ready' &&
-        (window.OfflineReferences[id].sourceProvider||'').indexOf('Openverse / ')===0;}) ||
-        ids.find(function(id){return window.OfflineReferences[id].status==='ready';}) || null;`);
-    check(v.name + '：題庫含可離線載入的圖片範本', !!imageReferenceId, '沒有已媒合的本機圖片');
-    if (imageReferenceId) {
+    /* Expanded topics use the same pen-stroke recipes as the drawing game. */
+    const gameRecipeReferenceId = await cdp.eval(`var word=window.Words.all().find(function(item){
+      return item.id.indexOf('w-')===0 && !window.MeaningReference.get(item.id) &&
+        window.Words.strokesOf(item.id).length>=3;
+    }); return word && word.id;`);
+    check(v.name + '：擴充題有遊戲筆畫範本', !!gameRecipeReferenceId, '找不到可驗證的擴充題');
+    if (gameRecipeReferenceId) {
       await cdp.eval(
-        'window.__imageReferenceOriginal=window.DrawGuessApp.solo.state.wordId; ' +
-        'window.DrawGuessApp.solo.state.wordId=' + JSON.stringify(imageReferenceId) + '; return 1;'
+        'window.__recipeReferenceOriginal=window.DrawGuessApp.solo.state.wordId; ' +
+        'window.DrawGuessApp.solo.state.wordId=' + JSON.stringify(gameRecipeReferenceId) + '; return 1;'
       );
-      await cdp.waitFor('window.DrawGuessApp.view.game.referenceId === ' + JSON.stringify(imageReferenceId), 3000, '切換離線圖片範本');
+      await cdp.waitFor('window.DrawGuessApp.view.game.referenceId === ' + JSON.stringify(gameRecipeReferenceId), 3000, '切換遊戲筆畫範本');
       await cdp.eval('document.getElementById("b-reference").click(); return 1;');
-      await cdp.waitFor(
-        'document.querySelector("#reference-picture img") && ' +
-        'document.querySelector("#reference-picture img").complete && ' +
-        'document.querySelector("#reference-picture img").naturalWidth > 0',
-        5000,
-        '載入本機線稿'
-      );
-      const imageLayout = await cdp.json(`(function(){
+      await cdp.waitFor('document.querySelectorAll("#reference-picture path").length >= 3', 3000, '顯示遊戲筆畫範本');
+      const recipeLayout = await cdp.json(`(function(){
         var panel=document.getElementById('reference-panel'), r=panel.getBoundingClientRect();
-        var ids=['reference-word','reference-picture','reference-steps','reference-note','reference-credit','reference-done','reference-close'];
-        var rects=ids.map(function(id){var b=document.getElementById(id).getBoundingClientRect();return {id:id,l:b.left,t:b.top,r:b.right,b:b.bottom,w:b.width,h:b.height};});
-        var overlaps=[];
-        rects.forEach(function(a,i){rects.slice(i+1).forEach(function(b){if(Math.min(a.r,b.r)-Math.max(a.l,b.l)>2&&Math.min(a.b,b.b)-Math.max(a.t,b.t)>2)overlaps.push([a.id,b.id]);});});
-        var img=document.querySelector('#reference-picture img'), source=document.getElementById('reference-source');
-        var imageUrl=new URL(img.src,location.href);
+        var picture=document.getElementById('reference-picture'), b=picture.getBoundingClientRect();
+        var svg=picture.querySelector('svg');
         return {open:document.getElementById('reference-modal').getAttribute('aria-hidden')==='false',
           inView:r.left>=0&&r.top>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1,
-          content:rects.every(function(b){return b.l>=r.left&&b.t>=r.top&&b.r<=r.right+1&&b.b<=r.bottom+1&&b.w>0&&b.h>0;}),
-          overlaps:overlaps,src:img.src,local:imageUrl.origin===location.origin&&
-            imageUrl.pathname.indexOf('/references/assets/')>=0&&imageUrl.pathname.endsWith('.png'),
-          credit:!document.getElementById('reference-credit').hidden&&!!document.getElementById('reference-credit-text').textContent,
-          sourceLink:source.href.indexOf('https://')===0,
-          licenseLink:document.getElementById('reference-license').href.indexOf('https://')===0,
-          strokes:JSON.stringify(window.DrawGuessApp.solo.state.strokes)};
+          pictureInView:b.left>=r.left&&b.top>=r.top&&b.right<=r.right+1&&b.bottom<=r.bottom+1,
+          svg:!!svg,paths:picture.querySelectorAll('path').length,noImage:!picture.querySelector('img'),
+          noCatalog:!window.OfflineReferences,creditRemoved:!document.getElementById('reference-credit'),
+          strokes:JSON.stringify(window.DrawGuessApp.solo.state.strokes),word:document.getElementById('reference-word').textContent};
       })()`);
-      check(
-        v.name + '：離線圖範本在視窗內且內容不互相遮擋',
-        imageLayout.open && imageLayout.inView && imageLayout.content && imageLayout.overlaps.length === 0,
-        JSON.stringify(imageLayout)
-      );
-      check(
-        v.name + '：圖片從本機載入並顯示作者、授權與來源連結',
-        imageLayout.local && imageLayout.credit && imageLayout.sourceLink && imageLayout.licenseLink,
-        JSON.stringify(imageLayout)
-      );
-      await shot(v.name + '-範本-離線圖片');
+      check(v.name + '：擴充題由 SVG 遊戲筆畫繪製且符合螢幕尺寸',
+        recipeLayout.open && recipeLayout.inView && recipeLayout.pictureInView && recipeLayout.svg &&
+          recipeLayout.paths >= 3 && recipeLayout.noImage && recipeLayout.noCatalog && recipeLayout.creditRemoved,
+        JSON.stringify(recipeLayout));
+      await shot(v.name + '-範本-遊戲筆畫');
       await cdp.eval('document.querySelectorAll("[data-reference-step]")[0].click(); return 1;');
-      check(v.name + '：圖片範本可切換三個離線階段且作品不變',
-        await cdp.eval('return document.querySelector("#reference-picture img").src.endsWith("/1.png") && JSON.stringify(window.DrawGuessApp.solo.state.strokes) === ' + JSON.stringify(imageLayout.strokes) + ';'));
+      const firstRecipePaths = await cdp.eval('return document.querySelectorAll("#reference-picture path").length;');
+      check(v.name + '：遊戲筆畫能分階段顯示且作品不變',
+        firstRecipePaths > 0 && firstRecipePaths < recipeLayout.paths &&
+          await cdp.eval('return JSON.stringify(window.DrawGuessApp.solo.state.strokes) === ' + JSON.stringify(recipeLayout.strokes) + ';'));
       await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
-      await cdp.waitFor('document.getElementById("reference-modal").getAttribute("aria-hidden")==="true"', 3000, '關閉圖片範本');
-      await cdp.eval('window.DrawGuessApp.solo.state.wordId=window.__imageReferenceOriginal; return 1;');
+      await cdp.waitFor('document.getElementById("reference-modal").getAttribute("aria-hidden")==="true"', 3000, '關閉遊戲筆畫範本');
+      await cdp.eval('window.DrawGuessApp.solo.state.wordId=window.__recipeReferenceOriginal; return 1;');
       await cdp.waitFor('window.DrawGuessApp.view.game.referenceId === window.DrawGuessApp.solo.state.wordId', 3000, '還原範本題目');
     }
-    const semanticReferenceId = await cdp.eval(`var ids=Object.keys(window.OfflineReferences||{});
-      return ids.find(function(id){return window.OfflineReferences[id].status==='semantic';}) || null;`);
+    const semanticReferenceId = await cdp.eval('return window.MeaningReference.ids()[0] || null;');
     check(v.name + '：題庫含離線語意組圖範本', !!semanticReferenceId, '沒有已收錄的語意組圖');
     if (semanticReferenceId) {
       await cdp.eval(
@@ -631,12 +613,12 @@ async function main() {
           inView:r.left>=0&&r.top>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1,
           pictureInView:b.left>=r.left&&b.top>=r.top&&b.right<=r.right+1&&b.bottom<=r.bottom+1,
           svg:!!picture.querySelector('svg'),paths:picture.querySelectorAll('path').length,
-          noRemoteImage:!picture.querySelector('img'),creditHidden:document.getElementById('reference-credit').hidden,
+          noRemoteImage:!picture.querySelector('img'),creditRemoved:!document.getElementById('reference-credit'),
           strokes:JSON.stringify(window.DrawGuessApp.solo.state.strokes),word:document.getElementById('reference-word').textContent};
       })()`);
       check(v.name + '：語意組圖在螢幕內且不載入網路圖片',
         semanticLayout.open && semanticLayout.inView && semanticLayout.pictureInView &&
-          semanticLayout.svg && semanticLayout.paths > 0 && semanticLayout.noRemoteImage && semanticLayout.creditHidden,
+          semanticLayout.svg && semanticLayout.paths > 0 && semanticLayout.noRemoteImage && semanticLayout.creditRemoved,
         JSON.stringify(semanticLayout));
       await shot(v.name + '-範本-離線語意圖');
       await cdp.eval('document.querySelectorAll("[data-reference-step]")[0].click(); return 1;');
@@ -758,20 +740,6 @@ async function main() {
     await cdp.eval('var h=document.getElementById("hintrow"); return h.getBoundingClientRect().height === 0;'));
   check('單機不限時：作畫中沒有倒數',
     await cdp.eval('return window.DrawGuessApp.solo.state.deadline === 0 && getComputedStyle(document.getElementById("timer-chip")).display === "none";'));
-
-  /* Use a catalogued missing prompt so the check remains valid as coverage grows. */
-  await cdp.eval(`var st=window.DrawGuessApp.solo.state;
-    window.__referenceWord=st.wordId;
-    st.wordId=Object.keys(window.OfflineReferences).find(function(id){
-      return window.OfflineReferences[id].status==='missing';
-    }); return 1;`);
-  await cdp.waitFor('window.DrawGuessApp.view.game.referenceId === window.DrawGuessApp.solo.state.wordId', 3000);
-  await cdp.eval('document.getElementById("b-reference").click(); return 1;');
-  check('未收錄題目顯示說明，不借用其他圖像', await cdp.eval('return !document.getElementById("reference-empty").hidden && document.getElementById("reference-picture").hidden && document.querySelectorAll("#reference-picture path").length===0;'));
-  await shot('範本-尚未收錄');
-  await cdp.eval('window.DrawGuessApp.solo.state.wordId=window.__referenceWord; return 1;');
-  await cdp.waitFor('document.getElementById("reference-modal").getAttribute("aria-hidden")==="true"', 3000);
-  check('題目改變時關閉舊範本並清掉舊圖', await cdp.eval('return document.querySelectorAll("#reference-picture path").length === 0;'));
 
   /* 單機沒有電腦對手、只有你自己，「畫完了」沒有其他人可以通知，整顆鈕藏起來；
      改用「換題」，按下去會直接結束這一題並公布答案。 */

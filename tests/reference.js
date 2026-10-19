@@ -9,14 +9,7 @@ let available = 0;
 for (const word of Words.all()) {
   const before = JSON.stringify(word.draw);
   const strokes = Reference.get(word.id);
-  if (!strokes) {
-    assert.equal(
-      Reference.svg(word.id),
-      '',
-      'Unsupported topics must not use a borrowed icon'
-    );
-    continue;
-  }
+  assert.ok(strokes, word.id + ' must have a game-drawn reference');
   available++;
   assert.ok(strokes.length > 0);
   for (const stroke of strokes) {
@@ -40,10 +33,11 @@ for (const word of Words.all()) {
 const idFor = (text) => Words.all().find((w) => w.text === text).id;
 assert.notDeepEqual(Reference.get(idFor('棒球')), Reference.get('soccer'));
 assert.notDeepEqual(Reference.get(idFor('雪花')), Reference.get('star'));
-assert.equal(
-  Reference.get(idFor('拿破崙')),
-  null,
-  'Unverified historical topics must not show a generic person'
+assert.ok(Reference.get(idFor('拿破崙')).length > 0);
+assert.deepEqual(
+  Reference.get(idFor('熊')),
+  Words.strokesOf(idFor('熊')).slice(0, -3),
+  'Expanded references must omit the prompt-bank marker strokes'
 );
 assert.equal(Reference.get('unknown'), null);
 

@@ -1,5 +1,4 @@
-/* Offline drawing references. Expanded bank recipes are deliberately excluded:
- * their borrowed icons and identifying marks do not illustrate the actual topic. */
+/* Offline drawing references use the same shape recipes as the game. */
 (function (root, factory) {
   'use strict';
   var api = factory(
@@ -387,8 +386,10 @@
     if (!word) return null;
     if (recipes[word.text])
       return [].concat.apply([], recipes[word.text].map(pointsOf));
-    if (id.indexOf('w-') === 0) return null;
-    return Words.strokesOf(id);
+    var strokes = Words.strokesOf(id);
+    // Expanded recipes end with a small topic-bank marker, not part of the drawing.
+    if (id.indexOf('w-') === 0 && strokes.length > 3) return strokes.slice(0, -3);
+    return strokes;
   }
 
   function svg(id, step) {

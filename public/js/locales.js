@@ -9,10 +9,7 @@ I18N.register('zh-Hant', {
   'reference.step3': '③ 完整圖',
   'reference.back': '回去畫畫',
   'reference.image': '「{word}」簡筆畫範本，第 {step} 階段，共 3 階段',
-  'reference.credit': '參考圖片：{title} · {author} · {license}。範本為改作，依來源授權標示。',
-  'reference.source': '原始圖片',
-  'reference.license': '授權條款',
-  'reference.empty': '這題的正確圖像範本尚未收錄。可以先畫出你想到的特徵，或換一個題目。',
+  'reference.empty': '範本暫時無法顯示，請稍後再試。',
   'reference.note': '看輪廓與特徵就好，不必畫得一模一樣。範本不會放進你的畫布；線上回合仍會繼續計時。'
 }).register('en', {
   'reference.open': 'Reference',
@@ -24,10 +21,7 @@ I18N.register('zh-Hant', {
   'reference.step3': '③ Full sketch',
   'reference.back': 'Back to drawing',
   'reference.image': 'Drawing reference for {word}, stage {step} of 3',
-  'reference.credit': 'Source image: {title} · {author} · {license}. Sketch adapted under the source license.',
-  'reference.source': 'Original image',
-  'reference.license': 'License',
-  'reference.empty': 'A verified drawing reference has not been added for this topic yet. Try its key features, or choose another topic.',
+  'reference.empty': 'The drawing reference is temporarily unavailable. Please try again later.',
   'reference.note': 'Use the outline and details as a guide. The reference stays off your canvas. Online rounds keep counting down.'
 });
 

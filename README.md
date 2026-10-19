@@ -63,11 +63,11 @@ Windows 可以直接雙擊 **`啟動遊戲.bat`**（會自動安裝相依套件�
 
 選題後，畫家可按題目旁的「查看範本」，切換「起筆／加細節／完整圖」三個階段，再按「回去畫畫」繼續作畫。支援繁中與英文介面、手機和平板直橫向及桌機；線上回合查看範本時仍繼續計時。
 
-目前有 **158 題手繪範本**、**1,711 題**由 Wikimedia Commons 與 Openverse 的可改作授權圖片轉製成離線三階段線稿，以及 **66 題**依題意組合的離線語意範本；另有 **65 題**尚未找到合適圖像或可靠語意圖時，清楚顯示尚未收錄，不會借用其他題目的圖像。範本只供觀看，不會加入、覆蓋或儲存到玩家作品裡；改作圖片旁會標示作者、來源與授權。遊戲執行時只載入本機圖片，不會連線搜尋或下載。
+題庫 **2,000 題全部都有離線範本**。範本使用遊戲相同的形狀配方，以筆畫逐步畫出 SVG；有逐題手繪配方的題目直接使用手繪筆畫，成語題則優先顯示依題意組合的語意圖。範本分成起筆、加細節與完整圖三階段，不載入外部圖片，也不會加入、覆蓋或儲存到玩家作品裡。
 
 線上投影的 `referenceId` 只在作畫階段提供給當回合畫家；猜題者與觀戰者拿不到識別碼，也沒有範本入口。題目或回合改變時自動關閉舊範本。
 
-執行 `npm run references:build` 可續跑未完成項目與暫時失敗項目（需要 Python 3 與 Pillow）；`node scripts/build-offline-references.js --retry-missing` 會用 Wikimedia Commons 重新檢查未收錄題目，`--retry-openverse` 可改用 [Openverse 圖片 API](https://api.openverse.org/v1/) 搜尋開放授權來源，也可加 `--retry-categories=star,history,food` 限定分類。建置器會遵守來源 API 的速率限制，只採用可改作的 CC BY／CC BY-SA／CC0／公眾領域圖片，並保存作者、原始圖片頁與授權連結。`public/references/catalog.json` 保存結果與出處，`catalog.js` 供遊戲離線載入。執行 `node tests/reference.js` 與 `node tests/reference-catalog.js` 檢查手繪幾何、權限、離線檔案及來源欄位。`npm run test:browser` 包含八種視窗尺寸的雙語範本、焦點、作品保留與角色權限檢查，截圖位於忽略版控的 `screenshots/`。
+執行 `node tests/reference.js` 與 `node tests/reference-coverage.js` 可檢查全部題目的筆畫範本、三階段輸出與成語組圖。`npm run test:browser` 會在八種視窗尺寸檢查雙語範本、焦點、作品保留與角色權限，截圖位於忽略版控的 `screenshots/`。
 
 ### 畫布工具（參考小畫家）
 
