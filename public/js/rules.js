@@ -722,6 +722,8 @@
         revealed: state.revealed.length
       } : null,
       answer: showAnswer && w ? w.text : null,
+      // Only the active drawer receives the reference identifier.
+      referenceId: isDrawer && state.phase === 'drawing' && w ? w.id : null,
       /* 選字清單只有畫家看得到，否則等於把三個候選答案送給所有人 */
       choices: (isDrawer && state.phase === 'picking')
         ? state.choices.map(function (id) {

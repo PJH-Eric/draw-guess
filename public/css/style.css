@@ -1216,6 +1216,33 @@ body.solo-mode.big-tools .fillbox{min-height:56px}
 }
 
 /* Keep the language switch beside settings, including narrow English layouts. */
+.reference-toggle{flex:0 0 auto;min-height:48px;padding:6px 12px;font-size:.85rem;white-space:normal}
+.reference-modal{z-index:2147483002}
+.reference-panel{width:min(540px,calc(100vw - 24px));max-height:calc(100dvh - 24px);display:flex;flex-direction:column}
+.reference-panel .settings-head{flex:0 0 auto;gap:10px}
+.reference-panel .settings-head h2{min-width:0;overflow-wrap:anywhere;font-size:clamp(1.1rem,4vw,1.5rem)}
+.reference-body{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;align-items:center;gap:10px;padding:12px 18px}
+.reference-word{flex:0 0 auto;font-size:1.25rem;text-align:center;overflow-wrap:anywhere;max-width:100%}
+.reference-picture{flex:1 1 auto;min-height:0;width:100%;height:min(40dvh,340px);border:2px dashed var(--grape-d);border-radius:18px;background:#fff}
+.reference-picture svg{display:block;width:100%;height:100%;max-height:340px}
+.reference-steps{flex:0 0 auto;display:flex;gap:6px;align-items:center;width:100%}
+.reference-steps .pillbtn{flex:1 1 0;min-width:0;min-height:48px;padding:6px;font-size:.85rem;white-space:normal}
+.reference-steps [aria-pressed=true]{background:var(--mint);box-shadow:inset 0 0 0 2px var(--ink)}
+.reference-note,.reference-empty{flex:0 0 auto;margin:0;font-size:.875rem;line-height:1.5;overflow-wrap:anywhere}
+.reference-empty{padding:24px 10px;text-align:center;background:#fff7e0;border-radius:16px}
+.reference-panel .settings-foot{flex:0 0 auto}
+@media (max-height:500px) and (orientation:landscape){
+  .reference-panel{width:min(760px,calc(100vw - 24px));display:grid;grid-template-columns:minmax(150px,1fr) minmax(220px,1fr);grid-template-rows:auto minmax(0,1fr) auto}
+  .reference-panel .settings-head{grid-column:1 / -1;padding:8px 14px}
+  .reference-body{display:contents}
+  .reference-picture{grid-column:1;grid-row:2 / 4;height:100%;width:calc(100% - 24px);margin:0 12px 10px}
+  .reference-word{grid-column:2;grid-row:2;align-self:start;padding:4px 12px}
+  .reference-steps{grid-column:2;grid-row:2;align-self:center;padding:0 12px}
+  .reference-note{grid-column:2;grid-row:2;align-self:end;padding:0 12px;font-size:.8rem}
+  .reference-empty{grid-column:1;grid-row:2 / 4;align-self:center;margin:12px;padding:12px}
+  .reference-panel .settings-foot{grid-column:2;grid-row:3;padding:8px 12px}
+}
+
 .lang-toggle { position: fixed; top: calc(10px + env(safe-area-inset-top)); right: calc(70px + env(safe-area-inset-right)); min-width: 48px; min-height: 48px; padding: 8px; border: 2px solid #4a3b55; border-radius: 14px; background: #fff0de; color: #4a3b55; font: 800 16px/1.2 system-ui, sans-serif; cursor: pointer; box-shadow: 0 4px 0 #cfb99f; z-index: 1001; }
 .lang-toggle:focus-visible { outline: 3px solid #287dac; outline-offset: 3px; }
 .settings-fab { min-width: 48px; min-height: 48px; }

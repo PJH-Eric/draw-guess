@@ -1993,6 +1993,7 @@
     all: function () { return LIST.slice(); },
     inCategory: function (cat) { return LIST.filter(function (w) { return w.cat === cat; }); },
     strokesOf: strokesOf,
+    pointsOf: opStrokes,
     features: features,
     featuresOf: featuresOf,
     distance: distance,

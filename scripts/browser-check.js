@@ -523,6 +523,41 @@ async function main() {
       drawStage.canvas.w + ' / 視窗較短邊 ' + Math.min(v.width, v.height));
     await shot(v.name + '-7-作畫中');
 
+    /* Offline reference: both languages, staged strokes and actual modal geometry. */
+    for (const lang of ['zh-Hant', 'en']) {
+      await cdp.eval('window.I18N.setLang(' + JSON.stringify(lang) + '); document.getElementById("b-reference").focus(); document.getElementById("b-reference").click(); return 1;');
+      await sleep(180);
+      const reference = await cdp.json(`(function(){
+        var panel=document.getElementById('reference-panel'), r=panel.getBoundingClientRect();
+        var ids=['reference-word','reference-picture','reference-steps','reference-note','reference-done','reference-close'];
+        var rects=ids.map(function(id){var e=document.getElementById(id),b=e.getBoundingClientRect();return {id:id,l:b.left,t:b.top,r:b.right,b:b.bottom,w:b.width,h:b.height};});
+        var overlaps=[];
+        rects.forEach(function(a,i){rects.slice(i+1).forEach(function(b){if(Math.min(a.r,b.r)-Math.max(a.l,b.l)>2&&Math.min(a.b,b.b)-Math.max(a.t,b.t)>2)overlaps.push([a.id,b.id]);});});
+        return {open:document.getElementById('reference-modal').getAttribute('aria-hidden')==='false',
+          inView:r.left>=0&&r.top>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1,
+          content:rects.every(function(b){return b.l>=r.left&&b.t>=r.top&&b.r<=r.right+1&&b.b<=r.bottom+1&&b.w>0&&b.h>0;}),
+          overlaps:overlaps, paths:document.querySelectorAll('#reference-picture path').length,
+          strokes:JSON.stringify(window.DrawGuessApp.solo.state.strokes),
+          picture:rects[1], word:document.getElementById('reference-word').textContent};
+      })()`);
+      const label = v.name + ' ' + lang + ' 範本';
+      check(label + '：畫家可開啟且題目正確', reference.open && reference.word === '貓');
+      check(label + '：彈窗與全部內容都在視窗內', reference.inView && reference.content, JSON.stringify(reference));
+      check(label + '：圖片、步驟、說明與按鈕互不重疊', reference.overlaps.length === 0, JSON.stringify(reference.overlaps));
+      check(label + '：圖像有足夠參考尺寸', reference.picture.w >= 120 && reference.picture.h >= 100, JSON.stringify(reference.picture));
+      await shot(v.name + '-範本-' + lang);
+      await cdp.eval(`document.querySelector('[data-reference-step="1"]').click(); return 1;`);
+      const firstPaths = await cdp.eval('return document.querySelectorAll("#reference-picture path").length;');
+      check(label + '：起筆階段只顯示部分筆畫', firstPaths > 0 && firstPaths < reference.paths);
+      check(label + '：查看範本不會修改作品', await cdp.eval('return JSON.stringify(window.DrawGuessApp.solo.state.strokes);') === reference.strokes);
+      await cdp.eval('document.getElementById("reference-done").focus(); return 1;');
+      await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9 });
+      check(label + '：Tab 焦點鎖在彈窗內', await cdp.eval('return document.activeElement.id === "reference-close";'));
+      await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+      check(label + '：Escape 關閉並回到入口', await cdp.eval('return document.getElementById("reference-modal").getAttribute("aria-hidden")==="true" && document.activeElement.id==="b-reference";'));
+    }
+    await cdp.eval('window.I18N.setLang("zh-Hant"); return 1;');
+
     /* 版面微調：題號只留題目列、橫向工具列分組、較高手機展開不滑、平板直向工具放大 */
     const tb = await cdp.json(`(function(){
       function R(e){ if(!e) return null; var r=e.getBoundingClientRect(); return {l:r.left,t:r.top,r:r.right,b:r.bottom,w:r.width,h:r.height}; }
@@ -631,17 +666,30 @@ async function main() {
   check('單機不限時：作畫中沒有倒數',
     await cdp.eval('return window.DrawGuessApp.solo.state.deadline === 0 && getComputedStyle(document.getElementById("timer-chip")).display === "none";'));
 
+  await cdp.eval(`var st=window.DrawGuessApp.solo.state;
+    window.__referenceWord=st.wordId;
+    st.wordId=window.Words.all().find(function(w){return w.text==='拿破崙';}).id; return 1;`);
+  await cdp.waitFor('window.DrawGuessApp.view.game.referenceId === window.DrawGuessApp.solo.state.wordId', 3000);
+  await cdp.eval('document.getElementById("b-reference").click(); return 1;');
+  check('缺少正確範本時顯示說明，不借用人物圖', await cdp.eval('return !document.getElementById("reference-empty").hidden && document.getElementById("reference-picture").hidden && document.querySelectorAll("#reference-picture path").length===0;'));
+  await shot('範本-尚未收錄');
+  await cdp.eval('window.DrawGuessApp.solo.state.wordId=window.__referenceWord; return 1;');
+  await cdp.waitFor('document.getElementById("reference-modal").getAttribute("aria-hidden")==="true"', 3000);
+  check('題目改變時關閉舊範本並清掉舊圖', await cdp.eval('return document.querySelectorAll("#reference-picture path").length === 0;'));
+
   /* 單機沒有電腦對手、只有你自己，「畫完了」沒有其他人可以通知，整顆鈕藏起來；
      改用「換題」，按下去會直接結束這一題並公布答案。 */
   const doneBtn = await cdp.json('(function(){var b=document.getElementById("b-done");return {hidden:b.hidden};})()');
   check('單機沒有「畫完了」鈕（藏起來）', doneBtn.hidden === true, JSON.stringify(doneBtn));
 
   const beforeSkip = await cdp.json('(function(){var g=window.DrawGuessApp.view.game;return {turnNo:g.turnNo,phase:g.phase};})()');
+  await cdp.eval('document.getElementById("b-reference").click(); return 1;');
   await cdp.eval('window.__probe.click("#b-solo-next"); return 1;');
   await sleep(300);
   const afterSkip = await cdp.json('(function(){var g=window.DrawGuessApp.view.game;return {turnNo:g.turnNo,phase:g.phase};})()');
   check('按「換題」直接結束這一題並公布答案',
     afterSkip.turnNo === beforeSkip.turnNo && afterSkip.phase === 'reveal', JSON.stringify(afterSkip));
+  check('回合揭曉自動關閉範本並隱藏入口', await cdp.eval('return document.getElementById("reference-modal").getAttribute("aria-hidden")==="true" && document.getElementById("b-reference").hidden;'));
 
   /* 公布答案時有「下一題」可以馬上換題，不用等倒數 */
   check('公布答案時有「下一題」按鈕', await cdp.eval('return !!document.querySelector("#overlay-card [data-act=solo-next]");'));
@@ -926,6 +974,9 @@ async function main() {
   const hostIsDrawer = await hostTab.eval('return !!window.DrawGuessApp.view.game.you.isDrawer;');
   const drawerTab = hostIsDrawer ? hostTab : mateTab;
   const guesserTab = hostIsDrawer ? mateTab : hostTab;
+  for (const [label, tab] of [['觀戰者', watchTab], ['猜題者', guesserTab]]) {
+    check(label + '拿不到範本識別碼也看不到入口', await tab.eval('return window.DrawGuessApp.view.game.referenceId === null && document.getElementById("b-reference").hidden;'));
+  }
   const ps1 = await drawerTab.eval('var e=document.querySelector("#overlay-card .pick-secs"); return e ? e.textContent : null;');
   await sleep(2200);
   const ps2 = await drawerTab.eval('var e=document.querySelector("#overlay-card .pick-secs"); return e ? e.textContent : null;');

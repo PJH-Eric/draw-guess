@@ -245,6 +245,8 @@
           <span class="wordbar-label" id="wordbar-label"><span data-i18n="text.156">題目</span></span>
           <b class="wordbar-mask" id="wordbar-mask">— — —</b>
           <span class="wordbar-meta" id="wordbar-meta"></span>
+          <button class="pillbtn reference-toggle" id="b-reference" type="button" hidden
+                  aria-haspopup="dialog" aria-controls="reference-modal" aria-expanded="false"><span data-i18n="reference.open">查看範本</span></button>
         </div>
 
         <!-- 畫布上方一列：玩家名稱與分數，旁邊接著畫家的三張提示（橫式，小張就好）。
@@ -357,6 +359,32 @@
       </aside>
     </div>
   </section>
+
+  <!-- ============================== 畫家參考範本 ============================== -->
+  <div class="settings-modal reference-modal" id="reference-modal" role="dialog" aria-modal="true"
+       aria-labelledby="reference-title" aria-describedby="reference-note" aria-hidden="true">
+    <div class="settings-backdrop" id="reference-backdrop"></div>
+    <section class="settings-panel reference-panel" id="reference-panel" tabindex="-1">
+      <div class="settings-head">
+        <h2 id="reference-title"><span data-i18n="reference.title">畫家參考範本</span></h2>
+        <button class="settings-close" id="reference-close" type="button" aria-label="關閉範本" data-i18n-attr="aria-label=reference.close">✕</button>
+      </div>
+      <div class="reference-body">
+        <b class="reference-word" id="reference-word"></b>
+        <div class="reference-picture" id="reference-picture" role="img"></div>
+        <p class="reference-empty" id="reference-empty" hidden data-i18n="reference.empty">這題尚未有確認正確的簡筆畫範本。可以先畫出你想到的特徵，或換一個題目。</p>
+        <div class="reference-steps" id="reference-steps" role="group" aria-label="範本步驟" data-i18n-attr="aria-label=reference.steps">
+          <button class="pillbtn" type="button" data-reference-step="1" aria-pressed="false" data-i18n="reference.step1">① 起筆</button>
+          <button class="pillbtn" type="button" data-reference-step="2" aria-pressed="false" data-i18n="reference.step2">② 加細節</button>
+          <button class="pillbtn" type="button" data-reference-step="3" aria-pressed="true" data-i18n="reference.step3">③ 完整圖</button>
+        </div>
+        <p class="reference-note" id="reference-note" data-i18n="reference.note">看輪廓與特徵就好，不必畫得一模一樣。範本不會放進你的畫布；線上回合仍會繼續計時。</p>
+      </div>
+      <div class="settings-foot">
+        <button class="btn3d settings-done" data-color="mint" id="reference-done" type="button"><span data-i18n="reference.back">回去畫畫</span></button>
+      </div>
+    </section>
+  </div>
 
   <!-- ============================== 系統設定彈窗 ============================== -->
   <div class="settings-modal" id="settings-modal" role="dialog" aria-modal="true"
@@ -507,6 +535,7 @@
 <script src="js/config.js"></script>
 <script src="js/rng.js"></script>
 <script src="js/words.js"></script>
+<script src="js/reference.js"></script>
 <script src="js/rules.js"></script>
 <script src="js/drawing-file.js"></script>
 <!-- js/ai.js 刻意不載入：單機已經沒有電腦對手，遊戲裡沒有任何程式用到它。

@@ -55,6 +55,7 @@
      ================================================================ */
 
   function show(id) {
+    if (referenceModal) referenceModal.close();
     var list = D.querySelectorAll('.screen');
     for (var i = 0; i < list.length; i++) list[i].classList.toggle('active', list[i].id === id);
     app.screen = id;
@@ -147,7 +148,66 @@
     return api;
   }
 
-  var settingsModal, gameModal, roomCreateModal, confirmModal;
+  var settingsModal, gameModal, roomCreateModal, confirmModal, referenceModal;
+  var referenceKey = '', referenceStep = 3;
+  var referenceRendered = '';
+
+  function referenceId() {
+    var v = app.view;
+    if (app.screen !== 's-game' || !v || !v.game || !v.you.can.draw ||
+        !v.game.you.isDrawer || (v.room && v.room.closed)) return null;
+    return v.game.referenceId;
+  }
+
+  function renderReference() {
+    var id = referenceId();
+    $('b-reference').hidden = !id;
+    var key = id ? id + ':' + app.view.game.turnNo + ':' + app.view.game.lang : '';
+    if (referenceKey !== key) {
+      referenceKey = key;
+      referenceStep = 3;
+      referenceRendered = '';
+      referenceModal.close();
+      $('reference-picture').innerHTML = '';
+      $('reference-word').textContent = '';
+    }
+    if (!id) { referenceModal.close(); return; }
+    if (!referenceModal.isOpen()) return;
+    var rendered = key + ':' + referenceStep + ':' + w.I18N.lang;
+    if (rendered === referenceRendered) return;
+    referenceRendered = rendered;
+    var word = Words.byId(id, app.view.game.lang);
+    var svg = w.DrawingReference.svg(id, referenceStep);
+    $('reference-word').textContent = word.text;
+    $('reference-picture').innerHTML = svg;
+    $('reference-picture').setAttribute('aria-label', w.I18N.t('reference.image', { word: word.text, step: referenceStep }));
+    $('reference-picture').hidden = !svg;
+    $('reference-empty').hidden = !!svg;
+    $('reference-steps').hidden = !svg;
+    var buttons = D.querySelectorAll('[data-reference-step]');
+    for (var i = 0; i < buttons.length; i++) {
+      buttons[i].setAttribute('aria-pressed', String(Number(buttons[i].dataset.referenceStep) === referenceStep));
+    }
+  }
+
+  function setupReference() {
+    referenceModal = makeModal('reference-modal', 'reference-panel', 'b-reference');
+    $('b-reference').addEventListener('click', function () {
+      if (!referenceId()) return;
+      referenceStep = 3;
+      referenceModal.open();
+      renderReference();
+    });
+    ['reference-close', 'reference-done', 'reference-backdrop'].forEach(function (id) {
+      $(id).addEventListener('click', function () { referenceModal.close(); });
+    });
+    $('reference-steps').addEventListener('click', function (ev) {
+      var button = ev.target.closest('[data-reference-step]');
+      if (!button) return;
+      referenceStep = Number(button.dataset.referenceStep);
+      renderReference();
+    });
+  }
 
   /* ---------------------------------------------------------- 確認對話框
      離開對局這種收不回來的動作，先再問一次。用同一組 Modal 行為
@@ -1123,6 +1183,7 @@
     renderPlayers();
     renderOverlay();
     renderControls();
+    renderReference();
     renderAside();
     sizeCanvas();
   }
@@ -2347,7 +2408,7 @@
       if (app.screen !== 's-game') return;
       var tag = (ev.target && ev.target.tagName) || '';
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-      if (settingsModal.isOpen() || gameModal.isOpen() || (confirmModal && confirmModal.isOpen())) return;
+      if (settingsModal.isOpen() || gameModal.isOpen() || referenceModal.isOpen() || (confirmModal && confirmModal.isOpen())) return;
       if (!app.view || !app.view.you.can.draw) return;
 
       var k = ev.key.toLowerCase();
@@ -2407,6 +2468,7 @@
     applyDisplaySettings();
 
     setupSettings();
+    setupReference();
     setupConfirm();
     setupRoomCreate();
     setupGameSettings();
