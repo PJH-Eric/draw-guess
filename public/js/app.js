@@ -170,6 +170,7 @@
       referenceModal.close();
       $('reference-picture').innerHTML = '';
       $('reference-word').textContent = '';
+      $('reference-credit').hidden = true;
     }
     if (!id) { referenceModal.close(); return; }
     if (!referenceModal.isOpen()) return;
@@ -178,12 +179,37 @@
     referenceRendered = rendered;
     var word = Words.byId(id, app.view.game.lang);
     var svg = w.DrawingReference.svg(id, referenceStep);
+    var asset = !svg && w.OfflineReferences && w.OfflineReferences[id];
+    var stagePath = asset && Array.isArray(asset.stages) && asset.stages[referenceStep - 1];
+    var hasAsset = !!(
+      asset &&
+      asset.status === 'ready' &&
+      /^references\/assets\/[\w-]+\/\d+\.png$/.test(stagePath || '')
+    );
+    var picture = $('reference-picture');
     $('reference-word').textContent = word.text;
-    $('reference-picture').innerHTML = svg;
-    $('reference-picture').setAttribute('aria-label', w.I18N.t('reference.image', { word: word.text, step: referenceStep }));
-    $('reference-picture').hidden = !svg;
-    $('reference-empty').hidden = !!svg;
-    $('reference-steps').hidden = !svg;
+    picture.innerHTML = svg;
+    $('reference-credit').hidden = true;
+    if (hasAsset) {
+      var image = D.createElement('img');
+      image.src = stagePath;
+      image.alt = w.I18N.t('reference.image', { word: word.text, step: referenceStep });
+      picture.appendChild(image);
+      var credit = $('reference-credit');
+      $('reference-credit-text').textContent = w.I18N.t('reference.credit', {
+        title: asset.fileTitle,
+        author: asset.author,
+        license: asset.license
+      });
+      $('reference-source').href = asset.sourceUrl;
+      $('reference-license').href = asset.licenseUrl;
+      credit.hidden = false;
+    }
+    var hasPicture = !!svg || hasAsset;
+    picture.setAttribute('aria-label', w.I18N.t('reference.image', { word: word.text, step: referenceStep }));
+    picture.hidden = !hasPicture;
+    $('reference-empty').hidden = hasPicture;
+    $('reference-steps').hidden = !hasPicture;
     var buttons = D.querySelectorAll('[data-reference-step]');
     for (var i = 0; i < buttons.length; i++) {
       buttons[i].setAttribute('aria-pressed', String(Number(buttons[i].dataset.referenceStep) === referenceStep));

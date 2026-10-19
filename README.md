@@ -63,11 +63,11 @@ Windows 可以直接雙擊 **`啟動遊戲.bat`**（會自動安裝相依套件�
 
 選題後，畫家可按題目旁的「查看範本」，切換「起筆／加細節／完整圖」三個階段，再按「回去畫畫」繼續作畫。支援繁中與英文介面、手機和平板直橫向及桌機；線上回合查看範本時仍繼續計時。
 
-目前內建 **158 / 2,000 題**的離線簡筆畫：原有 128 題專屬配方，加上 30 題獨立繪製的範本。未收錄的 1,842 題會明確顯示說明，不使用擴充題庫借來的圖像或識別記號當作正確範本。範本只提供觀看，不會加入、覆蓋或儲存到玩家作品裡。
+目前有 **158 題手繪範本**，另將 **1,391 題**的 Wikimedia Commons 可改作授權相符圖片轉製為離線三階段線稿；剩餘 **451 題**清楚顯示尚未收錄，不會借用題庫中其他題目的圖像。範本只供觀看，不會加入、覆蓋或儲存到玩家作品裡；衍生圖旁會標示作者、來源與授權。遊戲執行時只載入本機圖片，不會連線搜尋或下載。
 
 線上投影的 `referenceId` 只在作畫階段提供給當回合畫家；猜題者與觀戰者拿不到識別碼，也沒有範本入口。題目或回合改變時自動關閉舊範本。
 
-新增範本時，在 `public/js/reference.js` 的 `recipes` 以題目的繁中標準文字登記專屬形狀配方；同一題的中英文共用圖像。執行 `node tests/reference.js` 檢查幾何、分步與權限，再用瀏覽器確認圖像語意確實對應題目。`npm run test:browser` 包含八種視窗尺寸的雙語範本、焦點、作品保留與角色權限檢查，截圖位於忽略版控的 `screenshots/`。
+執行 `npm run references:build` 可續跑未完成項目與暫時失敗項目（需要 Python 3 與 Pillow）；`node scripts/build-offline-references.js --retry-missing` 會重新檢查未收錄題目，也可加 `--retry-categories=home,animal,fun,fantasy` 限定分類，`--refresh` 會重建整份媒合。`public/references/catalog.json` 保存結果與出處，`catalog.js` 供遊戲離線載入。執行 `node tests/reference.js` 與 `node tests/reference-catalog.js` 檢查手繪幾何、權限、離線檔案及來源欄位。`npm run test:browser` 包含八種視窗尺寸的雙語範本、焦點、作品保留與角色權限檢查，截圖位於忽略版控的 `screenshots/`。
 
 ### 畫布工具（參考小畫家）
 
