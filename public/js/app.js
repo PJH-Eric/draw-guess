@@ -182,7 +182,11 @@
     var semanticSvg = w.MeaningReference
       ? w.MeaningReference.svg(id, referenceStep)
       : '';
-    var svg = semanticSvg || w.DrawingReference.svg(id, referenceStep);
+    var DR = w.DrawingReference;
+    if (!semanticSvg && DR.hasRecipe && !DR.hasRecipe(id) && DR.ensure) {
+      DR.ensure(id, function () { referenceRendered = ''; renderReference(); });
+    }
+    var svg = semanticSvg || DR.svg(id, referenceStep);
     picture.innerHTML = svg;
     var hasPicture = !!svg;
     picture.setAttribute('aria-label', w.I18N.t('reference.image', { word: word.text, step: referenceStep }));

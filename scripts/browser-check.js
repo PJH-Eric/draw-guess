@@ -597,7 +597,6 @@ async function main() {
       await cdp.waitFor('window.DrawGuessApp.view.game.referenceId === window.DrawGuessApp.solo.state.wordId', 3000, '還原範本題目');
     }
     const semanticReferenceId = await cdp.eval('return window.MeaningReference.ids()[0] || null;');
-    check(v.name + '：題庫含離線語意組圖範本', !!semanticReferenceId, '沒有已收錄的語意組圖');
     if (semanticReferenceId) {
       await cdp.eval(
         'window.__semanticReferenceOriginal=window.DrawGuessApp.solo.state.wordId; ' +

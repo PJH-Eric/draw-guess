@@ -7,11 +7,14 @@
       : root.Words,
     typeof module === 'object' && module.exports
       ? require('./reference-recipes.js')
-      : root.ReferenceRecipes
+      : root.ReferenceRecipes,
+    typeof module === 'object' && module.exports
+      ? require('./reference-path.js')
+      : root.ReferencePath
   );
   if (typeof module === 'object' && module.exports) module.exports = api;
   root.DrawingReference = api;
-})(typeof globalThis !== 'undefined' ? globalThis : this, function (Words, Recipes) {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (Words, Recipes, Path) {
   'use strict';
 
   // Each entry describes the named subject, rather than its category or a similar word.
@@ -384,25 +387,90 @@
       });
   }
 
-  // A composed op is a game shape op, or {c: paletteKey, o: op} to colour that part.
+  // Rich items are realistic layered shapes: [fill, 'svg path', opts] or {f, d, ...opts}.
+  //   fill: '#rrggbb' | 'none'   opts: s outline colour|'none', w outline width, a opacity,
+  //   g gradient ('r' radial default, 'l' vertical, 'c' cylinder, 'n' flat),
+  //   b:1 base shape other items can be clipped to, i:1 clipped to the latest base,
+  //   bl blur radius (soft shadow / highlight).
+  // A plain object without d (first entry only) is scene meta: {bg, ground:0, shadow:0}.
+  function isRich(item) {
+    if (Array.isArray(item)) return typeof item[0] === 'string' && /^(#|none$)/.test(item[0]);
+    return !!item && typeof item === 'object' && typeof item.d === 'string';
+  }
+
+  function richStroke(item) {
+    var o = Array.isArray(item) ? Object.assign({ f: item[0], d: item[1] }, item[2] || {}) : item;
+    var parsed = Path.parse(o.d);
+    return {
+      p: parsed.p, d: parsed.d, f: o.f || 'none', s: o.s, w: o.w, a: o.a,
+      g: o.g, b: o.b, i: o.i, bl: o.bl
+    };
+  }
+
+  // A composed op is a game shape op, {c: paletteKey, o: op} to colour that part, or a rich item.
+  function flatten(list) {
+    return [].concat.apply([], list.map(function (item) {
+      return Array.isArray(item) && Array.isArray(item[0]) ? flatten(item) : [item];
+    }));
+  }
+
   function composed(ops) {
-    return [].concat.apply(
+    var meta = null;
+    ops = flatten(ops);
+    var out = [].concat.apply(
       [],
       ops.map(function (op) {
+        if (isRich(op)) return [richStroke(op)];
+        if (!Array.isArray(op) && !op.o) { meta = op; return []; }
         var key = Array.isArray(op) ? null : op.c;
         return pointsOf(key ? op.o : op).map(function (stroke) {
           return key ? { p: stroke.p, c: key } : stroke;
         });
       })
     );
+    if (meta) out.meta = meta;
+    return out;
+  }
+
+  /* ---------- Lazy loading of the hand-composed recipe blocks (40 topics per file) ---------- */
+  var BLOCK = 40;
+  var indexOf = null;
+  function blockOf(id) {
+    if (!indexOf) {
+      indexOf = {};
+      Words.all().forEach(function (w, i) { indexOf[w.id] = i; });
+    }
+    return indexOf[id] === undefined ? -1 : Math.floor(indexOf[id] / BLOCK) * BLOCK;
+  }
+  function blockFile(id) {
+    var b = blockOf(id);
+    return b < 0 ? null : 'js/refs/r' + ('000' + b).slice(-4) + '.js';
+  }
+  var pending = {};
+  /** Browser only: load the recipe block holding `id`, then call back (always called once). */
+  function ensure(id, done) {
+    var file = blockFile(id);
+    if (!file || (Recipes && Recipes[id]) || typeof document === 'undefined') return done();
+    if (pending[file]) { pending[file].push(done); return; }
+    pending[file] = [done];
+    var el = document.createElement('script');
+    var finish = function () {
+      var list = pending[file];
+      pending[file] = null;
+      list.forEach(function (fn) { fn(); });
+    };
+    el.src = file;
+    el.onload = finish;
+    el.onerror = finish;
+    document.head.appendChild(el);
   }
 
   function get(id) {
     var word = Words.byId(id);
     if (!word) return null;
+    if (Recipes && Recipes[id]) return composed(Recipes[id]);
     if (recipes[word.text])
       return [].concat.apply([], recipes[word.text].map(pointsOf));
-    if (Recipes && Recipes[id]) return composed(Recipes[id]);
     var strokes = Words.strokesOf(id);
     // Expanded recipes end with a small topic-bank marker, not part of the drawing.
     if (id.indexOf('w-') === 0 && strokes.length > 3) return strokes.slice(0, -3);
@@ -593,9 +661,97 @@
     return out.join(' ');
   }
 
+  /* ---------- Rich renderer: layered shapes restricted to what the game's paint tools can make ---------- */
+  var uidCounter = 0;
+  // The in-game canvas offers exactly these colours and pen widths (rules.js COLORS / WIDTHS),
+  // flat fills and lines only, so references are flattened to them: no gradient, blur or opacity.
+  var PAPER = '#FFFDF8';
+  var INK = '#4A3B55';
+  var GAME_COLORS = ['#4A3B55', '#D2444F', '#F0913F', '#E7C263', '#5FBF95', '#3E8F6B',
+    '#7FB4DA', '#4A6FA5', '#A48FDB', '#E88CAA', '#8B5E3C', '#FFFDF8'];
+  var GAME_WIDTHS = [7, 16, 34, 64];
+
+  function rgb(h) { return [1, 3, 5].map(function (i) { return parseInt(h.substr(i, 2), 16); }); }
+  var snapCache = {};
+  function snapColor(hex) {
+    hex = hex.toLowerCase();
+    if (snapCache[hex]) return snapCache[hex];
+    var c = rgb(hex), best = GAME_COLORS[0], bd = Infinity;
+    GAME_COLORS.forEach(function (g) {
+      var q = rgb(g);
+      var rm = (c[0] + q[0]) / 2;
+      var dr = c[0] - q[0], dg = c[1] - q[1], db = c[2] - q[2];
+      var d = (2 + rm / 256) * dr * dr + 4 * dg * dg + (2 + (255 - rm) / 256) * db * db;
+      if (d < bd) { bd = d; best = g; }
+    });
+    snapCache[hex] = best;
+    return best;
+  }
+  function snapWidth(w) {
+    if (w > 16) return w; // thick bars (limbs, trunks) are brush-filled shapes; keep their size
+    var best = GAME_WIDTHS[0];
+    GAME_WIDTHS.forEach(function (g) { if (Math.abs(g - w) < Math.abs(best - w)) best = g; });
+    return best;
+  }
+
+  function renderRich(strokes, step) {
+    var meta = strokes.meta || {};
+    var uid = 'q' + (++uidCounter) + '-';
+    var count = Math.ceil((strokes.length * Math.max(1, Math.min(3, step || 3))) / 3);
+    var defs = {};
+    var body = '';
+    var baseId = null;
+    var baseColor = PAPER;
+    var clips = {};
+    for (var n = 0; n < count; n++) {
+      var st = strokes[n];
+      var f = st.f || 'none';
+      var hex = /^#[0-9a-fA-F]{6}$/.test(f) ? f.toLowerCase() : null;
+      var fill = 'none';
+      if (hex) {
+        var col = hex;
+        if (st.a != null && st.a < 1) col = mix(st.i ? baseColor : PAPER, hex, st.a);
+        fill = snapColor(col);
+      }
+      var stroke = 'none', sw = 0;
+      if (st.s === 'none') stroke = 'none';
+      else if (!hex) {
+        var lc = st.s && /^#[0-9a-fA-F]{6}$/.test(st.s) ? st.s : INK;
+        if (st.a != null && st.a < 1) lc = mix(st.i ? baseColor : PAPER, lc, st.a);
+        stroke = snapColor(lc);
+        sw = snapWidth(st.w || 8);
+      } else if (!st.i || st.s) {
+        stroke = INK;
+        sw = snapWidth(st.w && st.w > 10 ? st.w : 7);
+      }
+      var attrs = 'd="' + st.d + '" fill="' + fill + '"' +
+        (stroke !== 'none' ? ' stroke="' + stroke + '" stroke-width="' + sw + '"' : '');
+      if (st.b) { baseId = uid + 'p' + n; attrs += ' id="' + baseId + '"'; baseColor = fill === 'none' ? baseColor : fill; }
+      var piece = '<path ' + attrs + '/>';
+      if (st.i && baseId) {
+        if (!clips[baseId]) {
+          clips[baseId] = uid + 'c' + n;
+          defs[clips[baseId]] = '<clipPath id="' + clips[baseId] + '"><use href="#' + baseId + '"/></clipPath>';
+        }
+        piece = '<g clip-path="url(#' + clips[baseId] + ')">' + piece + '</g>';
+      }
+      body += piece;
+    }
+    var bg = meta.bg;
+    var bgFill = PAPER;
+    if (bg) bgFill = snapColor(Array.isArray(bg) ? bg[0] : bg);
+    return (
+      '<svg viewBox="-40 -40 1080 1080" aria-hidden="true" focusable="false">' +
+      '<defs>' + Object.keys(defs).map(function (k) { return defs[k]; }).join('') + '</defs>' +
+      '<rect x="-40" y="-40" width="1080" height="1080" rx="64" fill="' + bgFill + '"/>' +
+      '<g stroke-linecap="round" stroke-linejoin="round">' + body + '</g></svg>'
+    );
+  }
+
   /** Strokes may carry `c` (palette key) so composed scenes can colour each object. */
   function render(strokes, step, fallbackKey) {
     if (!strokes || !strokes.length) return '';
+    if (strokes[0].d) return renderRich(strokes, step, fallbackKey);
     var count = Math.ceil(
       (strokes.length * Math.max(1, Math.min(3, step || 3))) / 3
     );
@@ -671,6 +827,9 @@
     svg: svg,
     render: render,
     paletteKeyOf: paletteKeyOf,
-    paletteKeys: function () { return Object.keys(PALETTES); }
+    paletteKeys: function () { return Object.keys(PALETTES); },
+    ensure: ensure,
+    blockFile: blockFile,
+    hasRecipe: function (id) { return !!(Recipes && Recipes[id]); }
   };
 });

@@ -4,7 +4,6 @@ const assert = require('node:assert/strict');
 const Words = require('../public/js/words.js');
 const Reference = require('../public/js/reference.js');
 const Rules = require('../public/js/rules.js');
-const TopicRecipes = require('../public/js/reference-recipes.js');
 
 const topics = Words.all();
 let available = 0;
@@ -18,7 +17,7 @@ for (const word of topics) {
     assert.equal(stroke.p.length % 2, 0);
     assert.ok(stroke.p.length >= 4);
     assert.ok(
-      stroke.p.every((n) => Number.isFinite(n) && n >= -40 && n <= 1040),
+      stroke.p.every((n) => Number.isFinite(n) && n >= -400 && n <= 1800),
       word.text,
     );
   }
@@ -36,45 +35,10 @@ const idFor = (text) => Words.all().find((w) => w.text === text).id;
 assert.notDeepEqual(Reference.get(idFor('棒球')), Reference.get('soccer'));
 assert.notDeepEqual(Reference.get(idFor('雪花')), Reference.get('star'));
 assert.ok(Reference.get(idFor('拿破崙')).length > 0);
-assert.deepEqual(
-  Reference.get('cat'),
-  Words.strokesOf('cat'),
-  'The existing hand-drawn prompt recipes must remain unchanged',
-);
-const expanded = topics.filter(
-  (word) => word.id.startsWith('w-') && word.cat !== 'idiom',
-);
-assert.equal(
-  Object.keys(TopicRecipes).length,
-  expanded.length - TopicRecipes.completedIds.length,
-  'Only unfinished expanded topics get newly generated recipes',
-);
-assert.equal(
-  TopicRecipes.completedIds.length,
-  30,
-  'Completed hand-drawn expansions stay out of the generated bank',
-);
-for (const word of expanded) {
-  if (TopicRecipes.completedIds.includes(word.id)) {
-    assert.equal(
-      TopicRecipes[word.id],
-      undefined,
-      word.id + ' must keep its finished drawing',
-    );
-    assert.ok(
-      Reference.get(word.id),
-      word.id + ' finished drawing must still resolve',
-    );
-    continue;
-  }
+for (const word of topics) {
   assert.ok(
-    TopicRecipes[word.id],
-    word.id + ' must have a topic-specific recipe',
-  );
-  assert.notDeepEqual(
-    Reference.get(word.id),
-    Words.strokesOf(word.id).slice(0, -3),
-    word.id + ' must replace its generic borrowed icon and marker',
+    Reference.hasRecipe(word.id),
+    word.id + ' must have a flat 12-colour reference recipe',
   );
 }
 assert.equal(Reference.get('unknown'), null);

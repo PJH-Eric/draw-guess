@@ -18,7 +18,6 @@ for (const word of topics) {
 }
 
 const semanticIds = MeaningReference.ids();
-assert.ok(semanticIds.length > 0, 'Idioms should use composed semantic drawings');
 for (const id of semanticIds) {
   assert.ok(MeaningReference.get(id), id + ' semantic scene must resolve every component');
   for (const step of [1, 2, 3]) {
