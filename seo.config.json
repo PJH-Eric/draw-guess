@@ -6,5 +6,8 @@
   "lobbyUrl": "https://pjh-eric.github.io/game-lobby/",
   "googleSiteVerification": "",
   "genre": "畫圖猜謎",
-  "players": "1-8"
+  "players": "1-8",
+  "iconUrl": "https://pjh-eric.github.io/draw-guess/favicon-96.png",
+  "ogImage": "https://pjh-eric.github.io/draw-guess/og-image.png",
+  "ogImageAlt": "你畫我猜遊戲圖示"
 }
