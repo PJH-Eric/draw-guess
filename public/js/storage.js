@@ -81,8 +81,17 @@
     '小貓', '小狗', '兔子', '企鵝', '狐狸', '水獺', '浣熊', '刺蝟', '海豚', '貓熊',
     '樹懶', '鸚鵡', '松鼠', '山羊', '袋鼠', '海豹', '章魚', '蜜蜂', '烏龜', '羊駝'
   ];
+  var NICK_ADJ_HANS = [
+    '快乐', '爱困', '勇敢', '迷糊', '害羞', '贪吃', '安静', '调皮', '温柔', '神秘',
+    '闪亮', '认真', '悠哉', '热血', '冷静', '幸运', '好奇', '努力', '慢吞吞', '急惊风'
+  ];
+  var NICK_ANIMAL_HANS = [
+    '小猫', '小狗', '兔子', '企鹅', '狐狸', '水獭', '浣熊', '刺猬', '海豚', '猫熊',
+    '树懒', '鹦鹉', '松鼠', '山羊', '袋鼠', '海豹', '章鱼', '蜜蜂', '乌龟', '羊驼'
+  ];
   function randomNick() {
     if (globalThis.I18N && globalThis.I18N.lang === 'en') return ['Cozy', 'Brave', 'Happy', 'Quick'][Math.floor(Math.random() * 4)] + ' ' + ['Artist', 'Bunny', 'Otter', 'Fox'][Math.floor(Math.random() * 4)];
+    if (globalThis.I18N && globalThis.I18N.lang === 'zh-Hans') return NICK_ADJ_HANS[Math.floor(Math.random() * NICK_ADJ_HANS.length)] + NICK_ANIMAL_HANS[Math.floor(Math.random() * NICK_ANIMAL_HANS.length)];
     return NICK_ADJ[Math.floor(Math.random() * NICK_ADJ.length)] +
       NICK_ANIMAL[Math.floor(Math.random() * NICK_ANIMAL.length)];
   }

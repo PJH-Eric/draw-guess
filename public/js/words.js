@@ -1741,8 +1741,8 @@
      （同一份配方、分類與難度），只換題目文字與別名。
      ================================================================ */
 
-  var LANGS = ['zh-Hant', 'en'];
-  function normLang(lang) { return lang === 'en' ? 'en' : 'zh-Hant'; }
+  var LANGS = ['zh-Hant', 'zh-Hans', 'en'];
+  function normLang(lang) { return lang === 'en' ? 'en' : lang === 'zh-Hans' || lang === 'zh-CN' || lang === 'zh-SG' ? 'zh-Hans' : 'zh-Hant'; }
 
   var EN_DATA = null;
   function enData() {
@@ -1757,20 +1757,35 @@
     return src || {};
   }
 
-  var enViews = {};
+  var enViews = {}, hansViews = {};
+  var HANS_DATA = null;
+  function hansData() {
+    if (HANS_DATA) return HANS_DATA;
+    var src = null;
+    if (typeof module === 'object' && module.exports && typeof require === 'function') {
+      try { src = require('./words.zh-Hans.js'); } catch (e) { src = null; }
+    } else if (typeof globalThis !== 'undefined') {
+      src = globalThis.WordsHans || null;
+    }
+    if (src) HANS_DATA = src;
+    return src || {};
+  }
 
-  /** 把中文題目換成指定語言的題目物件（text／alt 換掉，其餘共用）；找不到對應就維持中文 */
+  /** 把題目文字換成指定語言；找不到對應就保留原題。 */
   function localize(word, lang) {
-    if (!word || normLang(lang) !== 'en') return word;
-    if (enViews[word.id]) return enViews[word.id];
-    var raw = enData()[word.id];
+    if (!word) return word;
+    lang = normLang(lang);
+    if (lang === 'zh-Hant') return word;
+    var views = lang === 'en' ? enViews : hansViews;
+    if (views[word.id]) return views[word.id];
+    var raw = (lang === 'en' ? enData() : hansData())[word.id];
     if (!raw) return word;
     var names = String(raw).split('|');
     var view = {
       id: word.id, text: names[0], alt: names.slice(1),
-      cat: word.cat, diff: word.diff, draw: word.draw, lang: 'en'
+      cat: word.cat, diff: word.diff, draw: word.draw, lang: lang
     };
-    enViews[word.id] = view;
+    views[word.id] = view;
     return view;
   }
 
