@@ -8,6 +8,6 @@
   "genre": "畫圖猜謎",
   "players": "1-8",
   "iconUrl": "https://pjh-eric.github.io/draw-guess/favicon-96.png",
-  "ogImage": "https://pjh-eric.github.io/draw-guess/og-image.png",
-  "ogImageAlt": "你畫我猜遊戲圖示"
+  "ogImage": "https://pjh-eric.github.io/draw-guess/assets/images/cover.webp",
+  "ogImageAlt": "你畫我猜 遊戲封面"
 }
