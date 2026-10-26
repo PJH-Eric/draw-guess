@@ -55,6 +55,7 @@
      ================================================================ */
 
   function show(id) {
+    if (w.ServerOutage) w.ServerOutage.setScreen(id);
     if (referenceModal) referenceModal.close();
     var list = D.querySelectorAll('.screen');
     for (var i = 0; i < list.length; i++) list[i].classList.toggle('active', list[i].id === id);
