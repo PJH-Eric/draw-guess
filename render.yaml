@@ -14,7 +14,7 @@ services:
     healthCheckPath: /health
     envVars:
       - key: NODE_VERSION
-        value: "22"
+        value: "26.12.1"
       # 允許這個 GitHub 帳號的 Pages 前端跨來源連線；Render 自己的同源前端也能連線。
       - key: GAME_ALLOWED_ORIGIN
         value: https://pjh-eric.github.io

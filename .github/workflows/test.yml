@@ -15,7 +15,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "26.12.1"
           cache: npm
 
       # 用 lockfile 安裝，確保 CI 跟本機拿到同一組版本
