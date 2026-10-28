@@ -58,6 +58,7 @@ class Client {
     this.errors = [];
     this.closed = null;
     this.rooms = null;
+    this.online = null;
     this.syncCount = 0;
     this.socket = io(BASE, {
       transports: ['websocket'],
@@ -73,7 +74,7 @@ class Client {
     this.socket.on('room:private', (p) => { this.privates.push(p); });
     this.socket.on('room:error', (p) => { this.errors.push(p); });
     this.socket.on('room:closed', (p) => { this.closed = p; });
-    this.socket.on('lobby:rooms', (p) => { this.rooms = p.rooms; });
+    this.socket.on('lobby:rooms', (p) => { this.rooms = p.rooms; this.online = p.online; });
   }
 
   connect() {
@@ -579,6 +580,13 @@ async function run() {
   const lobbyWatcher = new Client('lobby', 'client-lobby-001', '大廳');
   await lobbyWatcher.connect();
   lobbyWatcher.emit('lobby:subscribe', {});
+  check('大廳收到目前在線人數', await lobbyWatcher.until((c) => Number.isInteger(c.online) && c.online > 0, 4000));
+  const beforeCount = lobbyWatcher.online;
+  const countProbe = new Client('count-probe', 'client-count-probe', '測試');
+  await countProbe.connect();
+  check('新連線增加在線人數', await lobbyWatcher.until((c) => c.online === beforeCount + 1, 4000));
+  countProbe.close();
+  check('斷線減少在線人數', await lobbyWatcher.until((c) => c.online === beforeCount, 4000));
   check('大廳看得到這間房',
     await lobbyWatcher.until((c) => (c.rooms || []).some((r) => r.code === code), 4000),
     JSON.stringify((lobbyWatcher.rooms || []).map((r) => r.code)));

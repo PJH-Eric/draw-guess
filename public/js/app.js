@@ -2272,11 +2272,20 @@
 
   /* -------------------------------------------------------- 線上事件 */
 
+  function renderOnlineCount() {
+    var el = $('lobby-online-count');
+    var valid = app.conn && app.conn.status === 'connected' && Number.isInteger(app.onlineCount);
+    el.hidden = !valid;
+    el.textContent = valid ? w.I18N.t('lobby.onlineCount', { n: app.onlineCount }) : '';
+  }
+
   function setupOnlineEvents() {
     var O = w.Online;
 
     O.on('status', function (s) {
       app.conn = s;
+      if (s.status !== 'connected') app.onlineCount = null;
+      renderOnlineCount();
       if (app.screen === 's-lobby') {
         if (s.message) $('lobby-state').textContent = s.message;
         setLobbyEnabled(s.status === 'connected');
@@ -2284,7 +2293,11 @@
       if (app.view) renderAside();
     });
 
-    O.on('lobby:rooms', function (p) { renderRoomList(p.rooms); });
+    O.on('lobby:rooms', function (p) {
+      app.onlineCount = Number.isInteger(p.online) && p.online >= 0 ? p.online : null;
+      renderOnlineCount();
+      renderRoomList(p.rooms);
+    });
 
     O.on('room:sync', function (v) {
       localizeGame(v.game);
@@ -2462,6 +2475,7 @@
       renderSoloOptions();
       syncSettingsUI();
       if (app.rooms) renderRoomList(app.rooms);
+      renderOnlineCount();
       if (gameModal && gameModal.isOpen()) renderGameSettings();
       if (roomCreateModal && roomCreateModal.isOpen()) renderRoomCreateOptions();
       if (app.screen === 's-help') renderTutorial();

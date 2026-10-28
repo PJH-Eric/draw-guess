@@ -167,7 +167,8 @@ function syncOne(socket, room, full) {
 
 function syncLobby() {
   if (!lobbySockets.size) return;
-  const payload = { rooms: store.list(), total: store.size() };
+  const online = new Set([...io.sockets.sockets.values()].map(s => s.data.clientId).filter(Boolean)).size;
+  const payload = { rooms: store.list(), total: store.size(), online };
   for (const s of lobbySockets) s.emit('lobby:rooms', payload);
 }
 
@@ -247,12 +248,13 @@ io.on('connection', (socket) => {
     socket.data.clientId = publicIdOf(secret);
     socket.data.name = sanitizeName(p.name, '');
     if (typeof ack === 'function') ack({ ok: true, id: socket.data.clientId, name: socket.data.name, serverTime: now() });
+    syncLobby();
   });
 
   socket.on('lobby:subscribe', () => {
     detach(socket);
     lobbySockets.add(socket);
-    socket.emit('lobby:rooms', { rooms: store.list(), total: store.size() });
+    syncLobby();
   });
 
   socket.on('lobby:unsubscribe', () => { lobbySockets.delete(socket); });
@@ -492,6 +494,7 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     lobbySockets.delete(socket);
+    syncLobby();
     const room = store.getAny(socket.data.roomCode);
     detach(socket);
     if (!room || room.closed) return;

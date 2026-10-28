@@ -1,5 +1,6 @@
 /* 繁體中文／英文介面字典；由穩定 key 引用，玩家輸入保持原文。 */
 I18N.register('zh-Hant', {
+  'lobby.onlineCount': '目前在線：{n} 人',
   'reference.open': '查看範本',
   'reference.title': '畫家參考範本',
   'reference.close': '關閉範本',
@@ -12,6 +13,7 @@ I18N.register('zh-Hant', {
   'reference.empty': '範本暫時無法顯示，請稍後再試。',
   'reference.note': '看輪廓與特徵就好，不必畫得一模一樣。範本不會放進你的畫布；線上回合仍會繼續計時。'
 }).register('en', {
+  'lobby.onlineCount': 'Online now: {n}',
   'reference.open': 'Reference',
   'reference.title': 'Drawing reference',
   'reference.close': 'Close reference',
@@ -1883,6 +1885,7 @@ I18N.register("zh-Hant", { "meta.title": "你畫我猜｜免費線上多人畫�
     "meta.title": "你画我猜｜免费线上多人画图猜谜",
     "meta.desc": "免费免下载的你画我猜，轮流当画家，用画笔、形状与油漆桶画出题目，猜中答案抢积分。单机练习或开房间邀朋友同乐，支援观战与猜题纪录，手机平板都能作画。"
   };
+  hans['lobby.onlineCount'] = '当前在线：{n} 人';
   if (root.I18N) root.I18N.register('zh-Hans', hans);
   if (typeof module === 'object' && module.exports) module.exports['zh-Hans'] = hans;
 })(typeof window !== 'undefined' ? window : globalThis);
