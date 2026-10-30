@@ -1681,7 +1681,7 @@
       if (v.you.can.rematch) btns += (globalThis.I18N ? globalThis.I18N.t("text.081") : "<button class=\"btn3d\" data-color=\"mint\" data-act=\"rematch\">再玩一局</button>");
       btns += (globalThis.I18N ? globalThis.I18N.t("text.080") : "<button class=\"btn3d small\" data-color=\"cream\" data-act=\"home\">回主選單</button>");
     }
-    return (globalThis.I18N ? globalThis.I18N.t("text.079") : "<h3>結算</h3><ul class=\"resultlist\">") + rows + '</ul>' + note +
+    return '<div data-result-share>' + (globalThis.I18N ? globalThis.I18N.t("text.079") : "<h3>結算</h3><ul class=\"resultlist\">") + rows + '</ul>' + note + '</div>' +
       (app.mode === 'online' ? chatBlockHtml(v) : '') +
       '<div class="overlay-btns">' + btns + '</div>';
   }
