@@ -30,7 +30,11 @@
     'room:private',
     'room:error',
     'room:closed',
-    'room:left'
+    'room:left',
+    'lobbychat:history',
+    'lobbychat:msg',
+    'lobbychat:online',
+    'lobbychat:error'
   ];
 
   function emitLocal(evt, payload) {

@@ -1248,3 +1248,12 @@ body.solo-mode.big-tools .fillbox{min-height:56px}
 .settings-fab { min-width: 48px; min-height: 48px; }
 .panel-head h2, .setrow label, .rule-field, .modal-head h2 { min-width: 0; overflow-wrap: anywhere; }
 html[lang="en"] .home-btns .btn3d, html[lang="en"] .btn-wide { white-space: normal; overflow-wrap: anywhere; }
+
+/* ---------- 大廳聊天室：套用你畫我猜配色 ---------- */
+body .lc-root{
+  --lc-accent:var(--grape-t);--lc-accent-ink:#fff;
+  --lc-panel-bg:var(--paper);--lc-panel-solid:var(--paper);
+  --lc-ink:var(--ink);--lc-muted:var(--ink-soft);--lc-line:var(--line);
+  --lc-field-bg:#fff;--lc-sys-bg:rgba(201,182,245,.28);--lc-name:var(--grape-t);
+  --lc-radius:var(--radius);--lc-z:95;
+}

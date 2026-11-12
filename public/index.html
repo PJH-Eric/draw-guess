@@ -29,6 +29,7 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"你畫我猜","url":"https://pjh-eric.github.io/draw-guess/","description":"免費免下載的你畫我猜，輪流當畫家，用畫筆、形狀與油漆桶畫出題目，猜中答案搶積分。單機練習或開房間邀朋友同樂，支援觀戰與猜題紀錄，手機平板都能作畫。","applicationCategory":"GameApplication","operatingSystem":"Any","inLanguage":"zh-Hant","genre":"畫圖猜謎","offers":{"@type":"Offer","price":"0","priceCurrency":"TWD"},"image":"https://pjh-eric.github.io/draw-guess/assets/images/seo.webp","thumbnailUrl":"https://pjh-eric.github.io/draw-guess/assets/images/seo.webp","isPartOf":{"@type":"WebSite","url":"https://pjh-eric.github.io/game-lobby/"}}</script>
 <!--SEO:END-->
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/lobby-chat.css?v=20261112">
 <link rel="stylesheet" href="css/latency.css?v=20261002c">
 
 <link rel="icon" type="image/png" sizes="96x96" href="favicon-96.png">
@@ -468,6 +469,10 @@
             <span><b><span data-i18n="text.425">放大工具列</span></b><small><span data-i18n="text.426">工具與顏色的按鈕變大，手指比較好按</span></small></span>
             <input id="settings-bigtools" type="checkbox">
           </label>
+          <label class="setting-toggle" for="settings-lobbychat">
+            <span><b><span id="settings-lobbychat-label">大廳聊天室</span></b><small><span id="settings-lobbychat-sub">在線上大廳左下角顯示聊天氣泡</span></small></span>
+            <input id="settings-lobbychat" type="checkbox" checked>
+          </label>
         </div>
 
         <div class="settings-group">
@@ -577,6 +582,7 @@
 <script src="js/svgui.js"></script>
 <script src="js/paint.js"></script>
 <script src="js/latency.js?v=20261002c" data-skin="draw-guess"></script>
+<script src="js/lobby-chat.js?v=20261112"></script>
 <script src="js/online.js"></script>
 <script src="js/app.js"></script>
 <!--SEO:GAMEPLAY-->
