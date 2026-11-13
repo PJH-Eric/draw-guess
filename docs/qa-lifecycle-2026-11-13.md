@@ -18,3 +18,5 @@
 - 無設定 formatter；依既有風格手動整理，`git diff --check` 通過。檔案採 UTF-8 無 BOM。
 
 最後依 loop-engineering 檢視、修復、驗證一輪。首次線上測試與其他遊戲測試埠衝突，改為獨立埠後通過；不是產品測試失敗。未驗證正式服務部署結果；本機 Node 版本低於宣告的 26.12.1。原有 QA 文件刪除不納入本次提交。
+
+部署回歸修正：Render 的 `npm ci --omit=dev && npm test` 不會安裝 `socket.io-client`。將需要該套件的整合測試移至既有 GitHub CI 會執行的 `npm run test:online`，`npm test` 改跑無開發依賴的 `tests/lifecycle-model.cjs`，涵蓋斷線期限、觀戰關房及兩分鐘回收。以 Git archive ZIP 解開的獨立目錄完成乾淨 `npm ci --omit=dev && npm test`，全部通過，未變更正式依賴或 Render 設定。
