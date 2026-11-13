@@ -2411,6 +2411,8 @@
     O.on('reconnected', function () {
       if (app.mode === 'online' && app.roomCode) {
         joinRoom(app.roomCode, null, null, { rejoin: true });
+      } else if (app.screen === 's-lobby') {
+        O.send('lobby:subscribe', {});
       }
     });
   }

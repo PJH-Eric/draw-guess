@@ -82,6 +82,13 @@ async function main() {
     await until(() => io.sockets.sockets.size === 0);
     assert.equal(store.get(code).member(host.identity.id).connected, false);
   });
+  await check('已關閉房間到點釋放，不因清理工作重設保存期限', () => {
+    const { room } = store.create('host', { name: 'host', now: 0 });
+    room.close('srv.closed.empty', 0);
+    assert.equal(store.sweep(119999).forget.length, 0);
+    assert.deepEqual(store.sweep(120000).forget, [room]);
+    assert.equal(store.getAny(room.code), null);
+  });
   io.close(); server.close();
   process.exit(failures ? 1 : 0);
 }
