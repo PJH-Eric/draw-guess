@@ -125,10 +125,26 @@ function socketsOf(code) {
 }
 
 function attach(socket, code) {
-  detach(socket);
+  if (socket.data.roomCode !== code) leaveCurrentRoom(socket);
   socket.data.roomCode = code;
   socketsOf(code).add(socket);
   lobbySockets.delete(socket);
+}
+
+function hasRoomConnection(code, clientId) {
+  return [...(roomSockets.get(code) || [])]
+    .some(s => s.connected && s.data.clientId === clientId);
+}
+
+/** 離房、回大廳與換房共用；仍有相同身分分頁在房內時保留成員。 */
+function leaveCurrentRoom(socket) {
+  const room = store.get(socket.data.roomCode);
+  detach(socket);
+  if (!room || hasRoomConnection(room.code, socket.data.clientId)) return;
+  const t = now();
+  const res = room.leave(socket.data.clientId, t);
+  if (res.ok) room.system(res.name + ' 離開了房間。', t);
+  if (!enforceLifecycle(room, t)) syncRoom(room, true);
 }
 
 function detach(socket) {
@@ -199,6 +215,8 @@ function fail(socket, message, code) {
 function announceClosed(room) {
   for (const s of socketsOf(room.code)) {
     s.emit('room:closed', { reason: room.closedReason || '房間已經結束。', code: room.code });
+    s.data.roomCode = null;
+    lobbySockets.add(s);
   }
   roomSockets.delete(room.code);
 }
@@ -248,14 +266,14 @@ io.on('connection', (socket) => {
     let secret = str(p.clientId).trim();
     if (!/^[A-Za-z0-9_-]{8,64}$/.test(secret)) secret = crypto.randomBytes(12).toString('hex');
     /* 房間裡只用公開 id，私密的 clientId 不會出現在任何廣播裡 */
-    socket.data.clientId = publicIdOf(secret);
+    socket.data.clientId = socket.data.clientId || publicIdOf(secret);
     socket.data.name = sanitizeName(p.name, '');
     if (typeof ack === 'function') ack({ ok: true, id: socket.data.clientId, name: socket.data.name, serverTime: now() });
     syncLobby();
   });
 
   socket.on('lobby:subscribe', () => {
-    detach(socket);
+    leaveCurrentRoom(socket);
     lobbySockets.add(socket);
     syncLobby();
   });
@@ -476,25 +494,11 @@ io.on('connection', (socket) => {
   }));
 
   socket.on('room:leave', (payload, ack) => {
-    /* 房間已經關了（或早就不在房裡）：直接回「離開成功」，不要跳紅色錯誤 */
-    if (!store.get(socket.data.roomCode)) {
-      detach(socket);
-      socket.emit('room:left', { ok: true });
-      return;
-    }
-    withRoom(leaveRoom)(payload, ack);
-  });
-
-  const leaveRoom = (room) => {
-    const t = now();
-    const res = room.leave(socket.data.clientId, t);
-    detach(socket);
+    leaveCurrentRoom(socket);
     socket.emit('room:left', { ok: true });
-    if (res.ok) room.system(res.name + ' 離開了房間。', t);
-    if (enforceLifecycle(room, t)) return;
-    syncRoom(room, true);
+    if (typeof ack === 'function') ack({ ok: true });
     syncLobby();
-  };
+  });
 
   socket.on('disconnect', () => {
     lobbySockets.delete(socket);
@@ -506,8 +510,7 @@ io.on('connection', (socket) => {
     if (!member) return;
     /* 同一個人還有別條連線在房裡（網路閃一下先重連成功、舊連線晚一點才斷；或開了兩個分頁）：
        舊連線斷掉不代表人走了，不能標成離線，不然 60 秒後會被當成斷線太久踢出去。 */
-    const live = roomSockets.get(room.code);
-    if (live && [...live].some((s) => s.data.clientId === socket.data.clientId)) return;
+    if (hasRoomConnection(room.code, socket.data.clientId)) return;
     /* 先標記斷線並保留座位，讓重新整理的人可以憑 clientId 回到原位；
        超過保留時間還沒回來，定時工作才會把他踢掉並檢查房間要不要關。 */
     room.disconnect(socket.data.clientId, now());
