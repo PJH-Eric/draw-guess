@@ -1,7 +1,7 @@
 /* 自訂滑軌不改動原始捲動容器，保留觸控慣性、滾輪與原有鍵盤操作。 */
 (function (w, d) {
   'use strict';
-  var selector = '.screen,.overlay-card,.settings-body,.aside-body,.playbar,.paint-controls,' +
+  var selector = '.screen,.overlay-card,.settings-body,.aside-body,.playbar,.guessfeed,.paint-controls,' +
     '.ruledd-list,.chatlist,.playerstrip,.toolrow-tools,.toolrow-colors,.toolscroll,.result-share-dialog,.dropdown-list';
   var records = new Map();
   var frame = 0;

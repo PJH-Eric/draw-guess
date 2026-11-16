@@ -1,10 +1,10 @@
 /* ===== app/solo.js — 單機引擎 ===== */
 
-import { D, LOOP_MS, ME, RNG, Rules, Sound, Store, app, show, toast } from './core.js?v=2b5363b0dc';
-import { pushFeed } from './feed.js?v=2b5363b0dc';
-import { ensurePaint } from './canvas.js?v=2b5363b0dc';
-import { render, updateTimers } from './render.js?v=2b5363b0dc';
-import { recordResult } from './online-events.js?v=2b5363b0dc';
+import { D, LOOP_MS, ME, RNG, Rules, Sound, Store, Words, app, show, toast } from './core.js?v=407d3bb548';
+import { pushFeed } from './feed.js?v=407d3bb548';
+import { ensurePaint } from './canvas.js?v=407d3bb548';
+import { render, updateTimers } from './render.js?v=407d3bb548';
+import { recordResult } from './online-events.js?v=407d3bb548';
 
 var w = window;
 
@@ -12,7 +12,18 @@ var w = window;
    單機引擎：自己持有完整狀態，就你一個人，單純練習作畫用的
    ================================================================ */
 
+/** 確認某個語系的題庫已經載入再做事（英文與簡中題庫是用到才載入的）。已經在就同步執行。 */
+export function withWordPack(lang, fn) {
+  if (Words.hasLang(lang) || !w.LazyPacks) { fn(); return; }
+  w.LazyPacks.words(lang, function (ok) {
+    if (ok && Words.hasLang(lang)) fn();
+    else toast(w.I18N.t('words.loadFail'), 'error');
+  });
+}
+
 export function startSolo() {
+  /* 題庫還沒載入（剛換題目語系、網路慢）：載好再開始 */
+  if (!Words.hasLang(Store.wordLang())) { withWordPack(Store.wordLang(), startSolo); return; }
   var players = [{ id: ME, get name() { return globalThis.I18N ? globalThis.I18N.t("text.166") : "你"; }, ai: null }];
   var seed = RNG.randomSeed(null, 6);
   /* 單機練習不設限：沒有別人在等，所以直接把引擎上限吃滿 ——

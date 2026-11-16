@@ -636,8 +636,10 @@ async function main() {
       JSON.stringify(toolGroups));
     if (v.height > v.width && v.width <= 1099) {
       const toolbarHeight = await cdp.eval('return document.getElementById("toolbar").getBoundingClientRect().height;');
-      check(v.name + '：工具箱含作品操作不超過 240px，保留主要畫圖區',
-        toolbarHeight <= 240, '工具箱高度=' + toolbarHeight);
+      /* 夠高的手機把十二個顏色排成兩列（不用左右滑），多用掉畫布下方本來空著的一段；
+         畫布本身有沒有被擠小由上面的 canvasFloor 把關。 */
+      check(v.name + '：工具箱含作品操作不超過 280px，保留主要畫圖區',
+        toolbarHeight <= 280, '工具箱高度=' + toolbarHeight);
     }
     const drawLimit = Math.min(drawStage.stage.w, drawStage.stage.h);
     check(v.name + '：工具列展開時畫布仍吃滿較短邊',
@@ -651,6 +653,7 @@ async function main() {
     /* Offline reference: both languages, staged strokes and actual modal geometry. */
     for (const lang of ['zh-Hant', 'en']) {
       await cdp.eval('window.I18N.setLang(' + JSON.stringify(lang) + '); document.getElementById("b-reference").focus(); document.getElementById("b-reference").click(); return 1;');
+      await cdp.waitFor('window.I18N.lang === ' + JSON.stringify(lang), 8000, '語系字典載入');
       await sleep(180);
       const reference = await cdp.json(`(function(){
         var panel=document.getElementById('reference-panel'), r=panel.getBoundingClientRect();
@@ -756,6 +759,7 @@ async function main() {
       await cdp.waitFor('window.DrawGuessApp.view.game.referenceId === window.DrawGuessApp.solo.state.wordId', 3000, '還原語意組圖題目');
     }
     await cdp.eval('window.I18N.setLang("zh-Hant"); return 1;');
+    await cdp.waitFor('window.I18N.lang === "zh-Hant"', 8000, '語系字典載入');
 
     /* 版面微調：題號只留題目列、橫向工具列分組、較高手機展開不滑、平板直向工具放大 */
     const tb = await cdp.json(`(function(){
@@ -822,13 +826,20 @@ async function main() {
   await goto(cdp, BASE);
   await cdp.eval('localStorage.clear(); return 1;');
   await goto(cdp, BASE);
+  const lazy0 = await cdp.json('({en:window.I18N.hasPack("en"),hans:window.I18N.hasPack("zh-Hans"),wordsEn:!!window.WordsEN,wordsHans:!!window.WordsHans,title:document.getElementById("b-solo").textContent.trim()})');
+  check('繁中開頁只載入繁中：英文／簡中的介面字典與題庫都還沒載入',
+    !lazy0.en && !lazy0.hans && !lazy0.wordsEn && !lazy0.wordsHans && /單機/.test(lazy0.title), JSON.stringify(lazy0));
   await cdp.eval('window.__probe.click("#b-tut-skip"); window.__probe.click("#b-solo"); return 1;');
   await cdp.waitFor('document.getElementById("opt-wordlang-button")', 3000, '題目語系自訂選單');
   const wl0 = await cdp.json('({ui:window.I18N.lang,word:document.getElementById("opt-wordlang").value,stored:window.Store.wordLang(),options:Array.from(document.getElementById("opt-wordlang").options).map(function(o){return o.value;}),custom:document.getElementById("opt-wordlang").hidden})');
   check('單機設定有題目語系選單（自訂元件、三種語系），預設等於系統語系',
     wl0.custom && wl0.options.join() === 'zh-Hant,zh-Hans,en' && wl0.word === wl0.ui && wl0.stored === wl0.ui, JSON.stringify(wl0));
   await cdp.eval('window.I18N.setLang("en"); return 1;');
+  await cdp.waitFor('window.I18N.lang === "en"', 8000, '語系字典載入');
   await sleep(200);
+  const lazy1 = await cdp.json('({en:window.I18N.hasPack("en"),hans:window.I18N.hasPack("zh-Hans"),wordsEn:!!window.WordsEN,head:document.querySelector("#s-solo .panel-head h2").textContent.trim()})');
+  check('切到英文時才載入英文字典（簡中與英文題庫仍未載入），畫面換成英文',
+    lazy1.en && !lazy1.hans && !lazy1.wordsEn && !/[㐀-鿿]/.test(lazy1.head), JSON.stringify(lazy1));
   const wl1 = await cdp.json('({ui:window.I18N.lang,word:document.getElementById("opt-wordlang").value,stored:window.Store.wordLang()})');
   check('改介面語系不會改到題目語系', wl1.ui === 'en' && wl1.word === wl0.word && wl1.stored === wl0.word, JSON.stringify(wl1));
   await cdp.eval('document.getElementById("opt-wordlang-button").click(); return 1;');
@@ -848,9 +859,40 @@ async function main() {
   check('單機題目用選好的題目語系（簡體「猫」），介面仍是英文',
     wl3.lang === 'zh-Hans' && wl3.shown.replace(/\s/g, '') === '猫' && wl3.back === 'Reference', JSON.stringify(wl3));
   await cdp.eval('window.I18N.setLang("zh-Hant"); return 1;');
+  await cdp.waitFor('window.I18N.lang === "zh-Hant"', 8000, '語系字典載入');
   await sleep(200);
   check('對局中改介面語系，題目維持原本的題目語系',
     await cdp.eval('return window.DrawGuessApp.solo.state.lang === "zh-Hans" && document.getElementById("wordbar-mask").textContent.replace(/\s/g, "") === "猫";'));
+  check('選了簡中題目才載入簡中題庫，英文題庫始終沒載入',
+    await cdp.eval('return !!window.WordsHans && !window.WordsEN;'));
+
+  /* ================= A1b. 手機返回鍵／瀏覽器上一頁 ================= */
+  console.log('\n【返回鍵】');
+  const here = await cdp.eval('return location.href;');
+  await cdp.eval('history.back(); return 1;');
+  await cdp.waitFor('document.getElementById("confirm-modal").classList.contains("open")', 4000, '返回鍵：離開確認');
+  check('對局中按返回不會直接離開網頁，而是先問要不要離開這一局',
+    await cdp.eval('return window.DrawGuessApp.screen === "s-game" && window.DrawGuessApp.mode === "solo" && location.href === ' + JSON.stringify(here) + ';'));
+  await cdp.eval('window.__probe.click("#confirm-cancel"); return 1;');
+  await cdp.waitFor('!document.getElementById("confirm-modal").classList.contains("open")', 3000, '取消離開');
+  await cdp.eval('window.__probe.click("#b-settings"); return 1;');
+  await cdp.waitFor('document.getElementById("settings-modal").classList.contains("open")', 3000, '開啟設定');
+  await cdp.eval('history.back(); return 1;');
+  await cdp.waitFor('!document.getElementById("settings-modal").classList.contains("open")', 4000, '返回鍵：關閉設定');
+  check('有彈窗開著時按返回只關掉彈窗，對局還在',
+    await cdp.eval('return window.DrawGuessApp.screen === "s-game" && window.DrawGuessApp.mode === "solo";'));
+  await cdp.eval('document.body.click(); history.back(); return 1;');
+  await cdp.waitFor('document.getElementById("confirm-modal").classList.contains("open")', 4000, '返回鍵：再次詢問');
+  await cdp.eval('window.__probe.click("#confirm-ok"); return 1;');
+  await cdp.waitFor('window.DrawGuessApp.screen === "s-home"', 4000, '確定離開回主選單');
+  await sleep(250);
+  check('確定離開後回到主選單，網址沒有被帶走',
+    await cdp.eval('return window.DrawGuessApp.screen === "s-home" && location.href === ' + JSON.stringify(here) + ';'));
+  await cdp.eval('window.__probe.click("#b-help"); return 1;');
+  await cdp.waitFor('window.DrawGuessApp.screen === "s-help"', 3000, '進教學');
+  await cdp.eval('history.back(); return 1;');
+  await cdp.waitFor('window.DrawGuessApp.screen === "s-home"', 4000, '返回鍵：教學回主選單');
+  check('子畫面（教學）按返回會回主選單', await cdp.eval('return window.DrawGuessApp.screen === "s-home";'));
 
   /* ================= A2. 其他語言的版面（英文字串最長、最容易撐破） ================= */
 
@@ -863,6 +905,7 @@ async function main() {
       await cdp.eval('localStorage.clear(); return 1;');
       await goto(cdp, BASE);
       await cdp.eval('window.I18N.setLang(' + JSON.stringify(lang) + '); return 1;');
+      await cdp.waitFor('window.I18N.lang === ' + JSON.stringify(lang), 8000, '語系字典載入');
       await sleep(200);
       assertLayout(tag + ' 教學', v, await cdp.json('window.__probe.layout()'));
       await cdp.eval('window.__probe.click("#b-tut-skip"); return 1;');
@@ -1114,7 +1157,7 @@ async function main() {
   await hostTab.eval('var wl=document.getElementById("room-create-wordlang"); wl.value="zh-Hans"; wl.dispatchEvent(new Event("change",{bubbles:true})); return 1;');
   await hostTab.send('Emulation.setDeviceMetricsOverride', { width: 1024, height: 768, deviceScaleFactor: 2, mobile: true });
   await sleep(250);
-  await hostTab.eval('window.__probe.click("#room-create-rounds [data-v=\\"3\\"]"); window.__probe.click("#room-create-drawsec [data-v=\\"120\\"]"); window.__probe.click("#room-create-diff [data-v=\\"3\\"]"); return 1;');
+  await hostTab.eval('[["room-create-rounds","3"],["room-create-drawsec","120"],["room-create-diff","3"]].forEach(function(p){var el=document.getElementById(p[0]); el.value=p[1]; el.dispatchEvent(new Event("change",{bubbles:true}));}); return 1;');
   await hostTab.eval('window.__probe.click("#room-create-submit"); return 1;');
   await hostTab.waitFor('window.DrawGuessApp.mode === "online" && window.DrawGuessApp.view', 10000, '進入房間');
   const roomLang = await hostTab.json('({setting:window.DrawGuessApp.view.room.settings.wordLang,ui:window.I18N.lang,note:(document.getElementById("room-wordlang-note")||{}).textContent||""})');
@@ -1242,9 +1285,9 @@ async function main() {
   check('手機直向：玩家列表同樣是滿版一列（不是縮成一團）',
     phoneCard.rowW > 0 && Math.abs(phoneCard.rowW - phoneCard.listW) < 2, JSON.stringify(phoneCard));
   check('手機直向：遊戲規則仍是同一行（不換行）', phoneCard.rulesRowFlex === 'nowrap', JSON.stringify(phoneCard));
-  const phoneTop = await hostTab.json('(function(){var h=document.querySelector("#overlay-card h3").getBoundingClientRect(), f=document.getElementById("b-settings").getBoundingClientRect(), a=document.querySelector(".game-top-actions").getBoundingClientRect(); var i=document.getElementById("invite-url").getBoundingClientRect(); var bs=document.querySelectorAll("#overlay-card .inviterow .pillbtn"); var one=bs.length===3; for(var k=0;k<bs.length;k++){var b=bs[k].getBoundingClientRect(); if(Math.abs((b.top+b.bottom)/2-(i.top+i.bottom)/2)>4) one=false;} return {titleTop:h.top, btnBottom:Math.max(f.bottom,a.bottom), inviteOneRow:one, inviteW:i.width, oneCol:getComputedStyle(document.querySelector("#overlay-card .setup-cols")).display};})()');
+  const phoneTop = await hostTab.json('(function(){var h=document.querySelector("#overlay-card h3").getBoundingClientRect(), f=document.getElementById("b-settings").getBoundingClientRect(), a=document.querySelector(".game-top-actions").getBoundingClientRect(); var i=document.getElementById("invite-url").getBoundingClientRect(); var bs=document.querySelectorAll("#overlay-card .inviterow .pillbtn"); var one=bs.length===3, b0=bs.length?bs[0].getBoundingClientRect():null; for(var k=0;k<bs.length;k++){var b=bs[k].getBoundingClientRect(); if(Math.abs(b.top-b0.top)>2||b.top<i.bottom-1) one=false;} return {titleTop:h.top, btnBottom:Math.max(f.bottom,a.bottom), inviteOneRow:one, inviteW:i.width, oneCol:getComputedStyle(document.querySelector("#overlay-card .setup-cols")).display};})()');
   check('手機直向：「房間設定」標題沒有被右上角的固定鈕蓋住', phoneTop.titleTop >= phoneTop.btnBottom - 1, JSON.stringify(phoneTop));
-  check('手機直向：網址欄跟三顆邀請按鈕排在同一行', phoneTop.inviteOneRow && phoneTop.inviteW >= 60, JSON.stringify(phoneTop));
+  check('手機直向：邀請網址自己一行（整串看得到），三顆按鈕在下一行排成一列', phoneTop.inviteOneRow && phoneTop.inviteW >= 240, JSON.stringify(phoneTop));
   check('手機直向：房間卡維持一欄（兩欄上下接著排）', phoneTop.oneCol === 'block', JSON.stringify(phoneTop));
   await shot('線上-房間設定-手機直向');
   await hostTab.send('Emulation.setDeviceMetricsOverride', { width: 1024, height: 768, deviceScaleFactor: 2, mobile: true });

@@ -1,0 +1,137 @@
+/* ===== 你畫我猜 — 可愛風主題 =====
+ * 版面策略：內容驅動的斷點 + 流動尺寸 + 安全區。
+ * 各尺寸都以「畫布最大」為優先；操作摘要與猜題紀錄都放在左側，
+ * 寬版是常駐的左欄（上 Summary、下猜題紀錄），窄版收成左下的可收合浮層。
+ */
+:root{
+  --ink:#4A3B55;
+  --ink-soft:#7A6A88;
+  --paper:#FFFDF8;
+  --grape:#C9B6F5;  --grape-d:#A48FDB;  --grape-t:#6E4FBF;
+  --mint:#A9E7D2;   --mint-d:#79C6AC;
+  --peach:#FFC2B4;  --peach-d:#E89C8B;
+  --sky:#AED9F5;    --sky-d:#7FB4DA;
+  --lemon:#FFE3A0;  --lemon-d:#E7C263;
+  --rose:#FFB8CF;   --rose-d:#E88CAA;
+  --cream:#FFF0DE;  --cream-d:#E6D2B4;
+  --danger:#D2444F; --danger-bg:#FFE6E8;
+  --ok:#2F8F6B;
+  --line:#DED3EA;
+  /* 表面與淡色底：全站只用這幾階，不再各處寫死相近的色碼 */
+  --surface:#FFFFFF;
+  --grape-tint:#F8F4FF; --grape-wash:#FAF6FF;
+  --mint-tint:#E4F6EC;  --sky-tint:#EAF4FC;  --lemon-tint:#FFF8E4;
+  --muted-bg:#EAE4F0;   --muted-tint:#F4F1F8;
+  --ink-deep:#3A2C46;
+  /* 立體感用的墨色陰影（同一個墨色，三種濃度） */
+  --shade-1:rgba(74,59,85,.09); --shade-2:rgba(74,59,85,.14); --shade-3:rgba(74,59,85,.2);
+  --radius:22px;
+  --d:8px;
+  --aside-w:min(86vw,320px);
+  /* 右上角三顆圓鈕（操作摘要／對局設定／系統設定）共用的尺寸、間距與右邊界 */
+  --topbtn:52px;
+  --topgap:8px;
+  --topedge:12px;
+  /* 右上三顆固定鈕佔掉的寬度，抬頭那一列要讓出來才不會被蓋到 */
+  --hud-reserve:calc(var(--topedge) + 4 * var(--topbtn) + 3 * var(--topgap) + 20px);
+  --safe-t:env(safe-area-inset-top);
+  --safe-r:env(safe-area-inset-right);
+  --safe-b:env(safe-area-inset-bottom);
+  --safe-l:env(safe-area-inset-left);
+  font-size:16px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;min-height:100%;margin:0;padding:0}
+body{
+  font-family:"Yuanti TC","圓體-繁","PingFang TC","蘋方-繁","Microsoft JhengHei","Noto Sans TC","Segoe UI",system-ui,sans-serif;
+  color:var(--ink);
+  background:linear-gradient(165deg,#F4EEFF 0%,#FFF7EC 48%,#E9F9F2 100%);
+  overflow:hidden;touch-action:manipulation;user-select:none;-webkit-user-select:none;
+}
+#bgdeco{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+#bgdeco span{position:absolute;display:block;border-radius:34%;opacity:.35;animation:float linear infinite}
+@keyframes float{0%{transform:translateY(0) rotate(0)}50%{transform:translateY(-24px) rotate(10deg)}100%{transform:translateY(0) rotate(0)}}
+
+#app{position:relative;z-index:1;height:100%;min-height:100dvh}
+.screen{
+  position:absolute;inset:0;display:none;overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  padding:var(--safe-t) var(--safe-r) var(--safe-b) var(--safe-l);
+}
+.screen.active{display:block}
+/* 置中靠子元素的 margin:auto：內容比畫面高時會從頂端開始排、可以捲到最上面；
+   用 align-items:center 的話超出的上半截會被裁掉、捲不回去（矮的橫向手機主選單 logo 被切頭）。 */
+.screen.flexcenter.active{display:flex;align-items:flex-start;justify-content:center}
+.screen.flexcenter.active > .home-wrap{margin:auto}
+.screen#s-game.active{display:block;overflow:hidden}
+[hidden]{display:none!important}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#F1EBFA;border-radius:6px;padding:1px 5px;font-size:.9em}
+.ico{display:inline-flex;align-items:center;justify-content:center;width:1.25em;height:1.25em;flex:0 0 auto}
+.ico svg{width:100%;height:100%;display:block}
+
+/* ---------- 立體 SVG 按鈕 ---------- */
+.btn3d{
+  position:relative;border:0;background:none;padding:13px 22px calc(13px + var(--d));
+  font:inherit;font-weight:800;font-size:1.02rem;color:var(--ink);cursor:pointer;
+  letter-spacing:.03em;line-height:1.15;min-height:52px;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.btn3d .b3-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.btn3d .b3-face{transition:transform .07s ease}
+.btn3d .b3-lbl{position:relative;z-index:2;display:inline-flex;align-items:center;gap:.4em;transition:transform .07s ease;text-shadow:0 1px 0 rgba(255,255,255,.65)}
+.btn3d.press .b3-face,.btn3d.press .b3-lbl{transform:translateY(calc(var(--d) - 2px))}
+.btn3d[disabled]{opacity:.42;cursor:default}
+.btn3d:focus-visible{outline:3px solid var(--sky-d);outline-offset:3px;border-radius:18px}
+.btn3d.big{font-size:1.2rem;padding:16px 28px calc(16px + var(--d));min-height:66px;--d:10px}
+.btn3d.small{font-size:.9rem;padding:9px 14px calc(9px + var(--d));min-height:48px;--d:6px}
+.btn3d.icononly{padding:10px 12px calc(10px + var(--d));min-width:52px;min-height:52px;font-size:1.2rem;--d:6px}
+
+/* 右上角設定入口：固定在安全區內，不遮住遊戲控制 */
+.settings-fab{
+  position:fixed;z-index:70;
+  top:calc(10px + var(--safe-t));
+  right:calc(var(--topedge) + var(--safe-r));
+  --d:6px;
+}
+/* 右上角這一排（含固定的系統設定鈕）一律同尺寸，才對得齊 */
+.game-top .btn3d.icononly,.btn3d.settings-fab{
+  width:var(--topbtn);min-width:var(--topbtn);min-height:var(--topbtn);
+}
+.settings-fab .b3-lbl{font-size:1.2rem}
+
+/* 回遊戲大廳：跟同一組遊戲共用的入口，固定在左上安全區內 */
+.lobby-home-link{
+  position:fixed;z-index:65;top:calc(10px + var(--safe-t));left:calc(12px + var(--safe-l));
+  display:inline-flex;align-items:center;min-height:44px;padding:9px 14px;
+  border:3px solid var(--ink);border-radius:14px;background:var(--cream);color:var(--ink);
+  font-size:.8rem;font-weight:900;text-decoration:none;box-shadow:0 4px 0 var(--cream-d);
+  transition:transform .15s,box-shadow .15s,background .15s;
+}
+.lobby-home-link:hover{background:#FFF6E8;transform:translateY(-2px)}
+.lobby-home-link:active{transform:translateY(3px);box-shadow:0 1px 0 var(--cream-d)}
+.lobby-home-link:focus-visible{outline:3px solid var(--sky-d);outline-offset:3px}
+@media (max-width:600px){
+  #s-home .home-wrap{padding-top:max(66px,8vh)}
+  .lobby-home-link{top:calc(8px + var(--safe-t));left:calc(8px + var(--safe-l));padding:8px 10px;font-size:.74rem}
+}
+
+/* ---------- 通用面板 ---------- */
+.panel{width:min(100%,880px);margin:0 auto;padding:18px 18px 28px;min-height:100%}
+.panel-head{display:flex;align-items:center;gap:12px;margin:6px 0 14px;padding-right:60px}
+/* 內容比畫面長的頁面（大廳、教學、戰績、單機設定）：抬頭黏在頂端當一條底，
+   內容從它下面捲過去，右上角固定的語言／設定鈕才不會直接壓在文字或按鈕上。 */
+.panel-head{
+  position:sticky;top:0;z-index:5;margin:0 -18px 8px;padding:10px 18px 8px;padding-right:78px;
+  background:rgba(255,249,243,.9);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  border-bottom:2px solid var(--shade-1)
+}
+.panel-head h2{flex:1;margin:0;text-align:center;font-size:1.5rem;letter-spacing:.05em}
+.panel-head .spacer{flex:0 0 52px}
+.lbl{margin:18px 4px 8px;font-size:1.05rem;color:var(--grape-t);letter-spacing:.04em}
+.category-label{display:block;font-weight:700}
+.category-select{width:100%;min-height:48px;padding:10px 14px;border:3px solid var(--line);border-radius:16px;background:var(--surface);color:var(--ink);font:inherit;font-weight:800}
+.category-select:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
+.category-rule{margin-top:10px}
+.hint-note{margin:8px 4px 0;font-size:.82rem;color:var(--ink-soft);line-height:1.6}
+.panel-foot{display:flex;justify-content:center;gap:12px;margin-top:22px;flex-wrap:wrap}

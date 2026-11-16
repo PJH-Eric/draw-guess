@@ -1,0 +1,59 @@
+/* ---------- 主選單 ---------- */
+.home-wrap{text-align:center;padding:22px 18px;width:100%;max-width:640px}
+.logo{margin:0 auto 18px;max-width:520px}
+.logo svg{width:100%;height:auto;display:block}
+.home-btns{display:flex;flex-direction:column;gap:12px;align-items:stretch;max-width:430px;margin:0 auto}
+.home-row{display:flex;gap:12px}
+.home-row .btn3d{flex:1}
+.home-note{margin:18px auto 0;max-width:480px;font-size:.88rem;color:var(--ink-soft);line-height:1.75}
+
+/* ---------- 選項卡 ---------- */
+
+.chiprow{display:flex;gap:8px;flex-wrap:wrap}
+.pillbtn{
+  min-height:48px;min-width:56px;padding:10px 16px;font:inherit;font-weight:800;font-size:.95rem;
+  border:3px solid var(--line);border-radius:16px;background:var(--surface);color:var(--ink);cursor:pointer;
+  box-shadow:0 4px 0 var(--shade-1);
+}
+.pillbtn[aria-checked=true]{border-color:var(--grape-d);background:var(--grape);box-shadow:0 4px 0 var(--grape-d)}
+.pillbtn:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
+
+/* ---------- 教學 ---------- */
+.tut-progress{margin:4px 4px 10px;font-size:.85rem;font-weight:800;color:var(--grape-t)}
+.tut-box{
+  border:3px solid var(--line);border-radius:22px;background:var(--surface);padding:16px 18px;
+  min-height:240px;line-height:1.85;font-size:.98rem;
+  user-select:text;-webkit-user-select:text;
+}
+.tut-box:focus-visible{outline:3px solid var(--sky-d);outline-offset:3px}
+.tut-box h3{margin:0 0 10px;color:var(--grape-t);font-size:1.15rem}
+.tut-box p{margin:0 0 10px}
+.tut-box ul{margin:0 0 10px;padding-left:1.3em}
+.tut-box li{margin-bottom:6px}
+.tut-box .key{display:inline-block;border:2px solid var(--ink);border-radius:8px;padding:0 7px;background:var(--cream);font-weight:900;font-size:.86em}
+.tut-nav{display:flex;gap:10px;justify-content:space-between;margin-top:14px;flex-wrap:wrap}
+.tut-nav .btn3d{flex:1 1 auto}
+
+/* ---------- 戰績 ---------- */
+.statgrid{display:flex;gap:14px;flex-wrap:wrap}
+.statcard{flex:1 1 260px;border:3px solid var(--line);border-radius:22px;background:var(--surface);padding:14px 16px;box-shadow:0 5px 0 var(--shade-1)}
+.statcard h3{margin:0 0 10px;color:var(--grape-t);font-size:1.1rem}
+.statrow{display:flex;justify-content:space-between;padding:5px 2px;font-weight:800;border-bottom:2px dashed var(--line)}
+.statrow:last-child{border-bottom:0}
+.statrow b{font-variant-numeric:tabular-nums}
+.stat-empty{flex:1 1 100%;text-align:center;border:3px dashed var(--line);border-radius:22px;background:rgba(255,255,255,.7);padding:26px 16px}
+.stat-empty-face{display:block;width:84px;height:84px;margin:0 auto 8px}
+.stat-empty-face svg{width:100%;height:100%;display:block}
+.stat-empty h3{margin:0 0 6px;font-size:1.2rem;color:var(--grape-t)}
+.stat-empty p{margin:0 auto 16px;max-width:420px;color:var(--ink-soft);font-size:.92rem;line-height:1.7}
+
+/* ---------- 單機設定：最近的作品 ---------- */
+.recentworks{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px}
+.recentwork{
+  display:flex;flex-direction:column;align-items:stretch;gap:4px;min-width:0;padding:6px;font:inherit;font-weight:800;font-size:.82rem;
+  color:var(--ink);cursor:pointer;border:3px solid var(--line);border-radius:16px;background:var(--surface);box-shadow:0 4px 0 var(--shade-1)
+}
+.recentwork canvas{width:100%;height:auto;aspect-ratio:1;border-radius:10px;background:var(--paper);display:block}
+.recentwork span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
+.recentwork:hover{border-color:var(--grape-d)}
+.recentwork:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}

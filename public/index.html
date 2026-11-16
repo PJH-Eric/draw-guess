@@ -28,17 +28,17 @@
 <meta name="twitter:image:alt" content="你畫我猜 遊戲封面">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"你畫我猜","url":"https://pjh-eric.github.io/draw-guess/","description":"免費免下載的你畫我猜，輪流當畫家，用畫筆、形狀與油漆桶畫出題目，猜中答案搶積分。單機練習或開房間邀朋友同樂，支援觀戰與猜題紀錄，手機平板都能作畫。","applicationCategory":"GameApplication","operatingSystem":"Any","inLanguage":"zh-Hant","genre":"畫圖猜謎","offers":{"@type":"Offer","price":"0","priceCurrency":"TWD"},"image":"https://pjh-eric.github.io/draw-guess/assets/images/seo.webp","thumbnailUrl":"https://pjh-eric.github.io/draw-guess/assets/images/seo.webp","isPartOf":{"@type":"WebSite","url":"https://pjh-eric.github.io/game-lobby/"}}</script>
 <!--SEO:END-->
-<link rel="stylesheet" href="css/style.css?v=2b5363b0dc">
-<link rel="stylesheet" href="css/scrollbars.css?v=2b5363b0dc">
-<link rel="stylesheet" href="css/lobby-chat.css?v=2b5363b0dc">
-<link rel="stylesheet" href="css/latency.css?v=2b5363b0dc">
+<link rel="stylesheet" href="css/style.css?v=407d3bb548">
+<link rel="stylesheet" href="css/scrollbars.css?v=407d3bb548">
+<link rel="stylesheet" href="css/lobby-chat.css?v=407d3bb548">
+<link rel="stylesheet" href="css/latency.css?v=407d3bb548">
 
 <link rel="icon" type="image/png" sizes="96x96" href="favicon-96.png">
 <link rel="icon" type="image/svg+xml" sizes="any" href="favicon.svg">
 <link rel="shortcut icon" href="favicon.ico">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<link rel="stylesheet" href="css/server-outage.css?v=2b5363b0dc">
-<script src="js/server-outage.js?v=2b5363b0dc"></script>
+<link rel="stylesheet" href="css/server-outage.css?v=407d3bb548">
+<script src="js/server-outage.js?v=407d3bb548"></script>
 </head>
 <body>
 <div id="bgdeco" aria-hidden="true"></div>
@@ -87,7 +87,7 @@
 
       <div class="panel-foot">
         <button class="btn3d big" data-color="grape" id="b-solo-start"><span data-i18n="text.342">開始畫！ ▶</span></button>
-        <button class="btn3d" data-color="sky" id="b-solo-load-home" type="button"><span data-i18n="text.181">載入作品</span></button>
+        <button class="btn3d small" data-color="sky" id="b-solo-load-home" type="button"><span data-i18n="text.181">載入作品</span></button>
       </div>
 
       <!-- 最近存檔的作品：按「存檔」時順便記在這台裝置上，點縮圖就能接著畫 -->
@@ -110,14 +110,15 @@
       <p class="tut-progress" id="tut-progress" role="status" aria-live="polite"><span data-i18n="text.343">第 1 段 / 共 7 段</span></p>
       <div class="tut-box" id="tut-box" tabindex="-1"></div>
 
+      <!-- 主要動作只有「下一段」：放大、佔滿剩下的寬度；上一段是小一號的次要鈕 -->
       <div class="tut-nav">
         <button class="btn3d small" data-color="cream" id="b-tut-prev"><span data-i18n="text.344">◀ 上一段</span></button>
-        <button class="btn3d small" data-color="lemon" id="b-tut-skip"><span data-i18n="text.345">跳過教學</span></button>
-        <button class="btn3d small" data-color="mint" id="b-tut-next"><span data-i18n="text.220">下一段 ▶</span></button>
+        <button class="btn3d" data-color="mint" id="b-tut-next"><span data-i18n="text.220">下一段 ▶</span></button>
       </div>
 
-      <div class="panel-foot">
-        <button class="btn3d" data-color="grape" id="b-tut-practice"><span data-i18n="text.346">立即練習</span></button>
+      <div class="panel-foot tut-foot">
+        <button class="btn3d small" data-color="cream" id="b-tut-skip"><span data-i18n="text.345">跳過教學</span></button>
+        <button class="btn3d small" data-color="grape" id="b-tut-practice"><span data-i18n="text.346">立即練習</span></button>
       </div>
     </div>
   </section>
@@ -170,8 +171,10 @@
             <span><span data-i18n="text.361">你的暱稱</span></span>
             <input id="lobby-nick" maxlength="12" autocomplete="off" spellcheck="false" placeholder="路過的畫家" data-i18n-attr="placeholder=text.448">
           </label>
-          <div class="lobby-me-btns">
-            <button class="btn3d" data-color="mint" id="b-lobby-host"><span data-i18n="text.362">開一間房</span></button>
+          <!-- 連線狀態與在線人數：收成兩顆小標籤，不佔整行 -->
+          <div class="lobby-status">
+            <p class="lobby-state" id="lobby-state" role="status" aria-live="polite"><span data-i18n="text.018">正在連線…</span></p>
+            <p class="lobby-state" id="lobby-online-count" aria-live="polite" hidden></p>
           </div>
         </div>
 
@@ -187,12 +190,29 @@
           </div>
         </div>
 
-        <div class="lobby-join">
-          <label class="sr-only" for="lobby-code"><span data-i18n="text.368">房號</span></label>
-          <input id="lobby-code" maxlength="4" autocomplete="off" spellcheck="false" placeholder="有房號？直接輸入" aria-describedby="lobby-join-note" data-i18n-attr="placeholder=text.449">
-          <button class="btn3d small" data-color="grape" id="b-lobby-join"><span data-i18n="text.369">加入</span></button>
+        <!-- 兩條路並排：自己開房，或用朋友給的房號加入 -->
+        <div class="lobby-actions">
+          <section class="lobby-card" data-tone="mint" aria-labelledby="lobby-host-title">
+            <span class="lobby-card-ico" aria-hidden="true"><span class="ico" data-ico="home"></span></span>
+            <div class="lobby-card-text">
+              <h3 id="lobby-host-title" data-i18n="lobby.host.title">自己開一間</h3>
+              <p data-i18n="lobby.host.desc">當房主設定規則，再把房號或邀請連結傳給朋友。</p>
+            </div>
+            <button class="btn3d" data-color="mint" id="b-lobby-host"><span data-i18n="text.362">開一間房</span></button>
+          </section>
+          <section class="lobby-card" data-tone="grape" aria-labelledby="lobby-join-title">
+            <span class="lobby-card-ico" aria-hidden="true"><span class="ico" data-ico="tag"></span></span>
+            <div class="lobby-card-text">
+              <h3 id="lobby-join-title" data-i18n="lobby.join.title">用房號加入</h3>
+              <p id="lobby-join-note" data-i18n="text.370">房號是 4 個英數字，不會用到容易看錯的 I、O、0、1。也可以直接開朋友傳來的邀請連結。</p>
+            </div>
+            <div class="lobby-join">
+              <label class="sr-only" for="lobby-code"><span data-i18n="text.368">房號</span></label>
+              <input id="lobby-code" maxlength="4" autocomplete="off" spellcheck="false" placeholder="有房號？直接輸入" aria-describedby="lobby-join-note" data-i18n-attr="placeholder=text.449">
+              <button class="btn3d small" data-color="grape" id="b-lobby-join"><span data-i18n="text.369">加入</span></button>
+            </div>
+          </section>
         </div>
-        <p class="hint-note" id="lobby-join-note"><span data-i18n="text.370">房號是 4 個英數字，不會用到容易看錯的 I、O、0、1。也可以直接開朋友傳來的邀請連結。</span></p>
 
         <div class="lobby-bar">
           <h3 class="lbl"><span data-i18n="text.371">目前開著的房間</span></h3>
@@ -204,10 +224,11 @@
           <label class="lobby-filter-field" for="lobby-filter-category"><span data-i18n="category.select">題目種類</span><select id="lobby-filter-category"></select></label>
           <button type="button" class="pillbtn lobby-filter-open" id="lobby-filter-open" aria-pressed="false"><span data-i18n="lobby.filter.open">只看可加入</span></button>
         </div>
-        <p class="lobby-state" id="lobby-state" role="status" aria-live="polite"><span data-i18n="text.018">正在連線…</span></p>
-        <p class="lobby-state" id="lobby-online-count" aria-live="polite" hidden></p>
         <div class="roomlist" id="roomlist"></div>
-        <p class="hint-note"><span data-i18n="text.373">房間只存在伺服器的記憶體裡：伺服器重新部署或重啟，房間就會消失。房間裡沒有任何真人玩家時會立刻關閉（只剩觀戰者也一樣）。線上房間一律是真人，沒有電腦對手。</span></p>
+        <details class="lobby-help lobby-about">
+          <summary><span data-i18n="lobby.about">房間什麼時候會關閉？</span></summary>
+          <div><p><span data-i18n="text.373">房間只存在伺服器的記憶體裡：伺服器重新部署或重啟，房間就會消失。房間裡沒有任何真人玩家時會立刻關閉（只剩觀戰者也一樣）。線上房間一律是真人，沒有電腦對手。</span></p></div>
+        </details>
       </div>
     </div>
   </section>
@@ -242,17 +263,10 @@
             <span><b data-i18n="wordlang.select">題目語系</b></span>
             <select id="room-create-wordlang"></select>
           </label>
-          <div class="create-choice">
-            <span><b><span data-i18n="text.379">每人當幾次畫家</span></b><small><span data-i18n="text.380">輪數越多，整局越久</span></small></span>
-            <div class="chiprow" id="room-create-rounds" role="radiogroup" aria-label="新房間每人當幾次畫家" data-i18n-attr="aria-label=text.453"></div>
-          </div>
-          <div class="create-choice">
-            <span><b><span data-i18n="text.381">每題可以畫多久</span></b><small><span data-i18n="text.382">時間到就公布答案</span></small></span>
-            <div class="chiprow" id="room-create-drawsec" role="radiogroup" aria-label="新房間每題作畫秒數" data-i18n-attr="aria-label=text.454"></div>
-          </div>
-          <div class="create-choice">
-            <span><b><span data-i18n="text.341">題目難度</span></b><small><span data-i18n="text.383">混合以簡單題為主，偶爾出困難題</span></small></span>
-            <div class="chiprow" id="room-create-diff" role="radiogroup" aria-label="新房間題目難度" data-i18n-attr="aria-label=text.455"></div>
+          <div class="rules-row create-rules">
+            <label class="rule-field" for="room-create-rounds"><span data-i18n="text.126">畫幾次</span><select id="room-create-rounds"></select></label>
+            <label class="rule-field" for="room-create-drawsec"><span data-i18n="text.125">秒數</span><select id="room-create-drawsec"></select></label>
+            <label class="rule-field" for="room-create-diff"><span data-i18n="text.124">題型</span><select id="room-create-diff"></select></label>
           </div>
         </div>
 
@@ -609,32 +623,32 @@
   <div class="toast" id="toast" role="status" aria-live="assertive" hidden></div>
 </div>
 
-<script src="js/analytics.js?v=2b5363b0dc"></script>
-<script src="js/i18n.js?v=2b5363b0dc"></script>
-<script src="js/locales.js?v=2b5363b0dc"></script>
-<script src="js/words.en.js?v=2b5363b0dc"></script>
-<script src="js/words.zh-Hans.js?v=2b5363b0dc"></script>
-<script src="js/keyboard.js?v=2b5363b0dc"></script>
-<script src="js/config.js?v=2b5363b0dc"></script>
-<script src="js/rng.js?v=2b5363b0dc"></script>
-<script src="js/words.js?v=2b5363b0dc"></script>
-<script src="js/reference-path.js?v=2b5363b0dc"></script>
-<script src="js/reference-kit.js?v=2b5363b0dc"></script>
-<script src="js/reference-recipes.js?v=2b5363b0dc"></script>
-<script src="js/reference.js?v=2b5363b0dc"></script>
-<script src="js/meaning-reference.js?v=2b5363b0dc"></script>
-<script src="js/rules.js?v=2b5363b0dc"></script>
-<script src="js/drawing-file.js?v=2b5363b0dc"></script>
+<script src="js/analytics.js?v=407d3bb548"></script>
+<script src="js/i18n.js?v=407d3bb548"></script>
+<!-- 介面字典只先載預設的繁中；其他語系與英文／簡中題庫用到才載入（js/lazy-packs.js） -->
+<script src="js/locales/ui.zh-Hant.js?v=407d3bb548"></script>
+<script src="js/lazy-packs.js?v=407d3bb548"></script>
+<script src="js/keyboard.js?v=407d3bb548"></script>
+<script src="js/config.js?v=407d3bb548"></script>
+<script src="js/rng.js?v=407d3bb548"></script>
+<script src="js/words.js?v=407d3bb548"></script>
+<script src="js/reference-path.js?v=407d3bb548"></script>
+<script src="js/reference-kit.js?v=407d3bb548"></script>
+<script src="js/reference-recipes.js?v=407d3bb548"></script>
+<script src="js/reference.js?v=407d3bb548"></script>
+<script src="js/meaning-reference.js?v=407d3bb548"></script>
+<script src="js/rules.js?v=407d3bb548"></script>
+<script src="js/drawing-file.js?v=407d3bb548"></script>
 <!-- js/ai.js 刻意不載入：單機已經沒有電腦對手，遊戲裡沒有任何程式用到它。
      演算法保留在檔案裡供未來需要時取用，但不讓每個玩家白載一份。 -->
-<script src="js/storage.js?v=2b5363b0dc"></script>
-<script src="js/audio.js?v=2b5363b0dc"></script>
-<script src="js/svgui.js?v=2b5363b0dc"></script>
-<script src="js/paint.js?v=2b5363b0dc"></script>
-<script src="js/latency.js?v=2b5363b0dc" data-skin="draw-guess"></script>
-<script src="js/lobby-chat.js?v=2b5363b0dc"></script>
-<script src="js/online.js?v=2b5363b0dc"></script>
-<script type="module" src="js/app/main.js?v=2b5363b0dc"></script>
+<script src="js/storage.js?v=407d3bb548"></script>
+<script src="js/audio.js?v=407d3bb548"></script>
+<script src="js/svgui.js?v=407d3bb548"></script>
+<script src="js/paint.js?v=407d3bb548"></script>
+<script src="js/latency.js?v=407d3bb548" data-skin="draw-guess"></script>
+<script src="js/lobby-chat.js?v=407d3bb548"></script>
+<script src="js/online.js?v=407d3bb548"></script>
+<script type="module" src="js/app/main.js?v=407d3bb548"></script>
 <!--SEO:GAMEPLAY-->
 <noscript><div class="seo-gameplay"><section lang="zh-Hant">
 <h2>你畫我猜</h2>
@@ -655,9 +669,9 @@
 <p><strong>How to play: </strong>The artist draws on the canvas; guessers type their answers</p>
 </section></div></noscript>
 <!--SEO:GAMEPLAY:END-->
-  <script defer src="js/locales/result-share.js?v=2b5363b0dc"></script>
-  <script defer src="js/result-share.js?v=2b5363b0dc"></script>
-  <script defer src="js/dropdowns.js?v=2b5363b0dc"></script>
-  <script defer src="js/scrollbars.js?v=2b5363b0dc"></script>
+  <script defer src="js/locales/result-share.js?v=407d3bb548"></script>
+  <script defer src="js/result-share.js?v=407d3bb548"></script>
+  <script defer src="js/dropdowns.js?v=407d3bb548"></script>
+  <script defer src="js/scrollbars.js?v=407d3bb548"></script>
 </body>
 </html>

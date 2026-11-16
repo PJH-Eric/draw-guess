@@ -1,0 +1,132 @@
+/* ---------- 等待畫面中央的「房間設定」卡 ----------
+   以前這張卡沒有自己的樣式，h4 與每一列全部黏在一起，看起來很擠。
+   改成一區一張白底小卡，區內每列用虛線分隔，標題、標籤、按鈕各有呼吸空間。 */
+.setupblock{
+  margin:0 0 9px;padding:8px 11px 9px;
+  border:2px solid var(--line);border-radius:16px;background:var(--surface);
+}
+.setupblock:last-of-type{margin-bottom:0}
+
+/* 房間設定卡的內容分兩欄（左：房號、名單、規則；右：邀請、聊天室）。
+   窄螢幕兩欄就上下接著排，跟一欄沒兩樣；寬螢幕（≥900px）並排，卡片加寬，
+   一個畫面就看得完，不用捲到底才看到聊天室跟「開始」。 */
+.setup-cols{display:block}
+.setup-col + .setup-col{margin-top:9px}
+.setup-blocked{margin:8px 0 0}
+@media (min-width:900px){
+  .overlay-card.setup-card{width:min(100%,920px)}
+  .setup-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start}
+  .setup-col + .setup-col{margin-top:0}
+  .setup-card .chatlist{max-height:210px}
+}
+.setupblock h4{
+  margin:0 0 5px;font-size:.9rem;color:var(--grape-t);
+  padding-bottom:5px;border-bottom:2px solid var(--line);
+}
+.setuprow{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;
+  padding:6px 0;border-bottom:2px dashed var(--line);
+}
+.setuprow:last-child{border-bottom:0;padding-bottom:1px}
+.setuprow > span{flex:0 0 auto;font-size:.8rem;font-weight:800;color:var(--ink-soft)}
+.setuprow .chiprow{flex:1 1 auto;justify-content:flex-end;gap:6px}
+/* 這張卡裡的 chip 刻意小一號：一排要放五顆，維持 44px 命中區就好 */
+.setupblock .pillbtn{min-height:44px;min-width:44px;padding:7px 12px;font-size:.86rem;border-radius:14px}
+.setupnote{margin:6px 2px 0;font-size:.76rem;line-height:1.6;color:var(--ink-soft);text-align:left}
+.setupblock > .setupnote:first-child{margin-top:0}
+
+/* 遊戲規則改成下拉選單，三個欄位排在同一行（不是三行堆疊），
+   標籤放在選單上面，卡片矮下來，等待畫面才擠得出空間放聊天室。
+   刻意不用原生 <select>：原生選單的清單交給瀏覽器／作業系統畫，跟卡通風的圓角、
+   陰影、配色不搭，這裡自己刻一顆按鈕（顯示目前值）＋按下展開的清單，
+   全部用卡片本身的樣式畫。清單用 position:absolute 蓋在下面的卡片上，不會把版面往下推開。 */
+.rules-row{display:flex;gap:8px}
+.rule-field{display:flex;flex-direction:column;gap:3px;flex:1 1 0;min-width:0;position:relative}
+.rule-field > span{font-size:.72rem;font-weight:800;color:var(--ink-soft)}
+.ruledd-btn{
+  display:flex;align-items:center;justify-content:space-between;gap:6px;
+  width:100%;min-width:0;
+  font:inherit;font-weight:800;font-size:.84rem;
+  border:2px solid var(--line);border-radius:12px;padding:7px 10px;
+  min-height:42px;background:var(--surface);color:var(--ink);cursor:pointer;
+}
+.ruledd.open .ruledd-btn{border-color:var(--grape-d)}
+.ruledd-btn:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
+.ruledd-val{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+.ruledd-arrow{
+  flex:0 0 auto;width:0;height:0;margin-top:2px;
+  border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid var(--ink-soft);
+  transition:transform .15s ease;
+}
+.ruledd.open .ruledd-arrow{transform:rotate(180deg)}
+.ruledd-list{
+  position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:5;
+  display:flex;flex-direction:column;gap:2px;max-height:200px;overflow-y:auto;
+  border:2px solid var(--grape-d);border-radius:14px;background:var(--paper);
+  padding:5px;box-shadow:0 5px 0 var(--shade-2);
+  scrollbar-width:thin;scrollbar-color:var(--grape-d) transparent;
+}
+.ruledd-list::-webkit-scrollbar{width:6px}
+.ruledd-list::-webkit-scrollbar-track{background:transparent}
+.ruledd-list::-webkit-scrollbar-thumb{background:var(--grape-d);border-radius:999px}
+.ruledd-opt{
+  display:flex;align-items:center;justify-content:space-between;gap:6px;
+  width:100%;text-align:left;font:inherit;font-weight:700;font-size:.82rem;
+  border:0;border-radius:10px;padding:7px 9px;background:transparent;color:var(--ink);cursor:pointer;
+}
+.ruledd-opt:hover,.ruledd-opt:focus-visible{background:var(--muted-tint);outline:none}
+.ruledd-opt.on{color:var(--grape-t);font-weight:900}
+.ruledd-check{flex:0 0 auto;color:var(--grape-t)}
+
+/* ---------- 房間設定卡片裡的聊天室（只在等待畫面出現，開始對局後這整塊就不會畫出來） ---------- */
+.chatlist{
+  list-style:none;margin:0 0 8px;padding:0;
+  max-height:150px;overflow-y:auto;overscroll-behavior:contain;
+  display:flex;flex-direction:column;gap:4px;
+  scrollbar-width:thin;scrollbar-color:var(--grape-d) transparent;
+}
+.chatlist::-webkit-scrollbar{width:6px}
+.chatlist::-webkit-scrollbar-track{background:transparent}
+.chatlist::-webkit-scrollbar-thumb{background:var(--grape-d);border-radius:999px}
+.chatmsg{
+  display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;
+  border-radius:12px;background:var(--muted-tint);padding:5px 9px;font-size:.82rem;line-height:1.4;
+}
+.chatmsg.mine{background:var(--sky-tint)}
+.chatmsg .chatfrom{flex:0 0 auto;color:var(--grape-t);font-size:.76rem}
+.chatmsg .chattext{flex:1 1 auto;min-width:0;color:var(--ink);word-break:break-word;font-weight:600}
+.chatlist .chatempty{text-align:center;color:var(--ink-soft);font-size:.8rem;padding:6px 0}
+.chatrow{display:flex;gap:8px}
+.chatrow input{
+  flex:1 1 auto;min-width:0;font:inherit;font-size:.86rem;font-weight:700;
+  border:2px solid var(--line);border-radius:12px;padding:8px 10px;background:var(--grape-wash);color:var(--ink);
+  min-height:44px;outline:none;user-select:text;-webkit-user-select:text;
+}
+.chatrow input:focus{border-color:var(--grape-d)}
+.chatrow .btn3d{flex:0 0 auto;min-width:64px}
+
+/* ---------- 對局設定彈窗裡的房間區塊 ---------- */
+.roomcode-pill{flex:0 0 auto;border:3px solid var(--grape-d);border-radius:999px;background:var(--grape-tint);color:var(--grape-t);padding:3px 14px;font-size:1rem;font-weight:900;letter-spacing:.18em}
+/* 房間設定卡的邀請區：網址欄跟「產生連結／複製／撤銷」排同一行，不換行（網址太長就截掉，反正是唯讀、用複製鈕拿） */
+.inviterow{display:flex;gap:6px;flex-wrap:nowrap;align-items:center;padding:0;margin:4px 0 2px}
+.inviterow .pillbtn{flex:0 0 auto}
+.inviterow input{
+  flex:1 1 0;min-width:0;font:inherit;font-size:.78rem;font-weight:700;
+  border:3px solid var(--line);border-radius:12px;padding:8px 10px;background:var(--grape-wash);color:var(--ink);
+  user-select:text;-webkit-user-select:text;outline:none;min-height:46px
+}
+.inviterow input:focus{border-color:var(--grape-d)}
+
+/* ---------- 提示 toast ---------- */
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%);
+  bottom:calc(18px + var(--safe-b));z-index:120;
+  max-width:min(92vw,520px);
+  border:3px solid var(--ink);border-radius:16px;background:var(--paper);
+  padding:10px 16px;font-weight:800;font-size:.88rem;line-height:1.5;
+  box-shadow:0 6px 0 var(--shade-3);text-align:center
+}
+/* 房間設定卡開著的時候，卡片底部是「開始／準備好了」：提示改到上方出現（右上那排固定鈕的正下方），才不會蓋住按鈕 */
+body.setup-open .toast{bottom:auto;top:calc(10px + var(--topbtn) + 14px + var(--safe-t))}
+.toast[data-kind=error]{background:var(--danger-bg);border-color:var(--danger);color:var(--danger)}
+.toast[data-kind=ok]{background:var(--mint-tint);border-color:var(--mint-d)}

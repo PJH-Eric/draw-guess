@@ -1,0 +1,90 @@
+/* ================================================================
+ * 猜題流（#guess-feed）：猜題者與觀戰者看得到，畫家的工具列佔著同一塊位置所以不顯示。
+ *   橫向：右欄從玩家列一路填到猜題框，像聊天室一樣最新的貼著輸入框。
+ *   直向：疊在畫布下方本來就空著的那一段（app/overlay.js placeGuessFeed 搬 DOM），
+ *         高度 = --stage-gap（app/canvas.js sizeCanvas 量的），不夠高就不顯示，絕不擠壓畫布。
+ * ================================================================ */
+.guessfeed{display:none;margin:0;padding:0;list-style:none}
+body.no-tools:not(.solo-mode) .guessfeed{
+  display:flex;flex-direction:column-reverse;gap:5px;min-height:0;
+  overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;
+}
+.guessfeed li{
+  flex:0 0 auto;align-self:flex-start;max-width:100%;
+  border:2px solid var(--line);border-radius:14px 14px 14px 5px;background:var(--surface);
+  padding:5px 10px;font-size:.82rem;font-weight:700;line-height:1.45;color:var(--ink-soft);overflow-wrap:anywhere;
+}
+/* 只有最新的一則跳進來 */
+.guessfeed li:first-child{animation:feed-pop .22s ease-out}
+.guessfeed li[data-k=guess]{border-color:var(--sky-d);background:var(--sky-tint);color:var(--ink)}
+.guessfeed li[data-k=guess][data-mine=true]{align-self:flex-end;border-radius:14px 14px 5px 14px;border-color:var(--grape-d);background:var(--grape-tint)}
+.guessfeed li[data-k=correct]{border-color:var(--mint-d);background:var(--mint-tint);color:var(--ink)}
+.guessfeed li[data-k=turn],.guessfeed li[data-k=reveal]{align-self:center;border-style:dashed;border-radius:999px;font-size:.76rem}
+.guessfeed li[data-k=closed]{border-color:var(--danger);color:var(--danger)}
+@keyframes feed-pop{from{opacity:0;transform:translateY(6px) scale(.96)}to{opacity:1;transform:none}}
+
+/* 直向：畫布下方的空白 */
+.stage > .guessfeed{
+  position:absolute;left:2px;right:2px;bottom:2px;height:calc(var(--stage-gap,0px) - 10px);
+  /* 最舊的幾則往上淡出，看得出來上面還有 */
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 22px);mask-image:linear-gradient(to bottom,transparent 0,#000 22px);
+}
+.stage.gap-tight > .guessfeed,.stage > .guessfeed:empty{display:none!important}
+
+/* 橫向：右欄（玩家列 → 猜題流 → 猜題框） */
+@media (orientation:landscape) and (min-width:560px){
+  body.side-top.no-tools .playbar{display:flex;flex-direction:column;overflow:hidden}
+  body.side-top.no-tools .playbar > .canvastop{order:0}
+  body.side-top.no-tools .playbar > .guessfeed{
+    order:1;flex:1 1 0;min-height:0;padding:7px;
+    border:2px solid var(--line);border-radius:16px;background:rgba(255,255,255,.55);
+  }
+  body.side-top.no-tools .playbar > .guessbar{order:2}
+  /* 還沒有任何紀錄：講清楚這一欄是做什麼的，不要留一整片空白 */
+  body.side-top.no-tools .playbar > .guessfeed:empty{justify-content:center}
+  body.side-top.no-tools .playbar > .guessfeed:empty::before{
+    content:attr(data-empty);text-align:center;font-size:.8rem;font-weight:700;line-height:1.6;color:var(--ink-soft);padding:0 6px;
+  }
+}
+/* 矮的橫向手機：右欄剩不到一則氣泡的高度就整塊收掉 */
+@media (orientation:landscape) and (max-height:340px){
+  body.side-top.no-tools .playbar > .guessfeed{display:none}
+}
+
+/* ---------- 倒數：數字放大、單位縮小 ---------- */
+.timer-unit{font-size:.62em;font-weight:800;margin-left:.1em}
+@media (max-width:620px){
+  body:not(.solo-mode) .chip-timer{font-size:clamp(1.3rem,6.4vw,1.6rem);padding:1px 9px;line-height:1.1}
+}
+
+/* ---------- 手機直向（夠高）：十二個顏色排成整齊的兩列六個，不用左右滑 ---------- */
+@media (orientation:portrait) and (max-width:620px) and (min-height:740px){
+  .toolrow-colors,body.solo-mode .toolrow-colors{
+    display:grid;grid-template-columns:repeat(6,minmax(0,1fr));justify-items:center;gap:4px;overflow:visible;
+  }
+  /* 工具七顆、粗細＋復原鍵也是七顆：都排成七欄平分寬度，左右對齊、不留一截空白 */
+  .toolrow-tools,body.solo-mode .toolrow-tools,.toolscroll,body.solo-mode .toolscroll{
+    display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;overflow:visible;
+  }
+  .toolscroll > .widthgroup,body.solo-mode .toolscroll > .widthgroup{display:contents}
+  .toolscroll > .fillbox{grid-column:1 / -1}
+  .toolrow-tools .toolbtn,.toolscroll .toolbtn,.toolscroll .widthbtn,
+  body.solo-mode .toolrow-tools .toolbtn,body.solo-mode .toolscroll .toolbtn,body.solo-mode .toolscroll .widthbtn{width:100%}
+}
+
+/* ---------- 平板／桌機橫向：右欄工具排成四欄等寬的格子，按鈕放大填滿欄寬 ----------
+   以前按鈕固定 44–48px 靠左排，右邊參差、下面空一大段；改成格子後每一列都對齊。 */
+@media (orientation:landscape) and (min-width:900px) and (min-height:760px){
+  .toolrow-tools,.toolrow-colors,.widthgroup,.toolscroll,
+  body.solo-mode .toolrow-tools,body.solo-mode .toolrow-colors{
+    display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;justify-items:center;align-items:center;
+    width:100%;overflow:visible;
+  }
+  .toolscroll > .widthgroup,.toolscroll > .fillbox{grid-column:1 / -1}
+  .toolrow-tools .toolbtn,.toolscroll .toolbtn,.widthgroup .widthbtn,
+  body.solo-mode .toolrow-tools .toolbtn,body.solo-mode .toolscroll .toolbtn,body.solo-mode .widthgroup .widthbtn{
+    width:100%;max-width:66px;height:auto;aspect-ratio:1;padding:7px;border-radius:16px;
+  }
+  .toolrow-colors .colorbtn,body.solo-mode .toolrow-colors .colorbtn{width:100%;max-width:54px;height:auto;aspect-ratio:1}
+  .fillbox{width:100%}
+}

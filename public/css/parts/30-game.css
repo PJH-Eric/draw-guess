@@ -1,0 +1,452 @@
+/* ================================================================
+   對戰畫面
+   ================================================================ */
+.game{display:flex;height:100%;min-height:0;overflow:hidden}
+.game-main{
+  position:relative;flex:1 1 auto;min-width:0;min-height:0;
+  display:flex;flex-direction:column;
+  padding:calc(4px + var(--safe-t)) calc(8px + var(--safe-r)) calc(4px + var(--safe-b)) calc(8px + var(--safe-l));
+}
+
+/* 對局抬頭：上排狀態（離開、階段、題號、倒數）＋ 題目提示列。
+   直向是上下兩列；橫向／寬螢幕合併成同一列，整整一列的高度還給畫布。 */
+.game-head{flex:0 0 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+
+/* 對局控制群組固定在遊戲主區右上角，不讓中間狀態列把它們拉開。 */
+.game-top{
+  display:flex;align-items:center;gap:6px;flex:0 0 auto;min-width:0;
+  padding-right:var(--hud-reserve);
+}
+.statusbar{flex:1 1 auto;min-width:0;display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
+  border:3px solid var(--ink);border-radius:999px;background:var(--surface);
+  padding:4px 14px;font-weight:900;font-size:.9rem;box-shadow:0 3px 0 var(--shade-2)
+}
+.chip-phase{background:var(--grape);color:var(--ink-deep)}
+.chip-phase[data-p=drawing]{background:var(--mint)}
+.chip-phase[data-p=picking]{background:var(--lemon)}
+.chip-phase[data-p=reveal]{background:var(--sky)}
+.chip-phase[data-p=over]{background:var(--muted-bg);color:var(--ink-soft)}
+/* 倒數：跟題目一樣是「隔著平板也要看得到」的資訊，字級刻意吃滿抬頭的高度。
+   tabular-nums 讓數字不會因為字寬不同一直跳。 */
+.chip-timer{
+  background:var(--lemon);gap:8px;padding:3px 16px;
+  font-size:clamp(1.15rem,3vmin,1.8rem);line-height:1.15;
+  font-variant-numeric:tabular-nums;
+}
+.chip-timer .ico{width:1.05em;height:1.05em}
+.chip-timer[data-urgent=true]{
+  background:var(--danger-bg);border-color:var(--danger);color:var(--danger);
+  animation:timer-beat .9s ease-in-out infinite;
+}
+@keyframes timer-beat{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.game-top-actions{
+  position:fixed;z-index:69;top:calc(10px + var(--safe-t));
+  /* 最右邊兩格是語言鈕與系統設定鈕（i18n.js 的 .language-controls），對局工具排在它們左邊 */
+  right:calc(var(--topedge) + 2 * var(--topbtn) + 2 * var(--topgap) + 8px + var(--safe-r));
+  width:max-content;
+  display:inline-flex;align-items:center;gap:var(--topgap);flex:0 0 auto;
+}
+.game-top-actions .btn3d{flex:0 0 auto}
+
+/* 題目提示列：整個畫面最重要的一行字，字級用 vmin 流動放大。 */
+.wordbar{
+  flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;
+  margin:4px 0 2px;padding:3px 16px;min-height:clamp(40px,4.4vh,50px);
+  border:3px solid var(--line);border-radius:18px;background:rgba(255,253,248,.9);
+}
+.wordbar[data-mine=true]{border-color:var(--grape-d);background:var(--grape-tint)}
+.wordbar-label{font-size:.86rem;font-weight:800;color:var(--ink-soft);white-space:nowrap}
+.wordbar-mask{
+  font-size:clamp(1.45rem,4.3vmin,2.6rem);font-weight:900;letter-spacing:.2em;line-height:1.12;
+  color:var(--grape-t);word-break:break-all
+}
+.wordbar-meta{font-size:.82rem;font-weight:800;color:var(--ink-soft)}
+
+/* 畫布上方一列：左邊是畫家的三張提示，右邊玩家與分數（玩家多的時候自己橫向捲）。
+   提示以前是絕對定位壓在畫布左側，窄螢幕會蓋掉一大塊畫圖區，改成橫式擺這裡。 */
+/* 一行放得下就跟名稱並排，放不下就整組掉到下一行（不橫向捲，才點得到） */
+.canvastop{flex:0 0 auto;display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:1px 0 3px}
+
+/* 玩家列 */
+.playerstrip{
+  flex:0 1 auto;min-width:0;display:flex;gap:6px;align-items:stretch;
+  overflow-x:auto;overflow-y:hidden;padding:1px 0 2px;scrollbar-width:thin;
+}
+.pcard{
+  flex:0 0 auto;min-width:92px;max-width:150px;
+  display:flex;align-items:center;gap:6px;
+  border:2px solid var(--ink);border-radius:13px;background:var(--surface);padding:3px 7px;
+  box-shadow:0 3px 0 var(--shade-2)
+}
+.pcard.drawer{border-color:var(--grape-t);box-shadow:0 4px 0 var(--grape-d);background:var(--grape-tint)}
+.pcard.guessed{background:var(--mint-tint)}
+.pcard.me .pname{color:var(--grape-t)}
+.pcard.off{opacity:.55}
+.pface{flex:0 0 auto;width:30px;height:30px}
+.pface svg{width:100%;height:100%;display:block}
+.pinfo{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px}
+.pname{font-size:.74rem;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pstate{font-size:.64rem;font-weight:800;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pscore{flex:0 0 auto;font-size:.9rem;font-weight:900;font-variant-numeric:tabular-nums;color:var(--grape-t)}
+
+/* 遊戲主區：畫布 + 操作列。
+   畫布是正方形，邊長 = 可用空間的較短邊，所以「把高度讓出來」比什麼都有效。
+   直向：操作列在畫布下方（寬度夠、高度貴）。
+   橫向／寬螢幕：操作列移到畫布右側（寬度有剩、高度貴），畫布可以吃滿整個高度。 */
+.playarea{flex:1 1 auto;min-height:0;min-width:0;display:flex;flex-direction:column;gap:4px}
+.playbar{flex:0 0 auto;min-width:0;min-height:0;display:flex;flex-direction:column;gap:4px}
+
+/* 畫布 */
+.stage{position:relative;flex:1 1 auto;min-height:0;min-width:0;display:flex;align-items:center;justify-content:center;padding:2px 0}
+.stage-canvas{position:relative;flex:0 0 auto;display:block;width:300px;height:300px}
+#board{
+  display:block;width:100%;height:100%;
+  border:3px solid var(--ink);border-radius:18px;
+  box-shadow:0 6px 0 var(--shade-2);background:var(--paper);
+  touch-action:none;-webkit-touch-callout:none;cursor:default;
+}
+#board.drawable{cursor:crosshair}
+
+/* 疊在畫布上的卡片：選題、等待、結算、房間結束 */
+.stage-overlay{
+  position:absolute;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;
+  padding:10px;background:rgba(74,59,85,.34);backdrop-filter:blur(2px);
+  /* 卡片頂端讓出右上角那排固定按鈕（對局設定、操作摘要、系統設定）的高度：
+     手機上卡片是滿版的，不讓位的話「房間設定」標題會被那三顆鈕蓋住。
+     按鈕距頂 10px、高 --topbtn、底下還有 6px 的立體陰影，再多留 8px。 */
+  padding-top:calc(10px + var(--topbtn) + 14px + var(--safe-t));
+}
+.overlay-card{
+  width:min(100%,580px);max-height:100%;overflow-y:auto;overscroll-behavior:contain;
+  border:3px solid var(--ink);border-radius:22px;background:var(--paper);
+  padding:14px 16px;box-shadow:0 10px 0 var(--shade-3);
+  /* 房間設定卡加了聊天室之後變長，很容易需要捲動：跟其他捲動區塊（.aside-body、.playbar）
+     一樣配細滾動條，不然瀏覽器原生那條粗粗的、帶上下箭頭的滾動條會很突兀，跟整體圓角卡通風完全不搭。 */
+  scrollbar-width:thin;scrollbar-color:var(--grape-d) transparent;
+}
+.overlay-card::-webkit-scrollbar{width:8px}
+.overlay-card::-webkit-scrollbar-track{background:transparent}
+.overlay-card::-webkit-scrollbar-thumb{background:var(--grape-d);border-radius:999px}
+.overlay-card:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
+.overlay-card h3{margin:0 0 8px;font-size:1.25rem;text-align:center;color:var(--grape-t)}
+.overlay-card p{margin:0 0 10px;font-size:.88rem;line-height:1.65;text-align:center;color:var(--ink-soft)}
+/* 主要按鈕（準備／開始／離開房間）黏在卡片底部：
+   房間設定這張卡很長，要捲到最後才看得到按鈕的話，等於沒有出口。 */
+.overlay-btns{
+  position:sticky;bottom:-14px;z-index:2;
+  display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;
+  margin-top:12px;padding:10px 0 calc(10px + 4px);
+  background:var(--paper);border-top:2px solid var(--line);
+}
+/* 次要動作（改成觀戰、離開房間）小一號，跟主要按鈕（開始／準備好了）排得進同一行；
+   命中區還是維持 46px 以上 */
+.overlay-btns .btn3d.sub{font-size:.84rem;padding:8px 12px calc(8px + var(--d));min-height:46px}
+/* 卡片捲到一半時，底部按鈕條下面留一點漸層，看得出來還有內容 */
+.overlay-btns::before{
+  content:"";position:absolute;left:0;right:0;top:-14px;height:14px;pointer-events:none;
+  background:linear-gradient(to bottom,rgba(255,253,248,0),var(--paper));
+}
+.wordchoices{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:6px 0}
+.wordchoice{
+  flex:1 1 150px;min-width:140px;min-height:92px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  border:3px solid var(--line);border-radius:18px;background:var(--surface);color:var(--ink);
+  font:inherit;cursor:pointer;padding:10px;box-shadow:0 5px 0 var(--shade-1)
+}
+.wordchoice b{font-size:1.3rem;letter-spacing:.08em}
+.wordchoice .s{font-size:.74rem;font-weight:800;color:var(--ink-soft)}
+.wordchoice:hover{border-color:var(--grape-d);background:var(--grape-tint)}
+.wordchoice:focus-visible{outline:3px solid var(--sky-d);outline-offset:3px}
+.revealword{text-align:center;font-size:1.6rem;font-weight:900;color:var(--grape-t);letter-spacing:.1em;margin:4px 0 8px}
+.resultlist{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-direction:column;gap:5px}
+.resultlist li{display:flex;align-items:center;gap:8px;border:2px solid var(--line);border-radius:12px;background:var(--surface);padding:5px 9px;font-size:.84rem;font-weight:800}
+.resultlist li .rface{width:26px;height:26px;flex:0 0 auto}
+.resultlist li .rface svg{width:100%;height:100%}
+.resultlist li .rname{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.resultlist li .rpts{flex:0 0 auto;color:var(--ok);font-variant-numeric:tabular-nums}
+.resultlist li.win{border-color:var(--lemon-d);background:var(--lemon-tint)}
+.result-share-card{padding:2px 0 4px}
+.result-heading{display:flex;flex-direction:column;align-items:center;gap:3px;margin:0 auto 12px;padding:3px 0 11px;border-bottom:2px solid var(--line)}
+.result-heading h3{margin:0;color:var(--grape-t);font-size:1.35rem;line-height:1.25}
+.result-heading span{display:inline-flex;align-items:center;padding:3px 10px;border:1px solid var(--line);border-radius:999px;background:var(--grape-tint);color:var(--ink-soft);font-size:.72rem;font-weight:800;letter-spacing:.04em}
+.resultlist{gap:8px;margin-bottom:10px}
+.resultlist li.result-row{display:grid;grid-template-columns:36px 30px minmax(0,1fr) auto;gap:9px;min-height:54px;padding:8px 10px;border-radius:16px;font-size:.9rem}
+.resultlist li.result-row .rplace{display:grid;place-items:center;width:34px;height:34px;border:2px solid var(--line);border-radius:12px;background:var(--muted-tint);color:var(--ink-soft);font-size:.82rem;font-weight:900;font-variant-numeric:tabular-nums}
+.resultlist li.result-row .rface{width:30px;height:30px}
+.resultlist li.result-row .rname{white-space:normal;overflow-wrap:anywhere;line-height:1.25}
+.resultlist li.result-row .rpts{padding:5px 9px;border:1px solid #C8E5D6;border-radius:999px;background:var(--mint-tint);color:var(--ok);font-size:.83rem;white-space:nowrap}
+.resultlist li.result-row.win{border-color:var(--lemon-d);background:linear-gradient(110deg,var(--lemon-tint),#FFFEF8)}
+.resultlist li.result-row.win .rplace{border-color:#E8B846;background:#FFE7A9;color:#654B12}
+/* 玩家名單改成一列一個玩家、寬度滿版、文字置左（以前是一顆一顆的置中小 chip）：
+   人多的時候一排 chip 會斷成好幾行、寬度也東一塊西一塊，改成滿版列表比較好掃視。
+   「x / y 位玩家」那行字拿掉了，人數用眼睛數列表就好；觀戰人數改成名單最後一列。 */
+.seatlist{display:flex;flex-direction:column;gap:6px;margin:2px 0 10px}
+.seatrow{
+  display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;
+  border:2px solid var(--line);border-radius:14px;background:var(--surface);
+  padding:7px 12px;font-size:.86rem;font-weight:800;text-align:left;
+}
+.seatrow .sface{width:24px;height:24px;flex:0 0 auto}
+.seatrow .sface svg{width:100%;height:100%}
+.seatrow .seatname{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seatrow.ready{border-color:var(--mint-d);background:var(--mint-tint)}
+
+/* ---------- 投票請玩家離開的橫幅 ---------- */
+.kick-banner{
+  position:absolute;z-index:45;left:50%;transform:translateX(-50%);
+  top:calc(var(--topbtn) + 18px + var(--safe-t));
+  width:max-content;max-width:calc(100% - 20px);
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;
+  border:3px solid var(--ink);border-radius:18px;background:#FFF3E6;
+  padding:8px 12px;font-size:.86rem;font-weight:800;line-height:1.5;text-align:center;
+  box-shadow:0 5px 0 var(--shade-3)
+}
+.kick-banner .kick-text{flex:1 1 200px;min-width:0;overflow-wrap:anywhere}
+.kick-banner .btn3d{flex:0 0 auto}
+
+/* ---------- 結算：皇冠、彩帶 ---------- */
+.resultlist .rface{position:relative}
+.resultlist .rcrown{position:absolute;left:50%;top:-13px;width:20px;height:20px;transform:translateX(-50%) rotate(-8deg)}
+.rscore{font-variant-numeric:tabular-nums}
+.overlay-card{position:relative}
+.confetti{position:absolute;inset:0;overflow:hidden;pointer-events:none;border-radius:inherit;z-index:3}
+.confetti i{
+  position:absolute;top:-14px;width:9px;height:14px;border-radius:3px;opacity:0;
+  animation:confetti-fall 1.8s ease-in 1 both
+}
+@keyframes confetti-fall{
+  0%{opacity:0;transform:translateY(0) rotate(0)}
+  12%{opacity:1}
+  100%{opacity:0;transform:translateY(340px) rotate(420deg)}
+}
+body.reduced-motion .confetti{display:none}
+@media (prefers-reduced-motion:reduce){.confetti{display:none}}
+.seatrow.ai{border-color:var(--sky-d);background:var(--sky-tint)}
+.seatrow.spec{border-color:var(--line);background:var(--muted-tint);color:var(--ink-soft);font-weight:700}
+/* 房號以前是整張卡最搶眼的東西，縮小一號讓位給下面的聊天室 */
+.roomcode{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:0 0 8px;padding:6px 10px;border:2px dashed var(--grape-d);border-radius:14px;background:var(--grape-tint)}
+.roomcode b{font-size:1.15rem;letter-spacing:.16em;color:var(--grape-t)}
+.roomcode span{font-size:.76rem;color:var(--ink-soft)}
+
+/* ---------- 猜題列 ---------- */
+/* 固定在遊戲主畫面正下方並左右滿版：輸入區更容易找到，也不用跟畫布搶欄位。
+   它離開了版面流，所以 .playarea 要用 --guessbar-h 把高度讓回來（app.js 量的）。 */
+.guessbar{
+  position:absolute;z-index:60;left:0;right:0;bottom:0;transform:none;
+  display:flex;gap:8px;align-items:center;
+  padding:8px max(8px,var(--safe-r)) calc(8px + var(--safe-b)) max(8px,var(--safe-l));
+  border:3px solid var(--ink);border-left:0;border-right:0;border-bottom:0;border-radius:18px 18px 0 0;
+  background:var(--paper);box-shadow:0 -4px 0 var(--shade-2)
+}
+body.has-guessbar .playarea{padding-bottom:var(--guessbar-h,0px)}
+.guessbar input{
+  flex:1 1 auto;min-width:0;font:inherit;font-size:1.05rem;font-weight:800;
+  border:3px solid var(--ink);border-radius:18px;padding:12px 16px;background:var(--surface);color:var(--ink);
+  outline:none;min-height:60px;user-select:text;-webkit-user-select:text;
+}
+.guessbar input:focus{border-color:var(--grape-d);box-shadow:0 0 0 3px rgba(164,143,219,.28)}
+.guessbar input:disabled{background:var(--muted-tint);color:var(--ink-soft)}
+.guessbar .btn3d{flex:0 0 auto;min-width:112px}
+
+/* ---------- 小畫家工具列 ---------- */
+.toolbar{flex:0 0 auto;padding:5px 2px 2px;display:flex;flex-direction:column;gap:5px}
+.toolrow{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+/* 畫布工具的按鈕刻意比一般按鈕小：它們數量多、又要一直佔著畫面，
+   做成 48px 會把畫布擠掉一大塊。這裡取「看得清楚」與「畫布夠大」的平衡，
+   需要更大命中區的人可以在設定裡打開「放大工具列」。 */
+.toolbtn{
+  flex:0 0 auto;width:44px;height:44px;padding:5px;
+  display:inline-flex;align-items:center;justify-content:center;
+  border:3px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);
+  font:inherit;cursor:pointer;box-shadow:0 3px 0 var(--shade-1)
+}
+.toolbtn .ico{width:100%;height:100%}
+.toolbtn[aria-checked=true]{border-color:var(--grape-d);background:var(--grape);box-shadow:0 3px 0 var(--grape-d)}
+.toolbtn:disabled{opacity:.4;cursor:default}
+.toolbtn:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
+.toolbtn.danger[aria-checked=true],.toolbtn.danger:hover{border-color:var(--danger);background:var(--danger-bg)}
+
+.colorbtn{
+  flex:0 0 auto;width:40px;height:40px;padding:0;
+  border:3px solid var(--line);border-radius:50%;cursor:pointer;
+  box-shadow:0 3px 0 var(--shade-2);position:relative
+}
+/* 選中的顏色：深色外框＋內圈白環。不放大，才不會壓到隔壁色票與分隔線。 */
+.colorbtn[aria-checked=true]{border-color:var(--ink);box-shadow:inset 0 0 0 3px var(--paper),0 3px 0 var(--ink)}
+.colorbtn:focus-visible{outline:3px solid var(--sky-d);outline-offset:3px}
+.toolrow-colors{gap:7px}
+
+.widthgroup{display:flex;gap:5px;align-items:center}
+.widthbtn{
+  flex:0 0 auto;width:44px;height:44px;padding:0;
+  display:inline-flex;align-items:center;justify-content:center;
+  border:3px solid var(--line);border-radius:14px;background:var(--surface);cursor:pointer
+}
+.widthbtn i{display:block;border-radius:999px;background:var(--ink)}
+.widthbtn[aria-checked=true]{border-color:var(--grape-d);background:var(--grape)}
+.widthbtn:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
+
+.fillbox{
+  display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:5px 10px;
+  border:3px solid var(--line);border-radius:14px;background:var(--surface);font-weight:800;font-size:.84rem;cursor:pointer
+}
+.fillbox input{
+  -webkit-appearance:none;appearance:none;position:relative;flex:0 0 auto;width:22px;height:22px;margin:0;
+  border:3px solid var(--ink-soft);border-radius:7px;background:var(--surface);cursor:pointer;
+}
+.fillbox input:checked{border-color:var(--grape-t);background:var(--grape-d)}
+.fillbox input:checked::after{
+  content:"";position:absolute;left:4px;top:0;width:5px;height:10px;
+  border:solid #fff;border-width:0 3px 3px 0;transform:rotate(45deg);
+}
+.fillbox input:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
+.fillbox.on{border-color:var(--grape-d);background:var(--grape-tint)}
+.toolrow-misc{align-items:center}
+/* 三張提示：橫式擺在畫布正上方，跟工具列分開，不再壓在畫布上。
+   已經給出去的打勾變淡，只有下一張是亮的。 */
+.hintdock{
+  flex:0 0 auto;max-width:100%;
+  display:flex;flex-direction:row;align-items:center;gap:5px;padding:2px 8px;
+  border:2px solid var(--line);border-radius:14px;background:var(--paper);
+  box-shadow:0 3px 0 var(--shade-1);
+}
+.hintrow-label{flex:0 0 auto;font-size:.74rem;font-weight:900;color:var(--ink-soft);white-space:nowrap}
+/* 刻意做小：只要看得到、點得到就好，畫布比它重要（一般按鈕的 48px 下限在這裡放寬） */
+.hintdock .hintbtn{
+  flex:0 0 auto;--d:4px;min-height:40px;
+  font-size:.76rem;padding:4px 10px calc(4px + var(--d));border-radius:12px;white-space:nowrap;
+}
+.hintbtn.done{opacity:.55}
+.hintbtn.done::after{content:"✓";margin-inline-start:4px}
+.hintrow-note{flex:0 0 auto;max-width:170px;font-size:.66rem;font-weight:700;line-height:1.25;color:var(--ink-soft)}
+.toolscroll{flex:1 1 auto;min-width:0;display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.donebox{flex:0 0 auto;margin-left:auto;display:flex;gap:5px;align-items:stretch}
+.tool-done{flex:0 0 auto}
+.tool-skip{flex:0 0 auto}
+.donebox .btn3d.small{white-space:nowrap}
+.tool-hint{margin:0 2px;font-size:.76rem;font-weight:700;color:var(--ink-soft);line-height:1.4;min-height:1.1em}
+.tool-hint[data-kind=error]{color:var(--danger)}
+.tool-hint[data-kind=ok]{color:var(--ok)}
+
+/* 放大工具列（設定裡的選項，給手指用） */
+body.big-tools .toolbtn,body.big-tools .widthbtn{width:56px;height:56px}
+body.big-tools .colorbtn{width:52px;height:52px}
+body.big-tools .fillbox{min-height:56px}
+
+/* ================================================================
+   橫向／寬螢幕：操作列移到畫布右側
+   高度是正方形畫布的瓶頸，把工具列從下方搬到旁邊，畫布邊長可以多出
+   一整個工具列的高度（實測手機橫向 140 → 287、平板橫向 430 → 620）。
+   ================================================================ */
+@media (orientation:landscape) and (min-width:560px){
+  /* 抬頭合併成一列：狀態與倒數、題目、玩家與提示全部排在同一行，
+     一行放不下的部分自己換行（不會蓋到東西）。每少一列就多一列的高度給畫布。 */
+  /* 橫向的高度全部是畫布的：上排按鈕收到 48（仍在 46 命中區之上）、列間距壓到最小 */
+  :root{--topbtn:48px}
+  .game-top .btn3d.icononly,.btn3d.settings-fab{min-width:48px;min-height:48px;padding:8px 10px calc(8px + var(--d))}
+  .game-main{padding-top:calc(2px + var(--safe-t));padding-bottom:calc(2px + var(--safe-b))}
+  /* 右側工具欄緊接在抬頭下面、延伸到畫面最右邊，正上方就是固定的設定鈕。
+     抬頭只有一行時（題目很短）會比設定鈕矮，工具欄第一排就鑽到設定鈕底下；
+     所以抬頭至少要高過設定鈕底緣：鈕距頂 10px、高 --topbtn，扣掉主區上方 2px 再留 4px。 */
+  .game-head{flex-direction:row;flex-wrap:wrap;align-items:center;gap:4px 8px;padding-right:var(--hud-reserve);
+    min-height:calc(var(--topbtn) + 12px)}
+  .game-top{flex:0 0 auto;padding-right:0}
+  .statusbar{flex:0 0 auto;flex-wrap:nowrap}
+  /* 題目列的理想寬度跟著螢幕走：窄螢幕不要因為 basis 太大而被擠到下一行 */
+  .wordbar{flex:1 1 min(300px,32vw);min-width:0;margin:0;min-height:44px;padding:2px 14px}
+
+  /* 畫布是正方形又受高度限制，畫布左右本來就是空的；
+     工具欄拿去用不會讓畫布變小，反而少換幾行、按鈕不會被裁掉。 */
+  /* 已經在 .game-head 裡，右邊的保留寬度由外層負責。
+     flex:0 0 auto ＝ 整組放得下才留在同一行，放不下就整組換到下一行（不會被壓扁）；
+     max-width 讓它換行後仍不會撐破畫面（玩家多的時候玩家列自己橫向捲）。 */
+  .canvastop{flex:0 0 auto;min-width:0;max-width:100%;padding:0}
+  .playerstrip{padding:0}
+  .hintdock{padding:1px 7px;gap:4px}
+  .hintrow-note{display:none}
+
+  .playarea{flex-direction:row;gap:6px}
+  .playbar{
+    flex:0 0 auto;width:clamp(160px,24vw,240px);
+    padding:0 2px 0 0;
+    /* 很矮的橫向手機放不下整條工具列，讓側欄自己捲，
+       不要把「畫完了」之類的按鈕裁掉。寬一點的螢幕根本不會捲到。 */
+    overflow-y:auto;overscroll-behavior:contain;
+    scrollbar-width:thin;scrollbar-color:var(--grape-d) transparent;
+  }
+  .playbar::-webkit-scrollbar{width:8px}
+  .playbar::-webkit-scrollbar-thumb{background:var(--grape);border-radius:999px}
+  body.big-tools .playbar{width:clamp(180px,28vw,264px)}
+
+  .toolbar{flex:0 0 auto;padding:0;gap:4px}
+  .toolrow{gap:4px}
+  .toolrow-colors{align-content:flex-start}
+  .toolrow-misc{flex-wrap:wrap;gap:4px}
+  .widthgroup{gap:4px}
+  .toolscroll{margin-left:0;gap:4px;width:100%;flex-wrap:wrap}
+  /* 很矮的橫向手機工具列會捲動，兩顆結束鍵黏在底部才不會被捲不到。
+     直向是左右並排（省高度），橫向直接上下疊（欄位夠寬） */
+  .donebox{margin-left:0;width:100%;flex-direction:column;position:sticky;bottom:0;z-index:2;
+    background:linear-gradient(to bottom,rgba(255,253,248,0),var(--paper) 30%);padding-top:4px}
+  .tool-done,.tool-skip{width:100%}
+  .fillbox{flex:1 1 auto;justify-content:center}
+  .tool-hint{display:none}
+
+  /* 猜題框不在側欄裡，固定在遊戲主畫面正下方左右滿版；橫向只要壓低一點 */
+  .guessbar{padding:6px max(6px,var(--safe-r)) calc(6px + var(--safe-b)) max(6px,var(--safe-l))}
+  .guessbar input{min-height:48px;font-size:1rem;padding:8px 12px;text-align:center}
+  .guessbar .btn3d{min-width:96px}
+}
+
+/* ================================================================
+   左側資訊欄：上方操作摘要、下方猜題紀錄
+   ================================================================ */
+.game-aside{
+  position:fixed;top:0;left:0;bottom:0;z-index:80;
+  width:var(--aside-w);min-height:0;
+  display:flex;flex-direction:column;
+  border-right:3px solid var(--line);background:rgba(255,253,248,.95);
+  padding-top:var(--safe-t);padding-left:var(--safe-l);padding-bottom:var(--safe-b);
+  box-shadow:8px 0 0 var(--shade-2);backdrop-filter:blur(5px);
+  transform:translateX(-102%);transition:transform .22s ease;
+}
+.game-aside.open{transform:translateX(0)}
+.aside-head{display:flex;align-items:center;gap:8px;padding:10px 12px 8px;border-bottom:3px solid var(--line);flex:0 0 auto}
+.aside-head h3{flex:1;margin:0;font-size:1.02rem;color:var(--grape-t)}
+.aside-close{width:48px;height:48px;flex:0 0 auto;border:3px solid var(--ink);border-radius:50%;background:var(--rose);color:var(--ink);font:inherit;font-weight:900;cursor:pointer}
+.aside-close:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
+.aside-body{
+  flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:8px 9px 12px;
+  scrollbar-width:thin;scrollbar-color:var(--grape-d) transparent;scrollbar-gutter:stable;
+}
+.aside-body::-webkit-scrollbar{width:8px}
+.aside-body::-webkit-scrollbar-track{background:transparent}
+.aside-body::-webkit-scrollbar-thumb{background:var(--grape-d);border-radius:999px}
+
+.sumcard{border:3px solid var(--line);border-radius:16px;background:var(--surface);padding:7px 10px}
+.sum-line{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:2px dashed var(--line);font-size:.78rem}
+.sum-line:last-child{border-bottom:0}
+.sum-line span{flex:0 0 auto;color:var(--ink-soft);font-weight:800}
+.sum-line b{flex:1 1 auto;text-align:right;font-weight:900;overflow-wrap:anywhere}
+.sum-h{margin:10px 2px 5px;font-size:.84rem;color:var(--grape-t)}
+.scorelist{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:5px}
+.scorelist li{display:flex;align-items:center;gap:7px;border:2px solid var(--line);border-radius:12px;background:var(--surface);padding:4px 8px;font-size:.78rem;font-weight:800}
+.scorelist li .sface{width:24px;height:24px;flex:0 0 auto}
+.scorelist li .sface svg{width:100%;height:100%}
+.scorelist li .sname{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.scorelist li .spts{flex:0 0 auto;font-variant-numeric:tabular-nums;color:var(--grape-t)}
+.scorelist li.drawer{border-color:var(--grape-d);background:var(--grape-tint)}
+.scorelist li.me .sname{color:var(--grape-t)}
+.sum-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.sum-list li{border:2px solid var(--line);border-radius:12px;background:var(--surface);padding:6px 9px;font-size:.73rem;line-height:1.45;font-weight:700;color:var(--ink-soft)}
+.sum-list li[data-k=correct]{border-left:7px solid var(--mint-d);color:var(--ink)}
+.sum-list li[data-k=reveal]{border-left:7px solid var(--sky-d);color:var(--ink)}
+.sum-list li[data-k=turn]{border-left:7px solid var(--grape-d);color:var(--ink)}
+.sum-list li[data-k=hint]{border-left:7px solid var(--lemon-d)}
+.sum-list li[data-k=closed]{border-left:7px solid var(--danger);color:var(--danger)}
+/* 猜題（含猜錯的）也列在這裡；自己猜的標成綠色，一眼認得出來 */
+.sum-list li[data-k=guess]{border-left:7px solid var(--line)}
+.sum-list li[data-k=guess][data-mine=true]{border-left-color:var(--mint-d);background:var(--mint-tint);color:var(--ink)}
+.sum-empty{margin:8px 2px;font-size:.79rem;color:var(--ink-soft)}

@@ -68,6 +68,15 @@
     return v;
   }
 
+  /* 語系包可以「用到才載入」：專案用 usePackLoader 註冊載入函式，
+     各語系檔載完呼叫 packReady。沒註冊載入函式的專案，行為跟以前完全一樣。 */
+  var packLoader = null;
+  var packs = {};
+  var packLoading = {};
+  function packReady(code) { packs[code] = true; return api; }
+  function usePackLoader(fn) { packLoader = fn; return api; }
+  function hasPack(code) { return !packLoader || code === DEFAULT || !!packs[code]; }
+
   function register(code, dict) {
     messagePatterns = null;
     if (!dicts[code]) dicts[code] = {};
@@ -186,6 +195,21 @@
 
   function setLang(next, opts) {
     next = normalize(next) || DEFAULT;
+    /* 這個語系的字典還沒載入：先去載，載好再切（期間維持原本的語系，不會出現半套翻譯） */
+    if (!hasPack(next)) {
+      if (!packLoading[next]) {
+        packLoading[next] = true;
+        packLoader(next, function (ok) {
+          packLoading[next] = false;
+          if (!ok || !packs[next]) return;
+          var again = {};
+          for (var k in (opts || {})) again[k] = opts[k];
+          again.force = true;
+          setLang(next, again);
+        });
+      }
+      return lang;
+    }
     var drafts = root.document ? Array.from(root.document.querySelectorAll('input[id], textarea[id]')).filter(function (el) {
       return !el.readOnly && !el.disabled && (el.tagName === 'TEXTAREA' || /^(text|search|url|email|tel|password)$/.test(el.type));
     }).map(function (el) { return { id: el.id, value: el.value, start: el.selectionStart, end: el.selectionEnd }; }) : [];
@@ -378,7 +402,8 @@
     SUPPORTED: SUPPORTED,
     get lang() { return lang; },
     t: t, message: message, register: register, apply: apply, setLang: setLang, onChange: onChange,
-    mountToggle: mountToggle, withLang: withLang
+    mountToggle: mountToggle, withLang: withLang,
+    usePackLoader: usePackLoader, packReady: packReady, hasPack: hasPack
   };
   root.I18N = api;
   root.t = root.t || t;

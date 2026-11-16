@@ -1,0 +1,115 @@
+/* ================================================================
+   設定彈窗
+   ================================================================ */
+.settings-modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
+.settings-modal.open{display:flex}
+.settings-backdrop{position:absolute;inset:0;background:rgba(74,59,85,.36);backdrop-filter:blur(3px)}
+/* 彈窗開啟時收起全域語言／設定浮鈕，讓彈窗標題列與關閉鈕保有完整空間。 */
+body.modal-open .language-controls[data-floating]{visibility:hidden!important;pointer-events:none!important}
+body.modal-open .language-menu{display:none!important}
+.settings-panel{
+  position:relative;display:flex;flex-direction:column;
+  width:min(94vw,470px);max-height:min(88dvh,700px);overflow:hidden;
+  background:var(--paper);border:3px solid var(--ink);border-radius:26px;
+  box-shadow:0 12px 0 var(--shade-3);outline:none;
+}
+.room-create-panel{width:min(94vw,620px)}
+/* 確認對話框：比設定彈窗小一號，內容只有一句話 */
+.confirm-panel{width:min(92vw,400px)}
+.confirm-text{margin:0;font-size:.95rem;font-weight:700;line-height:1.7;color:var(--ink)}
+.confirm-modal .settings-body{padding:16px 18px}
+.settings-head{
+  flex:0 0 auto;display:flex;align-items:center;gap:10px;
+  padding:12px 14px 10px;background:linear-gradient(180deg,#F6EEFF 0%,var(--paper) 100%);
+  border-bottom:3px solid var(--line);border-radius:23px 23px 0 0;
+}
+.settings-badge{
+  flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:38px;height:38px;
+  border:3px solid var(--ink);border-radius:50%;background:var(--lemon);
+  box-shadow:0 3px 0 var(--lemon-d);font-size:1.1rem;
+}
+.settings-badge .ico{width:22px;height:22px}
+.settings-head h2{flex:1;margin:0;text-align:center;font-size:1.3rem;letter-spacing:.05em}
+.settings-close{flex:0 0 auto;width:48px;height:48px;border:3px solid var(--ink);border-radius:50%;background:var(--rose);color:var(--ink);font:inherit;font-size:1.1rem;font-weight:900;cursor:pointer;box-shadow:0 4px 0 var(--rose-d)}
+.settings-close:active{transform:translateY(3px);box-shadow:0 1px 0 var(--rose-d)}
+
+.settings-body{
+  flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;
+  overscroll-behavior:contain;scrollbar-gutter:stable;
+  padding:10px 12px 12px;outline:none;
+  scrollbar-width:thin;scrollbar-color:var(--grape-d) transparent;
+  -webkit-overflow-scrolling:touch;
+}
+.settings-body:focus-visible{outline:3px solid var(--sky-d);outline-offset:-3px;border-radius:12px}
+.settings-group{background:var(--surface);border:3px solid var(--line);border-radius:20px;padding:8px 10px 6px;margin-bottom:10px}
+.settings-group:last-child{margin-bottom:0}
+.settings-group h3{display:flex;align-items:center;gap:7px;margin:2px 2px 6px;color:var(--grape-t);font-size:1rem;letter-spacing:.03em}
+.settings-group .gico{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;flex:0 0 auto;border:2px solid var(--ink);border-radius:9px;background:var(--cream);font-size:.9rem}
+.settings-group .gico .ico{width:16px;height:16px}
+.settings-note{margin:6px 4px 4px;font-size:.76rem;color:var(--ink-soft);line-height:1.55}
+.setting-toggle,.setting-range,.setting-text{display:flex;align-items:center;justify-content:space-between;gap:12px;border-radius:14px;padding:8px;min-height:54px;cursor:pointer}
+.setting-toggle:hover,.setting-range:hover,.setting-text:hover{background:var(--grape-wash)}
+.setting-static{display:flex;align-items:center;justify-content:space-between;gap:12px;border-radius:14px;padding:8px;min-height:54px}
+.setting-static>span:first-child,.setting-text>span:first-child{display:flex;flex-direction:column;gap:2px;font-weight:800;min-width:0}
+.setting-static small,.setting-text small{color:var(--ink-soft);font-size:.73rem;font-weight:700;line-height:1.35;overflow-wrap:anywhere}
+.setting-text input[type=text],.setting-text select{
+  flex:0 1 46%;min-width:0;font:inherit;font-weight:800;
+  border:3px solid var(--ink);border-radius:14px;padding:8px 12px;background:var(--surface);color:var(--ink);
+  outline:none;min-height:46px;user-select:text;-webkit-user-select:text;
+}
+.setting-text select{cursor:pointer}
+.setting-text input[type=text]:focus,.setting-text select:focus{border-color:var(--grape-d);box-shadow:0 0 0 3px rgba(164,143,219,.28)}
+.room-create-invite-note{margin:0 4px;padding:9px 10px;border:2px dashed var(--grape-d);border-radius:14px;background:var(--grape-tint);color:var(--grape-t)}
+.server-pill{flex:0 0 auto;border:3px solid var(--ink-soft);border-radius:999px;background:var(--muted-bg);color:var(--ink);padding:3px 12px;font-size:.76rem;font-weight:900;white-space:nowrap}
+.server-pill[data-state=ok]{border-color:var(--mint-d);background:var(--mint)}
+.server-pill[data-state=fail],.server-pill[data-state=invalid]{border-color:#E39AA6;background:#FFE1E6}
+.server-pill[data-state=checking]{border-color:var(--grape-d);background:var(--grape)}
+.setting-toggle>span,.setting-range>span{display:flex;flex-direction:column;gap:2px;font-weight:800;min-width:0}
+.setting-toggle small{color:var(--ink-soft);font-size:.73rem;font-weight:700;line-height:1.35}
+.setting-toggle input[type=checkbox]{appearance:none;-webkit-appearance:none;position:relative;flex:0 0 auto;width:54px;height:31px;margin:0;border:3px solid var(--ink-soft);border-radius:999px;background:var(--muted-bg);cursor:pointer;transition:background .15s,border-color .15s}
+.setting-toggle input[type=checkbox]::after{content:"";position:absolute;top:2px;left:2px;width:21px;height:21px;border-radius:50%;background:var(--surface);box-shadow:0 2px 0 var(--shade-3);transition:transform .15s}
+.setting-toggle input[type=checkbox]:checked{border-color:var(--mint-d);background:var(--mint)}
+.setting-toggle input[type=checkbox]:checked::after{transform:translateX(21px)}
+.setting-toggle input:focus-visible,.setting-range input:focus-visible,.setting-text input:focus-visible,
+.setting-text select:focus-visible,.settings-close:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
+.setting-range>span{flex-direction:row;align-items:center;gap:6px;min-width:118px}
+.setting-range>span>span{flex:1 1 auto;min-width:0;white-space:nowrap}
+.setting-range output{min-width:3.2em;text-align:right;color:var(--grape-t);font-weight:900}
+/* 自訂滑桿：軌道、已填滿段與圓鈕都自己畫，不用瀏覽器預設的深色軌道 */
+.setting-range input[type=range]{
+  -webkit-appearance:none;appearance:none;width:min(52%,220px);min-height:32px;margin:0;
+  background:transparent;cursor:pointer;--fill:50%;
+}
+.setting-range input[type=range]::-webkit-slider-runnable-track{
+  height:12px;border:2px solid var(--ink-soft);border-radius:999px;
+  background:linear-gradient(90deg,var(--grape-d) var(--fill),var(--muted-bg) var(--fill));
+}
+.setting-range input[type=range]::-moz-range-track{
+  height:8px;border:2px solid var(--ink-soft);border-radius:999px;
+  background:linear-gradient(90deg,var(--grape-d) var(--fill),var(--muted-bg) var(--fill));
+}
+.setting-range input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;width:26px;height:26px;margin-top:-9px;
+  border:3px solid var(--ink);border-radius:50%;background:var(--surface);box-shadow:0 2px 0 rgba(74,59,85,.25);
+}
+.setting-range input[type=range]::-moz-range-thumb{
+  width:20px;height:20px;border:3px solid var(--ink);border-radius:50%;background:var(--surface);box-shadow:0 2px 0 rgba(74,59,85,.25);
+}
+.settings-foot{
+  flex:0 0 auto;display:flex;justify-content:center;gap:10px;
+  padding:10px 14px calc(10px + var(--safe-b));
+  background:linear-gradient(0deg,#F6EEFF 0%,var(--paper) 100%);
+  border-top:3px solid var(--line);border-radius:0 0 23px 23px;
+}
+.settings-foot .btn3d{min-height:48px}
+.settings-done{flex:0 1 auto;min-width:120px}
+
+/* 減少動態 */
+.reduced-motion *,.reduced-motion *::before,.reduced-motion *::after{
+  animation-duration:.01ms!important;animation-iteration-count:1!important;
+  transition-duration:.01ms!important;scroll-behavior:auto!important;
+}
+.reduced-motion #bgdeco{display:none}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}

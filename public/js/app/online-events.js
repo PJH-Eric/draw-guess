@@ -1,13 +1,13 @@
 /* ===== app/online-events.js — 線上事件 ===== */
 
-import { $, Sound, Store, app, toast } from './core.js?v=2b5363b0dc';
-import { modals } from './modal.js?v=2b5363b0dc';
-import { localizeGame } from './solo.js?v=2b5363b0dc';
-import { pushFeed, replaceFeed } from './feed.js?v=2b5363b0dc';
-import { render } from './render.js?v=2b5363b0dc';
-import { renderAside } from './overlay.js?v=2b5363b0dc';
-import { renderGameSettings } from './game-settings.js?v=2b5363b0dc';
-import { forgetRoom, joinRoom, leaveGame, renderRoomList, saveNick, setLobbyEnabled } from './lobby.js?v=2b5363b0dc';
+import { $, Sound, Store, Words, app, toast } from './core.js?v=407d3bb548';
+import { modals } from './modal.js?v=407d3bb548';
+import { localizeGame } from './solo.js?v=407d3bb548';
+import { pushFeed, replaceFeed } from './feed.js?v=407d3bb548';
+import { render } from './render.js?v=407d3bb548';
+import { renderAside } from './overlay.js?v=407d3bb548';
+import { renderGameSettings } from './game-settings.js?v=407d3bb548';
+import { forgetRoom, joinRoom, leaveGame, renderRoomList, saveNick, setLobbyEnabled } from './lobby.js?v=407d3bb548';
 
 var w = window;
 
@@ -53,7 +53,7 @@ export function setupOnlineEvents() {
     if (s.status !== 'connected') app.onlineCount = null;
     renderOnlineCount();
     if (app.screen === 's-lobby') {
-      if (s.message) { app.lobbyState = null; $('lobby-state').textContent = s.message; }
+      if (s.message) { app.lobbyState = null; $('lobby-state').textContent = s.message; $('lobby-state').setAttribute('data-ok', 'false'); }
       setLobbyEnabled(s.status === 'connected');
     }
     if (app.view) renderAside();
@@ -74,6 +74,10 @@ export function setupOnlineEvents() {
       mode: 'online', difficulty: v.game.diff, players: v.game.players.length, spectator: v.you.role !== 'player'
     }, { result: v.game.winners && v.game.winners.indexOf(v.you.id) >= 0 ? 'win' : 'lose' });
     app.roomCode = v.room.code;
+    /* 房間用的題目語系本機還沒載入（別人開的英文／簡中房）：補載，好了再重畫一次 */
+    if (v.game && v.game.lang && w.LazyPacks && !Words.hasLang(v.game.lang)) {
+      w.LazyPacks.words(v.game.lang, function (ok) { if (ok && app.mode === 'online' && app.view) render(); });
+    }
 
     /* 換題／換階段：清畫布、播音效 */
     var key = v.game ? (v.game.turnNo + ':' + v.game.phase) : (v.room.phase);

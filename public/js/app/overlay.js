@@ -1,16 +1,14 @@
 /* ===== app/overlay.js — 疊層卡片：房間設定、選題、公布答案、結算 ===== */
 
-import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=2b5363b0dc';
-import { askLeaveRoom, makeModal, modals } from './modal.js?v=2b5363b0dc';
-import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=2b5363b0dc';
-import { soloRefresh, soloStep, startSolo } from './solo.js?v=2b5363b0dc';
-import { renderRecent } from './feed.js?v=2b5363b0dc';
-import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=2b5363b0dc';
-import { PHASE_LABEL, moodOf } from './render.js?v=2b5363b0dc';
-import { copyText, newInvite, revokeInvite } from './game-settings.js?v=2b5363b0dc';
-import { checkPendingInvite, enterOnlineRoom, leaveGame, saveNick, setupLobby } from './lobby.js?v=2b5363b0dc';
-import { setupRuleMenuClose } from './keys.js?v=2b5363b0dc';
-import { init } from './main.js?v=2b5363b0dc';
+import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=407d3bb548';
+import { askLeaveRoom, makeModal, modals } from './modal.js?v=407d3bb548';
+import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=407d3bb548';
+import { soloRefresh, soloStep, startSolo } from './solo.js?v=407d3bb548';
+import { renderRecent } from './feed.js?v=407d3bb548';
+import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=407d3bb548';
+import { PHASE_LABEL, moodOf } from './render.js?v=407d3bb548';
+import { copyText, newInvite, revokeInvite } from './game-settings.js?v=407d3bb548';
+import { enterOnlineRoom, leaveGame, roomRuleChips, saveNick } from './lobby.js?v=407d3bb548';
 
 var w = window;
 
@@ -199,20 +197,33 @@ export function ruleDropdown(field, list, current) {
     '</div>';
 }
 
+/** 開房彈窗的規則欄位：跟房間設定卡同一組選項，同樣是下拉（dropdowns.js 會把 select 換成自訂清單） */
+export function fillSelect(id, list, current) {
+  var html = list.map(function (o) {
+    var val = (o.v !== undefined ? o.v : o);
+    var label = (o.label !== undefined ? o.label : o);
+    return '<option value="' + esc(val) + '"' + (String(val) === String(current) ? ' selected' : '') + '>' + esc(label) + '</option>';
+  }).join('');
+  var el = $(id);
+  if (el.getAttribute('data-sig') !== html) { el.innerHTML = html; el.setAttribute('data-sig', html); }
+  el.value = String(current);
+}
+
 export function renderRoomCreateOptions() {
   var c = app.roomCreate;
   renderCategorySelect('room-create-category', c.category || '');
   renderWordLangSelect('room-create-wordlang', c.wordLang);
   $('lobby-room-name').value = c.roomName;
-  $('room-create-rounds').innerHTML = chips('create-rounds', ROUND_CHOICES, c.rounds);
-  $('room-create-drawsec').innerHTML = chips('create-drawsec', SEC_CHOICES, c.drawSec);
-  $('room-create-diff').innerHTML = chips('create-diff', DIFF_CHOICES, c.diff);
+  fillSelect('room-create-rounds', ROUND_CHOICES, c.rounds);
+  fillSelect('room-create-drawsec', SEC_CHOICES, c.drawSec);
+  fillSelect('room-create-diff', DIFF_CHOICES, c.diff);
 }
 
 export function setupRoomCreate() {
   $('room-create-category').addEventListener('change', function () { app.roomCreate.category = this.value; });
   $('room-create-wordlang').addEventListener('change', function () {
     app.roomCreate.wordLang = Store.wordLang(this.value);
+    if (w.LazyPacks) w.LazyPacks.words(this.value);
   });
   modals.roomCreate = makeModal('room-create-modal', 'room-create-panel', 'b-lobby-host');
   $('room-create-close').addEventListener('click', function () { modals.roomCreate.close(); });
@@ -220,19 +231,9 @@ export function setupRoomCreate() {
   var back = D.querySelector('[data-room-create-close]');
   if (back) back.addEventListener('click', function () { modals.roomCreate.close(); });
 
-  ['room-create-rounds', 'room-create-drawsec', 'room-create-diff'].forEach(function (id) {
-    $(id).addEventListener('click', function (ev) {
-      var button = ev.target.closest('button[data-act]');
-      if (!button) return;
-      var action = button.getAttribute('data-act');
-      var value = button.getAttribute('data-v');
-      if (action === 'create-rounds') app.roomCreate.rounds = Number(value);
-      else if (action === 'create-drawsec') app.roomCreate.drawSec = Number(value);
-      else if (action === 'create-diff') app.roomCreate.diff = Number(value);
-      renderRoomCreateOptions();
-      Sound.play('click');
-    });
-  });
+  $('room-create-rounds').addEventListener('change', function () { app.roomCreate.rounds = Number(this.value); });
+  $('room-create-drawsec').addEventListener('change', function () { app.roomCreate.drawSec = Number(this.value); });
+  $('room-create-diff').addEventListener('change', function () { app.roomCreate.diff = Number(this.value); });
 
   $('lobby-room-name').addEventListener('input', function () {
     app.roomCreate.roomName = this.value.slice(0, 24);
@@ -302,6 +303,18 @@ export function roomSetupHtml(v) {
   }
   var specs = r.members.filter(function (x) { return x.role === 'spectator'; });
   var host = v.you.can.setSettings;
+  /* 還有幾個空位：用虛線小圓點畫出來，看得出還能再邀人 */
+  var taken = r.members.filter(function (x) { return x.role === 'player'; }).length;
+  var open = Math.max(0, (Number(r.settings.maxPlayers) || 0) - taken);
+  var dots = '';
+  for (var d = 0; d < Math.min(open, 7); d++) dots += '<i></i>';
+  var openSeats = open ? '<div class="seatrow seat-open"><span class="seat-dots" aria-hidden="true">' + dots + '</span>' +
+    '<span class="seatname">' + esc(w.I18N.t('room.openSeats', { n: open })) + '</span></div>' : '';
+  /* 題目語系開房後就固定了：跟其他規則同一種欄位外觀，只是不能點 */
+  var langField = '<div class="rule-field category-rule"><span>' + esc(w.I18N.t('wordlang.select')) + '</span>' +
+    '<div class="ruledd-static" id="room-wordlang-note" title="' + esc(w.I18N.t('room.langLocked')) + '">' +
+    '<span class="ruledd-val">' + esc(wordLangLabel(r.settings.wordLang)) + '</span>' +
+    '<span class="ruledd-lock" aria-hidden="true">' + esc(w.I18N.t('room.langLocked')) + '</span></div></div>';
 
   /* ---- 遊戲規則 ---- */
   var rules;
@@ -313,15 +326,14 @@ export function roomSetupHtml(v) {
       ("<div class=\"rule-field\"><span>" + esc(I18N.t("text.124")) + "</span>") + ruleDropdown('set-diff', DIFF_CHOICES, r.settings.diff) + '</div>' +
       '</div><div class="rule-field category-rule"><span>' + esc(w.I18N.t('category.select')) + '</span>' +
       ruleDropdown('set-category', categoryChoices(), r.settings.category || '') + '</div>' +
-      '<p class="setupnote" id="room-wordlang-note">' + esc(w.I18N.t('wordlang.select')) + '：' + esc(wordLangLabel(r.settings.wordLang)) + '</p></div>';
+      langField + '</div>';
   } else {
-    var dl = DIFF_CHOICES.filter(function (d) { return d.v === r.settings.diff; })[0];
-    rules = ("<div class=\"setupblock\"><h4>" + esc(I18N.t("text.123")) + "</h4>") +
-      ("<p class=\"setupnote\">" + esc(I18N.t("text.122"))) + r.settings.rounds + (globalThis.I18N ? globalThis.I18N.t("text.121") : " 次・每題 ") + r.settings.drawSec + (globalThis.I18N ? globalThis.I18N.t("text.120") : " 秒・") +
-      esc(dl ? dl.label : (globalThis.I18N ? globalThis.I18N.t("text.119") : "混合")) + (esc(I18N.t("text.118")) + "</p></div>");
-    rules += '<div class="setupblock"><h4>' + esc(w.I18N.t('category.select')) + '</h4><p class="setupnote">' +
-      esc(w.I18N.t(r.settings.category ? 'category.' + r.settings.category : 'category.all')) + '</p>' +
-      '<p class="setupnote" id="room-wordlang-note">' + esc(w.I18N.t('wordlang.select')) + '：' + esc(wordLangLabel(r.settings.wordLang)) + '</p></div>';
+    /* 不是房主：規則只能看，用跟大廳房間卡片同一種 chip 列出來 */
+    rules = '<div class="setupblock"><h4>' + esc(w.I18N.t('text.123')) + '</h4>' +
+      '<div class="setup-rulechips" id="room-wordlang-note">' + roomRuleChips({
+        rounds: r.settings.rounds, drawSec: r.settings.drawSec, diff: r.settings.diff,
+        category: r.settings.category || '', wordLang: r.settings.wordLang
+      }) + '</div></div>';
   }
 
   /* ---- 邀請連結 ----
@@ -332,17 +344,20 @@ export function roomSetupHtml(v) {
      這一區矮下來。 */
   var invite = '';
   if (v.you.can.invite) {
-    invite = ("<div class=\"setupblock\"><h4>" + esc(I18N.t("text.117")) + "</h4>") +
-      ("<div class=\"inviterow\"><label class=\"sr-only\" for=\"invite-url\">" + esc(I18N.t("text.116")) + "</label>") +
-      ("<input id=\"invite-url\" readonly placeholder=\"" + esc(I18N.t("text.115")) + "\" value=\"") + esc(app.inviteUrl) + '">' +
-      ("<button type=\"button\" class=\"pillbtn\" data-act=\"invite-new\">" + esc(I18N.t("text.114")) + "</button>") +
+    var has = !!app.inviteUrl;
+    invite = '<div class="setupblock"><h4>' + esc(w.I18N.t('text.117')) + '</h4>' +
+      '<div class="inviterow"><label class="sr-only" for="invite-url">' + esc(w.I18N.t('text.116')) + '</label>' +
+      /* 網址自己佔一行、可以折行，整串都看得到（以前跟三顆按鈕擠同一行，只露出前面十幾個字） */
+      '<textarea id="invite-url" readonly rows="2" spellcheck="false" placeholder="' + esc(w.I18N.t('text.115')) + '">' + esc(app.inviteUrl) + '</textarea>' +
+      '<div class="invite-btns">' +
+      '<button type="button" class="pillbtn' + (has ? '' : ' primary') + '" data-act="invite-new">' + esc(w.I18N.t('text.114')) + '</button>' +
       /* 只在觸控裝置用系統分享面板取代「複製」：桌機的分享視窗反而比複製麻煩 */
-        (w.navigator && w.navigator.share && w.matchMedia && w.matchMedia('(pointer:coarse)').matches
-        ? '<button type="button" class="pillbtn" data-act="invite-share"' + (app.inviteUrl ? '' : ' disabled') + '>' + esc(w.I18N.t('invite.share')) + '</button>'
-        : '<button type="button" class="pillbtn" data-act="invite-copy"' + (app.inviteUrl ? '' : ' disabled') + (">" + esc(I18N.t("text.113")) + "</button>")) +
-      '<button type="button" class="pillbtn" data-act="invite-revoke"' + (app.inviteToken ? '' : ' disabled') + (">" + esc(I18N.t("text.112")) + "</button>") +
-      '</div>' +
-      ("<p class=\"setupnote\">" + esc(I18N.t("text.111")) + "</p></div>");
+      (w.navigator && w.navigator.share && w.matchMedia && w.matchMedia('(pointer:coarse)').matches
+        ? '<button type="button" class="pillbtn' + (has ? ' primary' : '') + '" data-act="invite-share"' + (has ? '' : ' disabled') + '>' + esc(w.I18N.t('invite.share')) + '</button>'
+        : '<button type="button" class="pillbtn' + (has ? ' primary' : '') + '" data-act="invite-copy"' + (has ? '' : ' disabled') + '>' + esc(w.I18N.t('text.113')) + '</button>') +
+      '<button type="button" class="pillbtn" data-act="invite-revoke"' + (app.inviteToken ? '' : ' disabled') + '>' + esc(w.I18N.t('text.112')) + '</button>' +
+      '</div></div>' +
+      '<p class="setupnote">' + esc(w.I18N.t('text.111')) + '</p></div>';
   }
 
   /* ---- 聊天室 ----
@@ -382,6 +397,7 @@ export function roomSetupHtml(v) {
     '<div class="setup-cols"><div class="setup-col">' +
     '<div class="roomcode"><b>' + esc(r.code) + ("</b><span>" + esc(I18N.t("text.102")) + "</span></div>") +
     '<div class="seatlist">' + (seats || ("<div class=\"seatrow\">" + esc(I18N.t("text.101")) + "</div>")) +
+    openSeats +
     (specs.length ? '<div class="seatrow spec"><span class="ico" data-ico="eye" aria-hidden="true"></span> ' + specs.length + (esc(I18N.t("text.100")) + "</div>") : '') + '</div>' +
     rules + '</div><div class="setup-col">' + invite + chatHtml + '</div></div>' +
     (v.you.can.start ? '' : '<p class="setup-blocked">' + esc(blockedMessage) + '</p>') +
@@ -486,6 +502,13 @@ export function overHtml(v, g) {
   }).join('');
   /* 線上：結算完由房主按「回房間」，大家回到等待畫面（可以聊天、改規則、重新準備）再開一局；
      不再是全員投票直接開新局（有一個人掛機就全部卡住）。單機維持「再玩一局」。 */
+  /* 贏家放大擺在最上面：頭像、皇冠、名字（平手就並排） */
+  var champs = sorted.filter(function (p) { return g.winners.indexOf(p.id) >= 0; });
+  var hero = champs.length ? '<div class="result-hero"><div class="result-hero-faces">' + champs.map(function (p) {
+    return '<span class="result-hero-face" aria-hidden="true">' + S.face(indexOfPlayer(g, p.id), 'win') +
+      '<span class="ico hero-crown" data-ico="crown"></span></span>';
+  }).join('') + '</div><b class="result-hero-name">' + esc(champs.map(function (p) { return p.name; }).join('、')) + '</b>' +
+    '<span class="result-hero-tag">' + esc(w.I18N.t(champs.length > 1 ? 'result.tie' : 'result.winner')) + '</span></div>' : '';
   var btns = '';
   var note = '';
   if (app.mode === 'online') {
@@ -501,9 +524,10 @@ export function overHtml(v, g) {
     if (v.you.can.rematch) btns += ("<button class=\"btn3d\" data-color=\"mint\" data-act=\"rematch\">" + esc(I18N.t("text.081")) + "</button>");
     btns += ("<button class=\"btn3d small\" data-color=\"cream\" data-act=\"home\">" + esc(I18N.t("text.080")) + "</button>");
   }
-  return confettiHtml() + '<section data-result-share class="result-share-card">' + ("<div class=\"result-heading\"><h3>" + esc(I18N.t("text.079")) + "</h3><span>" + esc(I18N.t("text.079.2")) + "</span></div><ol class=\"resultlist\">") + rows + '</ol>' + note + '</section>' +
+  return confettiHtml() + '<section data-result-share class="result-share-card">' + ("<div class=\"result-heading\"><h3>" + esc(I18N.t("text.079")) + "</h3><span>" + esc(I18N.t("text.079.2")) + "</span></div>") + hero + '<ol class="resultlist">' + rows + '</ol>' + note + '</section>' +
     (app.mode === 'online' ? chatBlockHtml(v) : '') +
-    '<div class="overlay-btns">' + btns + '</div>';
+    /* 主要動作（再來一局）自己一列，其餘次要鈕在下一列平分寬度，不會落單一顆 */
+    '<div class="overlay-btns result-btns">' + btns + '</div>';
 }
 
 export function indexOfPlayer(g, id) {
@@ -658,6 +682,7 @@ export function renderControls() {
   D.body.classList.toggle('no-tools', !canDraw && app.mode !== 'solo');
   placeCanvasTop();
   placeSoloActions();
+  placeGuessFeed();
   $('guessbar').hidden = canDraw || isDrawer || spectator || !g ||
     g.phase === 'over' || (v.room && v.room.closed);
 
@@ -693,6 +718,16 @@ export function placeCanvasTop() {
   D.body.classList.toggle('side-top', side);
   if (top.parentNode === (side ? bar : head)) return;
   if (side) bar.insertBefore(top, bar.firstChild); else head.appendChild(top);
+}
+
+/** 猜題流的位置：橫向放在右欄（玩家列與猜題框之間）；
+    直向搬進舞台，疊在畫布下方本來就空著的那一段（高度由 sizeCanvas 量的 --stage-gap 決定）。 */
+export function placeGuessFeed() {
+  var feed = $('guess-feed'), stage = $('stage'), bar = $('playbar'), guess = $('guessbar');
+  if (!feed || !stage || !bar || !guess) return;
+  var inStage = w.matchMedia('(orientation:portrait)').matches;
+  if (feed.parentNode === (inStage ? stage : bar)) return;
+  if (inStage) stage.appendChild(feed); else bar.insertBefore(feed, guess.nextSibling);
 }
 
 /** 平板直向的單機：畫布被高度卡住，而粗細／復原那一排右邊空著一大段。

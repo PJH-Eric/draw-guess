@@ -1,0 +1,86 @@
+/* ---------- 大廳 ---------- */
+.lobby-off{text-align:center;padding:20px 10px}
+.state-face{font-size:3rem;margin-bottom:6px}
+.state-face .ico{width:1.3em;height:1.3em}
+.aside-head h3{display:flex;align-items:center;gap:6px}
+.lobby-off h3{margin:0 0 8px;font-size:1.2rem}
+.lobby-off p{margin:0 auto 12px;max-width:520px;color:var(--ink-soft);font-size:.9rem;line-height:1.7}
+.lobby-help{max-width:660px;margin:0 auto 16px;text-align:left;border:3px solid var(--line);border-radius:18px;background:var(--surface);padding:10px 14px}
+.lobby-help summary{cursor:pointer;font-weight:800;color:var(--grape-t);min-height:36px;display:flex;align-items:center}
+.lobby-help p{margin:8px 0;text-align:left;font-size:.85rem;line-height:1.75;color:var(--ink)}
+.invitebox-land{border-color:var(--grape-d);background:var(--grape-tint)}
+.invitebox-land strong{color:var(--grape-t)}
+.state-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+
+.lobby-me{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px}
+.lobby-nick{flex:1 1 260px;display:flex;flex-direction:row;align-items:center;gap:10px;font-weight:800;font-size:.88rem}
+.lobby-nick>span{flex:0 0 auto;white-space:nowrap}
+.lobby-me-btns{display:flex;gap:10px;flex:0 1 auto}
+.lobby-join{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.lobby-nick input,.lobby-join input{
+  flex:1 1 180px;min-width:0;font:inherit;font-weight:800;
+  border:3px solid var(--ink);border-radius:16px;padding:11px 14px;background:var(--surface);color:var(--ink);
+  outline:none;min-height:52px;user-select:text;-webkit-user-select:text;
+}
+.lobby-join input{letter-spacing:.12em;text-transform:uppercase}
+.lobby-nick input:focus,.lobby-join input:focus{border-color:var(--grape-d);box-shadow:0 0 0 3px rgba(164,143,219,.28)}
+.lobby-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;flex-wrap:wrap}
+.lobby-bar .lbl{margin:0;flex:1 1 auto}
+.lobby-state{margin:8px 4px;font-size:.85rem;font-weight:800;color:var(--ink-soft)}
+.roomlist{display:flex;flex-direction:column;gap:10px}
+.roomcard{
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  border:3px solid var(--line);border-radius:20px;background:var(--surface);padding:11px 14px;
+  box-shadow:0 4px 0 var(--shade-1)
+}
+.roomcard .rc-code{font-weight:900;font-size:1.15rem;letter-spacing:.14em;color:var(--grape-t);min-width:64px}
+.roomcard .rc-main{flex:1 1 200px;min-width:0}
+.roomcard .rc-name{font-weight:800;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.roomcard .rc-sub{font-size:.78rem;color:var(--ink-soft);font-weight:700}
+.roomcard .rc-btns{display:flex;gap:8px;flex-wrap:wrap}
+/* 房間規則 chip：純顯示，放在房名／人數下面，放不下就換行，不擠壓右邊的加入／觀戰 */
+.rc-rules{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;min-width:0}
+.rc-rule{
+  display:inline-flex;align-items:center;gap:4px;max-width:100%;min-width:0;white-space:nowrap;
+  border:2px solid var(--line);border-radius:999px;background:var(--grape-wash);color:var(--ink);
+  padding:1px 9px;font-size:.72rem;font-weight:800;line-height:1.5
+}
+.rc-rule .ico{width:1.1em;height:1.1em}
+.rc-rule-t{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.rc-progress{margin-right:6px;font-weight:900;color:var(--ink)}
+.lobby-filter{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin:10px 0 2px}
+.lobby-filter-open{flex:0 0 auto;min-height:48px}
+.pillbtn[aria-pressed=true]{background:var(--grape);border-color:var(--grape-d);color:var(--ink-deep)}
+.rc-faces{display:inline-flex;align-items:center;vertical-align:middle;margin-right:6px}
+.rc-face{width:20px;height:20px;margin-left:-5px;border-radius:50%;background:var(--surface)}
+.rc-face:first-child{margin-left:0}
+.rc-face svg{width:100%;height:100%;display:block}
+.rc-more{margin-left:3px;font-weight:900;font-size:.72rem;color:var(--ink)}
+.lobby-filter-field{flex:1 1 200px;min-width:0;display:flex;flex-direction:column;gap:4px;font-size:.8rem;font-weight:800;color:var(--ink-soft)}
+#b-lobby-filter-clear{align-self:flex-start;margin-top:4px}
+/* 窄版：房號與房名同一列、chip 佔滿整列、加入／觀戰各佔一半 */
+@media (max-width:560px){
+  .roomcard{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;align-items:center;padding:10px 12px}
+  .roomcard .rc-main{display:contents}
+  .roomcard .rc-code{min-width:0;grid-column:1;grid-row:1}
+  .roomcard .rc-name{grid-column:2;grid-row:1}
+  .roomcard .rc-sub,.roomcard .rc-rules,.roomcard .rc-btns{grid-column:1 / -1}
+  .roomcard .rc-rules{margin-top:2px}
+  .roomcard .rc-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+  .roomcard .rc-btns .btn3d{width:100%}
+}
+/* 夠寬時右上角按鈕落在面板外側，不會壓到內容，抬頭就不用黏住 */
+@media (min-width:1140px){
+  .panel-head{position:static;background:none;border-bottom:0;-webkit-backdrop-filter:none;backdrop-filter:none}
+}
+/* 寬螢幕展開大廳聊天室時，把大廳內容往右讓，面板不壓在房間列表上 */
+@media (min-width:1220px){
+  html.lc-wide-open .screen#s-lobby .panel{margin-left:max(calc((100% - 880px) / 2),330px)}
+}
+.rc-rule[data-k=diff]{background:var(--lemon);border-color:var(--lemon-d)}
+.rc-rule[data-k=category]{background:var(--mint);border-color:var(--mint-d)}
+.rc-rule[data-k=lang]{background:var(--sky);border-color:var(--sky-d)}
+.rc-badge{display:inline-block;border:2px solid var(--ink-soft);border-radius:999px;padding:1px 9px;font-size:.72rem;font-weight:900;margin-right:6px}
+.rc-badge[data-p=waiting]{border-color:var(--mint-d);background:var(--mint)}
+.rc-badge[data-p=playing]{border-color:var(--lemon-d);background:var(--lemon)}
+.rc-badge[data-p=finished]{border-color:var(--ink-soft);background:var(--muted-bg)}

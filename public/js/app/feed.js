@@ -1,7 +1,7 @@
 /* ===== app/feed.js — 猜題紀錄與左側摘要欄 ===== */
 
-import { $, RECENT_MAX, app, esc } from './core.js?v=2b5363b0dc';
-import { layoutStage } from './canvas.js?v=2b5363b0dc';
+import { $, RECENT_MAX, app, esc } from './core.js?v=407d3bb548';
+import { layoutStage } from './canvas.js?v=407d3bb548';
 
 var w = window;
 
@@ -61,11 +61,15 @@ export function renderRecent() {
       '>' + esc(n.text) + '</li>';
   }).join('');
   $('sum-empty').hidden = recent.length > 0;
+  /* 畫布旁（橫向右欄）或畫布下方空白處（直向）的猜題流：最新的在最下面，貼著猜題框 */
   var gf = $('guess-feed');
   if (gf) {
-    gf.innerHTML = recent.slice(0, 12).map(function (n) {
+    gf.setAttribute('data-empty', w.I18N ? w.I18N.t('text.408') : '');
+    var feedHtml = recent.slice(0, 30).map(function (n) {
       return '<li data-k="' + esc(n.kind || 'info') + '"' + (n.mine ? ' data-mine="true"' : '') + '>' + esc(n.text) + '</li>';
     }).join('');
+    /* 內容沒變就不重建：每次畫面更新都重建的話，氣泡的進場動畫會一直重播 */
+    if (gf.getAttribute('data-sig') !== feedHtml) { gf.setAttribute('data-sig', feedHtml); gf.innerHTML = feedHtml; }
   }
 }
 

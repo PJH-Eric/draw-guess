@@ -1,9 +1,9 @@
 /* ===== app/render.js — 對局畫面渲染 ===== */
 
-import { $, D, S, app, esc, secsLeft } from './core.js?v=2b5363b0dc';
-import { renderReference } from './modal.js?v=2b5363b0dc';
-import { sizeCanvas } from './canvas.js?v=2b5363b0dc';
-import { renderAside, renderControls, renderOverlay } from './overlay.js?v=2b5363b0dc';
+import { $, D, S, app, esc, secsLeft } from './core.js?v=407d3bb548';
+import { renderReference } from './modal.js?v=407d3bb548';
+import { sizeCanvas } from './canvas.js?v=407d3bb548';
+import { renderAside, renderControls, renderOverlay } from './overlay.js?v=407d3bb548';
 
 var w = window;
 
@@ -119,7 +119,10 @@ export function updateTimers() {
   }
   var s = secsLeft(g.deadline);
   chip.hidden = false;
-  $('timer-text').textContent = s + (globalThis.I18N ? globalThis.I18N.t("text.152") : " 秒");
+  /* 數字與單位分開：窄螢幕把單位縮小，數字才放得大（textContent 仍是「114 秒」） */
+  var timerHtml = s + '<span class="timer-unit">' + esc(globalThis.I18N ? globalThis.I18N.t("text.152") : " 秒") + '</span>';
+  var timerEl = $('timer-text');
+  if (timerEl.innerHTML !== timerHtml) timerEl.innerHTML = timerHtml;
   /* 選題卡上的「N 秒內沒選…」也跟著倒數（卡片本身只在收到投影時才更新） */
   var ps = D.querySelector('#overlay-card .pick-secs');
   if (ps && ps.textContent !== String(s)) ps.textContent = s;
@@ -145,19 +148,40 @@ export function stateOf(p, g) {
 export function renderPlayers() {
   var v = app.view, g = v.game;
   var host = $('playerstrip');
-  if (!g) { host.innerHTML = ''; return; }
+  if (!g) { host.innerHTML = ''; app.lastScores = null; return; }
   var html = '';
+  var prev = app.lastScores || {}, cur = {}, gains = [];
   for (var i = 0; i < g.players.length; i++) {
     var p = g.players[i];
     var cls = ['pcard'];
     if (p.isDrawer) cls.push('drawer');
     if (p.guessed) cls.push('guessed');
     if (p.id === v.you.id) cls.push('me');
+    cur[p.id] = p.score;
+    if (prev[p.id] !== undefined && p.score > prev[p.id]) gains.push({ i: i, n: p.score - prev[p.id] });
     html += '<div class="' + cls.join(' ') + '">' +
       '<span class="pface" aria-hidden="true">' + S.face(i, moodOf(p, g)) + '</span>' +
       '<span class="pinfo"><b class="pname">' + esc(p.name) + '</b>' +
       '<span class="pstate">' + esc(stateOf(p, g)) + '</span></span>' +
       '<span class="pscore">' + p.score + '</span></div>';
   }
-  host.innerHTML = html;
+  app.lastScores = cur;
+  /* 內容沒變就不重建（房間投影每秒都會來） */
+  if (host.getAttribute('data-sig') !== html) { host.setAttribute('data-sig', html); host.innerHTML = html; }
+  for (var k = 0; k < gains.length; k++) floatGain(host.children[gains[k].i], gains[k].n);
+}
+
+/** 有人得分：分數卡上方飄一個「+N」。掛在 body 上，卡片重畫也不會被洗掉，飄完自己移除。 */
+export function floatGain(card, n) {
+  if (!card || !card.getBoundingClientRect || D.body.classList.contains('reduced-motion')) return;
+  var r = card.getBoundingClientRect();
+  if (!r.width) return;
+  var el = D.createElement('span');
+  el.className = 'score-float';
+  el.setAttribute('aria-hidden', 'true');
+  el.textContent = '+' + n;
+  el.style.left = Math.round(r.left + r.width / 2) + 'px';
+  el.style.top = Math.round(r.top) + 'px';
+  D.body.appendChild(el);
+  w.setTimeout(function () { el.remove(); }, 1100);
 }

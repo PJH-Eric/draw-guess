@@ -2072,6 +2072,43 @@ I18N.register('zh-Hant', {
   'srv.err.categoryRange': 'Choose a valid topic category.'
 });
 
+/* 大廳卡片、房間空位 */
+I18N.register('zh-Hant', {
+  'lobby.host.title': '自己開一間',
+  'lobby.host.desc': '當房主設定規則，再把房號或邀請連結傳給朋友。',
+  'lobby.join.title': '用房號加入',
+  'lobby.empty.title': '來當第一個開房的人',
+  'lobby.about': '房間什麼時候會關閉？',
+  'room.openSeats': '還有 {n} 個空位，邀請朋友一起玩',
+  'room.langLocked': '開房後固定'
+}).register('zh-Hans', {
+  'lobby.host.title': '自己开一间',
+  'lobby.host.desc': '当房主设定规则，再把房号或邀请链接发给朋友。',
+  'lobby.join.title': '用房号加入',
+  'lobby.empty.title': '来当第一个开房的人',
+  'lobby.about': '房间什么时候会关闭？',
+  'room.openSeats': '还有 {n} 个空位，邀请朋友一起玩',
+  'room.langLocked': '开房后固定'
+}).register('en', {
+  'lobby.host.title': 'Host a room',
+  'lobby.host.desc': 'Set the rules as host, then send the room code or invite link to friends.',
+  'lobby.join.title': 'Join with a code',
+  'lobby.empty.title': 'Be the first to host',
+  'lobby.about': 'When do rooms close?',
+  'room.openSeats': '{n} open seats. Invite friends to join',
+  'room.langLocked': 'Fixed after creation'
+});
+
+/* 結算 */
+I18N.register('zh-Hant', { 'result.winner': '獲勝！', 'result.tie': '平手！' })
+  .register('zh-Hans', { 'result.winner': '获胜！', 'result.tie': '平手！' })
+  .register('en', { 'result.winner': 'Winner!', 'result.tie': 'Tie!' });
+
+/* 題庫延遲載入 */
+I18N.register('zh-Hant', { 'words.loadFail': '題庫載入失敗，請檢查網路後再試一次。' })
+  .register('zh-Hans', { 'words.loadFail': '题库加载失败，请检查网络后再试一次。' })
+  .register('en', { 'words.loadFail': 'Could not load the word list. Check your connection and try again.' });
+
 /* Server outage translations (shared by the custom notice component). */
 (function (root) {
   root.ServerOutageMessages = {

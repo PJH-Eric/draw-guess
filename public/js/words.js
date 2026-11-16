@@ -1791,6 +1791,15 @@
 
   function byId(id, lang) { return localize(index[id] || null, lang); }
 
+  /** 這個語系的題庫在不在（瀏覽器裡英文與簡中是用到才載入的，見 js/lazy-packs.js） */
+  function hasLang(lang) {
+    lang = normLang(lang);
+    if (lang === 'zh-Hant') return true;
+    var data = lang === 'en' ? enData() : hansData();
+    for (var k in data) if (Object.prototype.hasOwnProperty.call(data, k)) return true;
+    return false;
+  }
+
   /** 這個字元算不算「一格」：中文每個字都算；英文只算字母與數字（空白、連字號、撇號不算） */
   var GLYPH_RE = /[\p{L}\p{N}]/u;
   function isGlyph(word, ch) { return word.lang === 'en' ? GLYPH_RE.test(ch) : true; }
@@ -2009,6 +2018,7 @@
     byId: byId,
     LANGS: LANGS,
     normLang: normLang,
+    hasLang: hasLang,
     localize: localize,
     revealable: revealable,
     glyphCount: glyphCount,

@@ -1,0 +1,157 @@
+/* ================================================================
+ * 線上大廳：暱稱＋狀態標籤一列，「開房」「用房號加入」兩張並排卡片
+ * ================================================================ */
+.lobby-me{align-items:center;gap:10px 14px}
+.lobby-nick{flex:1 1 240px;max-width:440px}
+.lobby-status{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+.lobby-status .lobby-state{
+  display:inline-flex;align-items:center;gap:6px;margin:0;padding:4px 12px;
+  border:2px solid var(--line);border-radius:999px;background:var(--surface);font-size:.78rem;line-height:1.5;
+}
+#lobby-state::before{content:"";flex:0 0 auto;width:9px;height:9px;border-radius:50%;background:var(--lemon-d)}
+#lobby-state[data-ok=true]::before{background:var(--ok)}
+.lobby-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr));gap:12px;margin:2px 0 4px}
+.lobby-card{
+  display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 12px;align-items:center;align-content:space-between;
+  padding:14px;border:3px solid var(--ink);border-radius:22px;background:var(--surface);box-shadow:0 6px 0 var(--shade-2);
+}
+.lobby-card[data-tone=mint]{background:linear-gradient(165deg,var(--mint-tint),var(--surface) 72%)}
+.lobby-card[data-tone=grape]{background:linear-gradient(165deg,var(--grape-tint),var(--surface) 72%)}
+.lobby-card-ico{display:grid;place-items:center;width:46px;height:46px;border:3px solid var(--ink);border-radius:15px;background:var(--mint)}
+.lobby-card[data-tone=grape] .lobby-card-ico{background:var(--grape)}
+.lobby-card-ico .ico{width:26px;height:26px}
+.lobby-card h3{margin:0;font-size:1.1rem;letter-spacing:.03em}
+.lobby-card p{margin:2px 0 0;font-size:.8rem;line-height:1.55;color:var(--ink-soft)}
+.lobby-card > .btn3d,.lobby-card > .lobby-join{grid-column:1 / -1}
+.lobby-card > .btn3d{width:100%}
+.lobby-card .lobby-join{flex-wrap:nowrap}
+.lobby-card .lobby-join input{flex:1 1 0;min-width:0;text-align:center;font-size:1.15rem;letter-spacing:.3em;padding-left:10px;padding-right:10px}
+.lobby-card .lobby-join input::placeholder{font-size:.9rem;letter-spacing:.02em}
+.lobby-empty{text-align:center;border:3px dashed var(--line);border-radius:22px;background:rgba(255,255,255,.7);padding:22px 16px 24px}
+.lobby-empty-face{display:block;width:76px;height:76px;margin:0 auto 6px}
+.lobby-empty-face svg{width:100%;height:100%;display:block}
+.lobby-empty h3{margin:0 0 4px;font-size:1.15rem;color:var(--grape-t)}
+.lobby-empty p{margin:0 auto 14px;max-width:440px;color:var(--ink-soft);font-size:.9rem;line-height:1.7}
+.lobby-about{max-width:none;margin:14px 0 0}
+
+/* ================================================================
+ * 房間設定卡：空位、鎖定的語系欄位、邀請連結
+ * ================================================================ */
+.seatrow.seat-open{border-style:dashed;background:transparent;color:var(--ink-soft);font-weight:700}
+.seat-dots{display:inline-flex;gap:4px;flex:0 0 auto}
+.seat-dots i{display:block;width:18px;height:18px;border:2px dashed var(--grape-d);border-radius:50%}
+.ruledd-static{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:42px;padding:7px 10px;
+  border:2px dashed var(--line);border-radius:12px;background:var(--muted-tint);font-weight:800;font-size:.84rem;
+}
+.ruledd-lock{flex:0 0 auto;font-size:.68rem;font-weight:800;color:var(--ink-soft)}
+.setup-rulechips .rc-rules{margin-top:2px}
+.setup-rulechips .rc-rule{font-size:.8rem;padding:3px 11px}
+/* 邀請：網址自己一行、可折行，整串看得到；三顆按鈕在下一行平分寬度 */
+.inviterow{flex-direction:column;align-items:stretch;flex-wrap:nowrap}
+.inviterow textarea{
+  display:block;width:100%;min-width:0;resize:none;font:inherit;font-size:.78rem;font-weight:700;line-height:1.45;
+  border:3px solid var(--line);border-radius:12px;padding:8px 10px;background:var(--grape-wash);color:var(--ink);
+  outline:none;min-height:52px;overflow:hidden;overflow-wrap:anywhere;word-break:break-all;
+  user-select:text;-webkit-user-select:text;
+}
+.inviterow textarea:focus{border-color:var(--grape-d)}
+.invite-btns{display:flex;gap:6px}
+.invite-btns .pillbtn{flex:1 1 0;min-width:0;padding-left:6px;padding-right:6px}
+.pillbtn.primary{border-color:var(--grape-d);background:var(--grape);box-shadow:0 4px 0 var(--grape-d)}
+.pillbtn:disabled{opacity:.45;cursor:default}
+/* 開房彈窗的規則：跟房間設定卡同一種三欄 */
+.create-rules{padding:6px 8px 8px}
+.create-rules .rule-field > span{font-size:.78rem}
+
+/* ================================================================
+ * 主選單 Logo 進場：粉紅線「畫」出來、筆跟著動、問號泡泡彈出來後輕輕浮動
+ * ================================================================ */
+.logo .lg-line{stroke-dasharray:100;stroke-dashoffset:100;animation:lg-draw .6s .1s ease-out forwards}
+.logo .lg-dot{transform-box:fill-box;transform-origin:center;animation:lg-pop .35s .1s ease-out both}
+.logo .lg-pen{transform-box:fill-box;transform-origin:50% 100%;animation:lg-pen .7s .05s ease-in-out both}
+.logo .lg-bubble{transform-box:fill-box;transform-origin:30% 100%;animation:lg-pop .4s .45s cubic-bezier(.3,1.5,.5,1) both,lg-bob 3.2s 1s ease-in-out infinite}
+.logo .lg-title{transform-box:fill-box;transform-origin:center;animation:lg-title .5s .1s cubic-bezier(.3,1.4,.5,1) both}
+@keyframes lg-draw{to{stroke-dashoffset:0}}
+@keyframes lg-pop{from{opacity:0;transform:scale(.2)}to{opacity:1;transform:scale(1)}}
+@keyframes lg-pen{0%{transform:translate(-26px,6px) rotate(-8deg)}35%{transform:translate(-10px,-8px) rotate(4deg)}70%{transform:translate(4px,4px) rotate(-3deg)}100%{transform:none}}
+@keyframes lg-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes lg-title{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:scale(1)}}
+
+/* ================================================================
+ * 按鈕主次
+ * ================================================================ */
+/* 單機設定：「開始畫」是唯一的主要動作，滿版放大；「載入作品」小一號置中 */
+#s-solo .panel-foot{display:flex;flex-direction:column;align-items:center;gap:10px}
+#s-solo .panel-foot .btn3d.big{width:min(100%,460px)}
+#s-solo .panel-foot .btn3d.small{width:auto;min-width:160px}
+/* 教學：下一段佔滿剩下的寬度，上一段縮在左邊；跳過與練習是底下一列小鈕 */
+.tut-nav{flex-wrap:nowrap}
+.tut-nav #b-tut-prev{flex:0 0 auto}
+.tut-nav #b-tut-next{flex:1 1 auto}
+.tut-foot{margin-top:12px;gap:10px}
+.tut-foot .btn3d{flex:1 1 0;max-width:220px}
+
+/* ================================================================
+ * 教學：圓點進度與示意圖
+ * ================================================================ */
+.tut-progress{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tut-dots{display:inline-flex;gap:6px;align-items:center}
+.tut-dots i{display:block;width:10px;height:10px;border-radius:50%;border:2px solid var(--grape-d);background:transparent;transition:width .2s,background .2s}
+.tut-dots i.done{background:var(--grape)}
+.tut-dots i.on{width:26px;border-radius:999px;background:var(--grape-t);border-color:var(--grape-t)}
+.tut-art{
+  display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;
+  margin:0 0 14px;padding:14px 10px;border-radius:16px;
+  background:linear-gradient(135deg,var(--grape-tint),var(--mint-tint));user-select:none;-webkit-user-select:none;
+}
+.tut-tile,.tut-pill{
+  display:inline-grid;place-items:center;flex:0 0 auto;position:relative;
+  border:3px solid var(--ink);background:var(--surface);box-shadow:0 3px 0 var(--shade-2);
+  font-weight:900;line-height:1;color:var(--ink);animation:tut-pop .3s cubic-bezier(.3,1.4,.5,1) both;
+}
+.tut-tile{width:50px;height:50px;border-radius:14px;font-size:1.3rem}
+.tut-tile .ico{width:30px;height:30px}
+.tut-tile.face{border-radius:50%;padding:3px}
+.tut-tile.face svg{width:100%;height:100%;display:block}
+.tut-tile.ok{background:var(--mint)}
+.tut-tile.near{background:var(--lemon)}
+.tut-tile.miss{background:var(--muted-bg)}
+.tut-tile.ban{background:var(--danger-bg);border-color:var(--danger)}
+.tut-tile.ban::after{content:"";position:absolute;left:-3px;right:-3px;top:50%;height:4px;margin-top:-2px;border-radius:2px;background:var(--danger);transform:rotate(-45deg)}
+.tut-pill{display:inline-flex;gap:6px;min-height:46px;padding:0 16px;border-radius:999px;font-size:1.05rem;letter-spacing:.1em}
+.tut-pill .ico{width:24px;height:24px}
+.tut-pill i{font-style:normal;color:var(--ink-soft)}
+.tut-arrow{flex:0 0 auto;font-weight:900;color:var(--grape-t);font-size:1.2rem}
+.tut-art > :nth-child(2){animation-delay:.05s}.tut-art > :nth-child(3){animation-delay:.1s}
+.tut-art > :nth-child(4){animation-delay:.15s}.tut-art > :nth-child(5){animation-delay:.2s}
+.tut-art > :nth-child(6){animation-delay:.25s}.tut-art > :nth-child(7){animation-delay:.3s}
+@keyframes tut-pop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
+@media (max-width:400px){
+  .tut-art{gap:5px;padding:12px 6px}
+  .tut-tile{width:42px;height:42px;border-radius:12px}
+  .tut-tile .ico{width:25px;height:25px}
+}
+
+/* ================================================================
+ * 結算：贏家放大、分享鈕跟其他按鈕同一套外觀、離開按鈕不落單
+ * ================================================================ */
+.result-hero{display:flex;flex-direction:column;align-items:center;gap:2px;margin:0 0 12px}
+.result-hero-faces{display:flex;justify-content:center;gap:10px;padding-top:20px}
+.result-hero-face{position:relative;display:block;width:76px;height:76px;animation:hero-in .5s cubic-bezier(.3,1.5,.5,1) both}
+.result-hero-face svg{width:100%;height:100%;display:block}
+.result-hero-face .hero-crown{position:absolute;left:50%;top:-24px;width:38px;height:38px;margin-left:-19px;transform:rotate(-8deg);animation:crown-drop .5s .35s cubic-bezier(.3,1.6,.5,1) both}
+.result-hero-name{font-size:1.25rem;letter-spacing:.04em;text-align:center;overflow-wrap:anywhere;max-width:100%}
+.result-hero-tag{padding:2px 14px;border:2px solid var(--lemon-d);border-radius:999px;background:var(--lemon);font-size:.82rem;font-weight:900}
+@keyframes hero-in{from{opacity:0;transform:scale(.4) rotate(-12deg)}to{opacity:1;transform:none}}
+@keyframes crown-drop{from{opacity:0;transform:translateY(-18px) rotate(-30deg)}to{opacity:1;transform:rotate(-8deg)}}
+#overlay-card .result-share-trigger:not(.tk){
+  min-height:52px;padding:10px 22px;border:3px solid var(--ink)!important;border-radius:18px;
+  background:var(--grape)!important;color:var(--ink)!important;font:inherit;font-weight:900!important;letter-spacing:.03em;
+  box-shadow:0 6px 0 var(--grape-d)!important;cursor:pointer;transition:transform .07s,box-shadow .07s;
+}
+#overlay-card .result-share-trigger:not(.tk):active{transform:translateY(4px);box-shadow:0 2px 0 var(--grape-d)!important}
+#overlay-card .result-share-trigger:focus-visible{outline:3px solid var(--sky-d);outline-offset:3px}
+.result-btns .btn3d:not(.sub){flex:1 1 100%}
+.result-btns .btn3d.sub{flex:1 1 0;min-width:0;white-space:nowrap}
+.result-btns .btn3d.small:not(.sub){flex:1 1 0}

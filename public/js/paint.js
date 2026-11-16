@@ -94,12 +94,31 @@
       return;
     }
     ctx.beginPath();
-    ctx.moveTo(st.p[0] * SCALE, st.p[1] * SCALE);
-    for (var i = 2; i + 1 < st.p.length; i += 2) {
-      ctx.lineTo(st.p[i] * SCALE, st.p[i + 1] * SCALE);
-    }
+    tracePath(ctx, st.p);
     ctx.stroke();
     ctx.restore();
+  }
+
+  /**
+   * 手繪線的路徑：三個點以上就用「中點二次曲線」把折角修圓 ——
+   * 每個取樣點當控制點，曲線從前一段的中點走到下一段的中點。
+   * 畫得快的時候取樣點離得遠，直接 lineTo 會看到一節一節的稜角，這樣畫出來是連續的弧線。
+   * 頭尾各留一小段直線接到真正的端點，所以分段送出的筆畫（見 flushSegment）首尾仍然接得起來。
+   * 只是「怎麼連」不一樣，筆畫資料本身（點的座標）完全沒變，每台裝置畫出來仍是同一張圖。
+   */
+  function tracePath(ctx, p) {
+    var n = p.length / 2;
+    ctx.moveTo(p[0] * SCALE, p[1] * SCALE);
+    if (n < 3) {
+      ctx.lineTo(p[2] * SCALE, p[3] * SCALE);
+      return;
+    }
+    ctx.lineTo((p[0] + p[2]) / 2 * SCALE, (p[1] + p[3]) / 2 * SCALE);
+    for (var i = 1; i < n - 1; i++) {
+      var x = p[i * 2], y = p[i * 2 + 1];
+      ctx.quadraticCurveTo(x * SCALE, y * SCALE, (x + p[i * 2 + 2]) / 2 * SCALE, (y + p[i * 2 + 3]) / 2 * SCALE);
+    }
+    ctx.lineTo(p[n * 2 - 2] * SCALE, p[n * 2 - 1] * SCALE);
   }
 
   /* ------------------------------------------------------- 油漆桶 */
@@ -299,11 +318,26 @@
         return;
       }
 
+      /* 一幀之內瀏覽器可能把好幾次移動合併成一個事件（高更新率的平板、觸控筆尤其明顯）。
+         getCoalescedEvents 把被合併掉的中間點拿回來，快速畫弧線時才不會只剩幾個稀疏的點。 */
+      var moves = (typeof ev.getCoalescedEvents === 'function') ? ev.getCoalescedEvents() : null;
+      if (!moves || !moves.length) moves = [ev];
+      var added = false;
+      for (var m = 0; m < moves.length; m++) {
+        if (addPoint(m === moves.length - 1 ? p : toBox(moves[m]))) added = true;
+      }
+      if (!added) return;
+      if (typeof o.onSound === 'function') o.onSound('draw');
+      invalidate();
+      ev.preventDefault();
+    }
+
+    /** 手繪線加一個點；離上一點太近就不收。回傳有沒有真的加進去 */
+    function addPoint(p) {
       var lx = live.p[live.p.length - 2], ly = live.p[live.p.length - 1];
       var dx = p[0] - lx, dy = p[1] - ly;
-      if (dx * dx + dy * dy < MIN_DIST * MIN_DIST) return;
+      if (dx * dx + dy * dy < MIN_DIST * MIN_DIST) return false;
       live.p.push(p[0], p[1]);
-      if (typeof o.onSound === 'function') o.onSound('draw');
 
       var since = live.p.length / 2 - segStart / 2;
       if (since >= SEG_POINTS || Date.now() - segAt >= SEG_MS) flushSegment(false);
@@ -314,8 +348,7 @@
         live.p = [p[0], p[1]];
         segStart = 0;
       }
-      invalidate();
-      ev.preventDefault();
+      return true;
     }
 
     function end(ev) {

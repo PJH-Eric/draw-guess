@@ -1,9 +1,9 @@
 /* ===== app/canvas.js — 畫布與工具列 ===== */
 
-import { $, D, ME, Paint, Rules, S, Sound, Store, app, toast } from './core.js?v=2b5363b0dc';
-import { askConfirm } from './modal.js?v=2b5363b0dc';
-import { handleGameEvents, soloRefresh, startSolo } from './solo.js?v=2b5363b0dc';
-import { pushFeed } from './feed.js?v=2b5363b0dc';
+import { $, D, ME, Paint, Rules, S, Sound, Store, app, toast } from './core.js?v=407d3bb548';
+import { askConfirm } from './modal.js?v=407d3bb548';
+import { handleGameEvents, soloRefresh, startSolo, withWordPack } from './solo.js?v=407d3bb548';
+import { pushFeed } from './feed.js?v=407d3bb548';
 
 var w = window;
 
@@ -72,6 +72,10 @@ export function sizeCanvas() {
   if (!isFinite(size) || size < 80) return;
   /* 只扣掉外框陰影需要的一點點餘裕，其餘全部給畫布 */
   size = Math.max(140, size - 2);
+  /* 直向時畫布下方剩多少空白：猜題氣泡只用這一段，不夠高就不顯示（絕不擠壓畫布） */
+  var gap = Math.max(0, Math.floor(r.height - size));
+  stage.style.setProperty('--stage-gap', gap + 'px');
+  stage.classList.toggle('gap-tight', gap < 46);
   if (box.style.width === size + 'px') return;
   box.style.width = size + 'px';
   box.style.height = size + 'px';
@@ -228,7 +232,8 @@ export function loadSoloFile() {
     var state;
     try { state = w.DrawingFile.decode(reader.result, { id: ME, get name() { return globalThis.I18N ? globalThis.I18N.t("text.166") : "你"; } }, Date.now()); }
     catch (e) { toast(e.message, 'error'); return; }
-    var replace = function () {
+    var replace = function () { withWordPack(Store.wordLang(), replaceNow); };
+    var replaceNow = function () {
       if (app.screen !== screen || app.solo !== solo) return;
       if (screen === 's-solo') startSolo();
       app.solo.state = state;

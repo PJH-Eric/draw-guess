@@ -1,7 +1,7 @@
 /* ===== app/modal.js — 彈窗、範本與確認對話框 ===== */
 
-import { $, D, S, Sound, Words, app, esc } from './core.js?v=2b5363b0dc';
-import { leaveGame } from './lobby.js?v=2b5363b0dc';
+import { $, D, S, Sound, Words, app, esc, navChanged } from './core.js?v=407d3bb548';
+import { leaveGame } from './lobby.js?v=407d3bb548';
 
 var w = window;
 
@@ -35,6 +35,7 @@ export function makeModal(modalId, panelId, openerId) {
       D.addEventListener('keydown', onKey, true);
       setTimeout(function () { panel.focus(); }, 0);
       S.repaintAll(panel);
+      navChanged();
     },
     close: function () {
       if (!api.isOpen()) return;
@@ -48,6 +49,7 @@ export function makeModal(modalId, panelId, openerId) {
       var back = (lastFocus && lastFocus.focus && lastFocus !== D.body && D.contains(lastFocus))
         ? lastFocus : opener;
       if (back && back.focus) back.focus();
+      navChanged();
     },
     toggle: function () { api.isOpen() ? api.close() : api.open(); }
   };

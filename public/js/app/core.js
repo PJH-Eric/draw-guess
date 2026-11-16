@@ -9,9 +9,9 @@
  */
 /* 原本是單一檔案 app.js，依功能拆成 js/app/ 底下的 ES module；入口是 main.js。 */
 
-import { modals } from './modal.js?v=2b5363b0dc';
-import { renderRecentWorks } from './menus.js?v=2b5363b0dc';
-import { layoutStage } from './canvas.js?v=2b5363b0dc';
+import { modals } from './modal.js?v=407d3bb548';
+import { renderRecentWorks } from './menus.js?v=407d3bb548';
+import { layoutStage } from './canvas.js?v=407d3bb548';
 
 var w = window;
 
@@ -70,6 +70,12 @@ export function show(id) {
   if (id === 's-game') { layoutStage(); if (app.paint) app.paint.resize(); }
   if (id === 's-solo') renderRecentWorks();
   Sound.setTrack(id === 's-game' ? 'draw' : 'menu');
+  navChanged();
+}
+
+/** 畫面或彈窗有變：通知 app/history.js 更新「返回鍵擋板」 */
+export function navChanged() {
+  try { w.dispatchEvent(new w.Event('dg:nav')); } catch (e) { /* 很舊的瀏覽器沒有 Event 建構子：不影響遊玩 */ }
 }
 
 export var toastTimer = 0;

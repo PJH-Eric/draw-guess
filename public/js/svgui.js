@@ -323,32 +323,37 @@
 
   function logo() {
     var title = globalThis.I18N ? globalThis.I18N.t('logo.title') : '你畫我猜';
-    return '<svg viewBox="0 0 520 190" role="img" aria-label="' + escText(title) + '">' +
+    /* 牌子的高度配合內容（畫板 48–124、筆尖到 128）：上下留白一樣多，
+       以前牌子比內容高一截，標題看起來浮在上半部、下面空一塊。
+       畫板的線、筆、問號泡泡各自包一層 <g>，進場動畫由 CSS（.lg-*）負責。 */
+    return '<svg viewBox="0 0 520 172" role="img" aria-label="' + escText(title) + '">' +
       '<defs>' +
       '<linearGradient id="dgSky" x1="0" y1="0" x2="0" y2="1">' +
       '<stop offset="0" stop-color="#FFF6E8"/><stop offset="1" stop-color="#FFE9F2"/>' +
       '</linearGradient>' +
       '</defs>' +
-      '<rect x="14" y="14" width="492" height="162" rx="40" fill="url(#dgSky)" stroke="' + INK + '" stroke-width="7"/>' +
+      '<rect x="14" y="16" width="492" height="140" rx="40" fill="url(#dgSky)" stroke="' + INK + '" stroke-width="7"/>' +
       /* 左邊：畫板與筆 */
       '<rect x="44" y="48" width="96" height="76" rx="10" fill="#FFFDF8" stroke="' + INK + '" stroke-width="6"/>' +
-      '<path d="M58 106 q16 -34 30 -18 q10 12 22 -10" fill="none" stroke="#E88CAA" stroke-width="7" stroke-linecap="round"/>' +
-      '<circle cx="74" cy="70" r="7" fill="#7FB4DA"/>' +
-      '<g transform="rotate(30 138 108)">' +
+      '<path class="lg-line" pathLength="100" d="M58 106 q16 -34 30 -18 q10 12 22 -10" fill="none" stroke="#E88CAA" stroke-width="7" stroke-linecap="round"/>' +
+      '<circle class="lg-dot" cx="74" cy="70" r="7" fill="#7FB4DA"/>' +
+      '<g class="lg-pen"><g transform="rotate(30 138 108)">' +
       '<rect x="130" y="62" width="16" height="48" rx="4" fill="#FFE3A0" stroke="' + INK + '" stroke-width="5"/>' +
       '<path d="M130 110 L138 128 L146 110 Z" fill="#FFF0DE" stroke="' + INK + '" stroke-width="5" stroke-linejoin="round"/>' +
-      '</g>' +
+      '</g></g>' +
       /* 文字 */
       /* 字級 58：四個字寬 232，落在筆尖（x≈166）與泡泡（x=420）之間，不再互相壓到 */
-      '<text x="290" y="116" text-anchor="middle" font-size="58" font-weight="900" fill="#6E4FBF" ' +
+      '<text class="lg-title" x="290" y="107" text-anchor="middle" font-size="58" font-weight="900" fill="#6E4FBF" ' +
       'stroke="' + INK + '" stroke-width="7" paint-order="stroke" ' +
       'font-family="Yuanti TC, PingFang TC, Microsoft JhengHei, Noto Sans TC, sans-serif"' +
       /* 英文標題比四個中文字長，縮小並往上提一點才放得進畫板與泡泡之間 */
-      (title.length > 6 ? ' style="font-size:35px" dy="-12"' : '') + '>' + escText(title) + '</text>' +
+      (title.length > 6 ? ' style="font-size:35px" dy="-8"' : '') + '>' + escText(title) + '</text>' +
       /* 右邊：問號泡泡 */
+      '<g class="lg-bubble">' +
       '<path d="M420 38 H492 V84 H458 L442 98 V84 H420 Z" fill="#C9B6F5" stroke="' + INK + '" stroke-width="6" stroke-linejoin="round"/>' +
       '<text x="456" y="74" text-anchor="middle" font-size="36" font-weight="900" fill="#FFFDF8" ' +
       'stroke="' + INK + '" stroke-width="5" paint-order="stroke" font-family="system-ui, sans-serif">?</text>' +
+      '</g>' +
       '</svg>';
   }
 

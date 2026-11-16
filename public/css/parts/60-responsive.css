@@ -1,0 +1,583 @@
+/* ================================================================
+   RWD：內容驅動的斷點
+   ================================================================ */
+
+/* 寬版（桌機、平板橫向）：左側資訊欄常駐，上 Summary、下猜題紀錄，
+   畫布是正方形，所以多出來的寬度本來就用不到，給資訊欄剛剛好。 */
+@media (min-width:1100px){
+  .game-aside{
+    position:relative;transform:none;order:-1;flex:0 0 320px;width:320px;
+    box-shadow:none;border-right:3px solid var(--line);
+  }
+  .game-aside.collapsed{display:none}
+}
+
+/* 中等寬度（平板直向）：資訊欄維持浮層，畫布吃滿 */
+@media (max-width:1099px){
+  .game-aside{width:var(--aside-w);border-radius:0 20px 20px 0}
+}
+
+/* 手機直向：工具列壓縮成三段，把高度還給畫布 */
+@media (max-width:620px){
+  /* 手機直向的畫布是「寬度」在限制大小，左右邊距每省 1px 畫布就大 1px */
+  .game-main{padding-left:calc(4px + var(--safe-l));padding-right:calc(4px + var(--safe-r))}
+  .stage{padding:2px 0}
+  .panel{padding:14px 12px 24px}
+  .panel-head{margin-left:-12px;margin-right:-12px;padding-left:12px}
+  .panel-head h2{font-size:1.25rem}
+  .home-row{flex-direction:column}
+  /* 狀態與倒數疊在返回與工具鈕之間，共用第一列，省下整列高度。 */
+  :root{--topbtn:46px;--topgap:6px;--topedge:10px}
+  body:not(.solo-mode) .game-top{
+    min-height:60px;align-items:center;gap:0;
+    padding:4px var(--hud-reserve) 0 58px;
+  }
+  body:not(.solo-mode) #b-game-back{
+    position:fixed;top:calc(10px + var(--safe-t));left:calc(10px + var(--safe-l));z-index:71;
+  }
+  body:not(.solo-mode) .statusbar{flex:1 1 auto;flex-direction:column;justify-content:center;gap:2px;overflow:visible}
+  body:not(.solo-mode) .chip-phase{font-size:.65rem;padding:1px 7px;border-width:1px;box-shadow:none;max-width:100%}
+  body:not(.solo-mode) .chip-timer{font-size:1.1rem;padding:1px 8px;border-width:2px}
+  body:not(.solo-mode) #network-latency.is-inline{display:none}
+  body:not(.solo-mode) .wordbar{min-height:36px;margin:1px 0;padding:2px 8px}
+  body:not(.solo-mode) .wordbar-mask{font-size:1.4rem}
+  body:not(.solo-mode) .pstate{display:none}
+  .game-top{gap:3px}
+  .game-top .btn3d.icononly,.btn3d.settings-fab{padding:7px 7px calc(7px + var(--d))}
+  /* 一列放得下：階段 chip 可以被壓縮，倒數不縮（它要夠大） */
+  .statusbar{gap:4px;flex-wrap:nowrap;overflow:hidden}
+  .chip{padding:3px 10px;font-size:.78rem;border-width:2px;gap:3px}
+  .chip-phase{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .chip-timer{
+    flex:0 0 auto;border-width:3px;padding:2px 12px;gap:4px;
+    font-size:clamp(1.2rem,5.6vw,1.55rem);
+  }
+  .chip-timer .ico{display:none}
+  .chip-round{display:none}
+  .wordbar{gap:8px;padding:2px 10px;margin:3px 0 2px;min-height:46px;border-radius:16px}
+  /* 提示接在名稱右邊，一行放不下就整組掉到下一行（名稱不會被切掉） */
+  .canvastop{gap:5px;padding:0 0 2px}
+  .playerstrip{padding:1px 0 2px}
+  .hintdock{padding:2px 7px;gap:4px;border-width:2px}
+  .hintdock .hintbtn{font-size:.74rem;min-height:36px;padding:3px 8px calc(3px + var(--d))}
+  .hintrow-label{font-size:.7rem}
+  .hintrow-note{display:none}
+  .toolbar{gap:4px;padding:4px 2px 2px}
+  .toolrow{gap:4px}
+  .toolbtn,.widthbtn{width:40px;height:40px;border-radius:11px;padding:4px}
+  .colorbtn{width:36px;height:36px;border-width:3px}
+  .toolrow-colors{gap:4px}
+  .fillbox{min-height:40px;padding:4px 8px;font-size:.78rem}
+  .toolscroll{gap:4px}
+
+  /* 窄螢幕沒有空間讓工具列換行成四、五排 —— 那會把畫布壓到只剩一小塊。
+     改成三條可以橫向撥動的帶子：命中區維持 46px，畫布拿回一倍高度。
+     「畫完了」釘在右邊不會被撥走。 */
+  .toolrow-tools,.toolrow-colors,.toolscroll{
+    flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;
+    scrollbar-width:none;-webkit-overflow-scrolling:touch;
+  }
+  .toolrow-tools::-webkit-scrollbar,
+  .toolrow-colors::-webkit-scrollbar,
+  .toolscroll::-webkit-scrollbar{display:none}
+  .toolbtn,.widthbtn,.colorbtn,.fillbox,.widthgroup{flex:0 0 auto}
+  /* 「畫完了／跳過這題」跟粗細那條同一行（不要多吃一列高度）：
+     左邊那條自己橫向捲，兩顆按鈕釘在右邊不會被捲走。 */
+  .toolrow-misc{flex-wrap:nowrap}
+  .toolscroll{min-width:0}
+  .donebox{gap:4px}
+  .donebox .btn3d.small{min-height:46px;padding:9px 11px calc(9px + var(--d));font-size:.84rem}
+  /* 工具提示在小螢幕上不值得那一行高度，工具本身有 title 與 aria-label */
+  .tool-hint{display:none}
+  .wordbar-mask{font-size:clamp(1.4rem,7vw,2.1rem);letter-spacing:.16em}
+  .wordbar-label,.wordbar-meta{font-size:.74rem}
+  .pcard{min-width:82px;padding:2px 5px;gap:4px}
+  .pface{width:26px;height:26px}
+  .guessbar .btn3d{min-width:84px}
+  .guessbar input{font-size:1rem;min-height:56px}
+  /* 房間設定：邀請身分那排還是按鈕（三顆、標籤偏長），手機一行放不下就直排。
+     遊戲規則三個欄位維持同一行不直排，只是欄位間距跟字級跟著窄螢幕縮小。 */
+  .setupblock{padding:8px 9px 9px}
+  .setuprow{flex-direction:column;align-items:stretch;gap:6px;padding:6px 0}
+  .setuprow .chiprow{justify-content:flex-start}
+  .setupblock .pillbtn{min-width:44px;padding:8px 11px;font-size:.86rem}
+  .rules-row{gap:5px}
+  .rule-field > span{font-size:.68rem}
+  .ruledd-btn{font-size:.78rem;padding:6px 8px}
+  .ruledd-opt{font-size:.76rem;padding:6px 8px}
+  /* 手機直向卡片本來就窄，名單、房號跟平板/桌機同一套規則會擠：
+     一併縮小，跟上面規則列、聊天室的縮小幅度同步。 */
+  .seatlist{gap:5px}
+  .seatrow{padding:6px 9px;font-size:.8rem;gap:6px;border-radius:12px}
+  .seatrow .sface{width:22px;height:22px}
+  .roomcode{padding:5px 8px;gap:6px}
+  .roomcode b{font-size:1.02rem}
+  .roomcode span{font-size:.7rem}
+  .chatlist{max-height:120px}
+  /* 網址欄＋三顆按鈕同一行：手機上按鈕收窄一點，網址欄才留得下看得出是連結的寬度 */
+  .inviterow{gap:5px}
+  .inviterow .pillbtn{min-width:44px;padding:7px 8px;font-size:.78rem}
+  .inviterow input{padding:8px 8px;font-size:.72rem}
+}
+
+/* 橫向且高度很矮（手機橫向）：把裝飾與留白壓到最低，先保住畫布與操作 */
+@media (orientation:landscape) and (max-height:560px){
+  .game-main{padding-top:calc(2px + var(--safe-t));padding-bottom:calc(2px + var(--safe-b))}
+  .wordbar{margin:0;padding:1px 10px;border-width:2px;min-height:40px}
+  .wordbar-mask{font-size:clamp(1.25rem,4.8vh,1.8rem);letter-spacing:.14em}
+  .wordbar-label,.wordbar-meta{font-size:.7rem}
+  .chip{padding:2px 10px;font-size:.76rem;border-width:2px}
+  .chip-timer{font-size:1.3rem;padding:1px 12px;border-width:3px}
+  .chip-timer .ico{display:none}
+  .chip-round{display:none}
+  .canvastop{padding:0 0 1px;gap:6px}
+  .playerstrip{padding:1px 0}
+  .hintdock{padding:1px 7px;gap:4px;border-width:2px}
+  .hintdock .hintbtn{font-size:.74rem;min-height:34px;padding:2px 8px calc(2px + var(--d))}
+  .hintrow-label{font-size:.7rem}
+  .pcard{min-width:70px;padding:1px 5px;gap:4px;border-radius:11px}
+  .pface{width:22px;height:22px}
+  .pname{font-size:.7rem}
+  .pstate{display:none}
+  .chip{padding:2px 10px;font-size:.76rem}
+  .toolbtn,.widthbtn{width:40px;height:40px;border-radius:11px;padding:4px}
+  .colorbtn{width:36px;height:36px}
+  .fillbox{min-height:40px;padding:4px 8px;font-size:.78rem}
+  .guessbar input{min-height:48px;font-size:.95rem;padding:8px 12px}
+  .guessbar .btn3d{min-height:48px;min-width:84px;font-size:1rem}
+  .tool-hint{display:none}
+  :root{--topbtn:46px;--topgap:6px;--topedge:10px}
+  .game-head{gap:4px}
+  /* 畫布在這裡是被「高度」卡住的，畫布右邊本來就空著一大塊。
+     工具欄加寬把那塊空白吃掉，整條工具列就不用捲、也不會被「畫完了」蓋住。 */
+  .playbar{width:clamp(200px,32vw,300px)}
+  body.big-tools .playbar{width:clamp(220px,36vw,330px)}
+  .game-top .btn3d.icononly,.btn3d.settings-fab{padding:7px 7px calc(7px + var(--d))}
+}
+
+/* 很矮的橫向手機：顏色收成兩排、只留最關鍵的控制 */
+@media (orientation:landscape) and (max-height:430px){
+  .wordbar-label,.wordbar-meta{display:none}
+  .wordbar{min-height:36px}
+  .wordbar-mask{font-size:1.35rem}
+  .chip-timer{font-size:1.15rem}
+  .chip-round{display:none}
+  .hintdock .hintbtn{font-size:.72rem;min-height:34px;padding:2px 7px calc(2px + var(--d))}
+  .toolrow-colors{max-width:none}
+  .toolbtn,.widthbtn{width:38px;height:38px;padding:3px}
+  .colorbtn{width:34px;height:34px}
+  .playbar{width:clamp(190px,34vw,290px)}
+  .home-wrap{padding:14px}
+  .logo{max-width:360px}
+}
+
+/* 平板直向：畫布是「高度」在限制大小，下方工具列每省 1px 畫布就大 1px。
+   工具提示那一行在這裡不划算（每顆工具都有 title 與 aria-label）。 */
+@media (orientation:portrait) and (min-width:621px){
+  .canvastop{padding:0 0 2px}
+  .toolbar{gap:4px;padding:3px 2px 0}
+  .toolrow{gap:5px}
+  .tool-hint{display:none}
+}
+
+/* 很窄的手機（360 這種）：上排要塞下返回、階段、倒數，再加右上三顆固定鈕，
+   倒數收一級，階段 chip 才不會被切到字。 */
+@media (max-width:400px){
+  .chip-timer{font-size:1.15rem;padding:2px 11px}
+  .statusbar{gap:3px}
+}
+
+/* 矮的手機直向（640 高這種）：畫布同樣被高度卡住，所有配角再縮一級，
+   但題目與倒數仍然比改版前大。 */
+@media (orientation:portrait) and (max-height:700px){
+  /* 這種小螢幕的畫布是被高度卡住的，名稱與提示要擠進同一行才不會再吃掉一行 */
+  .pcard{min-width:52px;max-width:86px;padding:2px 4px;gap:3px}
+  .pface{width:22px;height:22px}
+  .pname{font-size:.7rem}
+  .hintdock{padding:1px 5px;gap:3px}
+  .hintrow-label{font-size:.66rem}
+  .hintdock .hintbtn{font-size:.7rem;min-height:34px;padding:2px 5px calc(2px + var(--d))}
+  .wordbar{min-height:38px;padding:1px 10px;margin:2px 0 1px}
+  .wordbar-mask{font-size:clamp(1.25rem,6vw,1.7rem)}
+  .canvastop{padding:0 0 1px}
+  .pstate{display:none}
+  .hintdock{padding:1px 7px}
+  .toolbar{gap:3px;padding:3px 2px 0}
+  .toolbtn,.widthbtn{width:38px;height:38px}
+  .colorbtn{width:34px;height:34px}
+  .fillbox{min-height:38px}
+}
+
+/* ================================================================
+ * 手機軟體鍵盤修正（js/keyboard.js 量測後寫入 --app-h／--kb）
+ * 鍵盤彈出時把滿版高度改成「真正看得到的高度」，猜題框
+ * 才不會被鍵盤蓋住；沒有鍵盤時兩個變數都不生效，版面與原本完全一樣。
+ * ================================================================ */
+#app{height:var(--app-h,100%);min-height:var(--app-h,100dvh)}
+input,textarea,select{user-select:text;-webkit-user-select:text}
+
+/* iOS 對 font-size < 16px 的欄位聚焦時會自動放大整頁，放大後輸入框常被推出畫面 */
+@media (pointer:coarse){
+  /* 聊天欄也一樣：字小於 16px 的話，iPhone 一點進去整頁就被放大 */
+  #guess-input,#lobby-nick,#lobby-code,#chat-input{font-size:16px}
+}
+body.kb-open .game-aside{bottom:var(--kb,0px)}
+
+/* ================================================================
+ * 對局畫面版面微調（放在檔案最後，確保蓋過上面各斷點的同名規則）
+ * ================================================================ */
+
+/* 題號只留題目列裡那一個：上排狀態列的「第 N 題」標籤跟題目列的「・第 N 題」重複了
+   （手機本來就只顯示在題目列），上排只留階段跟倒數，比較乾淨。 */
+.chip-round{display:none}
+
+/* 橫向／寬螢幕：工具列在畫布右側 */
+@media (orientation:landscape) and (min-width:560px){
+  /* 沒有工具列的人（猜題者、觀戰者）右側這一欄收掉，畫布回到正中間。
+     不能用 display:none：猜題框是這一欄的子元素（絕對定位在主畫面底部），藏掉這欄它也會跟著不見。 */
+  body.no-tools .playbar{width:0;min-width:0;padding:0;overflow:visible}
+  body.no-tools .playarea{gap:0}
+
+  /* 工具列固定分成四組，由上到下：畫圖工具 → 顏色 → 粗細 → 復原／重做／清除。
+     以前粗細跟復原鍵混在同一條帶子裡自由換行，會變成「粗細＋復原」一排、「重做＋垃圾桶」又一排，
+     讓粗細（跟填滿）各自佔滿一整排，復原／重做／清除三顆就一定會排在同一排。 */
+  .widthgroup{flex:0 0 100%}
+  .fillbox{flex:0 0 100%}
+}
+
+/* 較高的手機直向（畫面高度 ≥740px）：畫布是被「寬度」卡住的，上下本來就有空白，
+   拿那些空白把顏色排成兩排全部顯示、粗細與復原鍵也不用左右滑，
+   「畫完了／跳過這題」自己一排撐滿。畫布大小不變。360×640 這種矮手機維持可滑動的帶子。 */
+@media (orientation:portrait) and (max-width:620px) and (min-height:740px){
+  .toolrow-colors,.toolscroll{flex-wrap:wrap;overflow:visible}
+  .toolrow-misc{flex-wrap:wrap}
+  .toolscroll{flex:1 1 100%}
+  .donebox{flex:1 1 100%;margin-left:0}
+  .donebox .btn3d{flex:1 1 0}
+}
+
+/* 平板直向：工具鈕放大到 48px（顏色 44px），而且撐滿整個寬度，不要全擠在左邊。
+   工具那排每顆平分寬度；顏色保持圓形、平均散開；粗細與復原鍵維持 48px，結束鍵靠右。 */
+@media (orientation:portrait) and (min-width:621px){
+  .toolbtn,.widthbtn{width:48px;height:48px}
+  .colorbtn{width:44px;height:44px}
+  .fillbox{min-height:48px}
+  .toolrow-tools .toolbtn{flex:1 1 0;width:auto;min-width:48px}
+  .toolrow-colors{justify-content:space-between}
+  .toolrow{gap:8px}
+  .widthgroup{gap:8px}
+  .toolscroll{gap:8px}
+}
+
+/* ================================================================
+ * 單機練習（body.solo-mode）：只有自己一個人
+ * 左側操作摘要、玩家分數列、給別人看的三張提示、階段／倒數標籤都用不到（不限時、不限次、不計分），
+ * 整塊拿掉；上排只留「返回」跟題目，跟右上角兩顆鈕排在同一列，空出來的高度全部給畫布。
+ * ================================================================ */
+.solo-file-actions{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+.solo-file-actions .btn3d{flex:1 1 auto;min-height:44px}
+.paint-controls{display:flex;flex-direction:column;gap:5px;min-width:0;padding:8px 9px;border:2px solid rgba(164,143,219,.42);border-radius:18px;background:linear-gradient(150deg,#FFFEFF,var(--grape-tint) 58%,#F4FBF8);box-shadow:inset 0 1px 0 #fff,0 4px 0 var(--shade-1)}
+.tool-group{min-width:0;padding:3px 1px}
+.tool-group+.tool-group{border-top:1px dashed var(--line);padding-top:7px}
+.tool-group-label{display:flex;align-items:center;gap:6px;margin:0 0 5px 2px;color:var(--ink-soft);font-size:.7rem;font-weight:900;line-height:1.2;letter-spacing:.04em}
+.tool-group-label::before{content:"";width:6px;height:6px;flex:0 0 6px;border-radius:50%;background:var(--grape-d);box-shadow:0 0 0 3px rgba(164,143,219,.16)}
+.tool-group:nth-child(2) .tool-group-label::before{background:var(--mint-d);box-shadow:0 0 0 3px rgba(89,189,155,.16)}
+.tool-group:nth-child(3) .tool-group-label::before{background:var(--sky-d);box-shadow:0 0 0 3px rgba(126,180,219,.18)}
+.toolbtn[aria-checked=true]{box-shadow:0 3px 0 var(--grape-d),inset 0 0 0 2px rgba(255,255,255,.55)}
+.widthbtn[aria-checked=true]{box-shadow:inset 0 0 0 2px rgba(255,255,255,.72),0 3px 0 var(--shade-1)}
+/* 觸控與矮螢幕以畫布為主：分組用分隔線辨識，標題保留給輔助閱讀。 */
+@media (max-width:1099px), (max-height:700px){
+  .paint-controls{gap:3px;padding:4px 5px}
+  .tool-group{padding:0;position:relative}
+  .tool-group+.tool-group{padding-top:4px}
+  .tool-group-label{
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+    overflow:hidden;clip-path:inset(50%);white-space:nowrap;
+  }
+}
+@media (max-width:380px){
+  .resultlist li.result-row{grid-template-columns:32px 26px minmax(0,1fr) auto;gap:6px;padding:7px 8px;font-size:.82rem}
+  .resultlist li.result-row .rplace{width:30px;height:30px;border-radius:10px;font-size:.76rem}
+  .resultlist li.result-row .rface{width:26px;height:26px}
+  .resultlist li.result-row .rpts{padding:4px 7px;font-size:.76rem}
+}
+body.solo-mode .donebox{display:none}
+body.solo-mode{--hud-reserve:calc(var(--topedge) + 3 * var(--topbtn) + 2 * var(--topgap) + 20px)}
+body.solo-mode .game-aside,
+body.solo-mode .aside-toggle,
+body.solo-mode .canvastop,
+body.solo-mode .statusbar{display:none!important}
+body.solo-mode .game-head{
+  flex-direction:row;flex-wrap:nowrap;align-items:center;gap:6px;
+  padding-right:var(--hud-reserve);min-height:calc(var(--topbtn) + 12px);
+}
+body.solo-mode .game-top{flex:0 0 auto;padding-right:0}
+body.solo-mode .wordbar{flex:1 1 auto;min-width:0;margin:0}
+body.solo-mode .wordbar-mask{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:620px){
+  /* 手機上題目跟返回鈕擠同一列：「你要畫的是」這幾個字拿掉，題目本身留大字 */
+  body.solo-mode .wordbar-label{display:none}
+}
+
+/* 作品操作使用固定欄位，避免下載圖片換行擠出其他按鈕。 */
+body.solo-mode .solo-file-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+body.solo-mode .solo-file-actions .btn3d{min-width:0;min-height:48px;padding:8px 6px calc(8px + var(--d));font-size:.875rem;white-space:nowrap}
+#s-solo .panel-foot{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#s-solo .panel-foot .btn3d{min-width:0;width:100%}
+
+@media (max-width:620px){
+  .home-note,.hint-note{font-size:.875rem;line-height:1.7}
+  #s-solo .panel-foot{grid-template-columns:1fr}
+  body.solo-mode .wordbar-mask{font-size:clamp(1.1rem,5vw,1.45rem);letter-spacing:.06em;white-space:normal;overflow:visible;overflow-wrap:anywhere}
+  body.solo-mode .wordbar-meta{font-size:.7rem}
+}
+
+/* 手機直向：七種工具與編輯操作維持 44px，窄到放不下時才可左右滑動。 */
+@media (orientation:portrait) and (max-width:620px){
+  body.solo-mode .toolbar{gap:6px;padding-top:4px}
+  body.solo-mode .toolbtn,body.solo-mode .widthbtn{width:44px;height:44px}
+  body.solo-mode .colorbtn{width:44px;height:44px}
+  body.solo-mode .toolrow-tools,body.solo-mode .toolrow-colors{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;gap:4px}
+  body.solo-mode .toolrow-misc{flex-wrap:nowrap}
+  body.solo-mode .toolscroll{flex-wrap:nowrap;overflow-x:auto;gap:4px}
+  body.solo-mode .widthgroup{flex:0 0 auto;gap:4px}
+  body.solo-mode .fillbox{flex:0 0 auto;min-height:44px}
+}
+
+/* 平板與桌機橫向：作品操作排成兩列，長標籤也有完整觸控空間。 */
+@media (orientation:landscape) and (min-width:560px){
+  body.solo-mode .solo-file-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+  body.solo-mode .toolbtn,body.solo-mode .widthbtn{width:44px;height:44px}
+  body.solo-mode .colorbtn{width:44px;height:44px}
+}
+
+/* 矮的手機橫向：工具可以捲動，作品操作固定在底部，避免被其他按鈕遮住。 */
+@media (orientation:landscape) and (min-width:560px) and (max-height:560px){
+  body.solo-mode .playbar{display:flex;flex-direction:column;overflow:hidden}
+  body.solo-mode .toolbar{flex:1 1 auto;min-height:0;gap:6px}
+  body.solo-mode .paint-controls{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding-right:4px}
+  body.solo-mode .toolrow-colors{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;flex-shrink:0}
+  body.solo-mode .toolrow-tools,body.solo-mode .toolrow-misc{flex-shrink:0}
+  body.solo-mode .solo-file-actions{flex:0 0 auto;padding-top:6px;border-top:2px solid var(--grape-d)}
+}
+
+@media (min-width:621px) and (min-height:561px){
+  body.solo-mode .solo-file-actions .btn3d{min-height:52px;font-size:.9375rem}
+}
+@media (orientation:landscape) and (min-width:621px) and (min-height:561px){
+  body.solo-mode .toolbtn,body.solo-mode .widthbtn{width:48px;height:48px}
+  .playbar{width:clamp(220px,24vw,280px)}
+  body.big-tools .playbar{width:clamp(240px,26vw,300px)}
+}
+
+body.solo-mode.big-tools .toolbtn,body.solo-mode.big-tools .widthbtn{width:56px;height:56px}
+body.solo-mode.big-tools .colorbtn{width:52px;height:52px}
+body.solo-mode.big-tools .fillbox{min-height:56px}
+
+/* 單機＋橫向：畫布是被「高度」卡住的，上面那一列抬頭（返回＋題目）等於直接吃掉畫布的邊長。
+   單機的抬頭東西很少，所以整列搬進右側工具欄的最上面，畫布從最上面一路畫到最下面：
+   左欄只有畫布（跨兩列），右欄上面是抬頭、下面是工具列。
+   實測畫布邊長：手機橫向 272 → 約 380、平板橫向約 606 → 約 750、桌機約 740 → 約 880。 */
+@media (orientation:landscape) and (min-width:560px){
+  body.solo-mode .game-main{
+    display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto minmax(0,1fr);
+    column-gap:6px;row-gap:4px;
+  }
+  body.solo-mode .playarea{display:contents}
+  body.solo-mode .stage{grid-column:1;grid-row:1 / span 2;min-height:0}
+  body.solo-mode .playbar{grid-column:2;grid-row:2;min-height:0}
+  /* 抬頭寬度跟著工具欄走，不能反過來把右欄撐寬（contain:inline-size 讓它不參與欄寬計算） */
+  body.solo-mode .game-head{
+    grid-column:2;grid-row:1;contain:inline-size;
+    flex-direction:row;flex-wrap:wrap;align-items:center;gap:4px;padding-right:0;min-height:0;
+  }
+  /* 第一行：左邊返回鈕，右邊是固定的對局設定＋系統設定鈕；第二行：題目撐滿整欄 */
+  body.solo-mode .game-top{flex:1 1 100%;min-height:calc(var(--topbtn) + 8px)}
+  /* 返回鍵和兩個設定鍵共用視窗安全區，避免側欄內距造成上下錯位。 */
+  body.solo-mode #b-game-back{position:fixed;top:calc(10px + var(--safe-t))}
+  body.solo-mode .wordbar{flex:1 1 100%;flex-wrap:wrap;justify-content:center;padding:2px 8px}
+  body.solo-mode .wordbar-label{display:none}
+  body.solo-mode .wordbar-mask{font-size:clamp(1.25rem,2.4vw,1.7rem);letter-spacing:.08em}
+  body.solo-mode .wordbar .reference-toggle{min-height:46px;padding:5px 8px;font-size:.78rem}
+}
+
+/* Keep the language switch beside settings, including narrow English layouts. */
+.reference-toggle{flex:0 0 auto;min-height:48px;padding:6px 12px;font-size:.85rem;white-space:normal}
+.reference-modal{z-index:2147483002}
+.reference-panel{width:min(540px,calc(100vw - 24px));max-height:calc(100dvh - 24px);display:flex;flex-direction:column}
+.reference-panel .settings-head{flex:0 0 auto;gap:10px}
+.reference-panel .settings-head h2{min-width:0;overflow-wrap:anywhere;font-size:clamp(1.1rem,4vw,1.5rem)}
+.reference-body{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;align-items:center;gap:10px;padding:12px 18px}
+.reference-word{flex:0 0 auto;font-size:1.25rem;text-align:center;overflow-wrap:anywhere;max-width:100%}
+.reference-picture{flex:1 1 auto;min-height:0;width:100%;height:min(40dvh,340px);border:2px dashed var(--grape-d);border-radius:18px;background:var(--surface)}
+.reference-picture svg{display:block;width:100%;height:100%;max-height:340px}
+.reference-steps{flex:0 0 auto;display:flex;gap:6px;align-items:center;width:100%}
+.reference-steps .pillbtn{flex:1 1 0;min-width:0;min-height:48px;padding:6px;font-size:.85rem;white-space:normal}
+.reference-steps [aria-pressed=true]{background:var(--mint);box-shadow:inset 0 0 0 2px var(--ink)}
+.reference-note,.reference-empty{flex:0 0 auto;margin:0;font-size:.875rem;line-height:1.5;overflow-wrap:anywhere}
+.reference-empty{padding:24px 10px;text-align:center;background:#fff7e0;border-radius:16px}
+.reference-panel .settings-foot{flex:0 0 auto}
+@media (max-height:500px) and (orientation:landscape){
+  .reference-panel{width:min(760px,calc(100vw - 24px));display:grid;grid-template-columns:minmax(150px,1fr) minmax(220px,1fr);grid-template-rows:auto minmax(0,1fr) auto}
+  .reference-panel .settings-head{grid-column:1 / -1;padding:8px 14px}
+  .reference-body{display:contents}
+  .reference-picture{grid-column:1;grid-row:2;height:100%;width:calc(100% - 24px);margin:0 12px 10px}
+  .reference-word{grid-column:2;grid-row:2;align-self:start;padding:4px 12px}
+  .reference-steps{grid-column:2;grid-row:2;align-self:center;padding:0 12px}
+  .reference-note{grid-column:2;grid-row:2;align-self:end;padding:0 12px;font-size:.8rem}
+  .reference-empty{grid-column:1;grid-row:2;align-self:center;margin:12px;padding:12px}
+  .reference-panel .settings-foot{grid-column:2;grid-row:3;padding:8px 12px}
+}
+
+.lang-toggle { position: fixed; top: calc(10px + env(safe-area-inset-top)); right: calc(70px + env(safe-area-inset-right)); min-width: 48px; min-height: 48px; padding: 8px; border: 2px solid var(--ink); border-radius: 14px; background: #fff0de; color: var(--ink); font: 800 16px/1.2 system-ui, sans-serif; cursor: pointer; box-shadow: 0 4px 0 #cfb99f; z-index: 1001; }
+.lang-toggle:focus-visible { outline: 3px solid #287dac; outline-offset: 3px; }
+.settings-fab { min-width: 48px; min-height: 48px; }
+.panel-head h2, .rule-field { min-width: 0; overflow-wrap: anywhere; }
+html[lang="en"] .home-btns .btn3d { white-space: normal; overflow-wrap: anywhere; }
+
+/* 矮的橫向手機：右上角現在有四顆鈕，抬頭那一列放不下延遲燈號就會把題目列擠到下一行、
+   畫布跟著變小；連線狀態在操作摘要裡看得到，這裡直接收掉。 */
+@media (orientation:landscape) and (max-height:500px){
+  body:not(.solo-mode) #network-latency.is-inline{display:none}
+  /* 題目列的起始寬度調小：留在第一列跟狀態、右上角按鈕並排，再自己長到剩下的寬度 */
+  body:not(.solo-mode) .wordbar{flex-basis:150px;gap:4px 8px;padding-left:10px;padding-right:10px}
+}
+
+/* ---------- 換頁與按鈕動態 ---------- */
+@keyframes screen-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.screen.active:not(#s-game){animation:screen-in .22s ease-out}
+@keyframes panel-in{from{opacity:0}to{opacity:1}}
+.settings-modal.open .settings-panel{animation:panel-in .18s ease-out}
+body.reduced-motion .screen.active,body.reduced-motion .settings-modal.open .settings-panel{animation:none}
+@media (prefers-reduced-motion:reduce){
+  .screen.active,.settings-modal.open .settings-panel{animation:none}
+}
+
+/* ---------- 桌機主選單：畫面夠大就把 logo 與按鈕放大，不要縮在中間一小塊 ---------- */
+@media (min-width:1100px) and (min-height:720px){
+  .home-wrap{max-width:820px}
+  .logo{max-width:660px;margin-bottom:26px}
+  .home-btns{max-width:560px;gap:16px}
+  .home-btns .btn3d{font-size:1.2rem;min-height:64px}
+  .home-btns .btn3d.big{font-size:1.38rem;min-height:76px}
+  .home-row{gap:16px}
+  .home-note{max-width:620px;font-size:1rem;margin-top:26px}
+}
+
+/* ---------- 平板寬度展開大廳聊天室：內容往右讓，不被面板蓋住 ---------- */
+@media (min-width:900px) and (max-width:1219px){
+  html.lc-wide-open .screen#s-lobby .panel{width:auto;max-width:none;margin-left:324px;margin-right:0}
+}
+
+/* ---------- 大廳聊天室：套用你畫我猜配色 ---------- */
+body .lc-root{
+  --lc-accent:var(--grape-t);--lc-accent-ink:#fff;
+  --lc-panel-bg:var(--paper);--lc-panel-solid:var(--paper);
+  --lc-ink:var(--ink);--lc-muted:var(--ink-soft);--lc-line:var(--line);
+  --lc-field-bg:#fff;--lc-sys-bg:rgba(201,182,245,.28);--lc-name:var(--grape-t);
+  --lc-radius:var(--radius);--lc-z:95;
+}
+
+/* ================================================================
+ * 橫向畫家：玩家列與提示搬進右側工具欄（app.js placeCanvasTop 搬 DOM，body.side-top）
+ * 抬頭少一列，畫布多一列的高度。
+ * ================================================================ */
+.playbar > .canvastop{flex:0 0 auto;max-width:100%;padding:0 0 2px;gap:4px}
+@media (orientation:landscape) and (min-width:560px){
+  /* 猜題者與觀戰者也留著右欄：上面玩家列，下面猜題框（不再橫跨整個底部吃掉畫布高度） */
+  body.side-top.no-tools .playbar{width:clamp(200px,24vw,280px);padding:0 2px 0 0;overflow-y:auto}
+  body.side-top.no-tools .playarea{gap:6px}
+  body.side-top.has-guessbar .playarea{padding-bottom:0}
+  body.side-top .guessbar{
+    position:static;flex:0 0 auto;flex-direction:column;align-items:stretch;gap:6px;padding:8px;
+    border:3px solid var(--ink);border-radius:18px;box-shadow:0 4px 0 var(--shade-2);
+  }
+  body.side-top .guessbar .btn3d{min-width:0;width:100%}
+}
+/* 高度夠的橫向（平板、桌機）：玩家卡換行全部顯示，不用左右捲 */
+@media (orientation:landscape) and (min-width:560px) and (min-height:561px){
+  .playbar > .canvastop .playerstrip{flex-wrap:wrap;overflow:visible}
+}
+.playbar > .canvastop .playerstrip{max-width:100%}
+.playbar > .canvastop .hintdock{flex-wrap:wrap}
+
+/* 矮的手機橫向：畫布被高度卡住，左右空著一大塊。右欄加寬把空白吃掉
+   （上限 = 視窗寬 − 視窗高，畫布永遠放得下），工具列就不用捲、結束鍵也不會蓋住粗細那排。 */
+@media (orientation:landscape) and (min-width:560px) and (max-height:560px){
+  body.side-top .playbar,body.solo-mode .playbar{width:clamp(200px,calc(100vw - 100vh - 32px),440px)}
+  body.side-top.no-tools .playbar{width:clamp(200px,calc(100vw - 100vh - 32px),320px)}
+  /* 矮螢幕（含鍵盤彈出時）猜題框橫排，輸入與送出同一行 */
+  body.side-top .guessbar{flex-direction:row;align-items:center;padding:6px}
+  body.side-top .guessbar .btn3d{width:auto;min-width:72px}
+  body.side-top .donebox{flex-direction:row;position:static;background:none;padding-top:0}
+  body.side-top .tool-done,body.side-top .tool-skip{flex:1 1 0;width:auto}
+  /* 單機顏色改成換行，整塊只剩一個方向（上下）可捲 */
+  body.solo-mode .toolrow-colors{flex-wrap:wrap;overflow:visible}
+}
+@media (orientation:landscape) and (max-height:560px) and (min-aspect-ratio:2/1){
+  /* 夠寬時粗細與復原鍵並排成一排 */
+  body.side-top .widthgroup,body.solo-mode .widthgroup{flex:0 0 auto}
+  body.solo-mode .solo-file-actions{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+
+/* 矮的手機直向（360×640 這種）畫家：畫布被高度卡住。玩家列與提示擠進同一行
+   （玩家列自己橫向捲、「提示」兩個字省掉），省下的一整列高度還給畫布。 */
+@media (orientation:portrait) and (max-width:620px) and (max-height:700px){
+  .game-head > .canvastop{flex-wrap:nowrap}
+  .game-head > .canvastop .playerstrip{flex:1 1 0;min-width:84px}
+  .game-head > .canvastop .hintdock{flex:0 0 auto}
+  .game-head > .canvastop .hintrow-label{display:none}
+}
+
+/* 大廳左下角有聊天室浮動鈕：每種寬度都在面板底部留位置，捲到底時最後一段字不會被它壓住 */
+.screen#s-lobby .panel{padding-bottom:calc(84px + var(--safe-b))}
+
+/* 矮的橫向手機主選單：logo 與按鈕左右並排，一個畫面看得完，不用捲 */
+@media (orientation:landscape) and (max-height:480px) and (min-width:560px){
+  #s-home .home-wrap{
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);align-items:center;
+    gap:8px 22px;max-width:860px;padding:calc(64px + var(--safe-t)) 18px 12px;text-align:center;
+  }
+  #s-home .logo{grid-column:1;grid-row:1;margin:0 auto;max-width:320px;width:100%}
+  #s-home .home-btns{grid-column:2;grid-row:1 / span 2;gap:9px;max-width:none;width:100%}
+  #s-home .home-note{grid-column:1;grid-row:2;margin:0;font-size:.78rem;line-height:1.55}
+}
+
+/* 矮的橫向手機：彈窗標題列與底部按鈕列壓扁，中間可捲動的內容區多出將近一倍高度 */
+@media (orientation:landscape) and (max-height:480px){
+  .settings-panel{max-height:calc(100dvh - 16px);width:min(94vw,620px)}
+  .settings-head{padding:6px 12px 5px}
+  .settings-head h2{font-size:1.1rem}
+  .settings-badge{width:32px;height:32px}
+  .settings-foot{padding:6px 12px calc(6px + var(--safe-b))}
+  .settings-body{padding:8px 10px}
+}
+
+
+/* 矮的橫向範本彈窗：圖片吃滿左欄整個高度，底部按鈕列只在右欄、圓角對齊彈窗右下角 */
+@media (max-height:500px) and (orientation:landscape){
+  .reference-picture{grid-row:2 / span 2;margin-bottom:12px}
+  .reference-panel .settings-foot{border-radius:0 0 23px 0;border-left:3px solid var(--line)}
+}
+
+/* 英文等長字串 */
+/* 單機手機直向：題號拿掉，題目與「查看範本」留在同一行，不多吃一列畫布高度 */
+@media (orientation:portrait) and (max-width:620px){
+  body.solo-mode .wordbar-meta{display:none}
+  body.solo-mode .wordbar{flex-wrap:nowrap}
+  #opt-worddiff{flex-wrap:nowrap}
+  #opt-worddiff .pillbtn{flex:1 1 0;min-width:0;padding-left:6px;padding-right:6px}
+}
+/* 作品操作四顆鈕：長標籤（Export image、New prompt）縮字並允許折成兩行，不溢出按鈕 */
+html[lang="en"] body.solo-mode .solo-file-actions .btn3d{font-size:.78rem;line-height:1.1;white-space:normal;padding-left:4px;padding-right:4px}
+
+/* 平板直向單機：作品操作排在粗細／復原那一排的右邊（app.js placeSoloActions 搬 DOM） */
+body.solo-mode .toolrow-misc > .solo-file-actions{display:flex;flex:0 0 auto;gap:6px;margin-left:auto}
+body.solo-mode .toolrow-misc > .solo-file-actions .btn3d{flex:0 0 auto;min-height:48px;padding-left:12px;padding-right:12px}
+html[lang] body.solo-mode .toolrow-misc > .solo-file-actions .btn3d{min-width:64px;padding-left:12px;padding-right:12px;white-space:nowrap}
+body.solo-mode .toolrow-misc:has(> .solo-file-actions) > .toolscroll{flex:0 1 auto}
+
+/* ---------- 直向作畫：畫布貼著題目列，空白集中到畫布與工具列之間 ---------- */
+@media (orientation:portrait){
+  .stage{align-items:flex-start}
+}

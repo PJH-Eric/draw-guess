@@ -1,11 +1,11 @@
 /* ===== app/lobby.js — 線上大廳 ===== */
 
-import { $, Cfg, D, S, Sound, Store, Words, app, esc, paintIcons, show, toast } from './core.js?v=2b5363b0dc';
-import { WORD_LANGS, categoryChoices, wordLangLabel } from './menus.js?v=2b5363b0dc';
-import { startLoop, stopLoop } from './solo.js?v=2b5363b0dc';
-import { ensurePaint } from './canvas.js?v=2b5363b0dc';
-import { render } from './render.js?v=2b5363b0dc';
-import { DIFF_CHOICES, morphChildren, openRoomCreate } from './overlay.js?v=2b5363b0dc';
+import { $, Cfg, D, S, Sound, Store, Words, app, esc, paintIcons, show, toast } from './core.js?v=407d3bb548';
+import { WORD_LANGS, categoryChoices, wordLangLabel } from './menus.js?v=407d3bb548';
+import { startLoop, stopLoop } from './solo.js?v=407d3bb548';
+import { ensurePaint } from './canvas.js?v=407d3bb548';
+import { render } from './render.js?v=407d3bb548';
+import { DIFF_CHOICES, morphChildren, openRoomCreate } from './overlay.js?v=407d3bb548';
 
 var w = window;
 
@@ -166,6 +166,8 @@ export function setLobbyEnabled(on) {
 export function setLobbyState(key, tail) {
   app.lobbyState = { key: key, tail: tail || '' };
   $('lobby-state').textContent = w.I18N.t(key) + (tail || '');
+  /* 狀態標籤前面的小燈：已連線是綠的，其餘（連線中、回房間中）是黃的 */
+  $('lobby-state').setAttribute('data-ok', String(key === 'text.017'));
 }
 
 export function connectOnline() {
@@ -300,6 +302,7 @@ export function setupRoomFilter() {
     var act = btn.getAttribute('data-act');
     if (act === 'join') joinRoom(btn.getAttribute('data-code'), null, 'player');
     else if (act === 'watch') joinRoom(btn.getAttribute('data-code'), null, 'spectator');
+    else if (act === 'host') $('b-lobby-host').click();
     else if (act === 'filter-clear') {
       resetRoomFilter();
       renderRoomList(app.rooms);
@@ -368,7 +371,10 @@ export function renderRoomList(rooms) {
 
   var html;
   if (!total) {
-    html = ("<p class=\"hint-note\">" + esc(I18N.t("text.009")) + "</p>");
+    /* 沒有公開房間：給一張有下一步的空狀態卡，不要只丟一行字 */
+    html = '<div class="lobby-empty"><span class="lobby-empty-face" aria-hidden="true">' + S.face(4, 'idle') + '</span>' +
+      '<h3>' + esc(w.I18N.t('lobby.empty.title')) + '</h3><p>' + esc(w.I18N.t('text.009')) + '</p>' +
+      '<button class="btn3d" data-color="mint" data-act="host">' + esc(w.I18N.t('text.362')) + '</button></div>';
   } else {
     var list = visibleRooms(rooms);
     html = list.length ? list.map(roomCardHtml).join('')

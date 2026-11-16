@@ -1,7 +1,7 @@
 /* ===== app/menus.js — 教學、戰績與單機設定畫面 ===== */
 
-import { $, D, ME, S, Sound, Store, Words, app, esc, show, toast } from './core.js?v=2b5363b0dc';
-import { soloRefresh, startSolo } from './solo.js?v=2b5363b0dc';
+import { $, D, ME, S, Sound, Store, Words, app, esc, show, toast } from './core.js?v=407d3bb548';
+import { soloRefresh, startSolo, withWordPack } from './solo.js?v=407d3bb548';
 
 var w = window;
 
@@ -51,12 +51,42 @@ export var TUTORIAL = [
     (globalThis.I18N ? globalThis.I18N.t("text.224") : "<p>等待畫面的「房間設定」最下面有<b>離開房間</b>（房主是<b>退出房間</b>）：房主退出會把房主交給下一位，最後一個人退出房間就會關掉。</p>"); } }
 ];
 
+/* 每一段配一張小示意圖：用現成的圖示與表情拼出來（純裝飾，文字才是內容，所以 aria-hidden）。 */
+function tutTile(html, cls) { return '<span class="tut-tile' + (cls ? ' ' + cls : '') + '">' + html + '</span>'; }
+function tutIco(name) { return '<span class="ico">' + S.icon(name) + '</span>'; }
+export function tutorialArt(index) {
+  var lang = w.I18N ? w.I18N.lang : 'zh-Hant';
+  var arrow = '<span class="tut-arrow">→</span>';
+  var blank = lang === 'en' ? '_ _ _' : '＿ ＿';
+  var half = lang === 'en' ? '_ u _' : (lang === 'zh-Hans' ? '＿ 阳' : '＿ 陽');
+  var art = [
+    /* 這個遊戲在玩什麼：畫家畫、其他人猜 */
+    tutTile(S.face(0, 'draw'), 'face') + arrow + tutTile(tutIco('board')) + arrow + tutTile(S.face(1, 'think'), 'face') + tutTile(S.face(2, 'happy'), 'face'),
+    /* 工具列 */
+    ['pen', 'brush', 'line', 'rect', 'ellipse', 'erase', 'fill'].map(function (n) { return tutTile(tutIco(n)); }).join(''),
+    /* 不能做的事：沒有聊天、沒有文字，只能畫 */
+    tutTile(tutIco('chat'), 'ban') + tutTile('<b>Aa</b>', 'ban') + arrow + tutTile(tutIco('pen'), 'ok'),
+    /* 猜題：三種回應 */
+    '<span class="tut-pill">' + tutIco('pen') + '<i>…</i></span>' + arrow + tutTile('✓', 'ok') + tutTile('≈', 'near') + tutTile('✗', 'miss'),
+    /* 提示：字數 → 種類 → 一個字 */
+    '<span class="tut-pill">' + blank + '</span>' + arrow + '<span class="tut-pill">' + tutIco('tag') + '</span>' + arrow + '<span class="tut-pill">' + half + '</span>',
+    /* 單機練習 */
+    tutTile(S.face(0, 'draw'), 'face') + tutTile(tutIco('board')) + arrow + tutTile(tutIco('refresh')),
+    /* 線上一起玩 */
+    tutTile(tutIco('home')) + arrow + tutTile(S.face(0, 'happy'), 'face') + tutTile(S.face(1, 'happy'), 'face') + tutTile(S.face(2, 'happy'), 'face') + tutTile(tutIco('eye'))
+  ];
+  return '<div class="tut-art" aria-hidden="true">' + (art[index] || '') + '</div>';
+}
+
 /* 教學目前翻到第幾段 */
 export var tut = { index: 0 };
 export function renderTutorial() {
   var t = TUTORIAL[tut.index];
-  $('tut-progress').textContent = (globalThis.I18N ? globalThis.I18N.t("text.162") : "第 ") + (tut.index + 1) + (globalThis.I18N ? globalThis.I18N.t("text.223") : " 段 / 共 ") + TUTORIAL.length + (globalThis.I18N ? globalThis.I18N.t("text.222") : " 段");
-  $('tut-box').innerHTML = '<h3>' + t.h + '</h3>' + t.b;
+  var dots = '';
+  for (var i = 0; i < TUTORIAL.length; i++) dots += '<i' + (i === tut.index ? ' class="on"' : (i < tut.index ? ' class="done"' : '')) + '></i>';
+  $('tut-progress').innerHTML = '<span class="tut-dots" aria-hidden="true">' + dots + '</span><span class="tut-progress-text">' +
+    esc((globalThis.I18N ? globalThis.I18N.t("text.162") : "第 ") + (tut.index + 1) + (globalThis.I18N ? globalThis.I18N.t("text.223") : " 段 / 共 ") + TUTORIAL.length + (globalThis.I18N ? globalThis.I18N.t("text.222") : " 段")) + '</span>';
+  $('tut-box').innerHTML = tutorialArt(tut.index) + '<h3>' + t.h + '</h3>' + t.b;
   $('b-tut-prev').disabled = tut.index === 0;
   S.setLabel($('b-tut-next'), tut.index === TUTORIAL.length - 1 ? (globalThis.I18N ? globalThis.I18N.t("text.221") : "看完了 ✓") : (globalThis.I18N ? globalThis.I18N.t("text.220") : "下一段 ▶"));
   $('tut-box').focus();
@@ -201,13 +231,15 @@ export function openDrawingText(text) {
   var state;
   try { state = w.DrawingFile.decode(text, { id: ME, get name() { return globalThis.I18N ? globalThis.I18N.t("text.166") : "你"; } }, Date.now()); }
   catch (e) { toast(e.message, 'error'); return; }
-  startSolo();
-  app.solo.state = state;
-  app.solo.seed = state.seed;
-  app.paint.setStrokes(state.strokes);
-  app.paint.clearRedo();
-  soloRefresh();
-  toast((globalThis.I18N ? globalThis.I18N.t("text.184") : "作品已載入，可以繼續畫。"), 'ok');
+  withWordPack(Store.wordLang(), function () {
+    startSolo();
+    app.solo.state = state;
+    app.solo.seed = state.seed;
+    app.paint.setStrokes(state.strokes);
+    app.paint.clearRedo();
+    soloRefresh();
+    toast((globalThis.I18N ? globalThis.I18N.t("text.184") : "作品已載入，可以繼續畫。"), 'ok');
+  });
 }
 
 export function setupSoloScreen() {
@@ -219,6 +251,7 @@ export function setupSoloScreen() {
   });
   renderSoloOptions();
   $('opt-category').addEventListener('change', function () { Store.category(this.value); });
-  $('opt-wordlang').addEventListener('change', function () { Store.wordLang(this.value); });
+  /* 換題目語系就先把那一包題庫載進來，按「開始畫」時通常已經好了 */
+  $('opt-wordlang').addEventListener('change', function () { Store.wordLang(this.value); if (w.LazyPacks) w.LazyPacks.words(this.value); });
   $('b-solo-start').addEventListener('click', startSolo);
 }

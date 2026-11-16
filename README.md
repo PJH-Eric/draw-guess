@@ -185,9 +185,15 @@ draw-guess/
 ├── lib/rooms.js               房間狀態機（誰可以做什麼、邀請、生命週期）
 ├── public/
 │   ├── index.html
-│   ├── css/style.css
+│   ├── css/
+│   │   ├── parts/             主樣式表的來源，依區域分檔（00-base、10-menus、20-lobby、30-game…）
+│   │   └── style.css          由 parts/ 依檔名順序接成的產物（不要直接改，見「改完前端之後」）
 │   └── js/
 │       ├── config.js          全站唯一的 server URL 設定入口
+│       ├── i18n.js            多語系核心
+│       ├── locales.js         介面字典的來源（繁中／簡中／英文都寫在這裡）
+│       ├── locales/ui.*.js    由 locales.js 拆出來的各語系檔（產物）；只有繁中開頁就載，其餘用到才載
+│       ├── lazy-packs.js      語系與英文／簡中題庫「用到才載入」
 │       ├── rng.js             可注入的種子亂數
 │       ├── words.js           題庫 + 形狀配方 + 形狀特徵比對
 │       ├── rules.js           規則核心（狀態 + 行動 → 新狀態）
@@ -213,10 +219,14 @@ draw-guess/
 │           ├── lobby.js       線上大廳
 │           ├── online-events.js 線上事件
 │           ├── keys.js        鍵盤快捷鍵
+│           ├── history.js     手機返回鍵／瀏覽器上一頁（先關彈窗、離開對局要先問）
 │           └── main.js        啟動
 ├── scripts/
 │   ├── inject-server-url.js   把 GAME_SERVER_URL 注入 config.js
-│   ├── stamp-assets.js        幫 CSS／JS 網址加上版本參數（改完前端檔案後跑 npm run stamp）
+│   ├── build-locales.js       把 locales.js 拆成各語系檔
+│   ├── build-css.js           把 css/parts/ 接成 style.css
+│   ├── stamp-assets.js        幫 CSS／JS 網址加上版本參數
+│   ├── check-syntax.js        所有 JS 的語法檢查（npm test 第一步）
 │   ├── online-check.js        線上端對端（2 玩家 + 1 觀戰）
 │   └── browser-check.js       無頭 Chrome 的 RWD／互動檢查
 ├── tests/verify.js            題庫、規則、AI、房間、設定解析的單元測試
@@ -224,6 +234,17 @@ draw-guess/
 ├── render.yaml                Render 藍圖
 └── 啟動遊戲.bat               Windows 一鍵啟動
 ```
+
+### 改完前端之後
+
+```
+npm run build     # = 語系拆檔 + 接樣式表 + 更新版本參數
+npm test          # 會檢查上面三樣產物是不是最新的，不是就失敗
+```
+
+- 樣式改 `public/css/parts/*.css`，不要改 `style.css`。
+- 介面文字改 `public/js/locales.js`，不要改 `locales/ui.*.js`。
+- 只改 JS 的話 `npm run stamp` 就夠（`npm run build` 也會做）。
 
 ### 設計原則
 

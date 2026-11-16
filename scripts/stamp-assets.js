@@ -27,6 +27,9 @@ const PUBLIC = path.resolve(__dirname, '..', 'public');
 const INDEX = path.join(PUBLIC, 'index.html');
 const MODULE_DIR = path.join(PUBLIC, 'js', 'app');
 const CHECK = process.argv.includes('--check');
+/* 不在 index.html 裡、由 js/lazy-packs.js 用到才載入的檔案：內容也要算進版本，
+   不然只改這些檔的時候版本參數不會變，瀏覽器會繼續用快取的舊檔。 */
+const LAZY = ['js/locales/ui.en.js', 'js/locales/ui.zh-Hans.js', 'js/words.en.js', 'js/words.zh-Hans.js'];
 
 /* index.html 裡的本機樣式與腳本：href="css/x.css"、src="js/x.js"（可能已經帶 ?v=） */
 const ASSET_RE = /\b(href|src)="((?:css|js)\/[^"?#]+\.(?:css|js))(?:\?v=[0-9a-zA-Z]*)?"/g;
@@ -51,7 +54,8 @@ function main() {
     if (assets.indexOf(file) < 0) assets.push(file);
   }
   const modules = moduleFiles();
-  const all = [...new Set([...assets, ...modules])].sort();
+  const lazy = LAZY.map((f) => path.join(PUBLIC, f)).filter((f) => fs.existsSync(f));
+  const all = [...new Set([...assets, ...modules, ...lazy])].sort();
 
   const hash = crypto.createHash('sha1');
   for (const file of all) {
