@@ -17,9 +17,26 @@
   var listeners = {};
   var status = 'idle';    // idle | loading | connecting | connected | error | offline
   var lastError = '';
-  /* 伺服器時間與本機時間的差。倒數是用伺服器給的 deadline 算的，
-     本機時鐘不準時（常見）也不會讓倒數整個跑掉。 */
+  /* 以伺服器時間校準，再以單調時鐘推進；系統校時不應讓倒數跳秒。 */
   var timeOffset = 0;
+  var clockAnchor = null;
+
+  function elapsedNow() {
+    return w.performance && typeof w.performance.now === 'function' ? w.performance.now() : Date.now();
+  }
+
+  function syncClock(serverTime, sentAt) {
+    if (typeof serverTime !== 'number' || !isFinite(serverTime)) return;
+    var receivedAt = elapsedNow();
+    /* 使用往返延遲中點估計回程時間，回到前景時也重新校準。 */
+    var estimate = serverTime + Math.max(0, receivedAt - sentAt) / 2;
+    clockAnchor = { server: estimate, elapsed: receivedAt };
+    timeOffset = estimate - Date.now();
+  }
+
+  function serverNow() {
+    return clockAnchor ? clockAnchor.server + Math.max(0, elapsedNow() - clockAnchor.elapsed) : Date.now() + timeOffset;
+  }
 
   var SERVER_EVENTS = [
     'lobby:rooms',
@@ -135,9 +152,10 @@
   function sayHello(identity) {
     if (!socket) return;
     var target = socket;
+    var sentAt = elapsedNow();
     target.emit('hello', { clientId: identity.clientId, name: identity.name }, function (res) {
       if (socket !== target || !target.connected || !res || !res.ok) return;
-      if (res.serverTime) timeOffset = res.serverTime - Date.now();
+      syncClock(res.serverTime, sentAt);
       setStatus('connected');
       emitLocal('reconnected', {});
     });
@@ -156,13 +174,14 @@
       var finish = function () {
         if (done) return;
         if (generation !== connectionGeneration) return;
+        var sentAt = elapsedNow();
         target.emit('hello', { clientId: identity.clientId, name: identity.name }, function (res) {
           if (done) return;
           done = true;
           clearTimeout(timer);
           if (generation !== connectionGeneration) { reject(new Error('Connection cancelled')); return; }
           if (res && res.ok) {
-            if (res.serverTime) timeOffset = res.serverTime - Date.now();
+            syncClock(res.serverTime, sentAt);
             setStatus('connected');
             resolve(target);
           }
@@ -209,9 +228,12 @@
       return;
     }
     probing = true;
-    target.timeout(PROBE_MS).emit('latency:ping', Date.now(), function (err) {
+    var sentAt = elapsedNow();
+    target.timeout(PROBE_MS).emit('latency:ping', Date.now(), function (err, res) {
       probing = false;
+      if (socket !== target || !target.connected) return;
       if (err) { forceReconnect(target); return; }
+      if (res) syncClock(res.serverTime, sentAt);
       /* 瀏覽器報過離線、但這條連線其實撐過來了：把「重試中」的狀態改回已連線 */
       if (offlineMarked && socket === target && target.connected) setStatus('connected');
       offlineMarked = false;
@@ -262,7 +284,7 @@
     probe: probe,
     isConnected: function () { return !!socket && socket.connected; },
     /** 換算成伺服器時間，用來算倒數 */
-    now: function () { return Date.now() + timeOffset; },
+    now: serverNow,
     timeOffset: function () { return timeOffset; },
     status: function () { return { status: status, message: lastError }; }
   };

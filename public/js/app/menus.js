@@ -1,7 +1,7 @@
 /* ===== app/menus.js — 教學、戰績與單機設定畫面 ===== */
 
-import { $, D, ME, S, Sound, Store, Words, app, esc, show, toast } from './core.js?v=1bfd7253e7';
-import { soloRefresh, startSolo, withWordPack } from './solo.js?v=1bfd7253e7';
+import { $, D, ME, S, Sound, Store, Words, app, esc, show, toast } from './core.js?v=5c76ab25f4';
+import { soloRefresh, startSolo, withWordPack } from './solo.js?v=5c76ab25f4';
 
 var w = window;
 
