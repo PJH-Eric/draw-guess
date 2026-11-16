@@ -248,6 +248,22 @@ function enforceLifecycle(room, t) {
   return true;
 }
 
+/** 被投票請出去的人：把他還連著的分頁都移出房間並通知，之後收不到這間房的任何廣播 */
+function ejectKicked(room, id) {
+  for (const s of [...(roomSockets.get(room.code) || [])]) {
+    if (s.data.clientId !== id) continue;
+    detach(s);
+    s.emit('room:kicked', { code: room.code });
+    lobbySockets.add(s);
+  }
+}
+
+function afterKick(room, res) {
+  if (res.kicked) ejectKicked(room, res.kicked);
+  if (!enforceLifecycle(room, now())) syncRoom(room, true);
+  syncLobby();
+}
+
 /* ------------------------------------------------------------ Socket */
 
 io.on('connection', (socket) => {
@@ -485,6 +501,26 @@ io.on('connection', (socket) => {
     syncRoom(room, true); syncLobby();
   }));
 
+  /* 結算後房主直接開下一局（同一批人、同樣規則） */
+  socket.on('room:rematch', withRoom((room) => {
+    const res = room.rematch(socket.data.clientId, now());
+    if (!res.ok) return fail(socket, res.error, res.code);
+    syncRoom(room, true); syncLobby();
+  }));
+
+  /* 投票踢人：發起（發起人自動算一票）與附議 */
+  socket.on('room:kick', withRoom((room, p) => {
+    const res = room.startKick(socket.data.clientId, str(p.target), now());
+    if (!res.ok) return fail(socket, res.error, res.code);
+    afterKick(room, res);
+  }));
+
+  socket.on('room:kickVote', withRoom((room) => {
+    const res = room.voteKick(socket.data.clientId, now());
+    if (!res.ok) return fail(socket, res.error, res.code);
+    afterKick(room, res);
+  }));
+
   socket.on('room:invite', withRoom((room, p, ack) => {
     const res = room.createInvite(socket.data.clientId, {
       role: str(p.role), ttlMs: num(p.ttlMinutes) * 60000, maxUses: p.maxUses, now: now()
@@ -552,13 +588,14 @@ function sweepTick() {
       e.type === 'turnstart' || e.type === 'turnend' || e.type === 'autopick' || e.type === 'aipick' || e.type === 'gameover');
     if (item.events.length) syncRoom(item.room, bigChange);
   }
+  for (const item of res.kicked) ejectKicked(item.room, item.id);
   for (const room of res.changed) {
     if (!room.closed) syncRoom(room, true);
   }
   for (const room of res.closed) announceClosed(room);
   for (const room of res.forget) roomSockets.delete(room.code);
 
-  if (res.changed.length || res.closed.length || res.ticked.length) syncLobby();
+  if (res.changed.length || res.closed.length || res.ticked.length || res.kicked.length) syncLobby();
 }
 
 /* ------------------------------------------------------------ 啟動 */

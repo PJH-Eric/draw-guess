@@ -15,7 +15,8 @@ const Rules = require('../public/js/rules.js');
 const DrawingFile = require('../public/js/drawing-file.js');
 const AI = require('../public/js/ai.js');
 const RNG = require('../public/js/rng.js');
-const { RoomStore } = require('../lib/rooms.js');
+const Rooms = require('../lib/rooms.js');
+const { RoomStore } = Rooms;
 const { GameConfig } = require('../public/js/config.js');
 
 let passed = 0;
@@ -972,6 +973,123 @@ section('房主設定與再玩一局');
   check('回房間後可以改規則', room.setSettings('a', { rounds: 2 }).ok && room.settings.rounds === 2);
   room.setReady('b', true);
   check('其他人準備好就能再開一局', room.start('a', now).ok && room.phase === 'playing');
+}
+
+section('結算後房主直接再來一局');
+{
+  const store = new RoomStore({ maxPlayers: 8 });
+  let now = 1000;
+  const room = store.create('a', { name: 'A', now }).room;
+  room.join('b', { name: 'B', role: 'player', now });
+  room.setReady('b', true);
+  check('對局還沒結束不能再來一局', !room.rematch('a', now).ok);
+  room.start('a', now);
+  let guard = 0;
+  while (room.phase === 'playing' && guard++ < 400) {
+    now += 5000;
+    if (room.state && room.state.phase === 'picking') room.pickWord(room.state.drawerId, room.state.choices[0], now);
+    room.tick(now);
+  }
+  check('先打完一局', room.phase === 'finished');
+  check('結算時房主的投影帶著 rematch 權限', room.viewFor('a', now).you.can.rematch === true);
+  check('非房主沒有 rematch 權限', room.viewFor('b', now).you.can.rematch === false);
+  check('非房主不能再來一局', !room.rematch('b', now).ok && room.phase === 'finished');
+  const seedBefore = room.seed;
+  const again = room.rematch('a', now);
+  check('房主再來一局會直接開打', again.ok && room.phase === 'playing' && !!room.state, again.error);
+  check('新的一局分數歸零、換新種子', room.state.players.every((p) => p.score === 0) && room.seed !== seedBefore);
+  check('新的一局還是原班人馬', room.state.players.length === 2);
+
+  /* 只剩一個玩家時不能直接再來一局，房間也不會卡在奇怪的狀態 */
+  guard = 0;
+  while (room.phase === 'playing' && guard++ < 400) {
+    now += 5000;
+    if (room.state && room.state.phase === 'picking') room.pickWord(room.state.drawerId, room.state.choices[0], now);
+    room.tick(now);
+  }
+  room.leave('b', now);
+  const solo = room.rematch('a', now);
+  check('只剩一位玩家不能再來一局', !solo.ok && solo.error === 'srv.err.needPlayers' && room.phase === 'finished', solo.error);
+}
+
+section('投票踢人');
+{
+  const store = new RoomStore({ maxPlayers: 8 });
+  let t = 1000;
+  const room = store.create('a', { name: 'A', now: t }).room;
+  room.join('b', { name: 'B', role: 'player', now: t });
+  check('兩人房不能發起投票', room.startKick('a', 'b', t).error === 'srv.err.kickNeedThree');
+  room.join('c', { name: 'C', role: 'player', now: t });
+  room.join('d', { name: 'D', role: 'player', now: t });
+  room.join('w', { name: 'W', role: 'spectator', now: t });
+
+  check('不能對自己發起', room.startKick('a', 'a', t).error === 'srv.err.kickBadTarget');
+  check('不能對觀戰者發起', room.startKick('a', 'w', t).error === 'srv.err.kickBadTarget');
+  check('觀戰者不能發起', room.startKick('w', 'b', t).error === 'srv.err.kickPlayersOnly');
+  check('四人房可以發起投票的人有 kick 權限', room.viewFor('a', t).you.can.kick === true);
+
+  const first = room.startKick('a', 'd', t);
+  check('發起成功，發起人自動算一票但還沒過半', first.ok && !first.kicked && room.kickVote && room.kickVote.yes.size === 1);
+  const view = room.viewFor('b', t).room.kick;
+  check('投影帶著票數與門檻（3 位投票者要 2 票）', !!view && view.yes === 1 && view.need === 2 && view.voted === false, JSON.stringify(view));
+  check('投票進行中不能再開一場', room.startKick('b', 'c', t).error === 'srv.err.kickBusy');
+  check('被投票的人不能投', room.voteKick('d', t).error === 'srv.err.kickPlayersOnly');
+  check('觀戰者不能投', room.voteKick('w', t).error === 'srv.err.kickPlayersOnly');
+  check('被投票的人看得到投票但沒有投票權', room.viewFor('d', t).you.can.voteKick === false);
+  check('發起人不能重複投', room.viewFor('a', t).you.can.voteKick === false);
+
+  const second = room.voteKick('b', t);
+  check('第二票過半，人被請出去', second.ok && second.kicked === 'd' && !room.member('d') && room.kickVote === null, JSON.stringify(second));
+  check('被請出去會留下紀錄', room.feed.some((f) => f.key === 'srv.feed.kicked' && f.params.name === 'D'));
+  const back = room.join('d', { name: 'D', role: 'player', now: t + 1000 });
+  check('被踢的人 5 分鐘內進不來', !back.ok && back.code === 'kicked' && back.params.min === 5, JSON.stringify(back));
+  check('被踢的人當觀戰者也進不來', !room.join('d', { name: 'D', role: 'spectator', now: t + 1000 }).ok);
+  check('時間到之後可以再進來', room.join('d', { name: 'D', role: 'player', now: t + Rooms.KICK_BAN_MS + 1 }).ok);
+
+  /* 冷卻與逾時 */
+  check('同一人 60 秒內不能再發起', room.startKick('a', 'c', t + 1000).error === 'srv.err.kickCooldown');
+  t += Rooms.KICK_COOLDOWN_MS + Rooms.KICK_BAN_MS + 10;
+  check('冷卻過後可以再發起', room.startKick('a', 'c', t).ok && !!room.kickVote);
+  store.sweep(t + Rooms.KICK_VOTE_MS - 1);
+  check('時間還沒到投票還在', !!room.kickVote);
+  const swept = store.sweep(t + Rooms.KICK_VOTE_MS);
+  check('30 秒沒過半就作廢', room.kickVote === null && !!room.member('c') && swept.changed.indexOf(room) >= 0);
+  check('作廢會留下紀錄', room.feed.some((f) => f.key === 'srv.feed.kickFailed' && f.params.name === 'C'));
+
+  /* 投票中有人離開 */
+  t += Rooms.KICK_COOLDOWN_MS + 10;
+  room.startKick('b', 'c', t);
+  room.leave('c', t);
+  check('被投票的人自己離開，投票就取消', room.kickVote === null);
+  room.join('c', { name: 'C', role: 'player', now: t });
+  t += Rooms.KICK_COOLDOWN_MS + 10;
+  room.startKick('b', 'c', t);          // 投票者 a、b、d，需要 2 票，目前 b 一票
+  room.leave('d', t);                   // 投票者剩 a、b，仍需要 2 票
+  check('投票者離開後門檻重算但還沒過', store.sweep(t + 1).kicked.length === 0 && !!room.kickVote);
+  room.leave('a', t);                   // 投票者只剩 b，1 票就過半
+  const done = store.sweep(t + 2);
+  check('投票者離開後剛好過半，定時工作把人請出去', done.kicked.length === 1 && done.kicked[0].id === 'c' && !room.member('c'), JSON.stringify(done.kicked.map((k) => k.id)));
+}
+
+section('對局中踢掉畫家');
+{
+  const store = new RoomStore({ maxPlayers: 8 });
+  const t = 1000;
+  const room = store.create('a', { name: 'A', now: t }).room;
+  room.join('b', { name: 'B', role: 'player', now: t });
+  room.join('c', { name: 'C', role: 'player', now: t });
+  room.setReady('b', true);
+  room.setReady('c', true);
+  room.start('a', t);
+  const drawer = room.state.drawerId;
+  const others = ['a', 'b', 'c'].filter((id) => id !== drawer);
+  const turnBefore = room.state.turnNo;
+  room.startKick(others[0], drawer, t + 100);
+  const r = room.voteKick(others[1], t + 200);
+  check('對局中可以把畫家請出去', r.ok && r.kicked === drawer && !room.member(drawer));
+  check('畫家被請出去後對局繼續、換下一題', room.phase === 'playing' && room.state.players.length === 2 &&
+    (room.state.turnNo !== turnBefore || room.state.phase === 'reveal'), room.state.phase + '/' + room.state.turnNo);
+  check('被請出去的是房主時房主會換人', room.hostId !== drawer && !!room.member(room.hostId));
 }
 
 section('一直有人中途加入，最後順位就一直往後移');
