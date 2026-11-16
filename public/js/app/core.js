@@ -9,9 +9,9 @@
  */
 /* 原本是單一檔案 app.js，依功能拆成 js/app/ 底下的 ES module；入口是 main.js。 */
 
-import { modals } from './modal.js?v=118a96abdb';
-import { renderRecentWorks } from './menus.js?v=118a96abdb';
-import { layoutStage } from './canvas.js?v=118a96abdb';
+import { modals } from './modal.js?v=1bfd7253e7';
+import { renderRecentWorks } from './menus.js?v=1bfd7253e7';
+import { layoutStage } from './canvas.js?v=1bfd7253e7';
 
 var w = window;
 
@@ -45,6 +45,7 @@ export var app = {
   inviteToken: null,
   inviteUrl: '',
   chatDraft: '',                  // 聊天室打到一半的字，投影更新時用來保留輸入框內容
+  dismissedKickVote: '',              // 僅收起目前這場投票提示，不影響票數
   ruleMenuOpen: null,              // 遊戲規則自訂下拉選單：哪個欄位（set-rounds／set-drawsec／set-diff）展開中
   ruleFocus: null,                 // 卡片更新完要把焦點放到哪：{ field, target: 'btn' | 'opt' }
   roomCreate: { roomName: '', rounds: 2, drawSec: 90, diff: 0 },

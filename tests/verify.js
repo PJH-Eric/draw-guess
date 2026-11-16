@@ -900,6 +900,31 @@ section('投票踢人');
   check('投票者離開後剛好過半，定時工作把人請出去', done.kicked.length === 1 && done.kicked[0].id === 'c' && !room.member('c'), JSON.stringify(done.kicked.map((k) => k.id)));
 }
 
+section('不同意票與一人一票');
+{
+  const store = new RoomStore({ maxPlayers: 8 });
+  const t = 1000;
+  const room = store.create('a', { name: 'A', now: t }).room;
+  for (const id of ['b', 'c', 'd']) room.join(id, { name: id, role: 'player', now: t });
+  room.join('w', { name: 'Watcher', role: 'spectator', now: t });
+  room.startKick('a', 'd', t);
+  check('不同意票可以送出', room.voteKick('b', t, false).ok);
+  const vote = room.viewFor('b', t);
+  check('不同意只增加反對票，不增加同意票', vote.room.kick.yes === 1 && vote.room.kick.no === 1);
+  check('不同意後標記本人選擇並停止投票權', vote.room.kick.voted && vote.room.kick.choice === 'no' && !vote.you.can.voteKick);
+  room.voteKick('b', t, true);
+  check('不能改票或重複計票', room.kickTally().yes === 1 && room.kickTally().no === 1);
+  check('無效選擇不會被當成同意', room.voteKick('c', t, 'false').error === 'srv.err.kickChoice' && room.kickTally().yes === 1);
+  check('觀戰者與投票對象不能投不同意', !room.voteKick('w', t, false).ok && !room.voteKick('d', t, false).ok);
+  room.voteKick('c', t, false);
+  check('不同意票過半不會踢人', !!room.member('d') && room.kickTally().no === 2 && !!room.kickVote);
+  room.leave('b', t);
+  check('離開房間會移除不同意票', !room.kickVote.no.has('b') && room.kickTally().no === 1);
+  store.sweep(t + Rooms.KICK_VOTE_MS);
+  check('倒數結束未過半同意，投票不成立', !room.kickVote && !!room.member('d'));
+  check('結束後不能再投不同意', room.voteKick('c', t + Rooms.KICK_VOTE_MS, false).error === 'srv.err.kickNoVote');
+}
+
 section('對局中踢掉畫家');
 {
   const store = new RoomStore({ maxPlayers: 8 });

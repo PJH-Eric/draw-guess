@@ -1,9 +1,9 @@
 /* ===== app/render.js — 對局畫面渲染 ===== */
 
-import { $, D, S, app, esc, secsLeft } from './core.js?v=118a96abdb';
-import { renderReference } from './modal.js?v=118a96abdb';
-import { sizeCanvas } from './canvas.js?v=118a96abdb';
-import { renderAside, renderControls, renderOverlay } from './overlay.js?v=118a96abdb';
+import { $, D, S, app, esc, secsLeft } from './core.js?v=1bfd7253e7';
+import { renderReference } from './modal.js?v=1bfd7253e7';
+import { sizeCanvas } from './canvas.js?v=1bfd7253e7';
+import { renderAside, renderControls, renderOverlay } from './overlay.js?v=1bfd7253e7';
 
 var w = window;
 
@@ -89,13 +89,29 @@ export function render() {
 export function renderKickBanner() {
   var v = app.view;
   var k = app.mode === 'online' && v && v.room && !v.room.closed ? v.room.kick : null;
-  var box = $('kick-banner');
-  if (!k) { box.hidden = true; return; }
-  var secs = Math.max(0, secsLeft(k.endsAt));
-  $('kick-text').textContent = w.I18N.t('kick.banner', { by: k.byName, name: k.targetName, yes: k.yes, need: k.need, s: secs }) +
-    (v.you.can.voteKick ? '' : ' ' + w.I18N.t(k.targetId === v.you.id ? 'kick.target' : (k.voted ? 'kick.voted' : 'kick.watch')));
+  var box = $('kick-banner'), reopen = $('b-kick-open');
+  if (!k) { box.hidden = true; reopen.hidden = true; return; }
+  var key = v.room.code + ':' + k.targetId + ':' + k.endsAt;
+  var collapsed = app.dismissedKickVote === key;
+  box.hidden = collapsed;
+  reopen.hidden = !collapsed;
+  var aside = $('game-aside');
+  reopen.dataset.drawer = String(!!(aside && aside.classList.contains('open') && w.getComputedStyle(aside).position === 'fixed'));
+  function text(id, value) {
+    var element = $(id);
+    if (element.textContent !== value) element.textContent = value;
+  }
+  text('kick-timer', w.I18N.t('kick.timeLeft', { s: Math.max(0, secsLeft(k.endsAt)) }));
+  text('kick-subject', w.I18N.t('kick.subject', { name: k.targetName }));
+  text('kick-byline', w.I18N.t('kick.startedBy', { name: k.byName, need: k.need }));
+  text('kick-count-yes', w.I18N.t('kick.countYes', { n: k.yes }));
+  text('kick-count-no', w.I18N.t('kick.countNo', { n: k.no || 0 }));
+  var status = v.you.can.voteKick ? 'kick.prompt' : (k.targetId === v.you.id ? 'kick.target' :
+    (k.voted ? (k.choice === 'no' ? 'kick.declined' : 'kick.voted') : 'kick.watch'));
+  text('kick-text', w.I18N.t(status));
+  $('kick-text').dataset.choice = k.choice || '';
   $('b-kick-yes').hidden = !v.you.can.voteKick;
-  box.hidden = false;
+  $('b-kick-no').hidden = !v.you.can.voteKick;
 }
 
 export function updateTimers() {

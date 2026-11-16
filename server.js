@@ -515,8 +515,15 @@ io.on('connection', (socket) => {
     afterKick(room, res);
   }));
 
-  socket.on('room:kickVote', withRoom((room) => {
-    const res = room.voteKick(socket.data.clientId, now());
+  socket.on('room:kickVote', withRoom((room, p) => {
+    const res = room.voteKick(socket.data.clientId, now(), p.agree);
+    if (!res.ok) return fail(socket, res.error, res.code);
+    afterKick(room, res);
+  }));
+
+  /* 獨立事件避免新版前端向舊版伺服器送出反對時，被誤算成同意。 */
+  socket.on('room:kickDisagree', withRoom((room) => {
+    const res = room.voteKick(socket.data.clientId, now(), false);
     if (!res.ok) return fail(socket, res.error, res.code);
     afterKick(room, res);
   }));

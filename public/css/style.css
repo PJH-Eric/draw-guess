@@ -486,16 +486,31 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 
 /* ---------- 投票請玩家離開的橫幅 ---------- */
 .kick-banner{
-  position:absolute;z-index:45;left:50%;transform:translateX(-50%);
-  top:calc(var(--topbtn) + 18px + var(--safe-t));
-  width:max-content;max-width:calc(100% - 20px);
-  display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;
-  border:3px solid var(--ink);border-radius:18px;background:#FFF3E6;
-  padding:8px 12px;font-size:.86rem;font-weight:800;line-height:1.5;text-align:center;
-  box-shadow:0 5px 0 var(--shade-3)
+  position:absolute;z-index:95;left:50%;transform:translateX(-50%);
+  top:calc(var(--topbtn) + 18px + var(--safe-t));width:min(420px,calc(100% - 20px));
+  display:flex;flex-direction:column;align-items:stretch;gap:7px;
+  border:3px solid var(--ink);border-radius:22px;background:linear-gradient(145deg,#FFFDFA,#F7F0FF);
+  padding:10px 12px;font-weight:800;text-align:center;box-shadow:0 6px 0 var(--shade-3)
 }
-.kick-banner .kick-text{flex:1 1 200px;min-width:0;overflow-wrap:anywhere}
-.kick-banner .btn3d{flex:0 0 auto}
+.kick-head{display:flex;align-items:center;gap:8px}
+.kick-head h3{display:flex;align-items:center;gap:6px;flex:1;min-width:0;margin:0;font-size:.92rem;text-align:left;color:var(--grape-t)}
+.kick-timer{flex:0 0 auto;padding:4px 7px;border-radius:999px;background:var(--lemon);font-size:.72rem;white-space:nowrap;font-variant-numeric:tabular-nums}
+.kick-close{flex:0 0 46px;width:46px;height:46px;border:2px solid var(--ink);border-radius:50%;background:var(--rose);color:var(--ink);font:inherit;font-size:1.5rem;line-height:1;cursor:pointer}
+.kick-subject{font-size:1rem;line-height:1.35;overflow-wrap:anywhere}
+.kick-byline{margin:0;color:var(--ink-soft);font-size:.73rem;line-height:1.4;overflow-wrap:anywhere}
+.kick-counts{display:flex;gap:8px}
+.kick-counts>span{flex:1;min-width:0;padding:5px 6px;border:2px solid var(--line);border-radius:12px;font-size:.78rem;line-height:1.25;font-variant-numeric:tabular-nums}
+.kick-counts .kick-count-yes{background:var(--mint-tint);border-color:var(--mint-d)}
+.kick-counts .kick-count-no{background:var(--rose);border-color:var(--rose-d)}
+.kick-actions{display:flex;justify-content:center;gap:8px;max-width:100%}
+.kick-banner .btn3d{flex:1;min-width:0;min-height:48px}
+.kick-banner .kick-text{margin:0;min-width:0;color:var(--ink-soft);font-size:.72rem;line-height:1.4;overflow-wrap:anywhere}
+.kick-text[data-choice=yes]{color:var(--mint-t,#24745C)}
+.kick-text[data-choice=no]{color:var(--ink)}
+.kick-reopen{position:absolute;z-index:95;right:12px;top:calc(var(--topbtn) + 18px + var(--safe-t));min-height:46px;padding:8px 12px;border:3px solid var(--ink);border-radius:16px;background:var(--lemon);color:var(--ink);font:inherit;font-size:.82rem;font-weight:800;cursor:pointer;box-shadow:0 4px 0 var(--shade-2)}
+.kick-close:focus-visible,.kick-reopen:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
+.kick-reopen[data-drawer=true]{width:46px;height:46px;min-width:46px;right:8px;padding:4px;font-size:1.15rem}
+.kick-reopen[data-drawer=true] [data-i18n]{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 
 /* ---------- 結算：皇冠、彩帶 ---------- */
 .resultlist .rface{position:relative}

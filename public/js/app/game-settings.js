@@ -1,9 +1,10 @@
 /* ===== app/game-settings.js — 對局設定彈窗與邀請連結 ===== */
 
-import { $, Cfg, D, S, Sound, app, esc, toast } from './core.js?v=118a96abdb';
-import { askConfirm, askLeaveGame, makeModal, modals } from './modal.js?v=118a96abdb';
-import { doSkip } from './canvas.js?v=118a96abdb';
-import { renderOverlay } from './overlay.js?v=118a96abdb';
+import { $, Cfg, D, S, Sound, app, esc, toast } from './core.js?v=1bfd7253e7';
+import { askConfirm, askLeaveGame, makeModal, modals } from './modal.js?v=1bfd7253e7';
+import { doSkip } from './canvas.js?v=1bfd7253e7';
+import { renderOverlay } from './overlay.js?v=1bfd7253e7';
+import { renderKickBanner } from './render.js?v=1bfd7253e7';
 
 var w = window;
 
@@ -26,7 +27,25 @@ export function setupGameSettings() {
       if (button && !button.disabled) confirmKick(button.getAttribute('data-kick'));
     });
   });
-  $('b-kick-yes').addEventListener('click', function () { Sound.play('click'); w.Online.send('room:kickVote', {}); });
+  ['b-kick-yes', 'b-kick-no'].forEach(function (id) {
+    $(id).addEventListener('click', function () {
+      if (!app.view || !app.view.you.can.voteKick) return;
+      Sound.play('click');
+      w.Online.send(id === 'b-kick-yes' ? 'room:kickVote' : 'room:kickDisagree', {});
+    });
+  });
+  $('b-kick-close').addEventListener('click', function () {
+    var v = app.view, kick = v && v.room && v.room.kick;
+    if (!kick) return;
+    app.dismissedKickVote = v.room.code + ':' + kick.targetId + ':' + kick.endsAt;
+    renderKickBanner();
+    $('b-kick-open').focus();
+  });
+  $('b-kick-open').addEventListener('click', function () {
+    app.dismissedKickVote = '';
+    renderKickBanner();
+    $('b-kick-close').focus();
+  });
   $('gs-quit').addEventListener('click', function () {
     modals.game.close();
     askLeaveGame();

@@ -461,6 +461,7 @@ async function main() {
 
   /* ================= A. 各尺寸的版面檢查 ================= */
 
+  if (process.env.CHECK_SCOPE !== "online") {
   for (const v of VIEWPORTS.filter(function(v){return !process.env.CHECK_VIEWPORT || v.name===process.env.CHECK_VIEWPORT;})) {
     console.log('\n【' + v.name + ' ' + v.width + '×' + v.height + '】');
     await setViewport(v);
@@ -1160,6 +1161,8 @@ async function main() {
   check('單機流程沒有主控台錯誤', cdp.errors.length === 0, cdp.errors.slice(0, 2).join(' | '));
   cdp.errors.length = 0;
 
+  }
+
   /* ================= G. 線上三個分頁 ================= */
   console.log('\n【線上：房主 + 玩家 + 觀戰】');
   const hostTab = cdp;
@@ -1298,8 +1301,43 @@ async function main() {
   await hostTab.waitFor('DrawGuessApp.view.room.kick&&DrawGuessApp.view.room.kick.targetId==='+JSON.stringify(kickHello.id),5000,'確認後才發起投票');
   check('資訊欄確認後發起對指定玩家的投票',await hostTab.eval('return DrawGuessApp.view.room.kick.yes===1;'));
   await mateTab.waitFor('DrawGuessApp.view.you.can.voteKick',5000,'其他玩家可投票');
-  await mateTab.eval('document.getElementById("b-kick-yes").click();');
-  await hostTab.waitFor('!DrawGuessApp.view.room.kick&&DrawGuessApp.view.room.members.filter(function(m){return m.role==="player";}).length===2',5000,'過半數同意後移除指定玩家');
+  for(const viewport of VIEWPORTS) {
+    await mateTab.send('Emulation.setDeviceMetricsOverride',{width:viewport.width,height:viewport.height,deviceScaleFactor:viewport.dsf,mobile:viewport.mobile});
+    await mateTab.send('Page.bringToFront');
+    await sleep(200);
+    await mateTab.eval('if(!document.getElementById("game-aside").classList.contains("open"))document.getElementById("b-aside-toggle").click();');
+    const choices=await mateTab.eval('return ["b-kick-yes","b-kick-no"].map(function(id){var b=document.getElementById(id),r=b.getBoundingClientRect(),h=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return !b.hidden&&r.height>=46&&r.left>=0&&r.right<=innerWidth+1&&r.top>=0&&r.bottom<=innerHeight+1&&b.contains(h);});');
+    check(viewport.name+'：同意／不同意都可見且可點擊',choices.every(Boolean),JSON.stringify(choices));
+    const card=await mateTab.eval('var box=document.getElementById("kick-banner"),r=box.getBoundingClientRect(),x=document.getElementById("b-kick-close").getBoundingClientRect();return r.left>=0&&r.right<=innerWidth+1&&r.top>=0&&r.bottom<=innerHeight+1&&x.width>=46&&x.height>=46&&Array.from(document.querySelectorAll(".scroll-rail:not([hidden])")).every(function(rail){var t=rail.getBoundingClientRect(),cx=t.x+t.width/2,cy=t.y+t.height/2;return cx<r.left||cx>r.right||cy<r.top||cy>r.bottom||box.contains(document.elementFromPoint(cx,cy));});');
+    check(viewport.name+'：投票卡片與 X 完整顯示，背景滑軌不穿透',card);
+    await shot(viewport.name+'-投票同意與不同意',mateTab);
+    await mateTab.eval('document.getElementById("b-kick-close").click();');
+    check(viewport.name+'：X 只收起卡片不送票，保留再展開入口',await mateTab.eval('return document.getElementById("kick-banner").hidden&&!document.getElementById("b-kick-open").hidden&&DrawGuessApp.view.you.can.voteKick&&DrawGuessApp.view.room.kick.no===0&&document.activeElement.id==="b-kick-open";'));
+    check(viewport.name+'：收起投票後不遮住資訊欄的 X',await mateTab.eval('var b=document.getElementById("b-aside-close"),r=b.getBoundingClientRect();return b.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));'));
+    if(viewport.width===390)await shot('手機直向-投票已收起',mateTab);
+    await mateTab.eval('document.getElementById("b-kick-open").click();');
+    check(viewport.name+'：可重新展開且焦點返回 X',await mateTab.eval('return !document.getElementById("kick-banner").hidden&&document.activeElement.id==="b-kick-close";'));
+
+  }
+  await mateTab.send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:3,mobile:true});
+  await sleep(200);
+  const noButton=await mateTab.eval('var r=document.getElementById("b-kick-no").getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};');
+  await tap(mateTab,noButton.x,noButton.y);
+  await mateTab.waitFor('DrawGuessApp.view.room.kick&&DrawGuessApp.view.room.kick.choice==="no"',5000,'不同意票已送出');
+  await hostTab.waitFor('DrawGuessApp.view.room.kick&&DrawGuessApp.view.room.kick.no===1',5000,'不同意票同步');
+  check('不同意不增加贊成票，投過後兩個按鈕都收起',await mateTab.eval('return DrawGuessApp.view.room.kick.yes===1&&!DrawGuessApp.view.you.can.voteKick&&document.getElementById("b-kick-yes").hidden&&document.getElementById("b-kick-no").hidden&&document.getElementById("kick-text").textContent.indexOf("你已選擇不同意")>=0;'));
+  await shot('手機直向-已不同意',mateTab);
+  await mateTab.eval('if(document.getElementById("game-aside").classList.contains("open"))document.getElementById("b-aside-toggle").click();');
+  await mateTab.send('Emulation.setDeviceMetricsOverride',{width:1024,height:768,deviceScaleFactor:2,mobile:true});
+  const approver=require('socket.io-client').io(BASE,{transports:['websocket'],forceNew:true});
+  const approveAsk=(event,payload)=>new Promise((resolve,reject)=>approver.timeout(5000).emit(event,payload,(error,result)=>error?reject(error):resolve(result)));
+  await new Promise(resolve=>approver.once('connect',resolve));
+  await approveAsk('hello',{clientId:'browser-approve-'+Date.now(),name:'同意測試玩家'});
+  await approveAsk('room:join',{code:code,name:'同意測試玩家',role:'player'});
+  approver.emit('room:kickVote',{agree:true});
+  await hostTab.waitFor('!DrawGuessApp.view.room.kick&&!DrawGuessApp.view.room.members.some(function(m){return m.id==='+JSON.stringify(kickHello.id)+';})',5000,'贊成票過半後才移除玩家');
+  await approveAsk('room:leave',{});approver.disconnect();
+  await hostTab.waitFor('DrawGuessApp.view.room.members.filter(function(m){return m.role==="player";}).length===2',5000,'投票流程清理測試成員');
   kickClient.disconnect();
   await setViewport({width:1024,height:768,mobile:true,dsf:2});
   await hostTab.eval('if(document.getElementById("game-aside").classList.contains("open"))document.getElementById("b-aside-toggle").click();');

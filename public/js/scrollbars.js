@@ -31,7 +31,8 @@
     rail.tabIndex = 0;
     thumb.className = 'scroll-thumb';
     rail.appendChild(thumb);
-    d.body.appendChild(rail);
+    /* 與遊戲內容使用相同疊層，背景滑軌才不會穿透投票橫幅。 */
+    (target.closest('#app') || d.body).appendChild(rail);
     var item = { target: target, axis: axis, rail: rail, thumb: thumb, length: 0, size: 0, max: 0 };
     rail.addEventListener('pointerdown', function (ev) {
       if (ev.button !== 0) return;

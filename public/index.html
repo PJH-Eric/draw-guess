@@ -28,17 +28,17 @@
 <meta name="twitter:image:alt" content="你畫我猜 遊戲封面">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"你畫我猜","url":"https://pjh-eric.github.io/draw-guess/","description":"免費免下載的你畫我猜，輪流當畫家，用畫筆、形狀與油漆桶畫出題目，猜中答案搶積分。單機練習或開房間邀朋友同樂，支援觀戰與猜題紀錄，手機平板都能作畫。","applicationCategory":"GameApplication","operatingSystem":"Any","inLanguage":"zh-Hant","genre":"畫圖猜謎","offers":{"@type":"Offer","price":"0","priceCurrency":"TWD"},"image":"https://pjh-eric.github.io/draw-guess/assets/images/seo.webp","thumbnailUrl":"https://pjh-eric.github.io/draw-guess/assets/images/seo.webp","isPartOf":{"@type":"WebSite","url":"https://pjh-eric.github.io/game-lobby/"}}</script>
 <!--SEO:END-->
-<link rel="stylesheet" href="css/style.css?v=118a96abdb">
-<link rel="stylesheet" href="css/scrollbars.css?v=118a96abdb">
-<link rel="stylesheet" href="css/lobby-chat.css?v=118a96abdb">
-<link rel="stylesheet" href="css/latency.css?v=118a96abdb">
+<link rel="stylesheet" href="css/style.css?v=1bfd7253e7">
+<link rel="stylesheet" href="css/scrollbars.css?v=1bfd7253e7">
+<link rel="stylesheet" href="css/lobby-chat.css?v=1bfd7253e7">
+<link rel="stylesheet" href="css/latency.css?v=1bfd7253e7">
 
 <link rel="icon" type="image/png" sizes="96x96" href="favicon-96.png">
 <link rel="icon" type="image/svg+xml" sizes="any" href="favicon.svg">
 <link rel="shortcut icon" href="favicon.ico">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<link rel="stylesheet" href="css/server-outage.css?v=118a96abdb">
-<script src="js/server-outage.js?v=118a96abdb"></script>
+<link rel="stylesheet" href="css/server-outage.css?v=1bfd7253e7">
+<script src="js/server-outage.js?v=1bfd7253e7"></script>
 </head>
 <body>
 <div id="bgdeco" aria-hidden="true"></div>
@@ -408,10 +408,22 @@
         <!-- 房間設定／選題／結算／房間結束都疊在遊戲主區上。
              蓋住整個主區（不只畫布），房間設定這種內容比較多的面板才有地方放。 -->
         <!-- 投票請玩家離開：有投票進行中才出現，疊在房間設定／結算卡片上面 -->
-        <div class="kick-banner" id="kick-banner" role="status" aria-live="polite" hidden>
-          <span class="kick-text" id="kick-text"></span>
-          <button class="btn3d small" data-color="peach" id="b-kick-yes" type="button"><span data-i18n="kick.agree">同意</span></button>
-        </div>
+        <section class="kick-banner" id="kick-banner" role="region" aria-labelledby="kick-heading" hidden>
+          <div class="kick-head">
+            <h3 id="kick-heading"><span aria-hidden="true">🗳️</span> <span data-i18n="kick.action">投票踢出</span></h3>
+            <span class="kick-timer" id="kick-timer"></span>
+            <button class="kick-close" id="b-kick-close" type="button" aria-label="收起投票提示" data-i18n-attr="aria-label=kick.close">×</button>
+          </div>
+          <div class="kick-subject" id="kick-subject"></div>
+          <p class="kick-byline" id="kick-byline"></p>
+          <div class="kick-counts"><span class="kick-count-yes" id="kick-count-yes"></span><span class="kick-count-no" id="kick-count-no"></span></div>
+          <div class="kick-actions">
+            <button class="btn3d small" data-color="mint" id="b-kick-yes" type="button"><span data-i18n="kick.agree">同意</span></button>
+            <button class="btn3d small" data-color="peach" id="b-kick-no" type="button"><span data-i18n="kick.disagree">不同意</span></button>
+          </div>
+          <p class="kick-text" id="kick-text" role="status" aria-live="polite"></p>
+        </section>
+        <button class="kick-reopen" id="b-kick-open" type="button" aria-label="查看投票" data-i18n-attr="aria-label=kick.reopen" aria-controls="kick-banner" hidden><span aria-hidden="true">🗳️</span> <span data-i18n="kick.reopen">查看投票</span></button>
 
         <div class="stage-overlay" id="stage-overlay" hidden>
           <div class="overlay-card" id="overlay-card" tabindex="-1"></div>
@@ -623,30 +635,30 @@
   <div class="toast" id="toast" role="status" aria-live="assertive" hidden></div>
 </div>
 
-<script src="js/analytics.js?v=118a96abdb"></script>
-<script src="js/i18n.js?v=118a96abdb"></script>
+<script src="js/analytics.js?v=1bfd7253e7"></script>
+<script src="js/i18n.js?v=1bfd7253e7"></script>
 <!-- 介面字典只先載預設的繁中；其他語系與英文／簡中題庫用到才載入（js/lazy-packs.js） -->
-<script src="js/locales/ui.zh-Hant.js?v=118a96abdb"></script>
-<script src="js/lazy-packs.js?v=118a96abdb"></script>
-<script src="js/keyboard.js?v=118a96abdb"></script>
-<script src="js/config.js?v=118a96abdb"></script>
-<script src="js/rng.js?v=118a96abdb"></script>
-<script src="js/words.js?v=118a96abdb"></script>
-<script src="js/reference-path.js?v=118a96abdb"></script>
-<script src="js/reference-kit.js?v=118a96abdb"></script>
-<script src="js/reference-recipes.js?v=118a96abdb"></script>
-<script src="js/reference.js?v=118a96abdb"></script>
-<script src="js/meaning-reference.js?v=118a96abdb"></script>
-<script src="js/rules.js?v=118a96abdb"></script>
-<script src="js/drawing-file.js?v=118a96abdb"></script>
-<script src="js/storage.js?v=118a96abdb"></script>
-<script src="js/audio.js?v=118a96abdb"></script>
-<script src="js/svgui.js?v=118a96abdb"></script>
-<script src="js/paint.js?v=118a96abdb"></script>
-<script src="js/latency.js?v=118a96abdb" data-skin="draw-guess"></script>
-<script src="js/lobby-chat.js?v=118a96abdb"></script>
-<script src="js/online.js?v=118a96abdb"></script>
-<script type="module" src="js/app/main.js?v=118a96abdb"></script>
+<script src="js/locales/ui.zh-Hant.js?v=1bfd7253e7"></script>
+<script src="js/lazy-packs.js?v=1bfd7253e7"></script>
+<script src="js/keyboard.js?v=1bfd7253e7"></script>
+<script src="js/config.js?v=1bfd7253e7"></script>
+<script src="js/rng.js?v=1bfd7253e7"></script>
+<script src="js/words.js?v=1bfd7253e7"></script>
+<script src="js/reference-path.js?v=1bfd7253e7"></script>
+<script src="js/reference-kit.js?v=1bfd7253e7"></script>
+<script src="js/reference-recipes.js?v=1bfd7253e7"></script>
+<script src="js/reference.js?v=1bfd7253e7"></script>
+<script src="js/meaning-reference.js?v=1bfd7253e7"></script>
+<script src="js/rules.js?v=1bfd7253e7"></script>
+<script src="js/drawing-file.js?v=1bfd7253e7"></script>
+<script src="js/storage.js?v=1bfd7253e7"></script>
+<script src="js/audio.js?v=1bfd7253e7"></script>
+<script src="js/svgui.js?v=1bfd7253e7"></script>
+<script src="js/paint.js?v=1bfd7253e7"></script>
+<script src="js/latency.js?v=1bfd7253e7" data-skin="draw-guess"></script>
+<script src="js/lobby-chat.js?v=1bfd7253e7"></script>
+<script src="js/online.js?v=1bfd7253e7"></script>
+<script type="module" src="js/app/main.js?v=1bfd7253e7"></script>
 <!--SEO:GAMEPLAY-->
 <noscript><div class="seo-gameplay"><section lang="zh-Hant">
 <h2>你畫我猜</h2>
@@ -667,9 +679,9 @@
 <p><strong>How to play: </strong>The artist draws on the canvas; guessers type their answers</p>
 </section></div></noscript>
 <!--SEO:GAMEPLAY:END-->
-  <script defer src="js/locales/result-share.js?v=118a96abdb"></script>
-  <script defer src="js/result-share.js?v=118a96abdb"></script>
-  <script defer src="js/dropdowns.js?v=118a96abdb"></script>
-  <script defer src="js/scrollbars.js?v=118a96abdb"></script>
+  <script defer src="js/locales/result-share.js?v=1bfd7253e7"></script>
+  <script defer src="js/result-share.js?v=1bfd7253e7"></script>
+  <script defer src="js/dropdowns.js?v=1bfd7253e7"></script>
+  <script defer src="js/scrollbars.js?v=1bfd7253e7"></script>
 </body>
 </html>
