@@ -8,7 +8,6 @@ const Rules = require('../public/js/rules.js');
 const topics = Words.all();
 let available = 0;
 for (const word of topics) {
-  const before = JSON.stringify(word.draw);
   const strokes = Reference.get(word.id);
   assert.ok(strokes, word.id + ' must have a game-drawn reference');
   available++;
@@ -25,11 +24,6 @@ for (const word of topics) {
     (Reference.svg(word.id, step).match(/<path /g) || []).length;
   assert.ok(paths(1) <= paths(2) && paths(2) <= paths(3));
   assert.equal(paths(3), strokes.length);
-  assert.equal(
-    JSON.stringify(word.draw),
-    before,
-    'References must not modify gameplay recipes',
-  );
 }
 const idFor = (text) => Words.all().find((w) => w.text === text).id;
 assert.notDeepEqual(Reference.get(idFor('棒球')), Reference.get('soccer'));

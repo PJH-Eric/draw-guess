@@ -471,10 +471,7 @@
     if (Recipes && Recipes[id]) return composed(Recipes[id]);
     if (recipes[word.text])
       return [].concat.apply([], recipes[word.text].map(pointsOf));
-    var strokes = Words.strokesOf(id);
-    // Expanded recipes end with a small topic-bank marker, not part of the drawing.
-    if (id.indexOf('w-') === 0 && strokes.length > 3) return strokes.slice(0, -3);
-    return strokes;
+    return null;
   }
 
   /* ---------- Realistic rendering: colour, light and depth over the same strokes ---------- */

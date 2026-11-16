@@ -1,7 +1,7 @@
 /* ===== app/modal.js — 彈窗、範本與確認對話框 ===== */
 
-import { $, D, S, Sound, Words, app, esc, navChanged } from './core.js?v=9bf44e6972';
-import { leaveGame } from './lobby.js?v=9bf44e6972';
+import { $, D, S, Sound, Words, app, esc, navChanged } from './core.js?v=3fde9877f8';
+import { leaveGame } from './lobby.js?v=3fde9877f8';
 
 var w = window;
 

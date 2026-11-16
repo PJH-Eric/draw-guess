@@ -88,36 +88,6 @@ section('題庫（words.js）');
   const diffs = new Set(Words.LIST.map((w) => w.diff));
   check('三種難度都有題目', diffs.has(1) && diffs.has(2) && diffs.has(3), [...diffs].join(','));
 
-  let badStrokes = [];
-  let badFeatures = [];
-  let outOfBox = [];
-  for (const w of Words.LIST) {
-    const strokes = Words.strokesOf(w.id);
-    if (strokes.length < 2) badStrokes.push(w.id);
-    if (!Words.featuresOf(w.id)) badFeatures.push(w.id);
-    for (const s of strokes) {
-      for (const v of s.p) {
-        if (!isFinite(v) || v < -1 || v > Words.BOX + 1) { outOfBox.push(w.id); break; }
-      }
-    }
-  }
-  check('每一題都畫得出至少 2 筆', badStrokes.length === 0, badStrokes.slice(0, 5).join(','));
-  check('每一題都算得出形狀特徵', badFeatures.length === 0, badFeatures.slice(0, 5).join(','));
-  check('所有座標都在 0..1000 內', outOfBox.length === 0, outOfBox.slice(0, 5).join(','));
-
-  /* 特徵要有鑑別力：每一題的配方跟自己最像 */
-  let top1 = 0;
-  for (const w of Words.LIST) {
-    const f = Words.featuresOf(w.id);
-    let best = null, bestD = Infinity;
-    for (const x of Words.LIST) {
-      const d = Words.distance(f, Words.featuresOf(x.id));
-      if (d < bestD) { bestD = d; best = x.id; }
-    }
-    if (best === w.id) top1 += 1;
-  }
-  check('配方特徵自我識別率 100%', top1 === Words.LIST.length, top1 + '/' + Words.LIST.length);
-
   const sun = Words.byId('sun');
   check('答案比對：完全相同算對', Words.match(sun, ' 太陽 ') === 'hit');
   check('答案比對：別名算對', Words.match(sun, '日') === 'hit');

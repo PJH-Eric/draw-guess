@@ -195,7 +195,7 @@ draw-guess/
 │       ├── locales/ui.*.js    由 locales.js 拆出來的各語系檔（產物）；只有繁中開頁就載，其餘用到才載
 │       ├── lazy-packs.js      語系與英文／簡中題庫「用到才載入」
 │       ├── rng.js             可注入的種子亂數
-│       ├── words.js           題庫 + 形狀配方 + 形狀特徵比對
+│       ├── words.js           題庫（文字、別名、分類、難度）
 │       ├── rules.js           規則核心（狀態 + 行動 → 新狀態）
 │       ├── paint.js           小畫家風格的畫布引擎
 │       ├── svgui.js           立體 SVG 按鈕、LOGO、頭像、工具圖示

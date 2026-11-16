@@ -50,7 +50,6 @@
     MAX_TOTAL_POINTS: 30000, // 一題全部點數上限
     GUESS_MAX: 40,           // 猜測字數上限（英文題目最長 32 個字元，要放得下）
     HINTS: 3,                      // 畫家手上的提示張數：字數 → 種類 → 揭一個字
-    AI_HINT_AT: [0.18, 0.40, 0.62],// 電腦當畫家時，依已用時間比例自動按提示
     BOX: Words.BOX
   };
 
@@ -293,36 +292,6 @@
       f: (spec.shape && tool !== 'line' && raw.f) ? 1 : 0,
       p: out
     };
-  }
-
-  /* --------------------------------------------------------------
-     把任何一筆（含矩形、橢圓）攤平成折線。
-     電腦對手看畫猜題、以及任何需要「形狀」的計算都走這裡，
-     這樣玩家用哪個工具畫的都能一視同仁。油漆桶沒有輪廓，會被略過。
-     -------------------------------------------------------------- */
-  function toPolylines(strokes) {
-    var out = [];
-    for (var i = 0; i < (strokes || []).length; i++) {
-      var st = strokes[i];
-      if (!st || !st.p) continue;
-      var t = st.t || 'pen';
-      if (t === 'fill') continue;
-      if (t === 'rect') {
-        out.push({ p: [st.p[0], st.p[1], st.p[2], st.p[1], st.p[2], st.p[3], st.p[0], st.p[3], st.p[0], st.p[1]] });
-      } else if (t === 'ellipse') {
-        var cx = (st.p[0] + st.p[2]) / 2, cy = (st.p[1] + st.p[3]) / 2;
-        var rx = Math.abs(st.p[2] - st.p[0]) / 2, ry = Math.abs(st.p[3] - st.p[1]) / 2;
-        var pts = [];
-        for (var a = 0; a <= 24; a++) {
-          var ang = a / 24 * Math.PI * 2;
-          pts.push(cx + Math.cos(ang) * rx, cy + Math.sin(ang) * ry);
-        }
-        out.push({ p: pts });
-      } else {
-        out.push({ p: st.p });
-      }
-    }
-    return out;
   }
 
   function addStroke(state, playerId, raw) {
@@ -779,7 +748,6 @@
     beginTurn: beginTurn,
     pickWord: pickWord,
     sanitizeStroke: sanitizeStroke,
-    toPolylines: toPolylines,
     addStroke: addStroke,
     undoStroke: undoStroke,
     clearBoard: clearBoard,

@@ -684,10 +684,9 @@ async function main() {
       await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
       check(label + '：Escape 關閉並回到入口', await cdp.eval('return document.getElementById("reference-modal").getAttribute("aria-hidden")==="true" && document.activeElement.id==="b-reference";'));
     }
-    /* Expanded topics use the same pen-stroke recipes as the drawing game. */
+    /* 擴充題的範本一樣用遊戲筆畫（SVG 路徑）繪製 */
     const gameRecipeReferenceId = await cdp.eval(`var word=window.Words.all().find(function(item){
-      return item.id.indexOf('w-')===0 && !window.MeaningReference.get(item.id) &&
-        window.Words.strokesOf(item.id).length>=3;
+      return item.id.indexOf('w-')===0 && !window.MeaningReference.get(item.id);
     }); return word && word.id;`);
     check(v.name + '：擴充題有遊戲筆畫範本', !!gameRecipeReferenceId, '找不到可驗證的擴充題');
     if (gameRecipeReferenceId) {

@@ -268,9 +268,7 @@
     if (!word) return null;
     var manual = DrawingReference.get(word.id);
     if (manual) return manual;
-    var strokes = Words.strokesOf(word.id);
-    if (word.id.indexOf('w-') === 0 && strokes.length > 3) strokes = strokes.slice(0, -3);
-    return strokes;
+    return null;
   }
 
   var PEOPLE = /person|man|farmer|soldier|archer|visitor|student|parent|lord|expert|musician|hands|feet|face|eyes?|mouth|ears/;
