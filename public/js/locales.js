@@ -812,7 +812,7 @@ I18N.register('zh-Hant', {
   "text.309": "). Please check that the server is running.",
   "text.310": "Cannot connect to the game server (",
   "text.311": "No game server address is configured.",
-  "text.312": "font-family=\"Yuanti TC, PingFang TC, Microsoft JhengHei, Noto Sans TC, sans-serif\">Draw &amp; Guess</text>",
+  "text.312": "font-family=\"Yuanti TC, PingFang TC, Microsoft JhengHei, Noto Sans TC, sans-serif\" style=\"font-size:35px\" dy=\"-12\">Draw &amp; Guess</text>",
   "text.313": "<svg viewBox=\"0 0 520 190\" role=\"img\" aria-label=\"Draw &amp; Guess\">",
   "text.314": "Drawing board",
   "text.315": "Guess log",
@@ -1060,6 +1060,7 @@ I18N.register("zh-Hant", {
   "srv.feed.correct": "{name} 猜對了！",
   "srv.feed.done": "{name} 畫完了，可以猜囉！",
   "srv.feed.drawerGone": "畫家 {name} 離線了。",
+  "srv.feed.hostMoved": "房主 {from} 離線了，先由 {to} 當房主。",
   "srv.feed.noWord": "畫家沒有選題，跳過這一題。",
   "srv.feed.reveal": "答案是「{word}」。",
   "srv.feed.tie": "{names} 同分獲勝！",
@@ -1084,6 +1085,7 @@ I18N.register("zh-Hant", {
   "srv.sum.turn": "第 {no}／{total} 題，畫家是 {name}。",
   "srv.closed.default": "房間已結束。",
   "srv.closed.empty": "所有玩家已離開，房間已結束。",
+  "srv.closed.idle": "房間太久沒有動靜，已自動結束。",
   "srv.closed.onlySpectators": "沒有真人玩家，房間已結束。",
   "lang.switchTo": "切換為英文（English）"
 }).register("en", {
@@ -1162,6 +1164,7 @@ I18N.register("zh-Hant", {
   "srv.feed.correct": "{name} guessed correctly!",
   "srv.feed.done": "{name} finished drawing. Try a guess!",
   "srv.feed.drawerGone": "Artist {name} disconnected.",
+  "srv.feed.hostMoved": "Host {from} went offline. {to} is the host for now.",
   "srv.feed.noWord": "No prompt was chosen. Turn skipped.",
   "srv.feed.reveal": "The answer is \"{word}\".",
   "srv.feed.tie": "{names} tied for the win!",
@@ -1186,6 +1189,7 @@ I18N.register("zh-Hant", {
   "srv.sum.turn": "Turn {no}/{total} · Artist: {name}.",
   "srv.closed.default": "The room has closed.",
   "srv.closed.empty": "All players left. Room closed.",
+  "srv.closed.idle": "The room was idle for too long and has closed.",
   "srv.closed.onlySpectators": "No human players remain. Room closed.",
   "lang.switchTo": "Switch to Traditional Chinese"
 });
@@ -1825,6 +1829,7 @@ I18N.register("zh-Hant", { "meta.title": "你畫我猜｜免費線上多人畫�
     "srv.feed.correct": "{name} 猜对了！",
     "srv.feed.done": "{name} 画完了，可以猜啰！",
     "srv.feed.drawerGone": "画家 {name} 离线了。",
+    "srv.feed.hostMoved": "房主 {from} 离线了，先由 {to} 当房主。",
     "srv.feed.noWord": "画家没有选题，跳过这一题。",
     "srv.feed.reveal": "答案是「{word}」。",
     "srv.feed.tie": "{names} 同分获胜！",
@@ -1849,6 +1854,7 @@ I18N.register("zh-Hant", { "meta.title": "你畫我猜｜免費線上多人畫�
     "srv.sum.turn": "第 {no}／{total} 题，画家是 {name}。",
     "srv.closed.default": "房间已结束。",
     "srv.closed.empty": "所有玩家已离开，房间已结束。",
+    "srv.closed.idle": "房间太久没有动静，已自动结束。",
     "srv.closed.onlySpectators": "没有真人玩家，房间已结束。",
     "lang.switchTo": "切换为英文（English）",
     "category.animal": "动物",
@@ -1895,16 +1901,19 @@ I18N.register("zh-Hant", { "meta.title": "你畫我猜｜免費線上多人畫�
 
 I18N.register('zh-Hant', {
   'category.select': '題目種類',
+  'wordlang.select': '題目語系',
   'scrollbar.label': '捲動內容',
   'category.all': '全部種類',
   'srv.err.categoryRange': '請選擇有效的題目種類。'
 }).register('zh-Hans', {
   'category.select': '题目种类',
+  'wordlang.select': '题目语系',
   'scrollbar.label': '滚动内容',
   'category.all': '全部种类',
   'srv.err.categoryRange': '请选择有效的题目种类。'
 }).register('en', {
   'category.select': 'Topic category',
+  'wordlang.select': 'Prompt language',
   'scrollbar.label': 'Scroll content',
   'category.all': 'All categories',
   'srv.err.categoryRange': 'Choose a valid topic category.'

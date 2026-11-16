@@ -11,6 +11,9 @@
  *   HOST                 監聽介面，預設 0.0.0.0
  *   GAME_ALLOWED_ORIGIN  允許連進來的前端來源，逗號分隔；* 代表不限制
  *   ROOM_TICK_MS         對局推進間隔（毫秒），預設 500
+ *   PING_INTERVAL_MS     連線存活探測間隔（毫秒），預設 10000
+ *   PING_TIMEOUT_MS      探測多久沒回應就判定斷線（毫秒），預設 10000
+ *   ROOM_IDLE_MS         等待／結算畫面閒置多久收掉房間（毫秒），預設 30 分鐘；0 = 不收
  */
 'use strict';
 
@@ -28,6 +31,8 @@ const { RoomStore, sanitizeName, str, num } = require('./lib/rooms.js');
 const PORT = Number(process.env.PORT || 3030);
 const HOST = process.env.HOST || '0.0.0.0';
 const TICK_MS = Math.max(100, Number(process.env.ROOM_TICK_MS || 500));
+const PING_INTERVAL_MS = Math.max(2000, Number(process.env.PING_INTERVAL_MS || 10000));
+const PING_TIMEOUT_MS = Math.max(2000, Number(process.env.PING_TIMEOUT_MS || 10000));
 const STARTED_AT = Date.now();
 
 /* 允許的前端來源：正式環境請明確設定，不要放著 * 不管 */
@@ -86,8 +91,11 @@ const io = new Server(server, {
     origin(origin, cb) { cb(null, originAllowed(origin)); },
     methods: ['GET', 'POST']
   },
-  pingInterval: 20000,
-  pingTimeout: 25000,
+  /* 存活偵測：每 PING_INTERVAL_MS 探一次，PING_TIMEOUT_MS 內沒回應就判定斷線。
+     以前是 20 秒＋25 秒，網路直接斷掉（進電梯、關螢幕）的人最久要 45 秒才會被標成離線，
+     其他人看到的在線名單與房間座位都是舊的；現在最久 20 秒。 */
+  pingInterval: PING_INTERVAL_MS,
+  pingTimeout: PING_TIMEOUT_MS,
   /* 一筆最多 400 個點，留寬裕一點的上限 */
   maxHttpBufferSize: 2e5
 });
@@ -97,7 +105,10 @@ const lobbyChat = require('./lib/lobby-chat.js').attachSocketIo(io);
 
 /* ------------------------------------------------------------ 狀態 */
 
-const store = new RoomStore({});
+const store = new RoomStore(
+  process.env.ROOM_IDLE_MS !== undefined && isFinite(Number(process.env.ROOM_IDLE_MS))
+    ? { idleMs: Math.max(0, Number(process.env.ROOM_IDLE_MS)) } : {}
+);
 
 /** roomCode -> Set<socket> */
 const roomSockets = new Map();

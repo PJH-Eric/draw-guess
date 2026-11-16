@@ -174,6 +174,63 @@
     });
   }
 
+  /* ------------------------------------------------------------ 存活檢查
+   * 手機切到背景、關螢幕、換網路之後，瀏覽器手上的連線常常已經是死的，
+   * 但要等到心跳逾時才會發現，這段時間畫面看起來連著、送出去的動作卻石沉大海。
+   * 回到前景或網路恢復時主動確認一次：
+   *   - 已經斷線、正在等下一次重試 → 不等退避時間，馬上重連
+   *   - 看起來連著 → 丟一個要回條的探測，PROBE_MS 內沒回就當它死了，直接重連
+   * 重連成功後照原本流程 hello → reconnected → 回到房間或重新訂閱大廳。 */
+  var PROBE_MS = 4000;
+  var probing = false;
+  var offlineMarked = false;
+
+  function interrupted(reason) {
+    return (globalThis.I18N ? globalThis.I18N.t("text.307") : "連線中斷（") + reason +
+      (globalThis.I18N ? globalThis.I18N.t("text.306") : "），正在重試…");
+  }
+
+  function forceReconnect(target) {
+    if (socket !== target) return;
+    setStatus('connecting', interrupted('probe'));
+    target.disconnect();
+    target.connect();
+  }
+
+  function probe() {
+    var target = socket;
+    if (!target || probing) return;
+    if (!target.connected) {
+      /* 首次連線還在進行中就不要打斷它；已經掉線在等重試的才立刻重來 */
+      if (status !== 'loading' && !(target.io && target.io._readyState === 'opening')) {
+        target.disconnect();
+        target.connect();
+      }
+      return;
+    }
+    probing = true;
+    target.timeout(PROBE_MS).emit('latency:ping', Date.now(), function (err) {
+      probing = false;
+      if (err) { forceReconnect(target); return; }
+      /* 瀏覽器報過離線、但這條連線其實撐過來了：把「重試中」的狀態改回已連線 */
+      if (offlineMarked && socket === target && target.connected) setStatus('connected');
+      offlineMarked = false;
+    });
+  }
+
+  function onResume() {
+    if (document.visibilityState === 'hidden') return;
+    probe();
+  }
+  document.addEventListener('visibilitychange', onResume);
+  w.addEventListener('pageshow', onResume);
+  w.addEventListener('online', onResume);
+  w.addEventListener('offline', function () {
+    if (!socket) return;
+    offlineMarked = status === 'connected';
+    setStatus('connecting', interrupted('offline'));
+  });
+
   function send(evt, payload, ack) {
     if (!socket || !socket.connected) {
       emitLocal('room:error', { message: (globalThis.I18N ? globalThis.I18N.t("text.301") : "目前沒有連線，動作沒有送出去。請等重新連線後再試。"), code: 'offline' });
@@ -201,6 +258,8 @@
     connect: connect,
     send: send,
     disconnect: disconnect,
+    /** 主動確認連線還活著（回到前景、網路恢復時會自動呼叫） */
+    probe: probe,
     isConnected: function () { return !!socket && socket.connected; },
     /** 換算成伺服器時間，用來算倒數 */
     now: function () { return Date.now() + timeOffset; },
