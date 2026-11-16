@@ -1,14 +1,14 @@
 /* ===== app/overlay.js — 疊層卡片：房間設定、選題、公布答案、結算 ===== */
 
-import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=3fde9877f8';
-import { askLeaveRoom, makeModal, modals } from './modal.js?v=3fde9877f8';
-import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=3fde9877f8';
-import { soloRefresh, soloStep, startSolo } from './solo.js?v=3fde9877f8';
-import { renderRecent } from './feed.js?v=3fde9877f8';
-import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=3fde9877f8';
-import { PHASE_LABEL, moodOf } from './render.js?v=3fde9877f8';
-import { copyText, newInvite, revokeInvite } from './game-settings.js?v=3fde9877f8';
-import { enterOnlineRoom, leaveGame, roomRuleChips, saveNick } from './lobby.js?v=3fde9877f8';
+import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=35d7919526';
+import { askLeaveRoom, makeModal, modals } from './modal.js?v=35d7919526';
+import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=35d7919526';
+import { soloRefresh, soloStep, startSolo } from './solo.js?v=35d7919526';
+import { renderRecent } from './feed.js?v=35d7919526';
+import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=35d7919526';
+import { PHASE_LABEL, moodOf } from './render.js?v=35d7919526';
+import { copyText, newInvite, revokeInvite } from './game-settings.js?v=35d7919526';
+import { enterOnlineRoom, leaveGame, roomRuleChips, saveNick } from './lobby.js?v=35d7919526';
 
 var w = window;
 

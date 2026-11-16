@@ -1,9 +1,9 @@
 /* ===== app/keys.js — 鍵盤快捷鍵 ===== */
 
-import { D, app } from './core.js?v=3fde9877f8';
-import { modals } from './modal.js?v=3fde9877f8';
-import { chooseTool, doRedo, doUndo } from './canvas.js?v=3fde9877f8';
-import { renderOverlay } from './overlay.js?v=3fde9877f8';
+import { D, app } from './core.js?v=35d7919526';
+import { modals } from './modal.js?v=35d7919526';
+import { chooseTool, doRedo, doUndo } from './canvas.js?v=35d7919526';
+import { renderOverlay } from './overlay.js?v=35d7919526';
 
 var w = window;
 
@@ -34,6 +34,9 @@ export function setupRuleMenuClose() {
   D.addEventListener('click', function (ev) {
     if (!app.ruleMenuOpen) return;
     if (ev.target.closest && ev.target.closest('.ruledd')) return;
+    var rail = ev.target.closest && ev.target.closest('.scroll-rail');
+    var region = rail && D.getElementById(rail.getAttribute('aria-controls'));
+    if (region && region.closest('.ruledd')) return;
     app.ruleMenuOpen = null;
     app.lastOverlayHtml = null;
     renderOverlay();

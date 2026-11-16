@@ -1,7 +1,7 @@
 /* ===== app/feed.js — 猜題紀錄與左側摘要欄 ===== */
 
-import { $, RECENT_MAX, app, esc } from './core.js?v=3fde9877f8';
-import { layoutStage } from './canvas.js?v=3fde9877f8';
+import { $, RECENT_MAX, app, esc } from './core.js?v=35d7919526';
+import { layoutStage } from './canvas.js?v=35d7919526';
 
 var w = window;
 
@@ -43,7 +43,7 @@ export function recentEvents() {
     out.push({
       at: m.at || 0,
       kind: m.kind === 'guess' ? 'guess' : (m.kind || 'info'),
-      get text() { return m.kind === 'guess' ? (m.from + (globalThis.I18N ? globalThis.I18N.t("text.202") : " 猜「") + m.text + '」') : m.text; },
+      text: m.kind === 'guess' ? (m.from + (w.I18N ? w.I18N.t("text.202") : " 猜「") + m.text + '」') : m.text,
       mine: !!(m.fromId && v && v.you && m.fromId === v.you.id)
     });
   }

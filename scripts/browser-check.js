@@ -406,7 +406,36 @@ async function main() {
 
   const cdp = await attach(firstTarget, '主分頁');
 
+  async function auditScrollbars(name, tab) {
+    await tab.send('Page.bringToFront');
+    await tab.eval('return new Promise(function(resolve){requestAnimationFrame(function(){requestAnimationFrame(resolve);});});');
+    const rails = await tab.eval(`return Array.from(document.querySelectorAll('.scroll-rail:not([hidden])')).map(function(rail){
+      var target=document.getElementById(rail.getAttribute('aria-controls'));
+      var openList=document.querySelector('.dropdown-list:not([hidden]),.ruledd-list');
+      if(openList&&!openList.contains(target)) return null;
+      var r=rail.getBoundingClientRect(),t=rail.firstElementChild.getBoundingClientRect();
+      var x=t.left+t.width/2,y=t.top+t.height/2,hit=document.elementFromPoint(x,y);
+      return {id:target.id,axis:rail.dataset.axis,x:x,y:y,
+        endX:rail.dataset.axis==='x'?r.right-3:x,endY:rail.dataset.axis==='y'?r.bottom-3:y,
+        reverse:rail.dataset.axis==='y'&&getComputedStyle(target).flexDirection==='column-reverse',
+        start:rail.dataset.axis==='y'?target.scrollTop:target.scrollLeft,
+        max:rail.dataset.axis==='y'?target.scrollHeight-target.clientHeight:target.scrollWidth-target.clientWidth,
+        reachable:hit===rail||rail.contains(hit),inside:r.left>=0&&r.top>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1};
+    }).filter(Boolean);`);
+    for (const rail of rails) {
+      check(name+'：'+rail.id+' '+rail.axis+' 滑軌在視窗內',rail.inside);
+      // 被更上層彈窗覆蓋的背景滑軌不應接收操作。
+      if (!rail.reachable) continue;
+      await drag(tab,{x:rail.x,y:rail.y},{x:rail.endX,y:rail.endY},4);
+      const result=await tab.eval('var t=document.getElementById('+JSON.stringify(rail.id)+');return {connected:!!t,hidden:t.hidden,value:t['+JSON.stringify(rail.axis==='y'?'scrollTop':'scrollLeft')+']};');
+      check(name+'：'+rail.id+' '+rail.axis+' 滑塊可拖曳且內容不收合',result.connected&&!result.hidden&&(rail.reverse?result.value+rail.max:result.value)>rail.max*.5);
+      await tab.eval('document.getElementById('+JSON.stringify(rail.id)+')['+JSON.stringify(rail.axis==='y'?'scrollTop':'scrollLeft')+']='+rail.start);
+      await sleep(40);
+    }
+  }
+
   async function shot(name, tab) {
+    await auditScrollbars(name,tab||cdp);
     try {
       const res = await (tab || cdp).send('Page.captureScreenshot', { format: 'png' });
       fs.writeFileSync(path.join(SHOTS, name.replace(/[\\/:*?"<>|]/g, '_') + '.png'), Buffer.from(res.data, 'base64'));
@@ -1251,6 +1280,8 @@ async function main() {
     await hostTab.eval('return window.DrawGuessApp.view.room.settings.rounds === 1;'));
   await hostTab.eval('window.__probe.click("#overlay-card .ruledd-btn[data-field=set-category]"); return 1;');
   await hostTab.waitFor('document.querySelector("#overlay-card .ruledd-opt[data-field=set-category][data-v=food]")', 3000, '種類選單展開');
+  await sleep(100);
+  await auditScrollbars('房間種類選單',hostTab);
   await hostTab.eval('window.__probe.click("#overlay-card .ruledd-opt[data-field=set-category][data-v=food]"); return 1;');
   await mateTab.waitFor('window.DrawGuessApp.view.room.settings.category === "food"', 4000, '種類設定同步');
   check('房主更改種類後其他玩家同步收到食物設定', await hostTab.eval('return window.DrawGuessApp.view.room.settings.category === "food";'));

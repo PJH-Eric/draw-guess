@@ -448,8 +448,9 @@
       const h = log.clientHeight, sh = log.scrollHeight;
       if (!h || sh <= h + 1) { track.hidden = true; return; }
       track.hidden = false;
-      const th = Math.max(28, h * h / sh);
-      const top = (h - th) * (log.scrollTop / (sh - h));
+      const length = track.clientHeight;
+      const th = Math.min(length, Math.max(28, length * h / sh));
+      const top = (length - th) * (Math.max(0, Math.min(sh - h, log.scrollTop)) / (sh - h));
       thumb.style.height = th + 'px';
       thumb.style.transform = 'translateY(' + top + 'px)';
     }
@@ -468,15 +469,16 @@
       if (!drag) return;
       const h = log.clientHeight, sh = log.scrollHeight;
       const th = thumb.offsetHeight;
-      log.scrollTop = drag.top + (e.clientY - drag.y) * ((sh - h) / Math.max(1, h - th));
+      log.scrollTop = drag.top + (e.clientY - drag.y) * ((sh - h) / Math.max(1, track.clientHeight - th));
     });
     const endDrag = () => { drag = null; thumb.classList.remove('lc-drag'); };
     thumb.addEventListener('pointerup', endDrag);
     thumb.addEventListener('pointercancel', endDrag);
+    thumb.addEventListener('lostpointercapture', endDrag);
     track.addEventListener('pointerdown', (e) => {
       if (e.target !== track) return;
-      const r = track.getBoundingClientRect();
-      log.scrollTop += (e.clientY < r.top + thumb.offsetTop ? -1 : 1) * log.clientHeight * 0.9;
+      const r = thumb.getBoundingClientRect();
+      log.scrollTop += (e.clientY < r.top ? -1 : 1) * log.clientHeight * 0.9;
     });
     if (root.ResizeObserver) new root.ResizeObserver(() => updateThumb()).observe(log);
 

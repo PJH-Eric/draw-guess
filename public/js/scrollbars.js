@@ -72,11 +72,13 @@
   }
 
   function position(item) {
-    return item.axis === 'y' ? item.target.scrollTop : item.target.scrollLeft;
+    var value = item.axis === 'y' ? item.target.scrollTop : item.target.scrollLeft;
+    return item.reverse ? item.max + value : value;
   }
 
   function setPosition(item, value) {
-    item.target[item.axis === 'y' ? 'scrollTop' : 'scrollLeft'] = Math.max(0, Math.min(item.max, value));
+    var next = Math.max(0, Math.min(item.max, value));
+    item.target[item.axis === 'y' ? 'scrollTop' : 'scrollLeft'] = item.reverse ? next - item.max : next;
     schedule();
   }
 
@@ -105,8 +107,11 @@
     rail.hidden = !/^(auto|scroll)$/.test(overflow) || total <= client + 1 || !target.getClientRects().length;
     if (rail.hidden) return;
     var rect = target.getBoundingClientRect();
-    var bounds = { left: Math.max(0, rect.left), top: Math.max(0, rect.top),
-      right: Math.min(w.innerWidth, rect.right), bottom: Math.min(w.innerHeight, rect.bottom) };
+    /* 滑軌對齊內容可視區，避開卡片邊框。 */
+    var bounds = { left: Math.max(0, rect.left + target.clientLeft),
+      top: Math.max(0, rect.top + target.clientTop),
+      right: Math.min(w.innerWidth, rect.left + target.clientLeft + target.clientWidth),
+      bottom: Math.min(w.innerHeight, rect.top + target.clientTop + target.clientHeight) };
     var z = 1;
     for (var parent = target; parent && parent !== d.documentElement; parent = parent.parentElement) {
       var cs = w.getComputedStyle(parent);
@@ -123,6 +128,8 @@
     rail.hidden = item.length < 30 || bounds.right - bounds.left < 14 || bounds.bottom - bounds.top < 14 || style.visibility === 'hidden';
     if (rail.hidden) return;
     item.max = total - client;
+    /* 猜題流由底部往上排列，瀏覽器以負 scrollTop 表示較舊的紀錄。 */
+    item.reverse = vertical && style.display === 'flex' && style.flexDirection === 'column-reverse';
     item.size = Math.min(item.length, Math.max(24, item.length * client / total));
     /* 工具列那幾條橫向帶子只有一顆按鈕高，滑軌疊在裡面會蓋掉按鈕下緣；
        改成細一號、貼在帶子下方的列間空隙。 */

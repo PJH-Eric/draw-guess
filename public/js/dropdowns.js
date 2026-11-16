@@ -118,6 +118,8 @@
   }
 
   d.addEventListener('pointerdown', function (ev) {
+    var rail = ev.target.closest('.scroll-rail');
+    if (opened && rail && rail.getAttribute('aria-controls') === opened.list.id) return;
     if (opened && !opened.button.contains(ev.target) && !opened.list.contains(ev.target)) close(false);
   }, true);
   d.addEventListener('keydown', function (ev) {
