@@ -892,16 +892,22 @@ body.modal-open .language-menu{display:none!important}
   .panel{padding:14px 12px 24px}
   .panel-head h2{font-size:1.25rem}
   .home-row{flex-direction:column}
-  /* 固定操作鈕保留在第一列；狀態與倒數放到下一列，避免擠在按鈕底下。
-     觸控鈕縮到 46px，chip 縮字、收起時鐘圖示，題號改掛到題目提示列。 */
+  /* 狀態與倒數疊在返回與工具鈕之間，共用第一列，省下整列高度。 */
   :root{--topbtn:46px;--topgap:6px;--topedge:10px}
   body:not(.solo-mode) .game-top{
-    flex-direction:column;align-items:stretch;gap:0;padding:calc(var(--topbtn) + 8px) 0 0;
+    min-height:60px;align-items:center;gap:0;
+    padding:4px var(--hud-reserve) 0 58px;
   }
   body:not(.solo-mode) #b-game-back{
     position:fixed;top:calc(10px + var(--safe-t));left:calc(10px + var(--safe-l));z-index:71;
   }
-  body:not(.solo-mode) .statusbar{width:100%;flex:0 0 auto;justify-content:center}
+  body:not(.solo-mode) .statusbar{flex:1 1 auto;flex-direction:column;justify-content:center;gap:2px;overflow:visible}
+  body:not(.solo-mode) .chip-phase{font-size:.65rem;padding:1px 7px;border-width:1px;box-shadow:none;max-width:100%}
+  body:not(.solo-mode) .chip-timer{font-size:1.1rem;padding:1px 8px;border-width:2px}
+  body:not(.solo-mode) #network-latency.is-inline{display:none}
+  body:not(.solo-mode) .wordbar{min-height:36px;margin:1px 0;padding:2px 8px}
+  body:not(.solo-mode) .wordbar-mask{font-size:1.4rem}
+  body:not(.solo-mode) .pstate{display:none}
   .game-top{gap:3px}
   .game-top .btn3d.icononly,.btn3d.settings-fab{padding:7px 7px calc(7px + var(--d))}
   /* 一列放得下：階段 chip 可以被壓縮，倒數不縮（它要夠大） */
@@ -1149,6 +1155,16 @@ body.kb-open .game-aside{bottom:var(--kb,0px)}
 .tool-group:nth-child(3) .tool-group-label::before{background:var(--sky-d);box-shadow:0 0 0 3px rgba(126,180,219,.18)}
 .toolbtn[aria-checked=true]{box-shadow:0 3px 0 var(--grape-d),inset 0 0 0 2px rgba(255,255,255,.55)}
 .widthbtn[aria-checked=true]{box-shadow:inset 0 0 0 2px rgba(255,255,255,.72),0 3px 0 rgba(74,59,85,.1)}
+/* 觸控與矮螢幕以畫布為主：分組用分隔線辨識，標題保留給輔助閱讀。 */
+@media (max-width:1099px), (max-height:700px){
+  .paint-controls{gap:3px;padding:4px 5px}
+  .tool-group{padding:0;position:relative}
+  .tool-group+.tool-group{padding-top:4px}
+  .tool-group-label{
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+    overflow:hidden;clip-path:inset(50%);white-space:nowrap;
+  }
+}
 @media (max-width:380px){
   .resultlist li.result-row{grid-template-columns:32px 26px minmax(0,1fr) auto;gap:6px;padding:7px 8px;font-size:.82rem}
   .resultlist li.result-row .rplace{width:30px;height:30px;border-radius:10px;font-size:.76rem}
@@ -1221,6 +1237,8 @@ body.solo-mode .solo-file-actions .btn3d{min-width:0;min-height:48px;padding:8px
 }
 @media (orientation:landscape) and (min-width:621px) and (min-height:561px){
   body.solo-mode .toolbtn,body.solo-mode .widthbtn{width:48px;height:48px}
+  .playbar{width:clamp(220px,24vw,280px)}
+  body.big-tools .playbar{width:clamp(240px,26vw,300px)}
 }
 
 body.solo-mode.big-tools .toolbtn,body.solo-mode.big-tools .widthbtn{width:56px;height:56px}
@@ -1250,6 +1268,8 @@ body.solo-mode.big-tools .fillbox{min-height:56px}
   body.solo-mode #b-game-back{position:fixed;top:calc(10px + var(--safe-t))}
   body.solo-mode .wordbar{flex:1 1 100%;flex-wrap:wrap;justify-content:center;padding:2px 8px}
   body.solo-mode .wordbar-label{display:none}
+  body.solo-mode .wordbar-mask{font-size:clamp(1.25rem,2.4vw,1.7rem);letter-spacing:.08em}
+  body.solo-mode .wordbar .reference-toggle{min-height:46px;padding:5px 8px;font-size:.78rem}
 }
 
 /* Keep the language switch beside settings, including narrow English layouts. */

@@ -566,8 +566,13 @@ async function main() {
     assertLayout('作畫中（工具列展開）', v, drawInfo);
     const toolGroups = await cdp.json('(function(){var groups=Array.from(document.querySelectorAll(".paint-controls > .tool-group"));return {count:groups.length,labels:groups.map(function(g){var h=g.querySelector(".tool-group-label"),c=g.querySelector(".toolbtn,.colorbtn,.widthbtn");return {text:h&&h.textContent.trim(),visible:!!h&&getComputedStyle(h).display!=="none",above:!!h&&!!c&&h.getBoundingClientRect().bottom<=c.getBoundingClientRect().top+1};})};})()');
     check(v.name + '：工具、顏色、筆刷編輯分組清楚且標籤不擋按鈕',
-      toolGroups.count === 3 && toolGroups.labels.every(function (group) { return group.text && group.visible && group.above; }),
+      toolGroups.count === 3 && toolGroups.labels.every(function (group) { return group.text && group.visible; }),
       JSON.stringify(toolGroups));
+    if (v.height > v.width && v.width <= 1099) {
+      const toolbarHeight = await cdp.eval('return document.getElementById("toolbar").getBoundingClientRect().height;');
+      check(v.name + '：工具箱含作品操作不超過 240px，保留主要畫圖區',
+        toolbarHeight <= 240, '工具箱高度=' + toolbarHeight);
+    }
     const drawLimit = Math.min(drawStage.stage.w, drawStage.stage.h);
     check(v.name + '：工具列展開時畫布仍吃滿較短邊',
       drawStage.canvas.w >= drawLimit - 10, drawStage.canvas.w + ' / ' + drawLimit);
