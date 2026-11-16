@@ -155,6 +155,10 @@
     d.querySelectorAll('.settings-modal.open').forEach(function (modal) {
       if (!frontModal || Number(w.getComputedStyle(modal).zIndex) >= Number(w.getComputedStyle(frontModal).zIndex)) frontModal = modal;
     });
+    if (!frontModal) {
+      var drawer = d.querySelector('.game-aside.open');
+      if (drawer && w.getComputedStyle(drawer).position === 'fixed') frontModal = drawer;
+    }
     if (discover) {
       discover = false;
       d.querySelectorAll(selector).forEach(function (target) {
