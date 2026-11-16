@@ -382,6 +382,18 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 .resultlist li .rname{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .resultlist li .rpts{flex:0 0 auto;color:var(--ok);font-variant-numeric:tabular-nums}
 .resultlist li.win{border-color:var(--lemon-d);background:#FFF8E4}
+.result-share-card{padding:2px 0 4px}
+.result-heading{display:flex;flex-direction:column;align-items:center;gap:3px;margin:0 auto 12px;padding:3px 0 11px;border-bottom:2px solid var(--line)}
+.result-heading h3{margin:0;color:var(--grape-t);font-size:1.35rem;line-height:1.25}
+.result-heading span{display:inline-flex;align-items:center;padding:3px 10px;border:1px solid var(--line);border-radius:999px;background:#F8F4FF;color:var(--ink-soft);font-size:.72rem;font-weight:800;letter-spacing:.04em}
+.resultlist{gap:8px;margin-bottom:10px}
+.resultlist li.result-row{display:grid;grid-template-columns:36px 30px minmax(0,1fr) auto;gap:9px;min-height:54px;padding:8px 10px;border-radius:16px;font-size:.9rem}
+.resultlist li.result-row .rplace{display:grid;place-items:center;width:34px;height:34px;border:2px solid var(--line);border-radius:12px;background:#F3F0FA;color:var(--ink-soft);font-size:.82rem;font-weight:900;font-variant-numeric:tabular-nums}
+.resultlist li.result-row .rface{width:30px;height:30px}
+.resultlist li.result-row .rname{white-space:normal;overflow-wrap:anywhere;line-height:1.25}
+.resultlist li.result-row .rpts{padding:5px 9px;border:1px solid #C8E5D6;border-radius:999px;background:#EFF9F3;color:var(--ok);font-size:.83rem;white-space:nowrap}
+.resultlist li.result-row.win{border-color:var(--lemon-d);background:linear-gradient(110deg,#FFF8E4,#FFFEF8)}
+.resultlist li.result-row.win .rplace{border-color:#E8B846;background:#FFE7A9;color:#654B12}
 /* 玩家名單改成一列一個玩家、寬度滿版、文字置左（以前是一顆一顆的置中小 chip）：
    人多的時候一排 chip 會斷成好幾行、寬度也東一塊西一塊，改成滿版列表比較好掃視。
    「x / y 位玩家」那行字拿掉了，人數用眼睛數列表就好；觀戰人數改成名單最後一列。 */
@@ -571,7 +583,7 @@ body.big-tools .fillbox{min-height:56px}
   display:flex;flex-direction:column;
   border-right:3px solid var(--line);background:rgba(255,253,248,.95);
   padding-top:var(--safe-t);padding-left:var(--safe-l);padding-bottom:var(--safe-b);
-  box-shadow:8px 0 0 rgba(74,59,85,.14);
+  box-shadow:8px 0 0 rgba(74,59,85,.14);backdrop-filter:blur(5px);
   transform:translateX(-102%);transition:transform .22s ease;
 }
 .game-aside.open{transform:translateX(0)}
@@ -757,6 +769,9 @@ body.setup-open .toast{bottom:auto;top:calc(10px + var(--topbtn) + 14px + var(--
 .settings-modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
 .settings-modal.open{display:flex}
 .settings-backdrop{position:absolute;inset:0;background:rgba(74,59,85,.36);backdrop-filter:blur(3px)}
+/* 彈窗開啟時收起全域語言／設定浮鈕，讓彈窗標題列與關閉鈕保有完整空間。 */
+body.modal-open .language-controls[data-floating]{visibility:hidden!important;pointer-events:none!important}
+body.modal-open .language-menu{display:none!important}
 .settings-panel{
   position:relative;display:flex;flex-direction:column;
   width:min(94vw,470px);max-height:min(88dvh,700px);overflow:hidden;
@@ -828,6 +843,7 @@ body.setup-open .toast{bottom:auto;top:calc(10px + var(--topbtn) + 14px + var(--
 .setting-toggle input:focus-visible,.setting-range input:focus-visible,.setting-text input:focus-visible,
 .setting-text select:focus-visible,.settings-close:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
 .setting-range>span{flex-direction:row;align-items:center;gap:6px;min-width:118px}
+.setting-range>span>span{flex:1 1 auto;min-width:0;white-space:nowrap}
 .setting-range output{min-width:3.2em;text-align:right;color:var(--grape-t);font-weight:900}
 .setting-range input[type=range]{width:min(52%,220px);accent-color:var(--grape-d);cursor:pointer;min-height:32px}
 .settings-foot{
@@ -865,7 +881,7 @@ body.setup-open .toast{bottom:auto;top:calc(10px + var(--topbtn) + 14px + var(--
 
 /* 中等寬度（平板直向）：資訊欄維持浮層，畫布吃滿 */
 @media (max-width:1099px){
-  .game-aside{width:var(--aside-w)}
+  .game-aside{width:var(--aside-w);border-radius:0 20px 20px 0}
 }
 
 /* 手機直向：工具列壓縮成三段，把高度還給畫布 */
@@ -876,10 +892,16 @@ body.setup-open .toast{bottom:auto;top:calc(10px + var(--topbtn) + 14px + var(--
   .panel{padding:14px 12px 24px}
   .panel-head h2{font-size:1.25rem}
   .home-row{flex-direction:column}
-  /* 窄版的頂列要在一行內放下：返回、狀態、倒數、兩顆切換鈕，
-     右邊還要留給固定的系統設定鈕。所以按鈕縮到 46（仍符合命中區下限），
-     chip 用小一點的字，時鐘圖示收起來，題號改掛到題目提示列上。 */
+  /* 固定操作鈕保留在第一列；狀態與倒數放到下一列，避免擠在按鈕底下。
+     觸控鈕縮到 46px，chip 縮字、收起時鐘圖示，題號改掛到題目提示列。 */
   :root{--topbtn:46px;--topgap:6px;--topedge:10px}
+  body:not(.solo-mode) .game-top{
+    flex-direction:column;align-items:stretch;gap:0;padding:calc(var(--topbtn) + 8px) 0 0;
+  }
+  body:not(.solo-mode) #b-game-back{
+    position:fixed;top:calc(10px + var(--safe-t));left:calc(10px + var(--safe-l));z-index:71;
+  }
+  body:not(.solo-mode) .statusbar{width:100%;flex:0 0 auto;justify-content:center}
   .game-top{gap:3px}
   .game-top .btn3d.icononly,.btn3d.settings-fab{padding:7px 7px calc(7px + var(--d))}
   /* 一列放得下：階段 chip 可以被壓縮，倒數不縮（它要夠大） */
@@ -959,6 +981,7 @@ body.setup-open .toast{bottom:auto;top:calc(10px + var(--topbtn) + 14px + var(--
   .inviterow{gap:5px}
   .inviterow .pillbtn{min-width:44px;padding:7px 8px;font-size:.78rem}
   .inviterow input{padding:8px 8px;font-size:.72rem}
+  .screen#s-lobby .panel{padding-bottom:calc(84px + var(--safe-b))}
 }
 
 /* 橫向且高度很矮（手機橫向）：把裝飾與留白壓到最低，先保住畫布與操作 */
@@ -1117,7 +1140,21 @@ body.kb-open .game-aside{bottom:var(--kb,0px)}
  * ================================================================ */
 .solo-file-actions{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
 .solo-file-actions .btn3d{flex:1 1 auto;min-height:44px}
-.paint-controls{display:flex;flex-direction:column;gap:inherit;min-width:0}
+.paint-controls{display:flex;flex-direction:column;gap:5px;min-width:0;padding:8px 9px;border:2px solid rgba(164,143,219,.42);border-radius:18px;background:linear-gradient(150deg,#FFFEFF,#F8F5FF 58%,#F4FBF8);box-shadow:inset 0 1px 0 #fff,0 4px 0 rgba(74,59,85,.08)}
+.tool-group{min-width:0;padding:3px 1px}
+.tool-group+.tool-group{border-top:1px dashed var(--line);padding-top:7px}
+.tool-group-label{display:flex;align-items:center;gap:6px;margin:0 0 5px 2px;color:var(--ink-soft);font-size:.7rem;font-weight:900;line-height:1.2;letter-spacing:.04em}
+.tool-group-label::before{content:"";width:6px;height:6px;flex:0 0 6px;border-radius:50%;background:var(--grape-d);box-shadow:0 0 0 3px rgba(164,143,219,.16)}
+.tool-group:nth-child(2) .tool-group-label::before{background:var(--mint-d);box-shadow:0 0 0 3px rgba(89,189,155,.16)}
+.tool-group:nth-child(3) .tool-group-label::before{background:var(--sky-d);box-shadow:0 0 0 3px rgba(126,180,219,.18)}
+.toolbtn[aria-checked=true]{box-shadow:0 3px 0 var(--grape-d),inset 0 0 0 2px rgba(255,255,255,.55)}
+.widthbtn[aria-checked=true]{box-shadow:inset 0 0 0 2px rgba(255,255,255,.72),0 3px 0 rgba(74,59,85,.1)}
+@media (max-width:380px){
+  .resultlist li.result-row{grid-template-columns:32px 26px minmax(0,1fr) auto;gap:6px;padding:7px 8px;font-size:.82rem}
+  .resultlist li.result-row .rplace{width:30px;height:30px;border-radius:10px;font-size:.76rem}
+  .resultlist li.result-row .rface{width:26px;height:26px}
+  .resultlist li.result-row .rpts{padding:4px 7px;font-size:.76rem}
+}
 body.solo-mode .donebox{display:none}
 body.solo-mode .colorbtn[aria-checked=true]{transform:none;box-shadow:inset 0 0 0 2px var(--paper)}
 body.solo-mode{--hud-reserve:calc(var(--topedge) + 2 * var(--topbtn) + var(--topgap) + 8px)}

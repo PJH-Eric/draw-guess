@@ -318,29 +318,38 @@
         <!-- 工具列：只有輪到自己當畫家時才出現 -->
         <div class="toolbar" id="toolbar" hidden>
           <div class="paint-controls">
-            <div class="toolrow toolrow-tools" id="tool-list" role="radiogroup" aria-label="畫圖工具" data-i18n-attr="aria-label=text.466"></div>
-            <div class="toolrow toolrow-colors" id="color-list" role="radiogroup" aria-label="顏色" data-i18n-attr="aria-label=text.467"></div>
+            <section class="tool-group">
+              <h3 class="tool-group-label" data-i18n="text.466">畫圖工具</h3>
+              <div class="toolrow toolrow-tools" id="tool-list" role="radiogroup" aria-label="畫圖工具" data-i18n-attr="aria-label=text.466"></div>
+            </section>
+            <section class="tool-group">
+              <h3 class="tool-group-label" data-i18n="text.467">顏色</h3>
+              <div class="toolrow toolrow-colors" id="color-list" role="radiogroup" aria-label="顏色" data-i18n-attr="aria-label=text.467"></div>
+            </section>
             <!-- 粗細、填滿與編輯動作放同一條；窄版時這一條可以橫向捲動，
                  但「畫完了／跳過這題」固定在右邊不會被捲走。 -->
-            <div class="toolrow toolrow-misc">
-              <div class="toolscroll" id="toolscroll">
-                <div class="widthgroup" id="width-list" role="radiogroup" aria-label="筆的粗細" data-i18n-attr="aria-label=text.468"></div>
-                <label class="fillbox" id="fillbox">
-                  <input type="checkbox" id="opt-filled">
-                  <span><span data-i18n="text.394">填滿</span></span>
-                </label>
-                <button class="toolbtn" id="b-undo" type="button" title="復原（Ctrl+Z）" aria-label="復原" data-i18n-attr="aria-label=text.323;title=tool.undoTitle"><span class="ico" data-ico="undo"></span></button>
-                <button class="toolbtn" id="b-redo" type="button" title="重做（Ctrl+Y）" aria-label="重做" data-i18n-attr="aria-label=text.322;title=tool.redoTitle"><span class="ico" data-ico="redo"></span></button>
-                <button class="toolbtn danger" id="b-clear" type="button" title="全部清除" aria-label="全部清除" data-i18n-attr="aria-label=text.321;title=text.321"><span class="ico" data-ico="trash"></span></button>
+            <section class="tool-group">
+              <h3 class="tool-group-label" data-i18n="tool.label.edit">筆刷與編輯</h3>
+              <div class="toolrow toolrow-misc" role="group" aria-label="筆刷與編輯" data-i18n-attr="aria-label=tool.label.edit">
+                <div class="toolscroll" id="toolscroll">
+                  <div class="widthgroup" id="width-list" role="radiogroup" aria-label="筆的粗細" data-i18n-attr="aria-label=text.468"></div>
+                  <label class="fillbox" id="fillbox">
+                    <input type="checkbox" id="opt-filled">
+                    <span><span data-i18n="text.394">填滿</span></span>
+                  </label>
+                  <button class="toolbtn" id="b-undo" type="button" title="復原（Ctrl+Z）" aria-label="復原" data-i18n-attr="aria-label=text.323;title=tool.undoTitle"><span class="ico" data-ico="undo"></span></button>
+                  <button class="toolbtn" id="b-redo" type="button" title="重做（Ctrl+Y）" aria-label="重做" data-i18n-attr="aria-label=text.322;title=tool.redoTitle"><span class="ico" data-ico="redo"></span></button>
+                  <button class="toolbtn danger" id="b-clear" type="button" title="全部清除" aria-label="全部清除" data-i18n-attr="aria-label=text.321;title=text.321"><span class="ico" data-ico="trash"></span></button>
+                </div>
+                <!-- 「畫完了」只表示可以開始猜；「跳過這題」才會結束回合。 -->
+                <div class="donebox">
+                  <button class="btn3d small tool-done" data-color="lemon" id="b-done" type="button"
+                          title="告訴大家你畫完了（這一題還會繼續，時間也照跑）" data-i18n-attr="title=text.469"><span data-i18n="text.179">畫完了</span></button>
+                  <button class="btn3d small tool-skip" data-color="peach" id="b-skip" type="button"
+                          title="直接結束這一題並公布答案" data-i18n-attr="title=text.470"><span data-i18n="text.395">跳過這題</span></button>
+                </div>
               </div>
-              <!-- 「畫完了」只是告訴大家可以猜了，不會結束這一題；真的要結束是下面的「跳過這題」 -->
-              <div class="donebox">
-                <button class="btn3d small tool-done" data-color="lemon" id="b-done" type="button"
-                        title="告訴大家你畫完了（這一題還會繼續，時間也照跑）" data-i18n-attr="title=text.469"><span data-i18n="text.179">畫完了</span></button>
-                <button class="btn3d small tool-skip" data-color="peach" id="b-skip" type="button"
-                        title="直接結束這一題並公布答案" data-i18n-attr="title=text.470"><span data-i18n="text.395">跳過這題</span></button>
-              </div>
-            </div>
+            </section>
           </div><!-- /.paint-controls -->
           <div class="solo-file-actions" id="solo-file-actions" role="group" aria-label="作品與題目操作" hidden data-i18n-attr="aria-label=text.471">
             <button class="btn3d small" data-color="mint" id="b-solo-save" type="button" title="下載可繼續編輯的作品存檔" data-i18n-attr="title=text.472"><span data-i18n="text.396">存檔</span></button>

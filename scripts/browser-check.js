@@ -427,6 +427,38 @@ async function main() {
     assertLayout('主選單', v, info);
     await shot(v.name + '-2-主選單');
 
+    await cdp.eval('window.__probe.click("#b-stats"); return 1;');
+    await cdp.waitFor('document.querySelector(".screen.active").id === "s-stats"', 3000, '我的戰績畫面');
+    info = await cdp.json('window.__probe.layout()');
+    assertLayout('我的戰績', v, info);
+    await shot(v.name + '-戰績');
+    await cdp.eval('window.__probe.click("#s-stats [data-back=\\"s-home\\"]"); return 1;');
+    await cdp.waitFor('document.querySelector(".screen.active").id === "s-home"', 3000, '返回主選單');
+
+    await cdp.eval('window.__probe.click("#b-online"); return 1;');
+    await cdp.waitFor('window.Online && window.Online.isConnected()', 10000, '線上大廳連線');
+    info = await cdp.json('window.__probe.layout()');
+    check(v.name + '：進入線上大廳', info.activeScreen === 's-lobby', info.activeScreen);
+    assertLayout('線上大廳', v, info);
+    const lobbyBubble = await cdp.json(`(function () {
+      var screen = document.getElementById('s-lobby');
+      var note = screen.querySelector('.panel > .hint-note:last-child');
+      var bubble = document.querySelector('.lc-bubble');
+      if (!note || !bubble) return { available: false };
+      screen.scrollTop = screen.scrollHeight;
+      var n = note.getBoundingClientRect();
+      var b = bubble.getBoundingClientRect();
+      var overlaps = Math.min(n.right, b.right) > Math.max(n.left, b.left) &&
+        Math.min(n.bottom, b.bottom) > Math.max(n.top, b.top);
+      screen.scrollTop = 0;
+      return { available: true, overlaps: overlaps, noteBottom: n.bottom, bubbleTop: b.top };
+    })()`);
+    check(v.name + '：大廳聊天室氣泡不會蓋住頁面最下方說明',
+      !lobbyBubble.available || !lobbyBubble.overlaps, JSON.stringify(lobbyBubble));
+    await shot(v.name + '-線上大廳');
+    await cdp.eval('window.__probe.click("#s-lobby [data-back=\\"s-home\\"]"); return 1;');
+    await cdp.waitFor('document.querySelector(".screen.active").id === "s-home"', 3000, '離開線上大廳');
+
     /* 設定彈窗 */
     await cdp.eval('window.__probe.click("#b-settings"); return 1;');
     await sleep(300);
@@ -436,6 +468,24 @@ async function main() {
     check(v.name + '：設定是 Modal 彈窗、焦點進入面板、aria 正確',
       modal.open && modal.focus === 'settings-panel' && modal.aria === 'false' && modal.role === 'dialog' && modal.modalAttr === 'true',
       JSON.stringify(modal));
+    const modalLayout = await cdp.json(`(function () {
+      var panel = document.getElementById('settings-panel');
+      var rect = panel.getBoundingClientRect();
+      var head = panel.querySelector('.settings-head').getBoundingClientRect();
+      var close = document.getElementById('settings-close').getBoundingClientRect();
+      var foot = panel.querySelector('.settings-foot').getBoundingClientRect();
+      var controls = document.querySelector('.language-controls');
+      return {
+        inView: rect.left >= 0 && rect.top >= 0 && rect.right <= innerWidth + 1 && rect.bottom <= innerHeight + 1,
+        closeInHeader: close.left >= head.left && close.right <= head.right && close.top >= head.top && close.bottom <= head.bottom,
+        footerInPanel: foot.top >= rect.top && foot.bottom <= rect.bottom,
+        globalControlsHidden: controls && getComputedStyle(controls).visibility === 'hidden',
+        bodyModalClass: document.body.classList.contains('modal-open')
+      };
+    })()`);
+    check(v.name + '：設定彈窗完整置中，關閉鈕與底部按鈕都在卡片內',
+      modalLayout.inView && modalLayout.closeInHeader && modalLayout.footerInPanel && modalLayout.globalControlsHidden && modalLayout.bodyModalClass,
+      JSON.stringify(modalLayout));
     const mixed = await cdp.json('({hasGameActions:!!document.querySelector("#settings-modal #gs-skip") || !!document.querySelector("#settings-modal #gs-quit"),gameOpen:document.getElementById("game-settings-modal").classList.contains("open")})');
     check(v.name + '：系統設定不混入本局操作', !mixed.hasGameActions && !mixed.gameOpen, JSON.stringify(mixed));
     await shot(v.name + '-3-設定彈窗');
@@ -443,9 +493,9 @@ async function main() {
     await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
     await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
     await sleep(250);
-    const closed = await cdp.json('({open:document.getElementById("settings-modal").classList.contains("open"),focus:document.activeElement.id})');
+    const closed = await cdp.json('({open:document.getElementById("settings-modal").classList.contains("open"),focus:document.activeElement.id,modalClass:document.body.classList.contains("modal-open")})');
     check(v.name + '：Escape 關閉設定並把焦點還給設定鈕',
-      !closed.open && closed.focus === 'b-settings', JSON.stringify(closed));
+      !closed.open && closed.focus === 'b-settings' && !closed.modalClass, JSON.stringify(closed));
 
     /* 單機設定 */
     await cdp.eval('window.__probe.click("#b-solo"); return 1;');
@@ -514,6 +564,10 @@ async function main() {
     const drawInfo = await cdp.json('window.__probe.layout()');
     check(v.name + '：畫家的工具列有出現', drawStage.toolbarShown === true);
     assertLayout('作畫中（工具列展開）', v, drawInfo);
+    const toolGroups = await cdp.json('(function(){var groups=Array.from(document.querySelectorAll(".paint-controls > .tool-group"));return {count:groups.length,labels:groups.map(function(g){var h=g.querySelector(".tool-group-label"),c=g.querySelector(".toolbtn,.colorbtn,.widthbtn");return {text:h&&h.textContent.trim(),visible:!!h&&getComputedStyle(h).display!=="none",above:!!h&&!!c&&h.getBoundingClientRect().bottom<=c.getBoundingClientRect().top+1};})};})()');
+    check(v.name + '：工具、顏色、筆刷編輯分組清楚且標籤不擋按鈕',
+      toolGroups.count === 3 && toolGroups.labels.every(function (group) { return group.text && group.visible && group.above; }),
+      JSON.stringify(toolGroups));
     const drawLimit = Math.min(drawStage.stage.w, drawStage.stage.h);
     check(v.name + '：工具列展開時畫布仍吃滿較短邊',
       drawStage.canvas.w >= drawLimit - 10, drawStage.canvas.w + ' / ' + drawLimit);
@@ -867,9 +921,32 @@ async function main() {
   await goto(hostTab, BASE);
   await hostTab.eval('window.__probe.click("#b-online"); return 1;');
   await hostTab.waitFor('window.Online && window.Online.isConnected()', 15000, '大廳連上線');
+  await hostTab.waitFor('!document.getElementById("b-lobby-host").disabled', 3000, '大廳操作鈕啟用');
   await hostTab.eval('window.__probe.click("#b-lobby-host"); return 1;');
   await hostTab.waitFor('document.getElementById("room-create-modal").classList.contains("open")', 3000, '開房間設定');
   check('開房前先顯示開房間設定', await hostTab.eval('return document.getElementById("room-create-modal").classList.contains("open");'));
+  await hostTab.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 3, mobile: true });
+  await sleep(250);
+  const roomModalLayout = await hostTab.json(`(function () {
+    var panel = document.getElementById('room-create-panel');
+    var rect = panel.getBoundingClientRect();
+    var head = panel.querySelector('.settings-head').getBoundingClientRect();
+    var close = document.getElementById('room-create-close').getBoundingClientRect();
+    var foot = panel.querySelector('.settings-foot').getBoundingClientRect();
+    var controls = document.querySelector('.language-controls');
+    return {
+      inView: rect.left >= 0 && rect.top >= 0 && rect.right <= innerWidth + 1 && rect.bottom <= innerHeight + 1,
+      closeInHeader: close.left >= head.left && close.right <= head.right && close.top >= head.top && close.bottom <= head.bottom,
+      footerInPanel: foot.top >= rect.top && foot.bottom <= rect.bottom,
+      globalControlsHidden: controls && getComputedStyle(controls).visibility === 'hidden'
+    };
+  })()`);
+  check('手機直向：開房設定標題列與固定按鈕不重疊，建立鈕留在卡片內',
+    roomModalLayout.inView && roomModalLayout.closeInHeader && roomModalLayout.footerInPanel && roomModalLayout.globalControlsHidden,
+    JSON.stringify(roomModalLayout));
+  await shot('線上-開房設定-手機直向');
+  await hostTab.send('Emulation.setDeviceMetricsOverride', { width: 1024, height: 768, deviceScaleFactor: 2, mobile: true });
+  await sleep(250);
   await hostTab.eval('window.__probe.click("#room-create-rounds [data-v=\\"3\\"]"); window.__probe.click("#room-create-drawsec [data-v=\\"120\\"]"); window.__probe.click("#room-create-diff [data-v=\\"3\\"]"); return 1;');
   await hostTab.eval('window.__probe.click("#room-create-submit"); return 1;');
   await hostTab.waitFor('window.DrawGuessApp.mode === "online" && window.DrawGuessApp.view', 10000, '進入房間');
@@ -952,6 +1029,13 @@ async function main() {
     await hostTab.eval('return document.querySelector("#overlay-card .ruledd-btn[data-field=set-rounds] .ruledd-val").textContent;'));
   await mateTab.waitFor('window.DrawGuessApp.view.room.settings.rounds === 4', 4000, '同步規則');
   check('改規則後其他分頁也同步收到', await mateTab.eval('return window.DrawGuessApp.view.room.settings.rounds === 4;'));
+  await hostTab.eval('window.__probe.click("#overlay-card .ruledd-btn[data-field=set-rounds]"); return 1;');
+  await hostTab.waitFor('document.querySelector("#overlay-card .ruledd-list")', 3000, '開啟回合數選單');
+  await hostTab.eval('window.__probe.click("#overlay-card .ruledd-opt[data-field=set-rounds][data-v=\\"1\\"]"); return 1;');
+  await hostTab.waitFor('window.DrawGuessApp.view.room.settings.rounds === 1', 4000, '設定單回合測試流程');
+  await mateTab.waitFor('window.DrawGuessApp.view.room.settings.rounds === 1', 4000, '同步單回合設定');
+  check('開始前可把回合數調整為 1（結算瀏覽器流程）',
+    await hostTab.eval('return window.DrawGuessApp.view.room.settings.rounds === 1;'));
   check('不再出現「x / y 位玩家」的字樣',
     await hostTab.eval('return !/\\d+\\s*\\/\\s*\\d+\\s*位玩家/.test(document.getElementById("overlay-card").textContent);'));
   check('玩家名單改成一列一個玩家、寬度滿版、文字置左',
@@ -1055,6 +1139,74 @@ async function main() {
   const hc = await guesserTab.json('(function(){var c=document.getElementById("stage-canvas").getBoundingClientRect(), m=document.querySelector(".game-main").getBoundingClientRect(); return {canvasCenter:(c.left+c.right)/2, mainCenter:(m.left+m.right)/2, playbarW:document.getElementById("playbar").getBoundingClientRect().width, drawer:window.DrawGuessApp.view.game.you.isDrawer};})()');
   check('猜題者（橫向）沒有工具列：右側那欄收掉、畫布置中',
     !hc.drawer && hc.playbarW < 2 && Math.abs(hc.canvasCenter - hc.mainCenter) < 12, JSON.stringify(hc));
+
+  /* 手機與平板：狀態列、題目列、玩家列都不能被固定操作鈕或摘要抽屜壓住。 */
+  for (const v of [
+    { name: '手機窄版直向', width: 360, height: 640, mobile: true, dsf: 2 },
+    { name: '手機直向', width: 390, height: 844, mobile: true, dsf: 3 },
+    { name: '手機橫向', width: 844, height: 390, mobile: true, dsf: 3 },
+    { name: '平板直向', width: 768, height: 1024, mobile: true, dsf: 2 },
+    { name: '平板橫向', width: 1024, height: 768, mobile: true, dsf: 2 }
+  ]) {
+    await setViewport(v);
+    const hud = await hostTab.json('(function(){function box(s){var e=document.querySelector(s);if(!e)return null;var r=e.getBoundingClientRect();return {l:r.left,t:r.top,r:r.right,b:r.bottom,w:r.width,h:r.height};}function hit(a,b){return !!a&&!!b&&Math.min(a.r,b.r)-Math.max(a.l,b.l)>1&&Math.min(a.b,b.b)-Math.max(a.t,b.t)>1;}var status=box(".statusbar"),back=box("#b-game-back"),actions=box(".game-top-actions"),fab=box("#b-settings"),word=box("#wordbar"),players=box("#canvastop");return {vw:innerWidth,status:status,back:back,actions:actions,fab:fab,word:word,players:players,overlaps:{statusBack:hit(status,back),statusActions:hit(status,actions),statusFab:hit(status,fab),wordActions:hit(word,actions),wordFab:hit(word,fab),playersActions:hit(players,actions),playersFab:hit(players,fab)}};})()');
+    const hudOverlaps = Object.keys(hud.overlaps).filter(function (key) { return hud.overlaps[key]; });
+    check(v.name + '：狀態列、題目列和玩家列都避開固定按鈕',
+      hud.status && hud.word && hudOverlaps.length === 0,
+      JSON.stringify({ overlaps: hudOverlaps, status: hud.status, word: hud.word, players: hud.players }));
+
+    await hostTab.eval('document.getElementById("b-aside-toggle").click(); return 1;');
+    await hostTab.waitFor('document.getElementById("game-aside").classList.contains("open")', 2500, v.name + ' 開啟操作摘要');
+    const aside = await hostTab.json('(function(){var a=document.getElementById("game-aside").getBoundingClientRect(),i=document.getElementById("canvastop").getBoundingClientRect(),c=document.getElementById("b-aside-close").getBoundingClientRect();return {top:a.top,bottom:a.bottom,left:a.left,right:a.right,infoBottom:i.bottom,close:{top:c.top,bottom:c.bottom,left:c.left,right:c.right},height:innerHeight};})()');
+    check(v.name + '：操作摘要從玩家資訊列下方展開，收合鈕完整可見',
+      aside.top >= aside.infoBottom + 6 && aside.bottom <= aside.height + 1 && aside.close.top >= aside.top && aside.close.bottom <= aside.bottom && aside.close.right <= aside.right,
+      JSON.stringify(aside));
+    if (v.width === 390) await shot('線上-操作摘要-手機直向', hostTab);
+    await hostTab.eval('document.getElementById("b-aside-close").click(); return 1;');
+    await hostTab.waitFor('!document.getElementById("game-aside").classList.contains("open")', 2500, v.name + ' 收合操作摘要');
+  }
+
+  /* 用一題正確猜題加一題跳過，走到真實結算畫面並檢查不同 RWD 尺寸。 */
+  for (let turn = 0; turn < 2; turn++) {
+    await hostTab.waitFor('window.DrawGuessApp.view.room.phase === "playing" && window.DrawGuessApp.view.game.phase === "picking"', 8000, '第 ' + (turn + 1) + ' 題選題');
+    const drawerIsHost = await hostTab.eval('return !!window.DrawGuessApp.view.game.you.isDrawer;');
+    const currentDrawer = drawerIsHost ? hostTab : mateTab;
+    const currentGuesser = drawerIsHost ? mateTab : hostTab;
+    await currentDrawer.waitFor('document.querySelector("#overlay-card .wordchoice")', 5000, '畫家看到選題卡');
+    await currentDrawer.eval('window.__probe.click("#overlay-card .wordchoice"); return 1;');
+    await currentDrawer.waitFor('window.DrawGuessApp.view.game.phase === "drawing"', 5000, '進入作畫');
+    if (turn === 0) {
+      const answer = await currentDrawer.eval('return window.DrawGuessApp.view.game.answer;');
+      check('結算流程畫家收到答案', typeof answer === 'string' && answer.length > 0, String(answer));
+      await currentGuesser.eval('window.Online.send("room:guess",{text:' + JSON.stringify(answer) + '}); return 1;');
+      await currentGuesser.waitFor('window.DrawGuessApp.view.game.you.guessed === true', 5000, '玩家猜中');
+    } else {
+      await currentDrawer.eval('window.Online.send("room:skip",{}); return 1;');
+    }
+    await hostTab.waitFor('window.DrawGuessApp.view.game.phase === "reveal"', 5000, '公布答案');
+  }
+  await hostTab.waitFor('window.DrawGuessApp.view.room.phase === "finished" && window.DrawGuessApp.view.game.over === true', 10000, '顯示結算');
+  await hostTab.waitFor('document.querySelector("#overlay-card [data-result-share] .result-share-trigger")', 5000, '結算分享入口');
+  const resultRows = await hostTab.json('(function(){var rows=Array.from(document.querySelectorAll("#overlay-card .resultlist .result-row"));return {list:document.querySelector("#overlay-card .resultlist")&&document.querySelector("#overlay-card .resultlist").tagName,count:rows.length,winners:rows.filter(function(r){return r.classList.contains("win");}).length,ranks:rows.map(function(r){return Number(r.querySelector(".rplace").textContent);}),scores:rows.map(function(r){return Number(r.querySelector(".rpts").textContent);}),hasTitle:!!document.querySelector("#overlay-card .result-heading h3"),hasCaption:!!document.querySelector("#overlay-card .result-heading span"),hasShare:!!document.querySelector("#overlay-card [data-result-share] .result-share-trigger")};})()');
+  check('結算畫面有語意化名次、所有玩家分數、冠軍標示與分享入口',
+    resultRows.list === 'OL' && resultRows.count === 2 && resultRows.winners >= 1 && resultRows.ranks[0] === 1 && resultRows.ranks[1] >= 2 && resultRows.hasTitle && resultRows.hasCaption && resultRows.hasShare,
+    JSON.stringify(resultRows));
+
+  for (const v of [
+    { name: '結算手機窄版', width: 360, height: 640, mobile: true, dsf: 2 },
+    { name: '結算手機直向', width: 390, height: 844, mobile: true, dsf: 3 },
+    { name: '結算平板直向', width: 768, height: 1024, mobile: true, dsf: 2 },
+    { name: '結算平板橫向', width: 1024, height: 768, mobile: true, dsf: 2 },
+    { name: '結算桌機寬版', width: 1440, height: 900, mobile: false, dsf: 1 }
+  ]) {
+    await setViewport(v);
+    const resultLayout = await hostTab.json('(function(){var c=document.getElementById("overlay-card"),r=c.getBoundingClientRect(),o=document.querySelector("#overlay-card .resultlist").getBoundingClientRect();return {scroll:c.scrollWidth,client:c.clientWidth,card:{top:r.top,bottom:r.bottom},viewH:innerHeight,headingBottom:document.querySelector(".result-heading").getBoundingClientRect().bottom,listTop:o.top,actions:!!document.querySelector("#overlay-card .overlay-btns [data-act]")};})()');
+    const label = v.name + ' 結算';
+    check(label + '：卡片沒有水平溢出、標題和分數列表分層、底部動作可見',
+      resultLayout.scroll <= resultLayout.client + 2 && resultLayout.card.top >= 0 && resultLayout.card.bottom <= resultLayout.viewH + 1 && resultLayout.headingBottom < resultLayout.listTop && resultLayout.actions,
+      JSON.stringify(resultLayout));
+    await shot(v.name, hostTab);
+  }
 
   const wLayout = await watchTab.json('window.__probe.layout()');
   check('觀戰畫面（平板直向）沒有水平溢出',

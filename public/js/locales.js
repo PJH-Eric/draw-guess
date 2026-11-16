@@ -108,7 +108,7 @@ I18N.register('zh-Hant', {
   "text.076": "等畫家開始畫…",
   "text.077": "猜猜看這是什麼？",
   "text.078": "你已經猜對了，等其他人…",
-  "text.079": "<h3>結算</h3><ul class=\"resultlist\">",
+  "text.079": "<div class=\"result-heading\"><h3>結算</h3><span>本局排名</span></div><ol class=\"resultlist\">",
   "text.080": "<button class=\"btn3d small\" data-color=\"cream\" data-act=\"home\">回主選單</button>",
   "text.081": "<button class=\"btn3d\" data-color=\"mint\" data-act=\"rematch\">再玩一局</button>",
   "text.082": "<button class=\"btn3d small sub\" data-color=\"cream\" data-act=\"lobby\">回大廳</button>",
@@ -503,7 +503,8 @@ I18N.register('zh-Hant', {
   "text.477": "設定項目",
   "text.478": "留空會自動配一個",
   "text.479": "關閉對局設定",
-  "text.480": "選擇作品存檔"
+  "text.480": "選擇作品存檔",
+  "tool.label.edit": "筆刷與編輯"
 }).register("en", {
   "text.001": "\">Watch</button>",
   "text.002": "\">Join</button>",
@@ -583,7 +584,7 @@ I18N.register('zh-Hant', {
   "text.076": "Waiting for the artist to draw…",
   "text.077": "What do you think it is?",
   "text.078": "You guessed correctly. Waiting for others…",
-  "text.079": "<h3>Results</h3><ul class=\"resultlist\">",
+  "text.079": "<div class=\"result-heading\"><h3>Results</h3><span>Final standings</span></div><ol class=\"resultlist\">",
   "text.080": "<button class=\"btn3d small\" data-color=\"cream\" data-act=\"home\">Home</button>",
   "text.081": "<button class=\"btn3d\" data-color=\"mint\" data-act=\"rematch\">Play again</button>",
   "text.082": "<button class=\"btn3d small sub\" data-color=\"cream\" data-act=\"lobby\">Lobby</button>",
@@ -978,7 +979,8 @@ I18N.register('zh-Hant', {
   "text.477": "Settings",
   "text.478": "Leave blank for a random nickname",
   "text.479": "Close match settings",
-  "text.480": "Choose a drawing file"
+  "text.480": "Choose a drawing file",
+  "tool.label.edit": "Brush & edit"
 });
 })();
 
@@ -1351,7 +1353,7 @@ I18N.register("zh-Hant", { "meta.title": "你畫我猜｜免費線上多人畫�
     "text.076": "等画家开始画…",
     "text.077": "猜猜看这是什么？",
     "text.078": "你已经猜对了，等其他人…",
-    "text.079": "<h3>结算</h3><ul class=\"resultlist\">",
+    "text.079": "<div class=\"result-heading\"><h3>结算</h3><span>本局排名</span></div><ol class=\"resultlist\">",
     "text.080": "<button class=\"btn3d small\" data-color=\"cream\" data-act=\"home\">回主选单</button>",
     "text.081": "<button class=\"btn3d\" data-color=\"mint\" data-act=\"rematch\">再玩一局</button>",
     "text.082": "<button class=\"btn3d small sub\" data-color=\"cream\" data-act=\"lobby\">回大厅</button>",
@@ -1747,6 +1749,7 @@ I18N.register("zh-Hant", { "meta.title": "你畫我猜｜免費線上多人畫�
     "text.478": "留空会自动配一个",
     "text.479": "关闭对局设定",
     "text.480": "选择作品存档",
+    "tool.label.edit": "笔刷与编辑",
     "srv.err.allHintsGiven": "提示都给完了。",
     "srv.err.alreadyGuessed": "你已经猜对了。",
     "srv.err.alreadyStarted": "游戏已开始。",

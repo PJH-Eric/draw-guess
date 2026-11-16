@@ -127,6 +127,7 @@
         lastFocus = D.activeElement;
         modal.classList.add('open');
         modal.setAttribute('aria-hidden', 'false');
+        D.body.classList.add('modal-open');
         if (opener) opener.setAttribute('aria-expanded', 'true');
         D.addEventListener('keydown', onKey, true);
         setTimeout(function () { panel.focus(); }, 0);
@@ -136,6 +137,7 @@
         if (!api.isOpen()) return;
         modal.classList.remove('open');
         modal.setAttribute('aria-hidden', 'true');
+        if (!D.querySelector('.settings-modal.open')) D.body.classList.remove('modal-open');
         if (opener) opener.setAttribute('aria-expanded', 'false');
         D.removeEventListener('keydown', onKey, true);
         /* 焦點回到原本的地方。觸控裝置按按鈕常常不會讓它取得焦點，
@@ -684,6 +686,23 @@
     $('sum-empty').hidden = recent.length > 0;
   }
 
+  function layoutAside() {
+    var aside = $('game-aside');
+    if (!aside) return;
+    if (!app.asideOpen || w.matchMedia('(min-width:1100px)').matches) {
+      aside.style.top = '';
+      return;
+    }
+    /* 摘要抽屜從玩家列下方展開，保留階段／倒數、題目與玩家資訊的可見性。 */
+    var info = $('canvastop');
+    var top = info ? info.getBoundingClientRect().bottom : 0;
+    ['b-game-back', 'b-aside-toggle', 'b-game-settings', 'b-settings'].forEach(function (id) {
+      var control = $(id);
+      if (control && !control.hidden) top = Math.max(top, control.getBoundingClientRect().bottom);
+    });
+    aside.style.top = Math.ceil(top + 8) + 'px';
+  }
+
   function setAsideOpen(open) {
     app.asideOpen = !!open;
     var aside = $('game-aside');
@@ -692,6 +711,7 @@
     aside.classList.toggle('collapsed', !app.asideOpen);
     $('game').classList.toggle('aside-open', app.asideOpen);
     $('b-aside-toggle').setAttribute('aria-expanded', String(app.asideOpen));
+    layoutAside();
     layoutStage();
   }
 
@@ -1668,11 +1688,14 @@
 
   function overHtml(v, g) {
     var sorted = g.players.slice().sort(function (a, b) { return b.score - a.score; });
-    var rows = sorted.map(function (p, i) {
+    var rows = sorted.map(function (p) {
       var win = g.winners.indexOf(p.id) >= 0;
-      return '<li class="' + (win ? 'win' : '') + '">' +
+      var rank = 1;
+      for (var j = 0; j < sorted.length; j++) if (sorted[j].score > p.score) rank += 1;
+      return '<li class="result-row' + (win ? ' win' : '') + '">' +
+        '<span class="rplace" aria-hidden="true">' + rank + '</span>' +
         '<span class="rface" aria-hidden="true">' + S.face(indexOfPlayer(g, p.id), win ? 'win' : 'sad') + '</span>' +
-        '<span class="rname">' + (win ? '🏆 ' : (i + 1) + '. ') + esc(p.name) + '</span>' +
+        '<span class="rname">' + esc(p.name) + '</span>' +
         '<span class="rpts">' + p.score + (globalThis.I18N ? globalThis.I18N.t("text.085") : " 分</span></li>");
     }).join('');
     /* 線上：結算完由房主按「回房間」，大家回到等待畫面（可以聊天、改規則、重新準備）再開一局；
@@ -1687,7 +1710,7 @@
       if (v.you.can.rematch) btns += (globalThis.I18N ? globalThis.I18N.t("text.081") : "<button class=\"btn3d\" data-color=\"mint\" data-act=\"rematch\">再玩一局</button>");
       btns += (globalThis.I18N ? globalThis.I18N.t("text.080") : "<button class=\"btn3d small\" data-color=\"cream\" data-act=\"home\">回主選單</button>");
     }
-    return '<div data-result-share>' + (globalThis.I18N ? globalThis.I18N.t("text.079") : "<h3>結算</h3><ul class=\"resultlist\">") + rows + '</ul>' + note + '</div>' +
+    return '<section data-result-share class="result-share-card">' + (globalThis.I18N ? globalThis.I18N.t("text.079") : "<div class=\"result-heading\"><h3>結算</h3><span>本局排名</span></div><ol class=\"resultlist\">") + rows + '</ol>' + note + '</section>' +
       (app.mode === 'online' ? chatBlockHtml(v) : '') +
       '<div class="overlay-btns">' + btns + '</div>';
   }
@@ -2571,8 +2594,8 @@
     D.addEventListener('pointerdown', unlock);
     D.addEventListener('keydown', unlock);
 
-    w.addEventListener('resize', function () { syncGuessbarSpace(); relayoutFeed(); layoutStage(); });
-    w.addEventListener('orientationchange', function () { setTimeout(function () { syncGuessbarSpace(); relayoutFeed(); layoutStage(); }, 250); });
+    w.addEventListener('resize', function () { syncGuessbarSpace(); relayoutFeed(); layoutStage(); layoutAside(); });
+    w.addEventListener('orientationchange', function () { setTimeout(function () { syncGuessbarSpace(); relayoutFeed(); layoutStage(); layoutAside(); }, 250); });
     relayoutFeed();
     layoutStage();
 
