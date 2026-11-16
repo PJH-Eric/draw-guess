@@ -1597,6 +1597,12 @@
     /* 進來之後要走得掉：房主退出會把房主交給下一位，最後一個人退出房間就關掉 */
     btns += '<button class="btn3d small sub" data-color="peach" data-act="leave-room">' +
       (v.you.isHost ? (globalThis.I18N ? globalThis.I18N.t("text.105") : "退出房間") : (globalThis.I18N ? globalThis.I18N.t("text.104") : "離開房間")) + '</button>';
+    var blockedBy = v.you.can.startBlockedBy;
+    var blockedMessage = blockedBy
+      ? (globalThis.I18N
+        ? globalThis.I18N.message(blockedBy, v.you.can.startBlockedByParams)
+        : blockedBy)
+      : (globalThis.I18N ? globalThis.I18N.t("text.099") : "等房主按開始。");
 
     /* 房號跟「x / y 位玩家」以前各佔一行；席位卡本身就數得出人數，
        那行字拿掉、房號也縮小，卡片才有地方放下面新的聊天室。
@@ -1608,7 +1614,7 @@
       '<div class="seatlist">' + (seats || (globalThis.I18N ? globalThis.I18N.t("text.101") : "<div class=\"seatrow\">還沒有人入座</div>")) +
       (specs.length ? '<div class="seatrow spec">👀 ' + specs.length + (globalThis.I18N ? globalThis.I18N.t("text.100") : " 位觀戰</div>") : '') + '</div>' +
       rules + '</div><div class="setup-col">' + invite + chatHtml + '</div></div>' +
-      (v.you.can.start ? '' : '<p class="setup-blocked">' + esc(v.you.can.startBlockedBy || (globalThis.I18N ? globalThis.I18N.t("text.099") : "等房主按開始。")) + '</p>') +
+      (v.you.can.start ? '' : '<p class="setup-blocked">' + esc(blockedMessage) + '</p>') +
       '<div class="overlay-btns">' + btns + '</div>';
   }
 

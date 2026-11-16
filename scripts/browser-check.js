@@ -875,6 +875,10 @@ async function main() {
   await hostTab.waitFor('window.DrawGuessApp.mode === "online" && window.DrawGuessApp.view', 10000, '進入房間');
   const code = await hostTab.eval('return window.DrawGuessApp.roomCode;');
   check('房主開房成功', typeof code === 'string' && code.length === 4, code);
+  const startBlockedMessage = await hostTab.eval(
+    'var e=document.querySelector("#overlay-card .setup-blocked"); return e ? e.textContent.trim() : "";'
+  );
+  check('只有房主時顯示已翻譯的開局提示', startBlockedMessage === '至少需要 2 位玩家。', startBlockedMessage);
   check('開房設定有套用', await hostTab.eval('var s=window.DrawGuessApp.view.room.settings; return s.rounds===3 && s.drawSec===120 && s.diff===3;'));
   check('線上房間沒有電腦對手的入口', await hostTab.eval('return !document.getElementById("room-create-ai") && !document.querySelector("[data-act=add-ai]");'));
   check('房間設定裡有離開／退出房間的按鈕', await hostTab.eval('var b=document.querySelector("[data-act=leave-room]"); return !!b && b.textContent.indexOf("房間") >= 0;'));

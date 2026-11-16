@@ -706,6 +706,12 @@ section('房間狀態機（lib/rooms.js）');
      一個人只準備好還是不能開始，要去玩單機練習。 */
   room.setReady('u1', true);
   check('只有一個真人不能開始線上對局', !room.canStart().ok, room.canStart().error);
+  const blockedStartView = room.viewFor('u1', t);
+  check('單人房開局提示投影保留翻譯參數',
+    blockedStartView.you.can.startBlockedBy === 'srv.err.needPlayers' &&
+      blockedStartView.you.can.startBlockedByParams &&
+      blockedStartView.you.can.startBlockedByParams.n === 2,
+    JSON.stringify(blockedStartView.you.can));
   room.setReady('u1', false);
 
   check('第二個人可以加入', room.join('u2', { name: '小華', role: 'player', now: t }).ok);
