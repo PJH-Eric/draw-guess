@@ -1,7 +1,7 @@
 /* ===== app/modal.js — 彈窗、範本與確認對話框 ===== */
 
-import { $, D, S, Sound, Words, app, esc, navChanged } from './core.js?v=93db29ccce';
-import { leaveGame } from './lobby.js?v=93db29ccce';
+import { $, D, S, Sound, Words, app, esc, navChanged } from './core.js?v=e96dd9bf54';
+import { leaveGame } from './lobby.js?v=e96dd9bf54';
 
 var w = window;
 
@@ -20,6 +20,11 @@ export function makeModal(modalId, panelId, openerId) {
     for (var i = 0; i < f.length; i++) if (!f[i].disabled && f[i].offsetParent !== null) able.push(f[i]);
     if (!able.length) return;
     var first = able[0], last = able[able.length - 1];
+    if (D.activeElement === panel || !panel.contains(D.activeElement)) {
+      ev.preventDefault();
+      (ev.shiftKey ? last : first).focus();
+      return;
+    }
     if (ev.shiftKey && D.activeElement === first) { ev.preventDefault(); last.focus(); }
     else if (!ev.shiftKey && D.activeElement === last) { ev.preventDefault(); first.focus(); }
   };

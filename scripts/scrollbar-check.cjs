@@ -33,6 +33,22 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     await evaluate(`document.body.innerHTML = '<label style="display:block;width:280px;margin:20px"><select id="category">' + Array.from({length:38}, (_, i) => '<option value="'+i+'">Category '+i+'</option>').join('') + '</select></label>';`);
     await evaluate('var style=document.createElement("style");style.textContent=' + JSON.stringify(fs.readFileSync(path.join(ROOT, 'public/css/scrollbars.css'), 'utf8')) + ';document.head.appendChild(style)');
     for (const file of ['dropdowns.js', 'scrollbars.js']) await evaluate(fs.readFileSync(path.join(ROOT, 'public/js', file), 'utf8'));
+    // 使用實際 Modal 控制器檢查初始焦點、Tab 邊界及 Escape 返回。
+    await evaluate(`var D=document,$=function(id){return D.getElementById(id);},S={repaintAll:function(){}},navChanged=function(){};var host=document.createElement('div');host.id='modal-fixture';host.innerHTML='<button id="modal-opener">Open</button><div id="focus-modal" class="settings-modal" role="dialog"><div id="focus-panel" tabindex="-1"><button id="focus-first">First</button><button id="focus-last">Last</button></div></div><button id="focus-outside">Outside</button>';document.body.appendChild(host);`);
+    await evaluate(fs.readFileSync(path.join(ROOT,'public/js/app/modal.js'),'utf8').replace(/^import .*;$/gm,'').replace(/export /g,''));
+    await evaluate('document.getElementById("modal-opener").focus();window.testModal=makeModal("focus-modal","focus-panel","modal-opener");testModal.open();');
+    await sleep(50);
+    await send('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9,modifiers:8});
+    await send('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9,modifiers:8});
+    if(await evaluate('document.activeElement.id')!=='focus-last') throw Error('Initial Shift+Tab escaped modal focus trap');
+    await send('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9});
+    await send('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9});
+    if(await evaluate('document.activeElement.id')!=='focus-first') throw Error('Tab must wrap to first modal action');
+    await send('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+    if(await evaluate('testModal.isOpen()||document.activeElement.id!=="modal-opener"')) throw Error('Escape must close modal and restore opener');
+    await evaluate('document.getElementById("modal-fixture").remove()');
+    console.log('PASS initial Shift+Tab, Tab wrap and Escape focus restoration');
+
     for (const [width, height] of [[360,640],[844,390],[768,1024],[1024,768],[1440,900]]) {
       await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
       await evaluate('document.getElementById("category-button").click()');
