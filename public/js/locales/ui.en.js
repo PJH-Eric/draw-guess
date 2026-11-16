@@ -47,6 +47,8 @@ I18N.register("en", {
   "invite.share": "Share",
   "invite.shareText": "Join my room {code} and let us draw and guess!",
   "invite.shareTitle": "Play Draw & Guess",
+  "kick.action": "Vote to kick",
+  "kick.actionFor": "Vote to kick {name}",
   "kick.agree": "Agree",
   "kick.banner": "{by} started a vote to remove {name} ({yes}/{need} votes, {s}s left)",
   "kick.busy": "A vote is already in progress.",

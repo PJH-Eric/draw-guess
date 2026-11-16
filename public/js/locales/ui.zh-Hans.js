@@ -47,6 +47,8 @@ I18N.register("zh-Hans", {
   "invite.share": "分享",
   "invite.shareText": "加入我的房间 {code}，一起画图猜谜！",
   "invite.shareTitle": "来玩你画我猜",
+  "kick.action": "投票踢出",
+  "kick.actionFor": "投票踢出 {name}",
   "kick.agree": "同意",
   "kick.banner": "{by} 发起投票：把 {name} 请出房间（{yes}/{need} 票・剩 {s} 秒）",
   "kick.busy": "已经有一场投票在进行。",

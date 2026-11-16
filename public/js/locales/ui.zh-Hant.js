@@ -47,6 +47,8 @@ I18N.register("zh-Hant", {
   "invite.share": "分享",
   "invite.shareText": "加入我的房間 {code}，一起畫圖猜謎！",
   "invite.shareTitle": "來玩你畫我猜",
+  "kick.action": "投票踢出",
+  "kick.actionFor": "投票踢出 {name}",
   "kick.agree": "同意",
   "kick.banner": "{by} 發起投票：把 {name} 請出房間（{yes}/{need} 票・剩 {s} 秒）",
   "kick.busy": "已經有一場投票在進行。",

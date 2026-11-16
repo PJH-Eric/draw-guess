@@ -1266,6 +1266,44 @@ async function main() {
   await watchTab.waitFor('window.DrawGuessApp.mode === "online" && window.DrawGuessApp.view', 10000, '觀戰者進房');
   check('同一種連結，自己選「加入觀戰」就是觀戰者', (await watchTab.json('window.__probe.game()')).role === 'spectator');
 
+  /* 資訊欄投票：三位真人才可發起；確認前不送票，取消不改變房間。 */
+  check('兩位玩家時資訊欄顯示停用的投票鈕',await hostTab.eval('return !!document.querySelector("#scorelist .score-kick:disabled")&&!document.querySelector("#scorelist .score-kick:not(:disabled)");'));
+  const kickClient = require('socket.io-client').io(BASE, { transports: ['websocket'], forceNew: true });
+  const kickAsk = (event, payload) => new Promise((resolve,reject) => kickClient.timeout(5000).emit(event,payload,(error,result) => error?reject(error):resolve(result)));
+  await new Promise(resolve => kickClient.once('connect',resolve));
+  const kickHello=await kickAsk('hello',{clientId:'browser-kick-'+Date.now(),name:'投票測試玩家'});
+  await kickAsk('room:join',{code:code,name:'投票測試玩家',role:'player'});
+  await hostTab.waitFor('window.DrawGuessApp.view.you.can.kick',5000,'三人投票權限');
+  check('資訊欄不對自己提供投票操作',await hostTab.eval('return !Array.from(document.querySelectorAll("#scorelist .score-kick")).some(function(b){return b.dataset.kick===DrawGuessApp.view.you.id;});'));
+  check('觀戰者的資訊欄投票鈕停用',await watchTab.eval('return !document.querySelector("#scorelist .score-kick:not(:disabled)");'));
+  const kickSelector='#scorelist .score-kick[data-kick="'+kickHello.id+'"]';
+  for(const viewport of VIEWPORTS) {
+    await setViewport(viewport);
+    await hostTab.eval('if(!document.getElementById("game-aside").classList.contains("open"))document.getElementById("b-aside-toggle").click();');
+    await sleep(250);
+    await hostTab.eval('var b=document.querySelector('+JSON.stringify(kickSelector)+');b.scrollIntoView({block:"nearest"});b.focus();');
+    await sleep(100);
+    const voteButton=await hostTab.eval('var b=document.querySelector('+JSON.stringify(kickSelector)+'),r=b.getBoundingClientRect(),h=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return {x:r.x+r.width/2,y:r.y+r.height/2,hit:b.contains(h),height:r.height};');
+    check(viewport.name+'：投票按鈕可見且觸控高度足夠',voteButton.hit&&voteButton.height>=46,JSON.stringify(voteButton));
+    await shot(viewport.name+'-資訊欄投票',hostTab);
+    await tap(hostTab,voteButton.x,voteButton.y);
+    await hostTab.waitFor('document.getElementById("confirm-modal").classList.contains("open")',3000,'投票確認視窗');
+    const dialog=await hostTab.eval('var m=document.getElementById("confirm-modal"),p=document.getElementById("confirm-panel").getBoundingClientRect();return {custom:m.getAttribute("role")==="dialog",inside:p.left>=0&&p.right<=innerWidth+1&&p.top>=0&&p.bottom<=innerHeight+1,target:document.getElementById("confirm-text").textContent.indexOf("投票測試玩家")>=0,noVote:!DrawGuessApp.view.room.kick};');
+    check(viewport.name+'：自訂投票確認視窗完整顯示，確認前沒有投票',dialog.custom&&dialog.inside&&dialog.target&&dialog.noVote,JSON.stringify(dialog));
+    await shot(viewport.name+'-投票確認',hostTab);
+    await hostTab.eval('document.getElementById("confirm-cancel").click();');
+    check(viewport.name+'：取消投票不發起且焦點返回玩家按鈕',await hostTab.eval('return !DrawGuessApp.view.room.kick&&document.activeElement.matches("#scorelist .score-kick");'));
+  }
+  await hostTab.eval('document.querySelector('+JSON.stringify(kickSelector)+').click();document.getElementById("confirm-ok").click();');
+  await hostTab.waitFor('DrawGuessApp.view.room.kick&&DrawGuessApp.view.room.kick.targetId==='+JSON.stringify(kickHello.id),5000,'確認後才發起投票');
+  check('資訊欄確認後發起對指定玩家的投票',await hostTab.eval('return DrawGuessApp.view.room.kick.yes===1;'));
+  await mateTab.waitFor('DrawGuessApp.view.you.can.voteKick',5000,'其他玩家可投票');
+  await mateTab.eval('document.getElementById("b-kick-yes").click();');
+  await hostTab.waitFor('!DrawGuessApp.view.room.kick&&DrawGuessApp.view.room.members.filter(function(m){return m.role==="player";}).length===2',5000,'過半數同意後移除指定玩家');
+  kickClient.disconnect();
+  await setViewport({width:1024,height:768,mobile:true,dsf:2});
+  await hostTab.eval('if(document.getElementById("game-aside").classList.contains("open"))document.getElementById("b-aside-toggle").click();');
+
   /* 房間設定：遊戲規則改下拉、房號縮小、玩家名單置左沒有「x/y 位玩家」、聊天室 */
   check('遊戲規則改成下拉選單、不是按鈕，而且不是原生 <select>（自己刻的按鈕＋清單）',
     await hostTab.eval('return !!document.querySelector("#overlay-card .ruledd-btn[data-field=set-rounds]") && !document.querySelector("#overlay-card [data-act=set-rounds][role=radio]") && !document.querySelector("#overlay-card select");'));

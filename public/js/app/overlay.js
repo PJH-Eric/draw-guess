@@ -1,14 +1,14 @@
 /* ===== app/overlay.js — 疊層卡片：房間設定、選題、公布答案、結算 ===== */
 
-import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=fc5f04d81f';
-import { askLeaveRoom, makeModal, modals } from './modal.js?v=fc5f04d81f';
-import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=fc5f04d81f';
-import { soloRefresh, soloStep, startSolo } from './solo.js?v=fc5f04d81f';
-import { renderRecent } from './feed.js?v=fc5f04d81f';
-import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=fc5f04d81f';
-import { PHASE_LABEL, moodOf } from './render.js?v=fc5f04d81f';
-import { copyText, newInvite, revokeInvite } from './game-settings.js?v=fc5f04d81f';
-import { enterOnlineRoom, leaveGame, roomRuleChips, saveNick } from './lobby.js?v=fc5f04d81f';
+import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=93db29ccce';
+import { askLeaveRoom, makeModal, modals } from './modal.js?v=93db29ccce';
+import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=93db29ccce';
+import { soloRefresh, soloStep, startSolo } from './solo.js?v=93db29ccce';
+import { renderRecent } from './feed.js?v=93db29ccce';
+import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=93db29ccce';
+import { PHASE_LABEL, moodOf } from './render.js?v=93db29ccce';
+import { copyText, newInvite, revokeInvite } from './game-settings.js?v=93db29ccce';
+import { enterOnlineRoom, leaveGame, roomRuleChips, saveNick } from './lobby.js?v=93db29ccce';
 
 var w = window;
 
@@ -793,18 +793,28 @@ export function renderAside() {
   $('sum-conn').textContent = app.mode === 'solo' ? (globalThis.I18N ? globalThis.I18N.t("text.068") : "單機（不需要連線）")
     : ({ get connected() { return globalThis.I18N ? globalThis.I18N.t("text.067") : "已連線"; }, get connecting() { return globalThis.I18N ? globalThis.I18N.t("text.066") : "重新連線中…"; }, get loading() { return globalThis.I18N ? globalThis.I18N.t("text.065") : "載入中…"; }, get error() { return globalThis.I18N ? globalThis.I18N.t("text.064") : "連線錯誤"; }, get offline() { return globalThis.I18N ? globalThis.I18N.t("text.063") : "無伺服器"; }, get idle() { return globalThis.I18N ? globalThis.I18N.t("text.062") : "未連線"; } }[app.conn.status] || app.conn.status);
 
-  /* 比分 */
+  /* 比分與投票操作：按鈕沿用伺服器權限，名單未變時保留焦點。 */
   var sl = $('scorelist');
-  if (g) {
-    var sorted = g.players.slice().sort(function (a, b) { return b.score - a.score; });
-    sl.innerHTML = sorted.map(function (p) {
-      var cls = ['', p.isDrawer ? 'drawer' : '', p.id === v.you.id ? 'me' : ''].join(' ').trim();
-      return '<li class="' + cls + '"><span class="sface" aria-hidden="true">' +
-        S.face(indexOfPlayer(g, p.id), moodOf(p, g)) + '</span>' +
-        '<span class="sname">' + esc(p.name) + '</span>' +
-        '<span class="spts">' + p.score + '</span></li>';
-    }).join('');
-  } else sl.innerHTML = '';
+  var members = v.room ? v.room.members.filter(function (m) { return m.role === 'player'; }) : [];
+  var sorted = g ? g.players.slice().sort(function (a, b) { return b.score - a.score; }) : members;
+  var scoreHtml = sorted.map(function (p, index) {
+    var cls = ['', p.isDrawer ? 'drawer' : '', p.id === v.you.id ? 'me' : ''].join(' ').trim();
+    var eligible = app.mode === 'online' && v.room && !v.room.closed && p.id !== v.you.id && members.some(function (m) { return m.id === p.id; });
+    var button = '';
+    if (eligible) {
+      var reason = v.room.kick ? 'kick.busy' : (v.you.role !== 'player' ? 'kick.playersOnly' : 'kick.needThree');
+      button = '<button type="button" class="score-kick" data-kick="' + esc(p.id) + '" aria-label="' + esc(w.I18N.t('kick.actionFor', { name: p.name })) + '"' +
+        (v.you.can.kick ? '' : ' disabled title="' + esc(w.I18N.t(reason)) + '"') + '>' + esc(w.I18N.t('kick.action')) + '</button>';
+    }
+    return '<li class="' + cls + '"><span class="sface" aria-hidden="true">' +
+      S.face(g ? indexOfPlayer(g, p.id) : index, g ? moodOf(p, g) : 'happy') + '</span>' +
+      '<span class="sname" title="' + esc(p.name) + '">' + esc(p.name) + '</span>' +
+      '<span class="spts">' + (p.score || 0) + '</span>' + button + '</li>';
+  }).join('');
+  if (sl.getAttribute('data-sig') !== scoreHtml) {
+    sl.innerHTML = scoreHtml;
+    sl.setAttribute('data-sig', scoreHtml);
+  }
 
   /* 猜題紀錄：系統事件 + 每一則猜題 */
   renderRecent();

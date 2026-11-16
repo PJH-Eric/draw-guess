@@ -1,9 +1,9 @@
 /* ===== app/game-settings.js — 對局設定彈窗與邀請連結 ===== */
 
-import { $, Cfg, D, S, Sound, app, esc, toast } from './core.js?v=fc5f04d81f';
-import { askConfirm, askLeaveGame, makeModal, modals } from './modal.js?v=fc5f04d81f';
-import { doSkip } from './canvas.js?v=fc5f04d81f';
-import { renderOverlay } from './overlay.js?v=fc5f04d81f';
+import { $, Cfg, D, S, Sound, app, esc, toast } from './core.js?v=93db29ccce';
+import { askConfirm, askLeaveGame, makeModal, modals } from './modal.js?v=93db29ccce';
+import { doSkip } from './canvas.js?v=93db29ccce';
+import { renderOverlay } from './overlay.js?v=93db29ccce';
 
 var w = window;
 
@@ -20,22 +20,41 @@ export function setupGameSettings() {
   if (back) back.addEventListener('click', function () { modals.game.close(); });
 
   $('gs-skip').addEventListener('click', function () { doSkip(); modals.game.close(); });
-  $('gs-kick-list').addEventListener('click', function (ev) {
-    var b = ev.target.closest ? ev.target.closest('button[data-kick]') : null;
-    if (!b || b.disabled) return;
-    var target = b.getAttribute('data-kick'), name = b.getAttribute('data-name');
-    modals.game.close();
-    askConfirm({
-      title: w.I18N.t('kick.confirmTitle'),
-      text: w.I18N.t('kick.confirmText', { name: name }),
-      ok: w.I18N.t('kick.confirmOk'),
-      cancel: w.I18N.t('kick.cancel')
-    }, function () { w.Online.send('room:kick', { target: target }); });
+  ['gs-kick-list', 'scorelist'].forEach(function (id) {
+    $(id).addEventListener('click', function (ev) {
+      var button = ev.target.closest('button[data-kick]');
+      if (button && !button.disabled) confirmKick(button.getAttribute('data-kick'));
+    });
   });
   $('b-kick-yes').addEventListener('click', function () { Sound.play('click'); w.Online.send('room:kickVote', {}); });
   $('gs-quit').addEventListener('click', function () {
     modals.game.close();
     askLeaveGame();
+  });
+}
+
+export function confirmKick(target) {
+  var v = app.view;
+  if (app.mode !== 'online' || !v || !v.room || !v.you.can.kick) return;
+  var member = v.room.members.find(function (m) { return m.id === target && m.role === 'player' && m.id !== v.you.id; });
+  if (!member) return;
+  var code = v.room.code;
+  if (modals.game.isOpen()) modals.game.close();
+  Sound.play('click');
+  askConfirm({
+    title: w.I18N.t('kick.confirmTitle'),
+    text: w.I18N.t('kick.confirmText', { name: member.name }),
+    ok: w.I18N.t('kick.confirmOk'),
+    cancel: w.I18N.t('kick.cancel')
+  }, function () {
+    var current = app.view;
+    if (app.mode !== 'online' || !current || !current.room || current.room.code !== code) return;
+    var exists = current.room.members.some(function (m) { return m.id === target && m.role === 'player' && m.id !== current.you.id; });
+    if (!exists || !current.you.can.kick) {
+      toast(w.I18N.t(current.room.kick ? 'kick.busy' : 'srv.err.kickBadTarget'), 'error');
+      return;
+    }
+    w.Online.send('room:kick', { target: target });
   });
 }
 
