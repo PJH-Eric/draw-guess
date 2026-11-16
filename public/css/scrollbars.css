@@ -25,3 +25,9 @@ html.custom-scrollbars *::-webkit-scrollbar{display:none!important;width:0!impor
 .dropdown-option[aria-selected=true]{background:#EEE6FC;color:var(--grape-t)}
 .dropdown-option:hover{background:#F5F0FC}
 .dropdown-option:focus-visible,.dropdown-button:focus-visible{outline:3px solid var(--sky-d);outline-offset:-3px}
+@media (max-width:620px){
+  .setting-text:has(.dropdown-root){display:grid;grid-template-columns:minmax(0,1fr) minmax(140px,1.2fr);gap:8px;padding:6px 4px}
+  .dropdown-button{gap:6px;padding:8px 10px}
+  .dropdown-button span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .room-create-panel .create-rules .dropdown-button{font-size:.875rem}
+}

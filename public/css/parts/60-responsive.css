@@ -563,8 +563,14 @@ body .lc-root{
 /* 英文等長字串 */
 /* 單機手機直向：題號拿掉，題目與「查看範本」留在同一行，不多吃一列畫布高度 */
 @media (orientation:portrait) and (max-width:620px){
+  body.solo-mode{--hud-reserve:calc(var(--topedge) + 3 * var(--topbtn) + 2 * var(--topgap) + 8px)}
   body.solo-mode .wordbar-meta{display:none}
-  body.solo-mode .wordbar{flex-wrap:nowrap}
+  body.solo-mode .wordbar{flex-wrap:nowrap;gap:4px;padding:3px 5px}
+  body.solo-mode .wordbar-mask{flex:1 1 0;font-size:1rem;letter-spacing:.02em;line-height:1.15}
+  body.solo-mode .wordbar .reference-toggle{
+    flex:0 0 48px;width:48px;min-width:0;min-height:46px;padding:4px;
+    font-size:.72rem;line-height:1.15;overflow-wrap:anywhere;text-wrap:balance;
+  }
   #opt-worddiff{flex-wrap:nowrap}
   #opt-worddiff .pillbtn{flex:1 1 0;min-width:0;padding-left:6px;padding-right:6px}
 }

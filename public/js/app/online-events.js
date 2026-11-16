@@ -1,13 +1,13 @@
 /* ===== app/online-events.js — 線上事件 ===== */
 
-import { $, Sound, Store, Words, app, toast } from './core.js?v=35d7919526';
-import { modals } from './modal.js?v=35d7919526';
-import { localizeGame } from './solo.js?v=35d7919526';
-import { pushFeed, replaceFeed } from './feed.js?v=35d7919526';
-import { render } from './render.js?v=35d7919526';
-import { renderAside } from './overlay.js?v=35d7919526';
-import { renderGameSettings } from './game-settings.js?v=35d7919526';
-import { forgetRoom, joinRoom, leaveGame, renderRoomList, saveNick, setLobbyEnabled } from './lobby.js?v=35d7919526';
+import { $, Sound, Store, Words, app, toast } from './core.js?v=fc5f04d81f';
+import { modals } from './modal.js?v=fc5f04d81f';
+import { localizeGame } from './solo.js?v=fc5f04d81f';
+import { pushFeed, replaceFeed } from './feed.js?v=fc5f04d81f';
+import { render } from './render.js?v=fc5f04d81f';
+import { renderAside } from './overlay.js?v=fc5f04d81f';
+import { renderGameSettings } from './game-settings.js?v=fc5f04d81f';
+import { forgetRoom, joinRoom, leaveGame, renderRoomList, saveNick, setLobbyEnabled } from './lobby.js?v=fc5f04d81f';
 
 var w = window;
 

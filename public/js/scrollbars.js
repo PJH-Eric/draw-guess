@@ -8,6 +8,7 @@
   var discover = true;
   var serial = 0;
   var dragging = null;
+  var frontModal = null;
   var observer = w.ResizeObserver ? new w.ResizeObserver(schedule) : null;
 
   function schedule() {
@@ -104,6 +105,7 @@
     var total = vertical ? target.scrollHeight : target.scrollWidth;
     var overflow = vertical ? style.overflowY : style.overflowX;
     var rail = item.rail;
+    if (frontModal && !frontModal.contains(target)) { rail.hidden = true; return; }
     rail.hidden = !/^(auto|scroll)$/.test(overflow) || total <= client + 1 || !target.getClientRects().length;
     if (rail.hidden) return;
     var rect = target.getBoundingClientRect();
@@ -149,6 +151,10 @@
 
   function update() {
     frame = 0;
+    frontModal = null;
+    d.querySelectorAll('.settings-modal.open').forEach(function (modal) {
+      if (!frontModal || Number(w.getComputedStyle(modal).zIndex) >= Number(w.getComputedStyle(frontModal).zIndex)) frontModal = modal;
+    });
     if (discover) {
       discover = false;
       d.querySelectorAll(selector).forEach(function (target) {

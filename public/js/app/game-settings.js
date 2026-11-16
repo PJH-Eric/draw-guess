@@ -1,9 +1,9 @@
 /* ===== app/game-settings.js — 對局設定彈窗與邀請連結 ===== */
 
-import { $, Cfg, D, S, Sound, app, esc, toast } from './core.js?v=35d7919526';
-import { askConfirm, askLeaveGame, makeModal, modals } from './modal.js?v=35d7919526';
-import { doSkip } from './canvas.js?v=35d7919526';
-import { renderOverlay } from './overlay.js?v=35d7919526';
+import { $, Cfg, D, S, Sound, app, esc, toast } from './core.js?v=fc5f04d81f';
+import { askConfirm, askLeaveGame, makeModal, modals } from './modal.js?v=fc5f04d81f';
+import { doSkip } from './canvas.js?v=fc5f04d81f';
+import { renderOverlay } from './overlay.js?v=fc5f04d81f';
 
 var w = window;
 

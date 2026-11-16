@@ -47,6 +47,15 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
       await evaluate('document.getElementById("category-button").click()');
       console.log('PASS dropdown thumb drag '+width+'x'+height);
     }
+    await evaluate(`var background=document.createElement('div');background.id='scroll-background';background.className='screen';background.style.cssText='position:fixed;left:0;top:0;width:200px;height:100px;overflow:auto';background.innerHTML='<div style="height:400px">Background</div>';document.body.appendChild(background);var modal=document.createElement('div');modal.id='test-modal';modal.className='settings-modal open';modal.style.cssText='position:fixed;inset:0;z-index:100';modal.innerHTML='<div id="scroll-modal" class="settings-body" style="width:200px;height:100px;overflow:auto"><div style="height:400px">Modal</div></div>';document.body.appendChild(modal);`);
+    await sleep(100);
+    const activeRails=await evaluate(`Array.from(document.querySelectorAll('.scroll-rail:not([hidden])')).map(function(r){return r.getAttribute('aria-controls');})`);
+    if(activeRails.includes('scroll-background')||!activeRails.includes('scroll-modal')) throw Error('Modal must hide background scrollbars');
+    await evaluate('document.getElementById("test-modal").remove()');
+    await sleep(100);
+    if(!await evaluate(`!!document.querySelector('.scroll-rail[aria-controls="scroll-background"]:not([hidden])')`)) throw Error('Background scrollbar must return after closing modal');
+    await evaluate('document.getElementById("scroll-background").remove()');
+    console.log('PASS modal hides background rails and restores them on close');
     await evaluate('var style=document.createElement("style");style.textContent='+JSON.stringify(fs.readFileSync(path.join(ROOT,'public/css/lobby-chat.css'),'utf8'))+';document.head.appendChild(style)');
     await evaluate(fs.readFileSync(path.join(ROOT,'public/js/lobby-chat.js'),'utf8'));
     await evaluate('window.chat=LobbyChat.create({game:"scroll-check",active:function(){return true;}});chat.setConnected(true);chat.open();chat.history(Array.from({length:50},function(_,i){return {name:"Player",text:"Message "+i,time:Date.now()};}));');

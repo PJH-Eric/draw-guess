@@ -1,9 +1,9 @@
 /* ===== app/render.js — 對局畫面渲染 ===== */
 
-import { $, D, S, app, esc, secsLeft } from './core.js?v=35d7919526';
-import { renderReference } from './modal.js?v=35d7919526';
-import { sizeCanvas } from './canvas.js?v=35d7919526';
-import { renderAside, renderControls, renderOverlay } from './overlay.js?v=35d7919526';
+import { $, D, S, app, esc, secsLeft } from './core.js?v=fc5f04d81f';
+import { renderReference } from './modal.js?v=fc5f04d81f';
+import { sizeCanvas } from './canvas.js?v=fc5f04d81f';
+import { renderAside, renderControls, renderOverlay } from './overlay.js?v=fc5f04d81f';
 
 var w = window;
 

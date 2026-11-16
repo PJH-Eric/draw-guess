@@ -461,7 +461,7 @@ async function main() {
 
   /* ================= A. 各尺寸的版面檢查 ================= */
 
-  for (const v of VIEWPORTS) {
+  for (const v of VIEWPORTS.filter(function(v){return !process.env.CHECK_VIEWPORT || v.name===process.env.CHECK_VIEWPORT;})) {
     console.log('\n【' + v.name + ' ' + v.width + '×' + v.height + '】');
     await setViewport(v);
     await goto(cdp, BASE);
@@ -659,6 +659,18 @@ async function main() {
     check(v.name + '：畫家的工具列有出現', drawStage.toolbarShown === true);
     canvasFloor(v.name + ' 單機作畫', Math.min(drawStage.canvas.w, drawStage.canvas.h));
     assertLayout('作畫中（工具列展開）', v, drawInfo);
+    for (const topic of ['貓', '神力女超人', 'Tyrannosaurus']) {
+      const header = await cdp.eval('var mask=document.getElementById("wordbar-mask");var old=mask.textContent;mask.textContent='+JSON.stringify(topic)+';var b=document.getElementById("b-reference"),bar=document.getElementById("wordbar"),m=mask.getBoundingClientRect(),r=b.getBoundingClientRect(),box=bar.getBoundingClientRect();var result={align:getComputedStyle(mask).textAlign,overlap:Math.min(m.right,r.right)-Math.max(m.left,r.left)>1&&Math.min(m.bottom,r.bottom)-Math.max(m.top,r.top)>1,inside:r.left>=box.left&&r.right<=box.right+1&&r.top>=box.top&&r.bottom<=box.bottom+1,width:m.width,font:parseFloat(getComputedStyle(mask).fontSize),height:box.height};mask.textContent=old;return result;');
+      check(v.name+'：'+topic+' 題目與範本入口分開且完整留在題目列',!header.overlap&&header.inside&&header.align==='center',JSON.stringify(header));
+      if(v.width<=620&&v.height>v.width) check(v.name+'：長題目不擠成單字直排',header.width>=header.font*2&&header.height<=76,JSON.stringify(header));
+    }
+    if(v.width<=620&&v.height>v.width) {
+      await cdp.eval('window.__originalWord=DrawGuessApp.solo.state.wordId;DrawGuessApp.solo.state.wordId=Words.LIST.find(function(w){return w.text==="神力女超人";}).id;');
+      await sleep(200);
+      await shot(v.name+'-長題目與查看範本');
+      await cdp.eval('DrawGuessApp.solo.state.wordId=window.__originalWord;');
+    }
+
     const toolGroups = await cdp.json('(function(){var groups=Array.from(document.querySelectorAll(".paint-controls > .tool-group"));return {count:groups.length,labels:groups.map(function(g){var h=g.querySelector(".tool-group-label"),c=g.querySelector(".toolbtn,.colorbtn,.widthbtn");return {text:h&&h.textContent.trim(),visible:!!h&&getComputedStyle(h).display!=="none",above:!!h&&!!c&&h.getBoundingClientRect().bottom<=c.getBoundingClientRect().top+1};})};})()');
     check(v.name + '：工具、顏色、筆刷編輯分組清楚且標籤不擋按鈕',
       toolGroups.count === 3 && toolGroups.labels.every(function (group) { return group.text && group.visible; }),
@@ -847,6 +859,8 @@ async function main() {
     check(v.name + '：主控台沒有未處理錯誤', cdp.errors.length === 0, cdp.errors.slice(0, 2).join(' | '));
     cdp.errors.length = 0;
   }
+
+  if (process.env.CHECK_SCOPE === "layout") { cleanup(); return; }
 
   /* ================= A1. 題目語系：預設跟系統語系，之後與介面語系互不影響 ================= */
   console.log('\n【題目語系】');

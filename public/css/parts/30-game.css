@@ -60,7 +60,7 @@
 .wordbar-label{font-size:.86rem;font-weight:800;color:var(--ink-soft);white-space:nowrap}
 .wordbar-mask{
   font-size:clamp(1.45rem,4.3vmin,2.6rem);font-weight:900;letter-spacing:.2em;line-height:1.12;
-  color:var(--grape-t);word-break:break-all
+  color:var(--grape-t);word-break:break-all;text-align:center
 }
 .wordbar-meta{font-size:.82rem;font-weight:800;color:var(--ink-soft)}
 
