@@ -51,7 +51,10 @@ body{
   padding:var(--safe-t) var(--safe-r) var(--safe-b) var(--safe-l);
 }
 .screen.active{display:block}
-.screen.flexcenter.active{display:flex;align-items:center;justify-content:center}
+/* 置中靠子元素的 margin:auto：內容比畫面高時會從頂端開始排、可以捲到最上面；
+   用 align-items:center 的話超出的上半截會被裁掉、捲不回去（矮的橫向手機主選單 logo 被切頭）。 */
+.screen.flexcenter.active{display:flex;align-items:flex-start;justify-content:center}
+.screen.flexcenter.active > .home-wrap{margin:auto}
 .screen#s-game.active{display:block;overflow:hidden}
 [hidden]{display:none!important}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
@@ -111,7 +114,7 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 .panel-head h2{flex:1;margin:0;text-align:center;font-size:1.5rem;letter-spacing:.05em}
 .panel-head .spacer{flex:0 0 52px}
 .lbl{margin:18px 4px 8px;font-size:1.05rem;color:var(--grape-t);letter-spacing:.04em}
-.category-label{display:block}
+.category-label{display:block;font-weight:700}
 .category-select{width:100%;min-height:48px;padding:10px 14px;border:3px solid var(--line);border-radius:16px;background:#fff;color:var(--ink);font:inherit;font-weight:800}
 .category-select:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
 .category-rule{margin-top:10px}
@@ -461,7 +464,8 @@ body.has-guessbar .playarea{padding-bottom:var(--guessbar-h,0px)}
   border:3px solid var(--line);border-radius:50%;cursor:pointer;
   box-shadow:0 3px 0 rgba(74,59,85,.12);position:relative
 }
-.colorbtn[aria-checked=true]{border-color:var(--ink);transform:scale(1.12);box-shadow:0 3px 0 var(--ink)}
+/* 選中的顏色：深色外框＋內圈白環。不放大，才不會壓到隔壁色票與分隔線。 */
+.colorbtn[aria-checked=true]{border-color:var(--ink);box-shadow:inset 0 0 0 3px var(--paper),0 3px 0 var(--ink)}
 .colorbtn:focus-visible{outline:3px solid var(--sky-d);outline-offset:3px}
 .toolrow-colors{gap:7px}
 
@@ -479,7 +483,16 @@ body.has-guessbar .playarea{padding-bottom:var(--guessbar-h,0px)}
   display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:5px 10px;
   border:3px solid var(--line);border-radius:14px;background:#fff;font-weight:800;font-size:.84rem;cursor:pointer
 }
-.fillbox input{width:22px;height:22px;accent-color:var(--grape-d);cursor:pointer}
+.fillbox input{
+  -webkit-appearance:none;appearance:none;position:relative;flex:0 0 auto;width:22px;height:22px;margin:0;
+  border:3px solid var(--ink-soft);border-radius:7px;background:#fff;cursor:pointer;
+}
+.fillbox input:checked{border-color:var(--grape-t);background:var(--grape-d)}
+.fillbox input:checked::after{
+  content:"";position:absolute;left:4px;top:0;width:5px;height:10px;
+  border:solid #fff;border-width:0 3px 3px 0;transform:rotate(45deg);
+}
+.fillbox input:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
 .fillbox.on{border-color:var(--grape-d);background:#F8F4FF}
 .toolrow-misc{align-items:center}
 /* 三張提示：橫式擺在畫布正上方，跟工具列分開，不再壓在畫布上。
@@ -849,7 +862,26 @@ body.modal-open .language-menu{display:none!important}
 .setting-range>span{flex-direction:row;align-items:center;gap:6px;min-width:118px}
 .setting-range>span>span{flex:1 1 auto;min-width:0;white-space:nowrap}
 .setting-range output{min-width:3.2em;text-align:right;color:var(--grape-t);font-weight:900}
-.setting-range input[type=range]{width:min(52%,220px);accent-color:var(--grape-d);cursor:pointer;min-height:32px}
+/* 自訂滑桿：軌道、已填滿段與圓鈕都自己畫，不用瀏覽器預設的深色軌道 */
+.setting-range input[type=range]{
+  -webkit-appearance:none;appearance:none;width:min(52%,220px);min-height:32px;margin:0;
+  background:transparent;cursor:pointer;--fill:50%;
+}
+.setting-range input[type=range]::-webkit-slider-runnable-track{
+  height:12px;border:2px solid var(--ink-soft);border-radius:999px;
+  background:linear-gradient(90deg,var(--grape-d) var(--fill),#EAE4F0 var(--fill));
+}
+.setting-range input[type=range]::-moz-range-track{
+  height:8px;border:2px solid var(--ink-soft);border-radius:999px;
+  background:linear-gradient(90deg,var(--grape-d) var(--fill),#EAE4F0 var(--fill));
+}
+.setting-range input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;width:26px;height:26px;margin-top:-9px;
+  border:3px solid var(--ink);border-radius:50%;background:#fff;box-shadow:0 2px 0 rgba(74,59,85,.25);
+}
+.setting-range input[type=range]::-moz-range-thumb{
+  width:20px;height:20px;border:3px solid var(--ink);border-radius:50%;background:#fff;box-shadow:0 2px 0 rgba(74,59,85,.25);
+}
 .settings-foot{
   flex:0 0 auto;display:flex;justify-content:center;gap:10px;
   padding:10px 14px calc(10px + var(--safe-b));
@@ -991,7 +1023,6 @@ body.modal-open .language-menu{display:none!important}
   .inviterow{gap:5px}
   .inviterow .pillbtn{min-width:44px;padding:7px 8px;font-size:.78rem}
   .inviterow input{padding:8px 8px;font-size:.72rem}
-  .screen#s-lobby .panel{padding-bottom:calc(84px + var(--safe-b))}
 }
 
 /* 橫向且高度很矮（手機橫向）：把裝飾與留白壓到最低，先保住畫布與操作 */
@@ -1176,7 +1207,6 @@ body.kb-open .game-aside{bottom:var(--kb,0px)}
   .resultlist li.result-row .rpts{padding:4px 7px;font-size:.76rem}
 }
 body.solo-mode .donebox{display:none}
-body.solo-mode .colorbtn[aria-checked=true]{transform:none;box-shadow:inset 0 0 0 2px var(--paper)}
 body.solo-mode{--hud-reserve:calc(var(--topedge) + 2 * var(--topbtn) + var(--topgap) + 8px)}
 body.solo-mode .game-aside,
 body.solo-mode .aside-toggle,
@@ -1318,3 +1348,107 @@ body .lc-root{
   --lc-field-bg:#fff;--lc-sys-bg:rgba(201,182,245,.28);--lc-name:var(--grape-t);
   --lc-radius:var(--radius);--lc-z:95;
 }
+
+/* ================================================================
+ * 橫向畫家：玩家列與提示搬進右側工具欄（app.js placeCanvasTop 搬 DOM，body.side-top）
+ * 抬頭少一列，畫布多一列的高度。
+ * ================================================================ */
+.playbar > .canvastop{flex:0 0 auto;max-width:100%;padding:0 0 2px;gap:4px}
+@media (orientation:landscape) and (min-width:560px){
+  /* 猜題者與觀戰者也留著右欄：上面玩家列，下面猜題框（不再橫跨整個底部吃掉畫布高度） */
+  body.side-top.no-tools .playbar{width:clamp(200px,24vw,280px);padding:0 2px 0 0;overflow-y:auto}
+  body.side-top.no-tools .playarea{gap:6px}
+  body.side-top.has-guessbar .playarea{padding-bottom:0}
+  body.side-top .guessbar{
+    position:static;flex:0 0 auto;flex-direction:column;align-items:stretch;gap:6px;padding:8px;
+    border:3px solid var(--ink);border-radius:18px;box-shadow:0 4px 0 rgba(74,59,85,.12);
+  }
+  body.side-top .guessbar .btn3d{min-width:0;width:100%}
+}
+/* 高度夠的橫向（平板、桌機）：玩家卡換行全部顯示，不用左右捲 */
+@media (orientation:landscape) and (min-width:560px) and (min-height:561px){
+  .playbar > .canvastop .playerstrip{flex-wrap:wrap;overflow:visible}
+}
+.playbar > .canvastop .playerstrip{max-width:100%}
+.playbar > .canvastop .hintdock{flex-wrap:wrap}
+
+/* 矮的手機橫向：畫布被高度卡住，左右空著一大塊。右欄加寬把空白吃掉
+   （上限 = 視窗寬 − 視窗高，畫布永遠放得下），工具列就不用捲、結束鍵也不會蓋住粗細那排。 */
+@media (orientation:landscape) and (min-width:560px) and (max-height:560px){
+  body.side-top .playbar,body.solo-mode .playbar{width:clamp(200px,calc(100vw - 100vh - 32px),440px)}
+  body.side-top.no-tools .playbar{width:clamp(200px,calc(100vw - 100vh - 32px),320px)}
+  /* 矮螢幕（含鍵盤彈出時）猜題框橫排，輸入與送出同一行 */
+  body.side-top .guessbar{flex-direction:row;align-items:center;padding:6px}
+  body.side-top .guessbar .btn3d{width:auto;min-width:72px}
+  body.side-top .donebox{flex-direction:row;position:static;background:none;padding-top:0}
+  body.side-top .tool-done,body.side-top .tool-skip{flex:1 1 0;width:auto}
+  /* 單機顏色改成換行，整塊只剩一個方向（上下）可捲 */
+  body.solo-mode .toolrow-colors{flex-wrap:wrap;overflow:visible}
+}
+@media (orientation:landscape) and (max-height:560px) and (min-aspect-ratio:2/1){
+  /* 夠寬時粗細與復原鍵並排成一排 */
+  body.side-top .widthgroup,body.solo-mode .widthgroup{flex:0 0 auto}
+  body.solo-mode .solo-file-actions{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+
+/* 矮的手機直向（360×640 這種）畫家：畫布被高度卡住。玩家列與提示擠進同一行
+   （玩家列自己橫向捲、「提示」兩個字省掉），省下的一整列高度還給畫布。 */
+@media (orientation:portrait) and (max-width:620px) and (max-height:700px){
+  .game-head > .canvastop{flex-wrap:nowrap}
+  .game-head > .canvastop .playerstrip{flex:1 1 0;min-width:84px}
+  .game-head > .canvastop .hintdock{flex:0 0 auto}
+  .game-head > .canvastop .hintrow-label{display:none}
+}
+
+/* 大廳左下角有聊天室浮動鈕：每種寬度都在面板底部留位置，捲到底時最後一段字不會被它壓住 */
+.screen#s-lobby .panel{padding-bottom:calc(84px + var(--safe-b))}
+
+/* 矮的橫向手機主選單：logo 與按鈕左右並排，一個畫面看得完，不用捲 */
+@media (orientation:landscape) and (max-height:480px) and (min-width:560px){
+  #s-home .home-wrap{
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);align-items:center;
+    gap:8px 22px;max-width:860px;padding:calc(64px + var(--safe-t)) 18px 12px;text-align:center;
+  }
+  #s-home .logo{grid-column:1;grid-row:1;margin:0 auto;max-width:320px;width:100%}
+  #s-home .home-btns{grid-column:2;grid-row:1 / span 2;gap:9px;max-width:none;width:100%}
+  #s-home .home-note{grid-column:1;grid-row:2;margin:0;font-size:.78rem;line-height:1.55}
+}
+
+/* 矮的橫向手機：彈窗標題列與底部按鈕列壓扁，中間可捲動的內容區多出將近一倍高度 */
+@media (orientation:landscape) and (max-height:480px){
+  .settings-panel{max-height:calc(100dvh - 16px);width:min(94vw,620px)}
+  .settings-head{padding:6px 12px 5px}
+  .settings-head h2{font-size:1.1rem}
+  .settings-badge{width:32px;height:32px}
+  .settings-foot{padding:6px 12px calc(6px + var(--safe-b))}
+  .settings-body{padding:8px 10px}
+}
+
+/* 手機開房設定：一排選項平均分寬，「1 2 3 4」後面不會孤零零掉一顆「5」到下一行 */
+@media (max-width:620px){
+  .create-choice .chiprow{flex-wrap:nowrap;gap:6px}
+  .create-choice .chiprow .pillbtn{flex:1 1 0;min-width:44px;padding-left:6px;padding-right:6px}
+}
+
+/* 矮的橫向範本彈窗：圖片吃滿左欄整個高度，底部按鈕列只在右欄、圓角對齊彈窗右下角 */
+@media (max-height:500px) and (orientation:landscape){
+  .reference-picture{grid-row:2 / span 2;margin-bottom:12px}
+  .reference-panel .settings-foot{border-radius:0 0 23px 0;border-left:3px solid var(--line)}
+}
+
+/* 英文等長字串 */
+/* 單機手機直向：題號拿掉，題目與「查看範本」留在同一行，不多吃一列畫布高度 */
+@media (orientation:portrait) and (max-width:620px){
+  body.solo-mode .wordbar-meta{display:none}
+  body.solo-mode .wordbar{flex-wrap:nowrap}
+  #opt-worddiff{flex-wrap:nowrap}
+  #opt-worddiff .pillbtn{flex:1 1 0;min-width:0;padding-left:6px;padding-right:6px}
+}
+/* 作品操作四顆鈕：長標籤（Export image、New prompt）縮字並允許折成兩行，不溢出按鈕 */
+html[lang="en"] body.solo-mode .solo-file-actions .btn3d{font-size:.78rem;line-height:1.1;white-space:normal;padding-left:4px;padding-right:4px}
+
+/* 平板直向單機：作品操作排在粗細／復原那一排的右邊（app.js placeSoloActions 搬 DOM） */
+body.solo-mode .toolrow-misc > .solo-file-actions{display:flex;flex:0 0 auto;gap:6px;margin-left:auto}
+body.solo-mode .toolrow-misc > .solo-file-actions .btn3d{flex:0 0 auto;min-height:48px;padding-left:12px;padding-right:12px}
+html[lang] body.solo-mode .toolrow-misc > .solo-file-actions .btn3d{min-width:64px;padding-left:12px;padding-right:12px;white-space:nowrap}
+body.solo-mode .toolrow-misc:has(> .solo-file-actions) > .toolscroll{flex:0 1 auto}

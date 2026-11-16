@@ -11,6 +11,7 @@
     tutorialDone: 'dg_tutorial',
     diff: 'dg_diff',
     category: 'dg_category',
+    wordLang: 'dg_word_lang',
     stats: 'dg_stats',
     reduceMotion: 'dg_reduce_motion',
     bigTools: 'dg_big_tools',
@@ -109,6 +110,21 @@
   }
 
   w.Store = {
+    /* 題目語系：第一次用到時跟著當下的介面語系並記下來，之後兩者各自獨立 ——
+       改介面語系不會動到題目語系，改題目語系也不會動到介面。 */
+    wordLang: function (v) {
+      var ok = ['zh-Hant', 'zh-Hans', 'en'];
+      if (v === undefined) {
+        var saved = get(KEY.wordLang, '');
+        if (ok.indexOf(saved) >= 0) return saved;
+        var initial = w.I18N && ok.indexOf(w.I18N.lang) >= 0 ? w.I18N.lang : 'zh-Hant';
+        set(KEY.wordLang, initial);
+        return initial;
+      }
+      if (ok.indexOf(v) < 0) return this.wordLang();
+      set(KEY.wordLang, v);
+      return v;
+    },
     category: function (v) {
       if (v === undefined) return get(KEY.category, '');
       set(KEY.category, v);

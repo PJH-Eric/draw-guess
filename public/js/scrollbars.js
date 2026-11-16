@@ -124,9 +124,14 @@
     if (rail.hidden) return;
     item.max = total - client;
     item.size = Math.min(item.length, Math.max(24, item.length * client / total));
+    /* 工具列那幾條橫向帶子只有一顆按鈕高，滑軌疊在裡面會蓋掉按鈕下緣；
+       改成細一號、貼在帶子下方的列間空隙。 */
+    var slim = !vertical && target.matches('.toolrow-tools,.toolrow-colors,.toolscroll');
+    rail.toggleAttribute('data-slim', slim);
+    var railTop = vertical ? bounds.top + 4 : (slim ? Math.min(bounds.bottom - 1, w.innerHeight - 8) : bounds.bottom - 12);
     rail.style.cssText = 'z-index:' + (z + 1) + ';left:' + (vertical ? bounds.right - 13 : bounds.left + 4) +
-      'px;top:' + (vertical ? bounds.top + 4 : bounds.bottom - 12) + 'px;width:' +
-      (vertical ? 12 : item.length) + 'px;height:' + (vertical ? item.length : 12) + 'px';
+      'px;top:' + railTop + 'px;width:' +
+      (vertical ? 12 : item.length) + 'px;height:' + (vertical ? item.length : (slim ? 8 : 12)) + 'px';
     var offset = Math.max(0, Math.min(item.max, position(item))) / item.max * (item.length - item.size);
     item.thumb.style[vertical ? 'height' : 'width'] = item.size + 'px';
     item.thumb.style.transform = 'translate' + (vertical ? 'Y' : 'X') + '(' + offset + 'px)';

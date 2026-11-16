@@ -7,6 +7,8 @@ html.custom-scrollbars *::-webkit-scrollbar{display:none!important;width:0!impor
 .scroll-rail[data-axis=x]::before{inset:4px 0}
 .scroll-thumb{position:absolute;left:3px;right:3px;min-height:24px;border:1px solid #8D75BE;border-radius:999px;background:linear-gradient(90deg,#D8CAF5,#B79FE4);box-shadow:inset 1px 0 0 #FFFFFFAA}
 .scroll-rail[data-axis=x] .scroll-thumb{top:3px;bottom:3px;left:0;right:auto;min-height:0;min-width:24px;background:linear-gradient(#D8CAF5,#B79FE4)}
+.scroll-rail[data-slim]::before{inset:2px 0}
+.scroll-rail[data-slim] .scroll-thumb{top:1px;bottom:1px}
 .scroll-rail:hover .scroll-thumb,.scroll-rail.dragging .scroll-thumb{background:var(--grape-d,#A48FDB);border-color:var(--grape-t,#6E4FBF)}
 .scroll-rail:focus-visible{outline:2px solid var(--sky-d,#7FB4DA);outline-offset:1px}
 @media (pointer:coarse){

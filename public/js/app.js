@@ -341,6 +341,12 @@
     $('settings-music-volume-value').textContent = Math.round(Sound.getMusicVolume() * 100) + '%';
     $('settings-sfx-volume').value = Math.round(Sound.getSfxVolume() * 100);
     $('settings-sfx-volume-value').textContent = Math.round(Sound.getSfxVolume() * 100) + '%';
+    /* 自訂滑桿的已填滿長度（CSS 用 --fill 畫軌道） */
+    ['settings-music-volume', 'settings-sfx-volume'].forEach(function (id) {
+      var range = $(id);
+      var span = (Number(range.max) || 100) - (Number(range.min) || 0);
+      range.style.setProperty('--fill', ((Number(range.value) - (Number(range.min) || 0)) / (span || 1) * 100) + '%');
+    });
     $('settings-pencue').checked = Sound.isPenCueOn();
     $('settings-chatcue').checked = Sound.isChatCueOn();
     $('settings-haptic').checked = Sound.isHapticOn();
@@ -475,8 +481,25 @@
     }).join('');
   }
 
+  /* 題目語系的選項一律寫各語言自己的名稱，不跟著介面語系翻譯 */
+  var WORD_LANGS = [
+    { v: 'zh-Hant', label: '繁體中文' },
+    { v: 'zh-Hans', label: '简体中文' },
+    { v: 'en', label: 'English' }
+  ];
+  function wordLangLabel(lang) {
+    var hit = WORD_LANGS.filter(function (item) { return item.v === lang; })[0];
+    return hit ? hit.label : WORD_LANGS[0].label;
+  }
+  function renderWordLangSelect(id, value) {
+    $(id).innerHTML = WORD_LANGS.map(function (item) {
+      return '<option value="' + esc(item.v) + '"' + (item.v === value ? ' selected' : '') + '>' + esc(item.label) + '</option>';
+    }).join('');
+  }
+
   function renderSoloOptions() {
     renderCategorySelect('opt-category', Store.category());
+    renderWordLangSelect('opt-wordlang', Store.wordLang());
     /* 單機可選種類與難度；練幾次、每題畫多久都不設限（見 startSolo） */
     buildChips('opt-worddiff', [
       { value: 0, get label() { return globalThis.I18N ? globalThis.I18N.t("text.119") : "混合"; } }, { value: 1, get label() { return globalThis.I18N ? globalThis.I18N.t("text.140") : "簡單"; } },
@@ -487,6 +510,7 @@
   function setupSoloScreen() {
     renderSoloOptions();
     $('opt-category').addEventListener('change', function () { Store.category(this.value); });
+    $('opt-wordlang').addEventListener('change', function () { Store.wordLang(this.value); });
     $('b-solo-start').addEventListener('click', startSolo);
   }
 
@@ -500,7 +524,7 @@
     /* 單機練習不設限：沒有別人在等，所以直接把引擎上限吃滿 ——
        練幾次、每題畫多久都不用先決定，練夠了直接離開就好。
        （引擎需要一個有限數字才跑得動，所以用 CONST 的極限值當「不設限」。） */
-    var state = Rules.createState({ lang: w.I18N.lang,
+    var state = Rules.createState({ lang: Store.wordLang(),
       seed: seed,
       players: players,
       rounds: Rules.CONST.ROUNDS_MAX,
@@ -1482,6 +1506,7 @@
   function renderRoomCreateOptions() {
     var c = app.roomCreate;
     renderCategorySelect('room-create-category', c.category || '');
+    renderWordLangSelect('room-create-wordlang', c.wordLang);
     $('lobby-room-name').value = c.roomName;
     $('room-create-rounds').innerHTML = chips('create-rounds', ROUND_CHOICES, c.rounds);
     $('room-create-drawsec').innerHTML = chips('create-drawsec', SEC_CHOICES, c.drawSec);
@@ -1490,6 +1515,9 @@
 
   function setupRoomCreate() {
     $('room-create-category').addEventListener('change', function () { app.roomCreate.category = this.value; });
+    $('room-create-wordlang').addEventListener('change', function () {
+      app.roomCreate.wordLang = Store.wordLang(this.value);
+    });
     roomCreateModal = makeModal('room-create-modal', 'room-create-panel', 'b-lobby-host');
     $('room-create-close').addEventListener('click', function () { roomCreateModal.close(); });
     $('room-create-cancel').addEventListener('click', function () { roomCreateModal.close(); });
@@ -1522,7 +1550,8 @@
       rounds: 2,
       drawSec: 90,
       diff: 0,
-      category: ''
+      category: '',
+      wordLang: Store.wordLang()
     };
     renderRoomCreateOptions();
     roomCreateModal.open();
@@ -1537,7 +1566,7 @@
     w.Online.send('room:create', {
       name: Store.ensureNick(),
       roomName: roomName,
-      settings: { wordLang: w.I18N.lang, rounds: c.rounds, drawSec: c.drawSec, diff: c.diff, category: c.category || '' }
+      settings: { wordLang: c.wordLang || Store.wordLang(), rounds: c.rounds, drawSec: c.drawSec, diff: c.diff, category: c.category || '' }
     }, function (res) {
       $('room-create-submit').disabled = false;
       if (!res || !res.ok) return toast((res && w.I18N.message(res.error, res.params)) || (globalThis.I18N ? globalThis.I18N.t("text.134") : "開房失敗。"), 'error');
@@ -1587,14 +1616,16 @@
         (globalThis.I18N ? globalThis.I18N.t("text.125") : "<div class=\"rule-field\"><span>秒數</span>") + ruleDropdown('set-drawsec', SEC_CHOICES, r.settings.drawSec) + '</div>' +
         (globalThis.I18N ? globalThis.I18N.t("text.124") : "<div class=\"rule-field\"><span>題型</span>") + ruleDropdown('set-diff', DIFF_CHOICES, r.settings.diff) + '</div>' +
         '</div><div class="rule-field category-rule"><span>' + esc(w.I18N.t('category.select')) + '</span>' +
-        ruleDropdown('set-category', categoryChoices(), r.settings.category || '') + '</div></div>';
+        ruleDropdown('set-category', categoryChoices(), r.settings.category || '') + '</div>' +
+        '<p class="setupnote" id="room-wordlang-note">' + esc(w.I18N.t('wordlang.select')) + '：' + esc(wordLangLabel(r.settings.wordLang)) + '</p></div>';
     } else {
       var dl = DIFF_CHOICES.filter(function (d) { return d.v === r.settings.diff; })[0];
       rules = (globalThis.I18N ? globalThis.I18N.t("text.123") : "<div class=\"setupblock\"><h4>遊戲規則</h4>") +
         (globalThis.I18N ? globalThis.I18N.t("text.122") : "<p class=\"setupnote\">每人畫 ") + r.settings.rounds + (globalThis.I18N ? globalThis.I18N.t("text.121") : " 次・每題 ") + r.settings.drawSec + (globalThis.I18N ? globalThis.I18N.t("text.120") : " 秒・") +
         esc(dl ? dl.label : (globalThis.I18N ? globalThis.I18N.t("text.119") : "混合")) + (globalThis.I18N ? globalThis.I18N.t("text.118") : "難度（由房主決定）</p></div>");
       rules += '<div class="setupblock"><h4>' + esc(w.I18N.t('category.select')) + '</h4><p class="setupnote">' +
-        esc(w.I18N.t(r.settings.category ? 'category.' + r.settings.category : 'category.all')) + '</p></div>';
+        esc(w.I18N.t(r.settings.category ? 'category.' + r.settings.category : 'category.all')) + '</p>' +
+        '<p class="setupnote" id="room-wordlang-note">' + esc(w.I18N.t('wordlang.select')) + '：' + esc(wordLangLabel(r.settings.wordLang)) + '</p></div>';
     }
 
     /* ---- 邀請連結 ----
@@ -1874,6 +1905,8 @@
     /* 單機永遠是自己在畫，選題那幾秒工具列暫時收著也不要收掉右欄：
        右欄上面還放著返回鈕跟題目，收掉的話返回鈕會被擠出畫面、畫布也會跳一下 */
     D.body.classList.toggle('no-tools', !canDraw && app.mode !== 'solo');
+    placeCanvasTop();
+    placeSoloActions();
     $('guessbar').hidden = canDraw || isDrawer || spectator || !g ||
       g.phase === 'over' || (v.room && v.room.closed);
 
@@ -1895,6 +1928,33 @@
       input.placeholder = guessed ? (globalThis.I18N ? globalThis.I18N.t("text.078") : "你已經猜對了，等其他人…")
         : (g && g.phase === 'drawing' ? (globalThis.I18N ? globalThis.I18N.t("text.077") : "猜猜看這是什麼？") : (globalThis.I18N ? globalThis.I18N.t("text.076") : "等畫家開始畫…"));
     }
+  }
+
+  /** 橫向的線上對局：玩家列與提示搬進右側那一欄的最上面（下面接工具列或猜題框）。
+      抬頭少掉一整列、猜題框也不再橫跨底部，那些高度全部還給畫布（畫布右邊本來就有空位）。
+      直向與單機放回抬頭原位。 */
+  function placeCanvasTop() {
+    var top = $('canvastop'), bar = $('playbar'), tools = $('toolbar');
+    var head = D.querySelector('.game-head');
+    if (!top || !bar || !tools || !head) return;
+    var side = app.mode !== 'solo' &&
+      w.matchMedia('(orientation:landscape) and (min-width:560px)').matches;
+    D.body.classList.toggle('side-top', side);
+    if (top.parentNode === (side ? bar : head)) return;
+    if (side) bar.insertBefore(top, bar.firstChild); else head.appendChild(top);
+  }
+
+  /** 平板直向的單機：畫布被高度卡住，而粗細／復原那一排右邊空著一大段。
+      「存檔／下載圖片／載入／換題」搬進那一排的右邊（跟線上的「畫完了／跳過」同位置），
+      少掉一整列，高度還給畫布。其他版面放回工具列底部。 */
+  function placeSoloActions() {
+    var acts = $('solo-file-actions'), tools = $('toolbar'), hint = $('tool-hint');
+    var row = tools && tools.querySelector('.toolrow-misc');
+    if (!acts || !tools || !row) return;
+    var inline = app.mode === 'solo' &&
+      w.matchMedia('(orientation:portrait) and (min-width:621px)').matches;
+    if (acts.parentNode === (inline ? row : tools)) return;
+    if (inline) row.appendChild(acts); else tools.insertBefore(acts, hint);
   }
 
   /** 猜題列是固定在遊戲主畫面正下方的浮層，把它的高度讓回給畫布（不然會蓋到） */
@@ -2614,8 +2674,8 @@
     D.addEventListener('pointerdown', unlock);
     D.addEventListener('keydown', unlock);
 
-    w.addEventListener('resize', function () { syncGuessbarSpace(); relayoutFeed(); layoutStage(); layoutAside(); });
-    w.addEventListener('orientationchange', function () { setTimeout(function () { syncGuessbarSpace(); relayoutFeed(); layoutStage(); layoutAside(); }, 250); });
+    w.addEventListener('resize', function () { placeCanvasTop(); placeSoloActions(); syncGuessbarSpace(); relayoutFeed(); layoutStage(); layoutAside(); });
+    w.addEventListener('orientationchange', function () { setTimeout(function () { placeCanvasTop(); placeSoloActions(); syncGuessbarSpace(); relayoutFeed(); layoutStage(); layoutAside(); }, 250); });
     relayoutFeed();
     layoutStage();
 
