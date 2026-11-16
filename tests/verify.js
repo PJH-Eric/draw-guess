@@ -816,6 +816,11 @@ section('房間生命週期：沒有實體玩家就關閉');
   const room = store.create('h1', { name: '房主', now: t }).room;
   room.join('s1', { name: '觀眾', role: 'spectator', now: t });
   check('有真人玩家時不該關閉', !room.shouldClose());
+  const listed = store.list().filter((r) => r.code === room.code)[0];
+  check('大廳列表帶著房間規則（輪數、秒數、難度、種類、語系）', !!listed &&
+    listed.rounds === room.settings.rounds && listed.drawSec === room.settings.drawSec &&
+    listed.diff === room.settings.diff && listed.category === room.settings.category &&
+    listed.wordLang === room.settings.wordLang, listed);
 
   room.leave('h1', t);
   check('最後一個真人離開後就該關閉', room.shouldClose());

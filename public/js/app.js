@@ -2348,6 +2348,30 @@
     });
   }
 
+  /* 大廳房間卡片上的規則 chip：畫幾次、每題秒數、難度、題目種類、題目語系。
+     純顯示（不是按鈕），窄螢幕自動換行；舊版伺服器沒送的欄位就不畫那一顆。 */
+  function roomRuleChips(r) {
+    var list = [];
+    if (r.rounds) list.push({ k: 'rounds', label: (r.rounds === 1 ? w.I18N.t('lobby.rule.roundsOne') : w.I18N.t('lobby.rule.rounds', { n: r.rounds })) });
+    if (r.drawSec) list.push({ k: 'sec', label: w.I18N.t('lobby.rule.sec', { n: r.drawSec }) });
+    if (r.diff !== undefined) {
+      var dl = DIFF_CHOICES.filter(function (d) { return d.v === r.diff; })[0];
+      if (dl) list.push({ k: 'diff', label: dl.label });
+    }
+    if (r.category !== undefined) {
+      var cat = r.category && Words.CATEGORIES[r.category];
+      list.push({
+        k: 'category',
+        label: cat ? cat.emoji + ' ' + w.I18N.t('category.' + r.category) : w.I18N.t('category.all')
+      });
+    }
+    if (r.wordLang) list.push({ k: 'lang', label: wordLangLabel(r.wordLang) });
+    if (!list.length) return '';
+    return '<span class="rc-rules" role="list" aria-label="' + esc(w.I18N.t('lobby.rules')) + '">' + list.map(function (c) {
+      return '<span class="rc-rule" role="listitem" data-k="' + c.k + '">' + esc(c.label) + '</span>';
+    }).join('') + '</span>';
+  }
+
   function renderRoomList(rooms) {
     app.rooms = rooms;
     var host = $('roomlist');
@@ -2362,7 +2386,8 @@
         '<span class="rc-sub"><span class="rc-badge" data-p="' + r.phase + '">' + phase + '</span>' +
         r.players + '/' + r.maxPlayers + (globalThis.I18N ? globalThis.I18N.t("text.005") : " 位玩家") +
         (r.spectators ? '・' + r.spectators + (globalThis.I18N ? globalThis.I18N.t("text.004") : " 觀戰") : '') +
-        (globalThis.I18N ? globalThis.I18N.t("text.003") : "・房主 ") + esc(r.host) + '</span></span>' +
+        (globalThis.I18N ? globalThis.I18N.t("text.003") : "・房主 ") + esc(r.host) + '</span>' +
+        roomRuleChips(r) + '</span>' +
         '<span class="rc-btns">' +
         '<button class="btn3d small" data-color="mint" data-join="' + esc(r.code) + (globalThis.I18N ? globalThis.I18N.t("text.002") : "\">加入</button>") +
         '<button class="btn3d small" data-color="sky" data-watch="' + esc(r.code) + (globalThis.I18N ? globalThis.I18N.t("text.001") : "\">觀戰</button>") +

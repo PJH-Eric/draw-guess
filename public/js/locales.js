@@ -1904,18 +1904,30 @@ I18N.register('zh-Hant', {
   'wordlang.select': '題目語系',
   'scrollbar.label': '捲動內容',
   'category.all': '全部種類',
+  'lobby.rules': '房間規則',
+  'lobby.rule.rounds': '每人畫 {n} 次',
+  'lobby.rule.roundsOne': '每人畫 1 次',
+  'lobby.rule.sec': '每題 {n} 秒',
   'srv.err.categoryRange': '請選擇有效的題目種類。'
 }).register('zh-Hans', {
   'category.select': '题目种类',
   'wordlang.select': '题目语系',
   'scrollbar.label': '滚动内容',
   'category.all': '全部种类',
+  'lobby.rules': '房间规则',
+  'lobby.rule.rounds': '每人画 {n} 次',
+  'lobby.rule.roundsOne': '每人画 1 次',
+  'lobby.rule.sec': '每题 {n} 秒',
   'srv.err.categoryRange': '请选择有效的题目种类。'
 }).register('en', {
   'category.select': 'Topic category',
   'wordlang.select': 'Prompt language',
   'scrollbar.label': 'Scroll content',
   'category.all': 'All categories',
+  'lobby.rules': 'Room rules',
+  'lobby.rule.rounds': '{n} turns each',
+  'lobby.rule.roundsOne': '1 turn each',
+  'lobby.rule.sec': '{n}s per round',
   'srv.err.categoryRange': 'Choose a valid topic category.'
 });
 
