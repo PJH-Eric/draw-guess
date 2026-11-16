@@ -1,14 +1,14 @@
 /* ===== app/overlay.js — 疊層卡片：房間設定、選題、公布答案、結算 ===== */
 
-import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=131ce4b06c';
-import { askLeaveRoom, makeModal, modals } from './modal.js?v=131ce4b06c';
-import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=131ce4b06c';
-import { soloRefresh, soloStep, startSolo } from './solo.js?v=131ce4b06c';
-import { renderRecent } from './feed.js?v=131ce4b06c';
-import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=131ce4b06c';
-import { PHASE_LABEL, moodOf } from './render.js?v=131ce4b06c';
-import { copyText, newInvite, revokeInvite } from './game-settings.js?v=131ce4b06c';
-import { enterOnlineRoom, leaveGame, roomRuleChips, saveNick } from './lobby.js?v=131ce4b06c';
+import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=118a96abdb';
+import { askLeaveRoom, makeModal, modals } from './modal.js?v=118a96abdb';
+import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=118a96abdb';
+import { soloRefresh, soloStep, startSolo } from './solo.js?v=118a96abdb';
+import { renderRecent } from './feed.js?v=118a96abdb';
+import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=118a96abdb';
+import { PHASE_LABEL, moodOf } from './render.js?v=118a96abdb';
+import { copyText, newInvite, revokeInvite } from './game-settings.js?v=118a96abdb';
+import { enterOnlineRoom, leaveGame, roomRuleChips, saveNick } from './lobby.js?v=118a96abdb';
 
 var w = window;
 
@@ -803,7 +803,7 @@ export function renderAside() {
     var button = '';
     if (eligible) {
       var reason = v.room.kick ? 'kick.busy' : (v.you.role !== 'player' ? 'kick.playersOnly' : 'kick.needThree');
-      button = '<button type="button" class="score-kick" data-kick="' + esc(p.id) + '" aria-label="' + esc(w.I18N.t('kick.actionFor', { name: p.name })) + '"' +
+      button = '<button type="button" class="score-kick" id="score-kick-' + esc(p.id) + '" data-kick="' + esc(p.id) + '" aria-label="' + esc(w.I18N.t('kick.actionFor', { name: p.name })) + '"' +
         (v.you.can.kick ? '' : ' disabled title="' + esc(w.I18N.t(reason)) + '"') + '>' + esc(w.I18N.t('kick.action')) + '</button>';
     }
     return '<li class="' + cls + '"><span class="sface" aria-hidden="true">' +
@@ -812,8 +812,11 @@ export function renderAside() {
       '<span class="spts">' + (p.score || 0) + '</span>' + button + '</li>';
   }).join('');
   if (sl.getAttribute('data-sig') !== scoreHtml) {
+    var focusedId = sl.contains(D.activeElement) ? D.activeElement.id : '';
     sl.innerHTML = scoreHtml;
     sl.setAttribute('data-sig', scoreHtml);
+    var nextFocus = focusedId && D.getElementById(focusedId);
+    if (nextFocus && !nextFocus.disabled) nextFocus.focus();
   }
 
   /* 猜題紀錄：系統事件 + 每一則猜題 */

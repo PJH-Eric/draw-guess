@@ -1,7 +1,7 @@
 /* ===== app/modal.js — 彈窗、範本與確認對話框 ===== */
 
-import { $, D, S, Sound, Words, app, esc, navChanged } from './core.js?v=131ce4b06c';
-import { leaveGame } from './lobby.js?v=131ce4b06c';
+import { $, D, S, Sound, Words, app, esc, navChanged } from './core.js?v=118a96abdb';
+import { leaveGame } from './lobby.js?v=118a96abdb';
 
 var w = window;
 
@@ -51,8 +51,9 @@ export function makeModal(modalId, panelId, openerId) {
       D.removeEventListener('keydown', onKey, true);
       /* 焦點回到原本的地方。觸控裝置按按鈕常常不會讓它取得焦點，
          那時候 lastFocus 會是 body，退而求其次回到開啟用的按鈕。 */
+      var replacement = lastFocus && lastFocus.id ? D.getElementById(lastFocus.id) : null;
       var back = (lastFocus && lastFocus.focus && lastFocus !== D.body && D.contains(lastFocus))
-        ? lastFocus : opener;
+        ? lastFocus : (replacement || (openerId && $(openerId)) || opener);
       if (back && back.focus) back.focus();
       navChanged();
     },

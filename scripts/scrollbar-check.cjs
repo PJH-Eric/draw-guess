@@ -106,5 +106,19 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     if (await evaluate('document.getElementById("reverse-feed").scrollTop') > -100) throw Error('Touch drag must reach older guesses');
     console.log('PASS guess feed keyboard End and touch drag');
+    // 真實 DOM 與 renderAside：比分變動會重排玩家列，焦點仍應留在相同玩家。
+    await evaluate(`var app={mode:'online',conn:{status:'connected'},view:{you:{id:'me',role:'player',can:{kick:true}},room:{code:'ABCD',phase:'playing',members:[{id:'me',name:'Me',role:'player'},{id:'other',name:'Other',role:'player'}]},game:{phase:'drawing',you:{isDrawer:false},players:[{id:'me',name:'Me',score:0},{id:'other',name:'Other',score:0}]}}};window.I18N={t:function(key){return key;}};$=function(id){var el=document.getElementById(id);if(!el){el=document.createElement(id==='scorelist'?'ol':'div');el.id=id;document.body.appendChild(el);}return el;};S.face=function(){return '';};var PHASE_LABEL={drawing:'Drawing'},esc=function(value){return String(value);},drawerName=function(){return 'Me';},canDoText=function(){return '';},indexOfPlayer=function(){return 0;},moodOf=function(){return 'happy';},renderRecent=function(){};`);
+    const overlay=fs.readFileSync(path.join(ROOT,'public/js/app/overlay.js'),'utf8');
+    await evaluate(overlay.slice(overlay.indexOf('export function renderAside()'),overlay.indexOf('export function canDoText(')).replace(/export /g,''));
+    await evaluate(`renderAside();document.querySelector('#scorelist [data-kick="other"]').focus();app.view.game.players[1].score=100;renderAside();`);
+    if(await evaluate('document.activeElement.dataset.kick')!=='other') throw Error('Score update loses focused player action');
+    console.log('PASS score updates preserve the focused player action');
+    await evaluate(`var updatedModal=document.createElement('div');updatedModal.id='update-modal';updatedModal.className='settings-modal';updatedModal.innerHTML='<div id="update-panel" tabindex="-1"><button>Cancel</button></div>';document.body.appendChild(updatedModal);window.updateModal=makeModal('update-modal','update-panel',null);updateModal.open();`);
+    await sleep(50);
+    await evaluate('app.view.game.players[1].score=200;renderAside();updateModal.close();');
+    if(await evaluate('document.activeElement.dataset.kick')!=='other') throw Error('Closing confirmation after score update loses return focus');
+    console.log('PASS confirmation restores updated player button after live score changes');
+
+
   } finally { if (ws) ws.close(); chrome.kill(); }
 })().catch(error => { console.error(error.message); process.exitCode = 1; });
