@@ -1895,14 +1895,17 @@ I18N.register("zh-Hant", { "meta.title": "你畫我猜｜免費線上多人畫�
 
 I18N.register('zh-Hant', {
   'category.select': '題目種類',
+  'scrollbar.label': '捲動內容',
   'category.all': '全部種類',
   'srv.err.categoryRange': '請選擇有效的題目種類。'
 }).register('zh-Hans', {
   'category.select': '题目种类',
+  'scrollbar.label': '滚动内容',
   'category.all': '全部种类',
   'srv.err.categoryRange': '请选择有效的题目种类。'
 }).register('en', {
   'category.select': 'Topic category',
+  'scrollbar.label': 'Scroll content',
   'category.all': 'All categories',
   'srv.err.categoryRange': 'Choose a valid topic category.'
 });

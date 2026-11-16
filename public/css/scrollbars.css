@@ -1,0 +1,25 @@
+/* 捲動仍由容器處理；滑軌與滑塊由獨立 DOM 繪製。 */
+html.custom-scrollbars *{scrollbar-width:none!important;scrollbar-gutter:auto!important}
+html.custom-scrollbars *::-webkit-scrollbar{display:none!important;width:0!important;height:0!important}
+.scroll-rail{position:fixed;touch-action:none;user-select:none;cursor:pointer;border-radius:999px}
+.scroll-rail[hidden]{display:none!important}
+.scroll-rail::before{content:"";position:absolute;inset:0 4px;border-radius:999px;background:rgba(201,182,245,.25)}
+.scroll-rail[data-axis=x]::before{inset:4px 0}
+.scroll-thumb{position:absolute;left:3px;right:3px;min-height:24px;border:1px solid #8D75BE;border-radius:999px;background:linear-gradient(90deg,#D8CAF5,#B79FE4);box-shadow:inset 1px 0 0 #FFFFFFAA}
+.scroll-rail[data-axis=x] .scroll-thumb{top:3px;bottom:3px;left:0;right:auto;min-height:0;min-width:24px;background:linear-gradient(#D8CAF5,#B79FE4)}
+.scroll-rail:hover .scroll-thumb,.scroll-rail.dragging .scroll-thumb{background:var(--grape-d,#A48FDB);border-color:var(--grape-t,#6E4FBF)}
+.scroll-rail:focus-visible{outline:2px solid var(--sky-d,#7FB4DA);outline-offset:1px}
+@media (pointer:coarse){
+  .scroll-rail::before{background:rgba(201,182,245,.18)}
+}
+.dropdown-root{position:relative;min-width:0;width:100%}
+.setting-text .dropdown-root{flex:0 1 46%}
+.dropdown-button{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:48px;padding:10px 14px;border:3px solid var(--line);border-radius:16px;background:#fff;color:var(--ink);font:inherit;font-weight:800;text-align:left;cursor:pointer}
+.dropdown-button::after{content:"";flex:0 0 auto;width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin-top:-4px}
+.dropdown-button[aria-expanded=true]{border-color:var(--grape-d);background:#FAF7FF}
+.dropdown-button span{min-width:0;overflow-wrap:anywhere}
+.dropdown-list{position:fixed;z-index:110;overflow:auto;overscroll-behavior:contain;padding:5px 13px 5px 5px;border:2px solid var(--grape-d);border-radius:16px;background:var(--paper);box-shadow:0 5px 0 #4A3B5524}
+.dropdown-option{display:block;width:100%;min-height:46px;padding:10px;border:0;border-radius:10px;background:transparent;color:var(--ink);font:inherit;font-weight:700;text-align:left;cursor:pointer}
+.dropdown-option[aria-selected=true]{background:#EEE6FC;color:var(--grape-t)}
+.dropdown-option:hover{background:#F5F0FC}
+.dropdown-option:focus-visible,.dropdown-button:focus-visible{outline:3px solid var(--sky-d);outline-offset:-3px}

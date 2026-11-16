@@ -489,6 +489,19 @@ async function main() {
     const mixed = await cdp.json('({hasGameActions:!!document.querySelector("#settings-modal #gs-skip") || !!document.querySelector("#settings-modal #gs-quit"),gameOpen:document.getElementById("game-settings-modal").classList.contains("open")})');
     check(v.name + '：系統設定不混入本局操作', !mixed.hasGameActions && !mixed.gameOpen, JSON.stringify(mixed));
     await shot(v.name + '-3-設定彈窗');
+    await cdp.waitFor('document.querySelector(".scroll-rail[aria-controls=settings-body][data-axis=y]:not([hidden])")', 3000, '自訂設定捲軸');
+    const scrollbar = await cdp.json(`(function () {
+      var body = document.getElementById('settings-body');
+      var rail = document.querySelector('.scroll-rail[aria-controls=settings-body][data-axis=y]');
+      var r = rail.getBoundingClientRect(), t = rail.firstElementChild.getBoundingClientRect();
+      return { hiddenNative: getComputedStyle(body).scrollbarWidth === 'none',
+        inView: r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight,
+        x: t.left + t.width / 2, y: t.top + t.height / 2, end: r.bottom - 8 };
+    })()`);
+    check(v.name + '：原生捲軸已隱藏，自訂捲軸留在可視範圍', scrollbar.hiddenNative && scrollbar.inView, JSON.stringify(scrollbar));
+    await drag(cdp, { x: scrollbar.x, y: scrollbar.y }, { x: scrollbar.x, y: scrollbar.end });
+    check(v.name + '：拖曳自訂滑塊可捲動設定內容', await cdp.eval('return document.getElementById("settings-body").scrollTop > 30;'));
+    await cdp.eval('document.getElementById("settings-body").scrollTop=0; return 1;');
 
     await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
     await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
@@ -504,7 +517,25 @@ async function main() {
     check(v.name + '：進入單機設定', info.activeScreen === 's-solo', info.activeScreen);
     assertLayout('單機設定', v, info);
     await shot(v.name + '-4-單機設定');
-    await cdp.eval('var category=document.getElementById("opt-category"); category.value="animal"; category.dispatchEvent(new Event("change",{bubbles:true})); return 1;');
+    await cdp.waitFor('document.getElementById("opt-category-button")', 3000, '自訂種類選單入口');
+    await cdp.eval('document.getElementById("opt-category-button").click(); return 1;');
+    await sleep(200);
+    const dropdown = await cdp.json(`(function () {
+      var source = document.getElementById('opt-category');
+      var list = document.getElementById('opt-category-list');
+      var r = list.getBoundingClientRect();
+      return { custom: source.hidden && !list.hidden && list.getAttribute('role') === 'listbox',
+        inView: r.left >= 0 && r.top >= 0 && r.right <= innerWidth + 1 && r.bottom <= innerHeight + 1,
+        count: list.querySelectorAll('[role=option]').length };
+    })()`);
+    check(v.name + '：種類選單使用自訂清單且完整適應畫面', dropdown.custom && dropdown.inView && dropdown.count === 29, JSON.stringify(dropdown));
+    await shot(v.name + '-自訂種類選單');
+    await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'End', code: 'End', windowsVirtualKeyCode: 35 });
+    await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13 });
+    check(v.name + '：鍵盤可選最後一個種類並收合選單',
+      await cdp.eval('return document.getElementById("opt-category").value==="taiwan" && document.getElementById("opt-category-list").hidden;'));
+    await cdp.eval('document.getElementById("opt-category-button").click(); return 1;');
+    await cdp.eval('document.querySelector("#opt-category-list [data-value=animal]").click(); return 1;');
 
     /* 對局畫面：單機沒有電腦對手了，練幾次、畫多久都不用設定，直接開始 */
     await cdp.eval(`
