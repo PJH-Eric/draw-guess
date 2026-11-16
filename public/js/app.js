@@ -693,9 +693,8 @@
       aside.style.top = '';
       return;
     }
-    /* 摘要抽屜從玩家列下方展開，保留階段／倒數、題目與玩家資訊的可見性。 */
-    var info = $('canvastop');
-    var top = info ? info.getBoundingClientRect().bottom : 0;
+    /* 摘要緊接工具鈕下方展開，讓長紀錄有更多可閱讀空間。 */
+    var top = 0;
     ['b-game-back', 'b-aside-toggle', 'b-game-settings', 'b-settings'].forEach(function (id) {
       var control = $(id);
       if (control && !control.hidden) top = Math.max(top, control.getBoundingClientRect().bottom);

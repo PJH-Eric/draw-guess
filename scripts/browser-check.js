@@ -1162,12 +1162,28 @@ async function main() {
 
     await hostTab.eval('document.getElementById("b-aside-toggle").click(); return 1;');
     await hostTab.waitFor('document.getElementById("game-aside").classList.contains("open")', 2500, v.name + ' 開啟操作摘要');
-    const aside = await hostTab.json('(function(){var a=document.getElementById("game-aside").getBoundingClientRect(),i=document.getElementById("canvastop").getBoundingClientRect(),c=document.getElementById("b-aside-close").getBoundingClientRect();return {top:a.top,bottom:a.bottom,left:a.left,right:a.right,infoBottom:i.bottom,close:{top:c.top,bottom:c.bottom,left:c.left,right:c.right},height:innerHeight};})()');
-    check(v.name + '：操作摘要從玩家資訊列下方展開，收合鈕完整可見',
-      aside.top >= aside.infoBottom + 6 && aside.bottom <= aside.height + 1 && aside.close.top >= aside.top && aside.close.bottom <= aside.bottom && aside.close.right <= aside.right,
+    await sleep(250);
+    const aside = await hostTab.json(`(function () {
+      var a = document.getElementById('game-aside').getBoundingClientRect();
+      var closeButton = document.getElementById('b-aside-close');
+      var c = closeButton.getBoundingClientRect();
+      var closeHit = document.elementFromPoint(c.left + c.width / 2, c.top + c.height / 2);
+      var controlsBottom = Math.max.apply(null, ['b-game-back', 'b-aside-toggle', 'b-game-settings', 'b-settings'].map(function (id) {
+        return document.getElementById(id).getBoundingClientRect().bottom;
+      }));
+      return { top: a.top, bottom: a.bottom, right: a.right, controlsBottom: controlsBottom,
+        close: { top: c.top, bottom: c.bottom, right: c.right, left: c.left, width: c.width, height: c.height },
+        closeClickable: closeButton.contains(closeHit), height: innerHeight };
+    })()`);
+    check(v.name + '：操作摘要緊接工具鈕下方展開，沒有多餘頂部留白且收合鈕完整可見',
+      aside.top >= aside.controlsBottom + 6 && aside.top <= aside.controlsBottom + 10 &&
+      aside.bottom <= aside.height + 1 && aside.close.top >= aside.top && aside.close.bottom <= aside.bottom && aside.close.right <= aside.right,
       JSON.stringify(aside));
+    check(v.name + '：關閉鈕完整可見且實際點擊位置沒有被遮擋',
+      aside.close.left >= 0 && aside.closeClickable && aside.close.width >= 46 && aside.close.height >= 46,
+      JSON.stringify(aside.close));
     if (v.width === 390) await shot('線上-操作摘要-手機直向', hostTab);
-    await hostTab.eval('document.getElementById("b-aside-close").click(); return 1;');
+    await tap(hostTab, aside.close.left + aside.close.width / 2, aside.close.top + aside.close.height / 2);
     await hostTab.waitFor('!document.getElementById("game-aside").classList.contains("open")', 2500, v.name + ' 收合操作摘要');
   }
 
