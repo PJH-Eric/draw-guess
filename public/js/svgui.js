@@ -158,34 +158,39 @@
 
   var ICONS = {
     pen: function () {
-      return ico('<path d="M22 78 L30 58 L68 20 L80 32 L42 70 Z" fill="#FFE3A0" ' + S + '/>' +
-        '<path d="M30 58 L42 70" ' + S + ' fill="none"/>' +
-        '<path d="M22 78 L28 72" ' + S + ' fill="none"/>', (globalThis.I18N ? globalThis.I18N.t("text.330") : "鉛筆"));
+      return ico('<g transform="rotate(42 50 50)">' +
+        '<path d="M40 24 V68 L50 87 L60 68 V24 Z" fill="#FFE3A0" ' + S + '/>' +
+        '<path d="M40 24 V16 Q40 12 44 12 H56 Q60 12 60 16 V24" fill="#FFB8CF" ' + S + '/>' +
+        '<path d="M40 30 H60 M50 35 V65 M40 68 L50 73 L60 68" fill="none" ' + S + '/>' +
+        '<path d="M46 80 L50 87 L54 80 Z" fill="' + INK + '"/></g>', (globalThis.I18N ? globalThis.I18N.t("text.330") : "鉛筆"));
     },
     brush: function () {
-      return ico('<path d="M20 80 q4 -22 18 -26 q10 -3 12 8 q2 12 -12 16 q-12 4 -18 2 Z" fill="#FFB8CF" ' + S + '/>' +
-        '<path d="M46 58 L82 22 L70 12 L38 46 Z" fill="#AED9F5" ' + S + '/>', (globalThis.I18N ? globalThis.I18N.t("text.329") : "筆刷"));
+      return ico('<g transform="rotate(35 50 50)">' +
+        '<path d="M44 43 V18 Q44 11 50 11 Q56 11 56 18 V43" fill="#AED9F5" ' + S + '/>' +
+        '<path d="M35 43 H65 V60 H35 Z" fill="#DCD5E6" ' + S + '/>' +
+        '<path d="M35 60 H65 L69 84 Q50 91 31 84 Z" fill="#E3B787" ' + S + '/>' +
+        '<path d="M42 69 L40 85 M51 69 V87 M59 69 L61 85" fill="none" stroke="' + INK + '" stroke-width="3" stroke-linecap="round"/></g>', (globalThis.I18N ? globalThis.I18N.t("text.329") : "筆刷"));
     },
     erase: function () {
-      return ico('<path d="M18 68 L50 36 q6 -6 12 0 L84 58 q6 6 0 12 L66 88 L34 88 Z" fill="#FFC2B4" ' + S + '/>' +
-        '<path d="M40 46 L74 76" ' + S + ' fill="none"/>' +
-        '<path d="M22 88 L88 88" ' + S + ' fill="none"/>', (globalThis.I18N ? globalThis.I18N.t("text.328") : "橡皮擦"));
+      return ico('<path d="M16 59 L54 21 Q58 17 62 21 L83 42 Q87 46 83 50 L49 84 H36 Z" fill="#FFB8CF" ' + S + '/>' +
+        '<path d="M16 59 L35 40 L66 71 L49 84 H36 Z" fill="#FFFDF8" ' + S + '/>' +
+        '<path d="M60 84 H87" fill="none" ' + S + '/>', (globalThis.I18N ? globalThis.I18N.t("text.328") : "橡皮擦"));
     },
     line: function () {
-      return ico('<path d="M20 80 L80 20" ' + S + ' fill="none"/>' +
-        '<circle cx="20" cy="80" r="9" fill="#A9E7D2" ' + S + '/>' +
-        '<circle cx="80" cy="20" r="9" fill="#A9E7D2" ' + S + '/>', (globalThis.I18N ? globalThis.I18N.t("text.327") : "直線"));
+      return ico('<path d="M20 80 L80 20" ' + S + ' fill="none"/>', (globalThis.I18N ? globalThis.I18N.t("text.327") : "直線"));
     },
     rect: function () {
-      return ico('<rect x="18" y="26" width="64" height="48" rx="4" fill="#AED9F5" ' + S + '/>', (globalThis.I18N ? globalThis.I18N.t("text.326") : "矩形"));
+      return ico('<rect x="16" y="24" width="68" height="52" rx="1" fill="none" ' + S + '/>', (globalThis.I18N ? globalThis.I18N.t("text.326") : "矩形"));
     },
     ellipse: function () {
-      return ico('<ellipse cx="50" cy="50" rx="34" ry="26" fill="#C9B6F5" ' + S + '/>', (globalThis.I18N ? globalThis.I18N.t("text.325") : "橢圓"));
+      return ico('<ellipse cx="50" cy="50" rx="34" ry="26" fill="none" ' + S + '/>', (globalThis.I18N ? globalThis.I18N.t("text.325") : "橢圓"));
     },
     fill: function () {
-      return ico('<path d="M30 26 L66 62 L44 84 q-6 6 -12 0 L14 66 q-6 -6 0 -12 Z" fill="#A9E7D2" ' + S + '/>' +
-        '<path d="M30 26 L24 16" ' + S + ' fill="none"/>' +
-        '<path d="M80 46 q10 16 10 22 a10 10 0 0 1 -20 0 q0 -6 10 -22 Z" fill="#7FB4DA" ' + S + '/>', (globalThis.I18N ? globalThis.I18N.t("text.324") : "油漆桶"));
+      return ico('<path d="M26 28 Q20 12 32 12 Q43 12 48 28" fill="none" ' + S + '/>' +
+        '<path d="M18 49 L43 24 L74 55 L48 81 Q43 86 38 81 L18 61 Q12 55 18 49 Z" fill="#E3DFEA" ' + S + '/>' +
+        '<path d="M18 55 H68 L48 81 Q43 86 38 81 Z" fill="#A9E7D2" ' + S + '/>' +
+        '<path d="M43 24 L76 57" fill="none" ' + S + '/>' +
+        '<path d="M80 59 Q91 74 91 80 A11 11 0 0 1 69 80 Q69 74 80 59 Z" fill="#7FB4DA" ' + S + '/>', (globalThis.I18N ? globalThis.I18N.t("text.324") : "油漆桶"));
     },
     undo: function () {
       return ico('<path d="M30 42 H62 a20 20 0 0 1 0 40 H40" fill="none" ' + S + '/>' +
