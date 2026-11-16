@@ -935,7 +935,97 @@
     ];
   }
 
+  /* ---------- 簡寫（第二批範本 r2000 之後使用） ----------
+   * Q(['填色|路徑|旗標', ...])：把一行一層的簡寫字串轉成圖層。
+   *   填色：k 墨 r 紅 o 橘 y 黃 m 淡綠 g 深綠 s 淺藍 b 深藍 v 紫 p 粉 n 棕 w 紙白；
+   *         「-k16」表示不填色、只畫線（線色 k、線寬 16，省略寬度為 7）。
+   *   旗標（逗號分隔，可省略）：b 底座、i 裁切進底座、n 不畫外框、w16 外框線寬、sn 外框色。
+   *   「@bg s」整張背景色；「@gr g 700」從 y=700 往下的地面色塊。
+   *   不是字串的項目（例如 K.guy()、K.tree() 的回傳值）原樣保留。 */
+  var QC = { k: '#4A3B55', r: '#D2444F', o: '#F0913F', y: '#E7C263', m: '#5FBF95', g: '#3E8F6B',
+    s: '#7FB4DA', b: '#4A6FA5', v: '#A48FDB', p: '#E88CAA', n: '#8B5E3C', w: '#FFFDF8' };
+  function Q(list) {
+    var out = [];
+    for (var i = 0; i < list.length; i++) {
+      var it = list[i];
+      if (typeof it !== 'string') { out.push(it); continue; }
+      if (it.charAt(0) === '@') {
+        var a = it.split(' ');
+        if (a[0] === '@bg') out.push([QC[a[1]], 'R-40 -40 1080 1080', { s: 'none' }]);
+        else out.push([QC[a[1]], 'R-40 ' + a[2] + ' 1080 ' + (1040 - Number(a[2])), { s: 'none' }]);
+        continue;
+      }
+      var p = it.split('|');
+      var o = {};
+      var fill;
+      if (p[0].charAt(0) === '-') {
+        fill = 'none';
+        o.s = QC[p[0].charAt(1)];
+        o.w = Number(p[0].slice(2)) || 7;
+      } else fill = QC[p[0]];
+      if (!fill || (fill === 'none' && !o.s)) throw new Error('Q: 未知的顏色 ' + it);
+      var flags = p[2] ? p[2].split(',') : [];
+      for (var j = 0; j < flags.length; j++) {
+        var f = flags[j];
+        if (f === 'b') o.b = 1;
+        else if (f === 'i') { o.i = 1; }
+        else if (f === 'n') o.s = 'none';
+        else if (f.charAt(0) === 'w') o.w = Number(f.slice(1));
+        else if (f.charAt(0) === 's') o.s = QC[f.charAt(1)];
+      }
+      out.push([fill, p[1], o]);
+    }
+    return out;
+  }
+
+  /** 簡化人形（約 12 層）：x,y 為腳底中心、h 身高。
+   *  o：shirt／pants／hair／skin 用 Q 的顏色字母；aL／aR 手掌相對肩膀的位移（以身高為 1）；
+   *  lL／lR 腳掌相對髖部的位移；hair:0 為光頭；sad:1 嘴角向下。 */
+  function guy(x, y, h, o) {
+    o = o || {};
+    var skin = QC[o.skin || 'y'], shirt = QC[o.shirt || 'r'], pants = QC[o.pants || 'b'];
+    var aL = o.aL || [-0.07, 0.3], aR = o.aR || [0.07, 0.3];
+    var lL = o.lL || [-0.02, 0.38], lR = o.lR || [0.02, 0.38];
+    var hip = y - 0.38 * h, sh = y - 0.7 * h, hy = y - 0.86 * h, hr = 0.13 * h;
+    var L = [];
+    L = L.concat(tube([[x - 0.05 * h, hip], [x - 0.05 * h + lL[0] * h, hip + lL[1] * h]], 0.085 * h, pants));
+    L = L.concat(tube([[x + 0.05 * h, hip], [x + 0.05 * h + lR[0] * h, hip + lR[1] * h]], 0.085 * h, pants));
+    L.push([shirt, RR(x - 0.11 * h, sh - 0.04 * h, 0.22 * h, 0.38 * h, 0.05 * h)]);
+    L = L.concat(tube([[x - 0.1 * h, sh], [x - 0.1 * h + aL[0] * h, sh + aL[1] * h]], 0.065 * h, shirt));
+    L = L.concat(tube([[x + 0.1 * h, sh], [x + 0.1 * h + aR[0] * h, sh + aR[1] * h]], 0.065 * h, shirt));
+    L.push([skin, E(x, hy, hr, hr)]);
+    if (o.hair !== 0) {
+      L.push([QC[o.hair || 'n'], 'M' + r1(x - hr) + ' ' + r1(hy - 0.02 * h) + 'A' + r1(hr) + ' ' + r1(hr) + ' 0 0 1 ' +
+        r1(x + hr) + ' ' + r1(hy - 0.02 * h) + 'Q' + r1(x) + ' ' + r1(hy - 0.09 * h) + ' ' + r1(x - hr) + ' ' + r1(hy - 0.02 * h) + 'Z']);
+    }
+    L.push(['#4A3B55', E(x - 0.045 * h, hy + 0.01 * h, 0.014 * h, 0.018 * h), { s: 'none' }]);
+    L.push(['#4A3B55', E(x + 0.045 * h, hy + 0.01 * h, 0.014 * h, 0.018 * h), { s: 'none' }]);
+    var my = hy + 0.06 * h, md = (o.sad ? -0.03 : 0.035) * h;
+    L.push(['none', 'M' + r1(x - 0.04 * h) + ' ' + r1(my) + 'Q' + r1(x) + ' ' + r1(my + md) + ' ' + r1(x + 0.04 * h) + ' ' + r1(my),
+      { s: '#4A3B55', w: Math.max(5, r1(0.012 * h)) }]);
+    return L;
+  }
+
+  /** 用題目文字當索引寫範本：N({ '溜溜球': Q([...]) }) → { 'w-toy-0': [...] }。找不到題目會直接丟錯。 */
+  var textIndex = null;
+  function N(byText) {
+    if (!textIndex) {
+      var W = typeof module === 'object' && module.exports ? require('./words.js') : globalThis.Words;
+      textIndex = {};
+      W.all().forEach(function (w) { textIndex[w.text] = w.id; });
+    }
+    var out = {};
+    Object.keys(byText).forEach(function (text) {
+      if (!textIndex[text]) throw new Error('N: 題庫裡沒有這一題 ' + text);
+      out[textIndex[text]] = byText[text];
+    });
+    return out;
+  }
+
   return {
+    Q: Q,
+    N: N,
+    guy: guy,
     E: E,
     RR: RR,
     poly: poly,

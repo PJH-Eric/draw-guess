@@ -10,7 +10,7 @@ const Reference = require('../public/js/reference.js');
 const all = Words.all();
 const arg = process.argv[2];
 const starts =
-  arg === 'all' ? Array.from({ length: 50 }, (_, i) => i * 40) : [Number(arg)];
+  arg === 'all' ? Array.from({ length: Math.ceil(all.length / 40) }, (_, i) => i * 40) : [Number(arg)];
 let bad = 0;
 for (const start of starts) {
   const file = path.join(

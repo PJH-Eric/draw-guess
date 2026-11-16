@@ -555,12 +555,12 @@ async function main() {
         inView: r.left >= 0 && r.top >= 0 && r.right <= innerWidth + 1 && r.bottom <= innerHeight + 1,
         count: list.querySelectorAll('[role=option]').length };
     })()`);
-    check(v.name + '：種類選單使用自訂清單且完整適應畫面', dropdown.custom && dropdown.inView && dropdown.count === 29, JSON.stringify(dropdown));
+    check(v.name + '：種類選單使用自訂清單且完整適應畫面', dropdown.custom && dropdown.inView && dropdown.count === require('../public/js/words.js').CATEGORY_KEYS.length + 1, JSON.stringify(dropdown));
     await shot(v.name + '-自訂種類選單');
     await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'End', code: 'End', windowsVirtualKeyCode: 35 });
     await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13 });
     check(v.name + '：鍵盤可選最後一個種類並收合選單',
-      await cdp.eval('return document.getElementById("opt-category").value==="taiwan" && document.getElementById("opt-category-list").hidden;'));
+      await cdp.eval('return document.getElementById("opt-category").value==="' + require('../public/js/words.js').CATEGORY_KEYS.slice(-1)[0] + '" && document.getElementById("opt-category-list").hidden;'));
     await cdp.eval('document.getElementById("opt-category-button").click(); return 1;');
     await cdp.eval('document.querySelector("#opt-category-list [data-value=animal]").click(); return 1;');
 

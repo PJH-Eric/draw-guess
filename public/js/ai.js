@@ -39,7 +39,7 @@
       /* --- 當猜題者 --- */
       firstMs: 16000,      // 最早幾毫秒後開口
       intervalMs: 9000,   // 兩次猜測的間隔
-      maxGuesses: 4,
+      maxGuesses: 6,     // 題庫擴到 3000 題後候選變多，多給兩次機會，維持原本「偶爾猜中」的程度
       topK: 8,             // 從距離前幾名裡挑
       useLength: true,     // 用字數過濾候選
       useMask: false,      // 用已揭開的字過濾候選

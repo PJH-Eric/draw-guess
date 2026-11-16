@@ -1,10 +1,10 @@
 /* ===== app/solo.js — 單機引擎 ===== */
 
-import { D, LOOP_MS, ME, RNG, Rules, Sound, Store, Words, app, show, toast } from './core.js?v=407d3bb548';
-import { pushFeed } from './feed.js?v=407d3bb548';
-import { ensurePaint } from './canvas.js?v=407d3bb548';
-import { render, updateTimers } from './render.js?v=407d3bb548';
-import { recordResult } from './online-events.js?v=407d3bb548';
+import { D, LOOP_MS, ME, RNG, Rules, Sound, Store, Words, app, show, toast } from './core.js?v=a91e944bc5';
+import { pushFeed } from './feed.js?v=a91e944bc5';
+import { ensurePaint } from './canvas.js?v=a91e944bc5';
+import { render, updateTimers } from './render.js?v=a91e944bc5';
+import { recordResult } from './online-events.js?v=a91e944bc5';
 
 var w = window;
 
