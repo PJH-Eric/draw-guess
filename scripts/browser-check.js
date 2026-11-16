@@ -265,11 +265,12 @@ const PAGE_HELPERS = `
       var aside = document.getElementById('b-aside-toggle');
       var settings = document.getElementById('b-game-settings');
       var fab = document.getElementById('b-settings');
+      var lang = document.getElementById('b-lang');
       function rect(el) {
         var r = el.getBoundingClientRect();
         return { left: Math.round(r.left), right: Math.round(r.right), width: Math.round(r.width), top: Math.round(r.top), bottom: Math.round(r.bottom) };
       }
-      return { group: rect(group), aside: rect(aside), settings: rect(settings), fab: rect(fab) };
+      return { group: rect(group), aside: rect(aside), settings: rect(settings), fab: rect(fab), lang: rect(lang) };
     },
     click: function (sel) {
       var el = document.querySelector(sel);
@@ -584,8 +585,11 @@ async function main() {
       const topActions = await cdp.json('window.__probe.topActions()');
       check(v.name + '：上方對局按鈕靠攏且不被設定鈕拉開',
         topActions.group.width <= 132 &&
-        topActions.fab.left - topActions.settings.right <= 8 &&
-        topActions.group.right <= topActions.fab.left + 1,
+        /* 順序是 對局設定｜語言｜系統設定：對局設定貼著語言鈕，而且沒有被它蓋住 */
+        topActions.lang.left - topActions.settings.right >= 0 &&
+        topActions.lang.left - topActions.settings.right <= 20 &&
+        topActions.fab.left - topActions.lang.right <= 12 &&
+        topActions.group.right <= topActions.lang.left + 1,
         JSON.stringify(topActions));
     }
 
@@ -1126,9 +1130,9 @@ async function main() {
   check('開房設定套用題目種類', await hostTab.eval('return window.DrawGuessApp.view.room.settings.category === "animal";'));
   check('線上房間沒有電腦對手的入口', await hostTab.eval('return !document.getElementById("room-create-ai") && !document.querySelector("[data-act=add-ai]");'));
   check('房間設定裡有離開／退出房間的按鈕', await hostTab.eval('var b=document.querySelector("[data-act=leave-room]"); return !!b && b.textContent.indexOf("房間") >= 0;'));
-  const actionGap = await hostTab.eval('var a=document.getElementById("b-aside-toggle").getBoundingClientRect(); var b=document.getElementById("b-game-settings").getBoundingClientRect(); var c=document.getElementById("b-settings").getBoundingClientRect(); return {gap: Math.max(0, b.left-a.right, a.left-b.right), fabGap: Math.round(c.left-b.right), aside:a.toJSON(), settings:b.toJSON(), fab:c.toJSON()};');
+  const actionGap = await hostTab.eval('var a=document.getElementById("b-aside-toggle").getBoundingClientRect(); var b=document.getElementById("b-game-settings").getBoundingClientRect(); var c=document.getElementById("b-lang").getBoundingClientRect(); return {gap: Math.max(0, b.left-a.right, a.left-b.right), fabGap: Math.round(c.left-b.right), aside:a.toJSON(), settings:b.toJSON(), fab:c.toJSON()};');
   check('左側欄與對局設定按鈕緊鄰', actionGap.gap <= 8, JSON.stringify(actionGap));
-  check('系統設定鈕也併在同一排', actionGap.fabGap >= 0 && actionGap.fabGap <= 8, JSON.stringify(actionGap));
+  check('對局設定鈕貼著語言鈕、沒有被蓋住', actionGap.fabGap >= 0 && actionGap.fabGap <= 20, JSON.stringify(actionGap));
 
   /* 產生邀請連結：連結不綁身分，房主不再事先幫對方選好身分——玩家還是觀戰交給拿到連結的人自己決定 */
   check('邀請面板不再讓房主先選對方身分',

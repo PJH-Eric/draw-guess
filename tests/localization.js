@@ -25,7 +25,10 @@ const html = read(path.join(publicDir, 'index.html'));
 const used = new Set();
 for (const m of html.matchAll(/data-i18n(?:-html|-title|-content)?="([^"]+)"/g)) used.add(m[1]);
 for (const m of html.matchAll(/data-i18n-attr="([^"]+)"/g)) for (const pair of m[1].split(';')) used.add(pair.split('=')[1]?.trim());
-for (const file of fs.readdirSync(jsDir).filter(f => f.endsWith('.js') && !/^(locales|ui-locales|i18n|msgs)\.js$/.test(f))) {
+/* js/ 底下一層的檔案，加上 js/app/ 裡拆出來的畫面模組 */
+const scanned = fs.readdirSync(jsDir).filter(f => f.endsWith('.js') && !/^(locales|ui-locales|i18n|msgs)\.js$/.test(f));
+if (fs.existsSync(path.join(jsDir, 'app'))) for (const f of fs.readdirSync(path.join(jsDir, 'app'))) if (f.endsWith('.js')) scanned.push(path.join('app', f));
+for (const file of scanned) {
   for (const m of read(path.join(jsDir, file)).matchAll(/\b(?:t|T)\(['"]([\w.-]+)['"]\s*[,)]/g)) used.add(m[1]);
 }
 for (const key of used) assert.ok(key in dicts.en, 'Missing translation key: ' + key);

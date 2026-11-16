@@ -25,7 +25,7 @@
   --topgap:8px;
   --topedge:12px;
   /* 右上三顆固定鈕佔掉的寬度，抬頭那一列要讓出來才不會被蓋到 */
-  --hud-reserve:calc(var(--topedge) + 3 * var(--topbtn) + 2 * var(--topgap) + 8px);
+  --hud-reserve:calc(var(--topedge) + 4 * var(--topbtn) + 3 * var(--topgap) + 20px);
   --safe-t:env(safe-area-inset-top);
   --safe-r:env(safe-area-inset-right);
   --safe-b:env(safe-area-inset-bottom);
@@ -111,9 +111,9 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 /* ---------- 通用面板 ---------- */
 .panel{width:min(100%,880px);margin:0 auto;padding:18px 18px 28px;min-height:100%}
 .panel-head{display:flex;align-items:center;gap:12px;margin:6px 0 14px;padding-right:60px}
-/* 大廳內容很長：抬頭黏在頂端當一條底，列表從它下面捲過去，
-   右上角固定的語言／設定鈕才不會直接壓在房名或按鈕上。 */
-#s-lobby .panel-head{
+/* 內容比畫面長的頁面（大廳、教學、戰績、單機設定）：抬頭黏在頂端當一條底，
+   內容從它下面捲過去，右上角固定的語言／設定鈕才不會直接壓在文字或按鈕上。 */
+.panel-head{
   position:sticky;top:0;z-index:5;margin:0 -18px 8px;padding:10px 18px 8px;padding-right:78px;
   background:rgba(255,249,243,.9);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
   border-bottom:2px solid rgba(74,59,85,.08)
@@ -184,10 +184,48 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 .statrow{display:flex;justify-content:space-between;padding:5px 2px;font-weight:800;border-bottom:2px dashed var(--line)}
 .statrow:last-child{border-bottom:0}
 .statrow b{font-variant-numeric:tabular-nums}
+.stat-empty{flex:1 1 100%;text-align:center;border:3px dashed var(--line);border-radius:22px;background:rgba(255,255,255,.7);padding:26px 16px}
+.stat-empty-face{display:block;width:84px;height:84px;margin:0 auto 8px}
+.stat-empty-face svg{width:100%;height:100%;display:block}
+.stat-empty h3{margin:0 0 6px;font-size:1.2rem;color:var(--grape-t)}
+.stat-empty p{margin:0 auto 16px;max-width:420px;color:var(--ink-soft);font-size:.92rem;line-height:1.7}
+
+/* ---------- 單機設定：最近的作品 ---------- */
+.recentworks{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px}
+.recentwork{
+  display:flex;flex-direction:column;align-items:stretch;gap:4px;min-width:0;padding:6px;font:inherit;font-weight:800;font-size:.82rem;
+  color:var(--ink);cursor:pointer;border:3px solid var(--line);border-radius:16px;background:#fff;box-shadow:0 4px 0 rgba(74,59,85,.08)
+}
+.recentwork canvas{width:100%;height:auto;aspect-ratio:1;border-radius:10px;background:var(--paper);display:block}
+.recentwork span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
+.recentwork:hover{border-color:var(--grape-d)}
+.recentwork:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
+
+/* ---------- 猜題框下面的猜題紀錄（只在橫向寬螢幕出現） ---------- */
+.guessfeed{display:none;margin:0;padding:0;list-style:none}
+@media (orientation:landscape) and (min-width:900px) and (min-height:560px){
+  .guessbar:not([hidden]) + .guessfeed{
+    display:flex;flex-direction:column;gap:5px;flex:1 1 0;min-height:0;overflow:hidden;margin-top:6px
+  }
+  .guessfeed li{
+    flex:0 0 auto;border:2px solid var(--line);border-radius:12px;background:#fff;padding:5px 9px;
+    font-size:.8rem;font-weight:700;line-height:1.45;overflow-wrap:anywhere
+  }
+  .guessfeed li[data-k=guess]{border-color:var(--sky-d);background:#F1F8FE}
+  .guessfeed li[data-mine=true]{border-color:var(--grape-d);background:#F8F4FF}
+}
+@media (min-width:1100px){
+  /* 左側摘要常駐展開時紀錄已經在那裡了，不重複放 */
+  #game.aside-open .guessfeed{display:none!important}
+}
+
+
 
 /* ---------- 大廳 ---------- */
 .lobby-off{text-align:center;padding:20px 10px}
 .state-face{font-size:3rem;margin-bottom:6px}
+.state-face .ico{width:1.3em;height:1.3em}
+.aside-head h3{display:flex;align-items:center;gap:6px}
 .lobby-off h3{margin:0 0 8px;font-size:1.2rem}
 .lobby-off p{margin:0 auto 12px;max-width:520px;color:var(--ink-soft);font-size:.9rem;line-height:1.7}
 .lobby-help{max-width:660px;margin:0 auto 16px;text-align:left;border:3px solid var(--line);border-radius:18px;background:#fff;padding:10px 14px}
@@ -209,8 +247,8 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 }
 .lobby-join input{letter-spacing:.12em;text-transform:uppercase}
 .lobby-nick input:focus,.lobby-join input:focus{border-color:var(--grape-d);box-shadow:0 0 0 3px rgba(164,143,219,.28)}
-.lobby-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px}
-.lobby-bar .lbl{margin:0}
+.lobby-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;flex-wrap:wrap}
+.lobby-bar .lbl{margin:0;flex:1 1 auto}
 .lobby-state{margin:8px 4px;font-size:.85rem;font-weight:800;color:var(--ink-soft)}
 .roomlist{display:flex;flex-direction:column;gap:10px}
 .roomcard{
@@ -233,7 +271,14 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 .rc-rule .ico{width:1.1em;height:1.1em}
 .rc-rule-t{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .rc-progress{margin-right:6px;font-weight:900;color:var(--ink)}
-.lobby-filter{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 2px}
+.lobby-filter{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin:10px 0 2px}
+.lobby-filter-open{flex:0 0 auto;min-height:48px}
+.pillbtn[aria-pressed=true]{background:var(--grape);border-color:var(--grape-d);color:#3A2C46}
+.rc-faces{display:inline-flex;align-items:center;vertical-align:middle;margin-right:6px}
+.rc-face{width:20px;height:20px;margin-left:-5px;border-radius:50%;background:#fff}
+.rc-face:first-child{margin-left:0}
+.rc-face svg{width:100%;height:100%;display:block}
+.rc-more{margin-left:3px;font-weight:900;font-size:.72rem;color:var(--ink)}
 .lobby-filter-field{flex:1 1 200px;min-width:0;display:flex;flex-direction:column;gap:4px;font-size:.8rem;font-weight:800;color:var(--ink-soft)}
 #b-lobby-filter-clear{align-self:flex-start;margin-top:4px}
 /* 窄版：房號與房名同一列、chip 佔滿整列、加入／觀戰各佔一半 */
@@ -249,7 +294,7 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 }
 /* 夠寬時右上角按鈕落在面板外側，不會壓到內容，抬頭就不用黏住 */
 @media (min-width:1140px){
-  #s-lobby .panel-head{position:static;background:none;border-bottom:0;-webkit-backdrop-filter:none;backdrop-filter:none}
+  .panel-head{position:static;background:none;border-bottom:0;-webkit-backdrop-filter:none;backdrop-filter:none}
 }
 /* 寬螢幕展開大廳聊天室時，把大廳內容往右讓，面板不壓在房間列表上 */
 @media (min-width:1220px){
@@ -308,7 +353,8 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 @keyframes timer-beat{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 .game-top-actions{
   position:fixed;z-index:69;top:calc(10px + var(--safe-t));
-  right:calc(var(--topedge) + var(--topbtn) + var(--topgap) + var(--safe-r));
+  /* 最右邊兩格是語言鈕與系統設定鈕（i18n.js 的 .language-controls），對局工具排在它們左邊 */
+  right:calc(var(--topedge) + 2 * var(--topbtn) + 2 * var(--topgap) + 8px + var(--safe-r));
   width:max-content;
   display:inline-flex;align-items:center;gap:var(--topgap);flex:0 0 auto;
 }
@@ -456,6 +502,37 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 .seatrow .sface svg{width:100%;height:100%}
 .seatrow .seatname{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .seatrow.ready{border-color:var(--mint-d);background:#E4F6EC}
+
+/* ---------- 投票請玩家離開的橫幅 ---------- */
+.kick-banner{
+  position:absolute;z-index:45;left:50%;transform:translateX(-50%);
+  top:calc(var(--topbtn) + 18px + var(--safe-t));
+  width:max-content;max-width:calc(100% - 20px);
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;
+  border:3px solid var(--ink);border-radius:18px;background:#FFF3E6;
+  padding:8px 12px;font-size:.86rem;font-weight:800;line-height:1.5;text-align:center;
+  box-shadow:0 5px 0 rgba(74,59,85,.18)
+}
+.kick-banner .kick-text{flex:1 1 200px;min-width:0;overflow-wrap:anywhere}
+.kick-banner .btn3d{flex:0 0 auto}
+
+/* ---------- 結算：皇冠、彩帶 ---------- */
+.resultlist .rface{position:relative}
+.resultlist .rcrown{position:absolute;left:50%;top:-13px;width:20px;height:20px;transform:translateX(-50%) rotate(-8deg)}
+.rscore{font-variant-numeric:tabular-nums}
+.overlay-card{position:relative}
+.confetti{position:absolute;inset:0;overflow:hidden;pointer-events:none;border-radius:inherit;z-index:3}
+.confetti i{
+  position:absolute;top:-14px;width:9px;height:14px;border-radius:3px;opacity:0;
+  animation:confetti-fall 1.8s ease-in 1 both
+}
+@keyframes confetti-fall{
+  0%{opacity:0;transform:translateY(0) rotate(0)}
+  12%{opacity:1}
+  100%{opacity:0;transform:translateY(340px) rotate(420deg)}
+}
+body.reduced-motion .confetti{display:none}
+@media (prefers-reduced-motion:reduce){.confetti{display:none}}
 .seatrow.ai{border-color:var(--sky-d);background:#EAF4FC}
 .seatrow.spec{border-color:var(--line);background:#F3F1F6;color:var(--ink-soft);font-weight:700}
 /* 房號以前是整張卡最搶眼的東西，縮小一號讓位給下面的聊天室 */
@@ -968,7 +1045,7 @@ body.modal-open .language-menu{display:none!important}
   .game-main{padding-left:calc(4px + var(--safe-l));padding-right:calc(4px + var(--safe-r))}
   .stage{padding:2px 0}
   .panel{padding:14px 12px 24px}
-  #s-lobby .panel-head{margin-left:-12px;margin-right:-12px;padding-left:12px}
+  .panel-head{margin-left:-12px;margin-right:-12px;padding-left:12px}
   .panel-head h2{font-size:1.25rem}
   .home-row{flex-direction:column}
   /* 狀態與倒數疊在返回與工具鈕之間，共用第一列，省下整列高度。 */
@@ -1250,7 +1327,7 @@ body.kb-open .game-aside{bottom:var(--kb,0px)}
   .resultlist li.result-row .rpts{padding:4px 7px;font-size:.76rem}
 }
 body.solo-mode .donebox{display:none}
-body.solo-mode{--hud-reserve:calc(var(--topedge) + 2 * var(--topbtn) + var(--topgap) + 8px)}
+body.solo-mode{--hud-reserve:calc(var(--topedge) + 3 * var(--topbtn) + 2 * var(--topgap) + 20px)}
 body.solo-mode .game-aside,
 body.solo-mode .aside-toggle,
 body.solo-mode .canvastop,
@@ -1383,6 +1460,40 @@ body.solo-mode.big-tools .fillbox{min-height:56px}
 .panel-head h2, .setrow label, .rule-field, .modal-head h2 { min-width: 0; overflow-wrap: anywhere; }
 html[lang="en"] .home-btns .btn3d, html[lang="en"] .btn-wide { white-space: normal; overflow-wrap: anywhere; }
 
+/* 矮的橫向手機：右上角現在有四顆鈕，抬頭那一列放不下延遲燈號就會把題目列擠到下一行、
+   畫布跟著變小；連線狀態在操作摘要裡看得到，這裡直接收掉。 */
+@media (orientation:landscape) and (max-height:500px){
+  body:not(.solo-mode) #network-latency.is-inline{display:none}
+  /* 題目列的起始寬度調小：留在第一列跟狀態、右上角按鈕並排，再自己長到剩下的寬度 */
+  body:not(.solo-mode) .wordbar{flex-basis:150px;gap:4px 8px;padding-left:10px;padding-right:10px}
+}
+
+/* ---------- 換頁與按鈕動態 ---------- */
+@keyframes screen-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.screen.active:not(#s-game){animation:screen-in .22s ease-out}
+@keyframes panel-in{from{opacity:0}to{opacity:1}}
+.settings-modal.open .settings-panel{animation:panel-in .18s ease-out}
+body.reduced-motion .screen.active,body.reduced-motion .settings-modal.open .settings-panel{animation:none}
+@media (prefers-reduced-motion:reduce){
+  .screen.active,.settings-modal.open .settings-panel{animation:none}
+}
+
+/* ---------- 桌機主選單：畫面夠大就把 logo 與按鈕放大，不要縮在中間一小塊 ---------- */
+@media (min-width:1100px) and (min-height:720px){
+  .home-wrap{max-width:820px}
+  .logo{max-width:660px;margin-bottom:26px}
+  .home-btns{max-width:560px;gap:16px}
+  .home-btns .btn3d{font-size:1.2rem;min-height:64px}
+  .home-btns .btn3d.big{font-size:1.38rem;min-height:76px}
+  .home-row{gap:16px}
+  .home-note{max-width:620px;font-size:1rem;margin-top:26px}
+}
+
+/* ---------- 平板寬度展開大廳聊天室：內容往右讓，不被面板蓋住 ---------- */
+@media (min-width:900px) and (max-width:1219px){
+  html.lc-wide-open .screen#s-lobby .panel{width:auto;max-width:none;margin-left:324px;margin-right:0}
+}
+
 /* ---------- 大廳聊天室：套用你畫我猜配色 ---------- */
 body .lc-root{
   --lc-accent:var(--grape-t);--lc-accent-ink:#fff;
@@ -1495,3 +1606,8 @@ body.solo-mode .toolrow-misc > .solo-file-actions{display:flex;flex:0 0 auto;gap
 body.solo-mode .toolrow-misc > .solo-file-actions .btn3d{flex:0 0 auto;min-height:48px;padding-left:12px;padding-right:12px}
 html[lang] body.solo-mode .toolrow-misc > .solo-file-actions .btn3d{min-width:64px;padding-left:12px;padding-right:12px;white-space:nowrap}
 body.solo-mode .toolrow-misc:has(> .solo-file-actions) > .toolscroll{flex:0 1 auto}
+
+/* ---------- 直向作畫：畫布貼著題目列，空白集中到畫布與工具列之間 ---------- */
+@media (orientation:portrait){
+  .stage{align-items:flex-start}
+}

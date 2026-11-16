@@ -243,6 +243,65 @@
         '<path d="M26 60 q12 -26 22 -14 q8 10 16 -6" fill="none" stroke="#E88CAA" stroke-width="6" stroke-linecap="round"/>' +
         '<path d="M40 74 V86 M60 74 V86 M32 86 H68" ' + S + ' fill="none"/>', (globalThis.I18N ? globalThis.I18N.t("text.314") : "畫板"));
     },
+    /* 以下是純裝飾圖示：外層元素自己有 aria-label 或 aria-hidden，所以這裡不給名稱 */
+    refresh: function () {
+      return ico('<path d="M78 42 A30 30 0 1 0 80 58" fill="none" ' + S + '/>' +
+        '<path d="M82 18 V44 H56" fill="none" ' + S + '/>', '');
+    },
+    home: function () {
+      return ico('<path d="M14 50 L50 18 L86 50 V84 H14 Z" fill="#FFE3A0" ' + S + '/>' +
+        '<rect x="41" y="58" width="18" height="26" fill="#FFFDF8" ' + S + '/>', '');
+    },
+    tag: function () {
+      return ico('<path d="M16 16 H50 L86 52 L52 86 L16 50 Z" fill="#C9B6F5" ' + S + '/>' +
+        '<circle cx="36" cy="36" r="6" fill="#FFFDF8" ' + S + '/>', '');
+    },
+    ruler: function () {
+      return ico('<rect x="10" y="32" width="80" height="36" rx="6" fill="#FFE3A0" ' + S + '/>' +
+        '<path d="M28 32 V48 M44 32 V54 M60 32 V48 M76 32 V54" fill="none" ' + S + '/>', '');
+    },
+    clipboard: function () {
+      return ico('<rect x="20" y="20" width="60" height="68" rx="9" fill="#FFFDF8" ' + S + '/>' +
+        '<rect x="35" y="10" width="30" height="18" rx="6" fill="#FFE3A0" ' + S + '/>' +
+        '<path d="M34 48 H66 M34 62 H66 M34 76 H54" fill="none" ' + S + '/>', '');
+    },
+    gamepad: function () {
+      return ico('<path d="M26 32 H74 Q92 32 92 54 Q92 78 77 78 Q68 78 62 67 H38 Q32 78 23 78 Q8 78 8 54 Q8 32 26 32 Z" fill="#AED9F5" ' + S + '/>' +
+        '<path d="M29 47 V63 M21 55 H37" fill="none" ' + S + '/>' +
+        '<circle cx="65" cy="49" r="5" fill="' + INK + '"/><circle cx="77" cy="60" r="5" fill="' + INK + '"/>', '');
+    },
+    music: function () {
+      return ico('<path d="M38 72 V24 L80 14 V62" fill="none" ' + S + '/>' +
+        '<ellipse cx="27" cy="73" rx="13" ry="10" fill="#FFB8CF" ' + S + '/>' +
+        '<ellipse cx="69" cy="63" rx="13" ry="10" fill="#FFB8CF" ' + S + '/>', '');
+    },
+    globe: function () {
+      return ico('<circle cx="50" cy="50" r="36" fill="#AED9F5" ' + S + '/>' +
+        '<ellipse cx="50" cy="50" rx="16" ry="36" fill="none" ' + S + '/>' +
+        '<path d="M14 50 H86" fill="none" ' + S + '/>', '');
+    },
+    help: function () {
+      return ico('<circle cx="50" cy="50" r="36" fill="#FFE3A0" ' + S + '/>' +
+        '<path d="M37 41 Q37 27 50 27 Q63 27 63 40 Q63 49 50 53 V60" fill="none" ' + S + '/>' +
+        '<circle cx="50" cy="73" r="5" fill="' + INK + '"/>', '');
+    },
+    person: function () {
+      return ico('<circle cx="50" cy="33" r="17" fill="#FFE3A0" ' + S + '/>' +
+        '<path d="M18 88 Q22 58 50 58 Q78 58 82 88 Z" fill="#A9E7D2" ' + S + '/>', '');
+    },
+    flag: function () {
+      return ico('<path d="M26 12 V90" fill="none" ' + S + '/>' +
+        '<path d="M26 18 H80 L66 37 L80 56 H26 Z" fill="#FFB8CF" ' + S + '/>', '');
+    },
+    plug: function () {
+      return ico('<path d="M36 10 V32 M64 10 V32" fill="none" ' + S + '/>' +
+        '<path d="M22 32 H78 V50 Q78 70 50 70 Q22 70 22 50 Z" fill="#C9B6F5" ' + S + '/>' +
+        '<path d="M50 70 V92" fill="none" ' + S + '/>', '');
+    },
+    crown: function () {
+      return ico('<path d="M12 78 L18 30 L37 54 L50 20 L63 54 L82 30 L88 78 Z" fill="#FFE3A0" ' + S + '/>' +
+        '<circle cx="50" cy="62" r="5" fill="#E88CAA"/>', '');
+    },
     people: function () {
       return ico('<circle cx="36" cy="36" r="16" fill="#FFE3A0" ' + S + '/>' +
         '<circle cx="68" cy="42" r="12" fill="#AED9F5" ' + S + '/>' +
@@ -258,8 +317,13 @@
 
   /* ---------------------------------------------------------- LOGO */
 
+  function escText(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
   function logo() {
-    return (globalThis.I18N ? globalThis.I18N.t("text.313") : "<svg viewBox=\"0 0 520 190\" role=\"img\" aria-label=\"你畫我猜\">") +
+    var title = globalThis.I18N ? globalThis.I18N.t('logo.title') : '你畫我猜';
+    return '<svg viewBox="0 0 520 190" role="img" aria-label="' + escText(title) + '">' +
       '<defs>' +
       '<linearGradient id="dgSky" x1="0" y1="0" x2="0" y2="1">' +
       '<stop offset="0" stop-color="#FFF6E8"/><stop offset="1" stop-color="#FFE9F2"/>' +
@@ -275,12 +339,15 @@
       '<path d="M130 110 L138 128 L146 110 Z" fill="#FFF0DE" stroke="' + INK + '" stroke-width="5" stroke-linejoin="round"/>' +
       '</g>' +
       /* 文字 */
-      '<text x="288" y="118" text-anchor="middle" font-size="70" font-weight="900" fill="#6E4FBF" ' +
+      /* 字級 58：四個字寬 232，落在筆尖（x≈166）與泡泡（x=420）之間，不再互相壓到 */
+      '<text x="290" y="116" text-anchor="middle" font-size="58" font-weight="900" fill="#6E4FBF" ' +
       'stroke="' + INK + '" stroke-width="7" paint-order="stroke" ' +
-      (globalThis.I18N ? globalThis.I18N.t("text.312") : "font-family=\"Yuanti TC, PingFang TC, Microsoft JhengHei, Noto Sans TC, sans-serif\">你畫我猜</text>") +
+      'font-family="Yuanti TC, PingFang TC, Microsoft JhengHei, Noto Sans TC, sans-serif"' +
+      /* 英文標題比四個中文字長，縮小並往上提一點才放得進畫板與泡泡之間 */
+      (title.length > 6 ? ' style="font-size:35px" dy="-12"' : '') + '>' + escText(title) + '</text>' +
       /* 右邊：問號泡泡 */
-      '<path d="M406 44 H486 V96 H448 L430 112 V96 H406 Z" fill="#C9B6F5" stroke="' + INK + '" stroke-width="6" stroke-linejoin="round"/>' +
-      '<text x="446" y="84" text-anchor="middle" font-size="40" font-weight="900" fill="#FFFDF8" ' +
+      '<path d="M420 38 H492 V84 H458 L442 98 V84 H420 Z" fill="#C9B6F5" stroke="' + INK + '" stroke-width="6" stroke-linejoin="round"/>' +
+      '<text x="456" y="74" text-anchor="middle" font-size="36" font-weight="900" fill="#FFFDF8" ' +
       'stroke="' + INK + '" stroke-width="5" paint-order="stroke" font-family="system-ui, sans-serif">?</text>' +
       '</svg>';
   }

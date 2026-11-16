@@ -17,8 +17,11 @@
     bigTools: 'dg_big_tools',
     tool: 'dg_tool',
     color: 'dg_color',
-    width: 'dg_width'
+    width: 'dg_width',
+    recent: 'dg_recent_drawings'
   };
+  var RECENT_MAX = 6;
+  var RECENT_TEXT_MAX = 300000;   // 單一作品存檔字數上限，太大的不放進瀏覽器（還是可以下載存檔）
 
   function get(k, d) { try { var v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } }
   function set(k, v) { try { localStorage.setItem(k, String(v)); } catch (e) {} }
@@ -146,6 +149,18 @@
     width: function (v) { if (v === undefined) return getInt(KEY.width, 1, 0, 3); set(KEY.width, v); return v; },
     stats: stats,
     recordGame: recordGame,
+    /* 最近存檔的作品（單機設定頁的縮圖列）：只留最新幾張，同一份內容不重複放 */
+    recentDrawings: function () {
+      var list = getJson(KEY.recent, []);
+      return Array.isArray(list) ? list.filter(function (it) { return it && typeof it.text === 'string'; }).slice(0, RECENT_MAX) : [];
+    },
+    addRecentDrawing: function (item) {
+      if (!item || typeof item.text !== 'string' || item.text.length > RECENT_TEXT_MAX) return false;
+      var list = this.recentDrawings().filter(function (it) { return it.text !== item.text; });
+      list.unshift({ text: item.text, word: String(item.word || ''), at: item.at || Date.now() });
+      setJson(KEY.recent, list.slice(0, RECENT_MAX));
+      return true;
+    },
     resetDefaults: function () {
       setFlag(KEY.reduceMotion, false);
       setFlag(KEY.bigTools, false);
