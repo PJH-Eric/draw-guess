@@ -821,6 +821,10 @@ section('房間生命週期：沒有實體玩家就關閉');
     listed.rounds === room.settings.rounds && listed.drawSec === room.settings.drawSec &&
     listed.diff === room.settings.diff && listed.category === room.settings.category &&
     listed.wordLang === room.settings.wordLang, listed);
+  const longName = store.create('h9', { name: '房主九', roomName: 'Friday doodle night party!!', now: t }).room;
+  check('房名上限 24 個字元（英文房名不會被切得太短）', longName.name === 'Friday doodle night part', longName.name);
+  longName.leave('h9', t);
+  store.sweep(t);
 
   room.leave('h1', t);
   check('最後一個真人離開後就該關閉', room.shouldClose());

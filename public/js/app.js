@@ -1539,7 +1539,7 @@
     });
 
     $('lobby-room-name').addEventListener('input', function () {
-      app.roomCreate.roomName = this.value.slice(0, 16);
+      app.roomCreate.roomName = this.value.slice(0, 24);
     });
     $('room-create-submit').addEventListener('click', createRoomFromSettings);
   }
@@ -1559,7 +1559,7 @@
 
   function createRoomFromSettings() {
     var c = app.roomCreate;
-    var roomName = $('lobby-room-name').value.trim().slice(0, 16) || (globalThis.I18N ? globalThis.I18N.t("text.135") : "畫畫小房間");
+    var roomName = $('lobby-room-name').value.trim().slice(0, 24) || (globalThis.I18N ? globalThis.I18N.t("text.135") : "畫畫小房間");
     c.roomName = roomName;
     saveNick($('lobby-nick'));
     $('room-create-submit').disabled = true;
@@ -2165,6 +2165,8 @@
       if (ev.key === 'Enter' && !ev.isComposing) { ev.preventDefault(); $('b-lobby-join').click(); }
     });
     $('b-lobby-refresh').addEventListener('click', function () { w.Online.send('lobby:subscribe', {}); });
+    app.roomFilter = { lang: '', category: null };
+    setupRoomFilter();
     $('b-lobby-retry').addEventListener('click', connectOnline);
     /* 邀請連結不綁身分：對方自己按「加入當玩家」或「加入觀戰」，見 checkPendingInvite。 */
     $('b-lobby-invite-player').addEventListener('click', function () {
@@ -2284,6 +2286,12 @@
     });
   }
 
+  /* 連線狀態記 key 不記字串，切換語系時才有辦法重畫 */
+  function setLobbyState(key, tail) {
+    app.lobbyState = { key: key, tail: tail || '' };
+    $('lobby-state').textContent = w.I18N.t(key) + (tail || '');
+  }
+
   function connectOnline() {
     $('lobby-nick').value = Store.ensureNick();
     setLobbyEnabled(false);
@@ -2295,21 +2303,21 @@
         : (globalThis.I18N ? globalThis.I18N.t("text.019") : "線上對戰需要一台開著的伺服器。單機練習完全不受影響，可以直接玩。");
       return;
     }
-    $('lobby-state').textContent = (globalThis.I18N ? globalThis.I18N.t("text.018") : "正在連線…");
+    setLobbyState('text.018');
     w.Online.connect({ clientId: Store.clientId(), name: Store.ensureNick() })
       .then(function () {
         $('lobby-off').hidden = true;
         $('lobby-live').hidden = false;
         setLobbyEnabled(true);
         w.Online.send('lobby:subscribe', {});
-        $('lobby-state').textContent = (globalThis.I18N ? globalThis.I18N.t("text.017") : "已連線。");
+        setLobbyState('text.017');
         checkPendingInvite();
         /* 重新整理前在房間裡：自動回去（有邀請連結的話以邀請為準） */
         var entry = Cfg.entry();
         if (app.resumeRoom && !(entry.room && entry.invite) && app.mode !== 'online') {
           var code = app.resumeRoom;
           app.resumeRoom = null;
-          $('lobby-state').textContent = (globalThis.I18N ? globalThis.I18N.t("text.016") : "正在回到房間 ") + code + '…';
+          setLobbyState('text.016', code + '…');
           joinRoom(code, null, null, { resume: true });
         }
       })
@@ -2352,8 +2360,8 @@
      純顯示（不是按鈕），窄螢幕自動換行；舊版伺服器沒送的欄位就不畫那一顆。 */
   function roomRuleChips(r) {
     var list = [];
-    if (r.rounds) list.push({ k: 'rounds', label: (r.rounds === 1 ? w.I18N.t('lobby.rule.roundsOne') : w.I18N.t('lobby.rule.rounds', { n: r.rounds })) });
-    if (r.drawSec) list.push({ k: 'sec', label: w.I18N.t('lobby.rule.sec', { n: r.drawSec }) });
+    if (r.rounds) list.push({ k: 'rounds', ico: 'pen', label: (r.rounds === 1 ? w.I18N.t('lobby.rule.roundsOne') : w.I18N.t('lobby.rule.rounds', { n: r.rounds })) });
+    if (r.drawSec) list.push({ k: 'sec', ico: 'clock', label: w.I18N.t('lobby.rule.sec', { n: r.drawSec }) });
     if (r.diff !== undefined) {
       var dl = DIFF_CHOICES.filter(function (d) { return d.v === r.diff; })[0];
       if (dl) list.push({ k: 'diff', label: dl.label });
@@ -2368,14 +2376,65 @@
     if (r.wordLang) list.push({ k: 'lang', label: wordLangLabel(r.wordLang) });
     if (!list.length) return '';
     return '<span class="rc-rules" role="list" aria-label="' + esc(w.I18N.t('lobby.rules')) + '">' + list.map(function (c) {
-      return '<span class="rc-rule" role="listitem" data-k="' + c.k + '">' + esc(c.label) + '</span>';
+      return '<span class="rc-rule" role="listitem" data-k="' + c.k + '">' +
+        (c.ico ? '<span class="ico" data-ico="' + c.ico + '" aria-hidden="true"></span>' : '') +
+        '<span class="rc-rule-t">' + esc(c.label) + '</span></span>';
     }).join('') + '</span>';
+  }
+
+  /* 大廳篩選：題目語系與題目種類。category 用 null 代表「不篩選」，
+     因為空字串本身是一個合法的值（房間選了「全部種類」）。 */
+  function renderRoomFilter() {
+    var f = app.roomFilter;
+    var langs = [{ v: '', label: w.I18N.t('lobby.filter.langAll') }].concat(WORD_LANGS);
+    var cats = [{ v: '*', label: w.I18N.t('lobby.filter.catAny') }].concat(categoryChoices());
+    function fill(id, list, cur) {
+      var html = list.map(function (o) {
+        return '<option value="' + esc(o.v) + '"' + (o.v === cur ? ' selected' : '') + '>' + esc(o.label) + '</option>';
+      }).join('');
+      var el = $(id);
+      if (el.getAttribute('data-sig') !== html) { el.innerHTML = html; el.setAttribute('data-sig', html); }
+    }
+    fill('lobby-filter-lang', langs, f.lang);
+    fill('lobby-filter-category', cats, f.category === null ? '*' : f.category);
+  }
+
+  function setupRoomFilter() {
+    $('lobby-filter-lang').addEventListener('change', function () {
+      app.roomFilter.lang = this.value;
+      renderRoomList(app.rooms);
+    });
+    $('lobby-filter-category').addEventListener('change', function () {
+      app.roomFilter.category = this.value === '*' ? null : this.value;
+      renderRoomList(app.rooms);
+    });
   }
 
   function renderRoomList(rooms) {
     app.rooms = rooms;
     var host = $('roomlist');
-    if (!rooms || !rooms.length) {
+    var total = rooms ? rooms.length : 0;
+    var f = app.roomFilter || (app.roomFilter = { lang: '', category: null });
+    $('lobby-filter').hidden = !total;
+    renderRoomFilter();
+    if (total) {
+      rooms = rooms.filter(function (r) {
+        return (!f.lang || r.wordLang === f.lang) && (f.category === null || (r.category || '') === f.category);
+      });
+      if (!rooms.length) {
+        host.innerHTML = '<p class="hint-note">' + esc(w.I18N.t('lobby.filter.none')) + '</p>' +
+          '<button class="btn3d small" data-color="cream" id="b-lobby-filter-clear">' + esc(w.I18N.t('lobby.filter.clear')) + '</button>';
+        S.decorateAll(host);
+        $('b-lobby-filter-clear').addEventListener('click', function () {
+          app.roomFilter = { lang: '', category: null };
+          renderRoomList(app.rooms);
+          var b = $('lobby-filter-lang-button');
+          if (b) b.focus();
+        });
+        return;
+      }
+    }
+    if (!total) {
       host.innerHTML = (globalThis.I18N ? globalThis.I18N.t("text.009") : "<p class=\"hint-note\">目前沒有公開房間。按「開一間房」自己開一間，把房號或邀請連結傳給朋友。</p>");
       return;
     }
@@ -2384,16 +2443,22 @@
       return '<div class="roomcard"><span class="rc-code">' + esc(r.code) + '</span>' +
         '<span class="rc-main"><b class="rc-name">' + esc(r.name) + '</b>' +
         '<span class="rc-sub"><span class="rc-badge" data-p="' + r.phase + '">' + phase + '</span>' +
+        (r.phase === 'playing' && r.turnNo && r.totalTurns
+          ? '<span class="rc-progress">' + esc(w.I18N.t('lobby.progress', { n: r.turnNo, total: r.totalTurns })) + '</span>' : '') +
         r.players + '/' + r.maxPlayers + (globalThis.I18N ? globalThis.I18N.t("text.005") : " 位玩家") +
         (r.spectators ? '・' + r.spectators + (globalThis.I18N ? globalThis.I18N.t("text.004") : " 觀戰") : '') +
         (globalThis.I18N ? globalThis.I18N.t("text.003") : "・房主 ") + esc(r.host) + '</span>' +
         roomRuleChips(r) + '</span>' +
         '<span class="rc-btns">' +
-        '<button class="btn3d small" data-color="mint" data-join="' + esc(r.code) + (globalThis.I18N ? globalThis.I18N.t("text.002") : "\">加入</button>") +
+        (r.players >= r.maxPlayers
+          /* 滿房按「加入」只會被伺服器轉成觀戰，不如直接講清楚 */
+          ? '<button class="btn3d small" data-color="cream" disabled>' + esc(w.I18N.t('lobby.full')) + '</button>'
+          : '<button class="btn3d small" data-color="mint" data-join="' + esc(r.code) + (globalThis.I18N ? globalThis.I18N.t("text.002") : "\">加入</button>")) +
         '<button class="btn3d small" data-color="sky" data-watch="' + esc(r.code) + (globalThis.I18N ? globalThis.I18N.t("text.001") : "\">觀戰</button>") +
         '</span></div>';
     }).join('');
     S.decorateAll(host);
+    paintIcons(host);
     var j = host.querySelectorAll('[data-join]');
     for (var i = 0; i < j.length; i++) {
       (function (el) { el.addEventListener('click', function () { joinRoom(el.getAttribute('data-join'), null, 'player'); }); }(j[i]));
@@ -2419,6 +2484,7 @@
     if (!w.LobbyChat) return;
     var chat = w.LobbyChat.create({
       game: 'draw-guess',
+      defaultOpen: false,   // 展開的面板會蓋到房間列表，預設先收成氣泡
       mount: '#app',
       watch: '#s-lobby',
       getName: function () { return Store.ensureNick(); },
@@ -2445,7 +2511,7 @@
       if (s.status !== 'connected') app.onlineCount = null;
       renderOnlineCount();
       if (app.screen === 's-lobby') {
-        if (s.message) $('lobby-state').textContent = s.message;
+        if (s.message) { app.lobbyState = null; $('lobby-state').textContent = s.message; }
         setLobbyEnabled(s.status === 'connected');
       }
       if (app.view) renderAside();
@@ -2634,6 +2700,7 @@
       $('logo').innerHTML = S.logo();
       renderSoloOptions();
       syncSettingsUI();
+      if (app.lobbyState) setLobbyState(app.lobbyState.key, app.lobbyState.tail);
       if (app.rooms) renderRoomList(app.rooms);
       renderOnlineCount();
       if (gameModal && gameModal.isOpen()) renderGameSettings();

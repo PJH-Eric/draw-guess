@@ -119,7 +119,8 @@
 
     const state = {
       enabled: store(K('enabled')) !== '0',
-      openWide: store(K('open')) !== '0',        // 桌機／平板：預設展開、記住上次
+      /* 桌機／平板：記住上次；沒記錄時看 defaultOpen（預設展開，遊戲可傳 false 改成收合） */
+      openWide: store(K('open')) === null ? o.defaultOpen !== false : store(K('open')) !== '0',
       openNarrow: false,                         // 手機：每次都從氣泡開始
       shown: false,          // 遊戲目前在大廳畫面
       joined: false,
@@ -286,6 +287,7 @@
       if (open) { peek.hidden = true; stickBottom(true); }
       if (!open || !isNarrow()) dropHistory();
       document.documentElement.classList.toggle('lc-lock', open && isNarrow());
+      document.documentElement.classList.toggle('lc-wide-open', open && !isNarrow());
       placeFor(open && isNarrow());
       syncJoin();
     }

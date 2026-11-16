@@ -192,6 +192,10 @@
           <h3 class="lbl"><span data-i18n="text.371">目前開著的房間</span></h3>
           <button class="btn3d small" data-color="cream" id="b-lobby-refresh"><span data-i18n="text.372">🔄 重新整理</span></button>
         </div>
+        <div class="lobby-filter" id="lobby-filter" hidden>
+          <label class="lobby-filter-field" for="lobby-filter-lang"><span data-i18n="wordlang.select">題目語系</span><select id="lobby-filter-lang"></select></label>
+          <label class="lobby-filter-field" for="lobby-filter-category"><span data-i18n="category.select">題目種類</span><select id="lobby-filter-category"></select></label>
+        </div>
         <p class="lobby-state" id="lobby-state" role="status" aria-live="polite"><span data-i18n="text.018">正在連線…</span></p>
         <p class="lobby-state" id="lobby-online-count" aria-live="polite" hidden></p>
         <div class="roomlist" id="roomlist"></div>
@@ -216,7 +220,7 @@
           <h3><span class="gico" aria-hidden="true">🏷️</span><span data-i18n="text.375">房間資料</span></h3>
           <label class="setting-text" for="lobby-room-name">
             <span><b><span data-i18n="text.376">房間名稱</span></b><small><span data-i18n="text.377">讓朋友在房間列表裡一眼認出來</span></small></span>
-            <input id="lobby-room-name" type="text" maxlength="16" autocomplete="off" spellcheck="false" placeholder="大家的畫畫房" data-i18n-attr="placeholder=text.452">
+            <input id="lobby-room-name" type="text" maxlength="24" autocomplete="off" spellcheck="false" placeholder="大家的畫畫房" data-i18n-attr="placeholder=text.452">
           </label>
         </div>
 
