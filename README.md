@@ -197,7 +197,6 @@ draw-guess/
 │       ├── rng.js             可注入的種子亂數
 │       ├── words.js           題庫 + 形狀配方 + 形狀特徵比對
 │       ├── rules.js           規則核心（狀態 + 行動 → 新狀態）
-│       ├── ai.js              （目前沒有接進遊戲）會畫、會猜的電腦對手演算法，保留供未來需要時使用
 │       ├── paint.js           小畫家風格的畫布引擎
 │       ├── svgui.js           立體 SVG 按鈕、LOGO、頭像、工具圖示
 │       ├── audio.js           即時合成的背景音樂與音效（沒有外部音檔）
@@ -229,7 +228,7 @@ draw-guess/
 │   ├── check-syntax.js        所有 JS 的語法檢查（npm test 第一步）
 │   ├── online-check.js        線上端對端（2 玩家 + 1 觀戰）
 │   └── browser-check.js       無頭 Chrome 的 RWD／互動檢查
-├── tests/verify.js            題庫、規則、AI、房間、設定解析的單元測試
+├── tests/verify.js            題庫、規則、房間、設定解析的單元測試
 ├── .github/workflows/         CI 測試 + GitHub Pages 部署
 ├── render.yaml                Render 藍圖
 └── 啟動遊戲.bat               Windows 一鍵啟動
@@ -260,7 +259,7 @@ npm test          # 會檢查上面三樣產物是不是最新的，不是就失
 ## 測試
 
 ```bash
-npm test            # 題庫、規則、AI、房間狀態機、設定解析
+npm test            # 題庫、規則、房間狀態機、設定解析
 npm run test:online # 真的開一台 server，2 位玩家 + 1 位觀戰跑完整流程（121 項）
 npm run test:browser# 無頭 Chrome 跑 7 種尺寸的 RWD 與完整互動（502 項）
 npm run verify      # 以上全部

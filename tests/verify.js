@@ -1,5 +1,5 @@
 /*
- * tests/verify.js — 規則、題庫、AI、房間狀態機與設定解析的單元測試
+ * tests/verify.js — 規則、題庫、房間狀態機與設定解析的單元測試
  *
  *   node tests/verify.js
  *
@@ -13,7 +13,6 @@ require('./seo.js');
 const Words = require('../public/js/words.js');
 const Rules = require('../public/js/rules.js');
 const DrawingFile = require('../public/js/drawing-file.js');
-const AI = require('../public/js/ai.js');
 const RNG = require('../public/js/rng.js');
 const Rooms = require('../lib/rooms.js');
 const { RoomStore } = Rooms;
@@ -37,7 +36,7 @@ function makeState(opts) {
     players: o.players || [
       { id: 'p1', name: '阿明' },
       { id: 'p2', name: '小華' },
-      { id: 'p3', name: '電腦', ai: 'normal' }
+      { id: 'p3', name: '小美' }
     ],
     rounds: o.rounds || 1,
     drawSec: o.drawSec || 60,
@@ -546,144 +545,6 @@ section('成員中途離開');
 }
 
 /* ================================================================
-   電腦對手
-   ================================================================ */
-section('電腦對手（ai.js）');
-{
-  check('三個難度都存在', AI.LEVEL_KEYS.length === 3 && AI.LEVEL_KEYS.every((k) => !!AI.LEVELS[k]));
-
-  /* 作畫：難度只影響完整度與速度，不影響合法性 */
-  const wordId = 'cat';
-  const full = Words.strokesOf(wordId).length;
-  const plans = {};
-  for (const lv of AI.LEVEL_KEYS) {
-    plans[lv] = AI.planDrawing(wordId, lv, RNG.createRng('plan:' + lv), 80000);
-  }
-  check('簡單畫得比普通少', plans.easy.length < plans.normal.length, plans.easy.length + ' < ' + plans.normal.length);
-  check('困難會把配方畫完整', plans.hard.length === full, plans.hard.length + '/' + full);
-  check('困難比簡單畫得快', last(plans.hard).at < last(plans.easy).at, last(plans.hard).at + ' < ' + last(plans.easy).at);
-
-  let illegal = 0;
-  for (const lv of AI.LEVEL_KEYS) {
-    for (const step of plans[lv]) {
-      if (!Rules.sanitizeStroke(step.stroke)) illegal += 1;
-      for (const v of step.stroke.p) if (v < 0 || v > Words.BOX) illegal += 1;
-    }
-  }
-  check('三個難度畫的每一筆都合法', illegal === 0, illegal);
-
-  /* 抖動：簡單抖得比困難明顯 */
-  const src = Words.strokesOf(wordId)[0].p;
-  const jitterOf = (lv) => {
-    const out = AI.wobble(src, AI.levelOf(lv).jitter, RNG.createRng('j:' + lv));
-    let sum = 0;
-    for (let i = 0; i < src.length; i++) sum += Math.abs(out[i] - src[i]);
-    return sum / src.length;
-  };
-  check('簡單的手比困難抖', jitterOf('easy') > jitterOf('hard'), jitterOf('easy').toFixed(1) + ' > ' + jitterOf('hard').toFixed(1));
-
-  /* 猜題：只吃公開投影，拿不到答案 */
-  const st = toDrawing(makeState({ seed: 'AIGUE1', players: [
-    { id: 'p1', name: '人' }, { id: 'ai1', name: '電腦', ai: 'hard' }
-  ] }), 0);
-  /* 讓人類當畫家：如果抽到電腦先畫就換一組種子 */
-  const view = Rules.toPublic(st, 'ai1');
-  check('AI 拿到的投影不含答案', view.answer === null || st.drawerId === 'ai1');
-
-  const ranked = AI.rankCandidates(Rules.toPublic(st, 'zzz'), 'hard');
-  check('沒有任何筆畫時排不出候選', ranked.length === 0, ranked.length);
-
-  /* 畫上配方後，候選裡應該找得到那一題 */
-  const target = 'sun';
-  const st3 = makeState({ seed: 'AIGUE2', players: [{ id: 'd', name: 'D' }, { id: 'ai1', name: 'AI', ai: 'hard' }] });
-  Rules.start(st3, 0);
-  st3.choices = [target, st3.choices[1], st3.choices[2]];
-  Rules.pickWord(st3, st3.drawerId, target, 0);
-  const drawer = st3.drawerId;
-  for (const s of Words.strokesOf(target)) Rules.addStroke(st3, drawer, { t: 'pen', p: s.p.map((v) => Math.round(v)) });
-  const guesserId = drawer === 'd' ? 'ai1' : 'd';
-  const rank2 = AI.rankCandidates(Rules.toPublic(st3, guesserId), 'hard');
-  check('照配方畫出來時，正確答案排第一', rank2.length > 0 && rank2[0].id === target, rank2.slice(0, 3).map((c) => c.id).join(','));
-
-  /* 畫家還沒給提示：電腦得在整個題庫裡找，不知道分類 */
-  const cat = Words.byId(target).cat;
-  check('沒有提示時，候選不限分類', rank2.some((c) => Words.byId(c.id).cat !== cat));
-
-  /* 畫家給了「種類」這張提示之後，候選才收斂到那個分類 */
-  Rules.giveHint(st3, drawer, 1);
-  Rules.giveHint(st3, drawer, 2);
-  const rank3 = AI.rankCandidates(Rules.toPublic(st3, guesserId), 'hard');
-  check('給了種類提示後，候選只在那個分類裡', rank3.length > 0 && rank3.every((c) => Words.byId(c.id).cat === cat));
-  check('給了字數提示後，正確答案仍排第一', rank3[0].id === target, rank3.slice(0, 3).map((c) => c.id).join(','));
-
-  /* 難度差異：固定情境下的猜中率與速度 */
-  const stats = {};
-  for (const lv of AI.LEVEL_KEYS) stats[lv] = simulate(lv, 80);
-  check('猜中率：困難 ≥ 普通 > 簡單',
-    stats.hard.rate >= stats.normal.rate && stats.normal.rate > stats.easy.rate,
-    JSON.stringify(stats));
-  check('猜中速度：困難比普通快', stats.hard.avg < stats.normal.avg, JSON.stringify(stats));
-  /* 簡單的電腦八十場只猜中個位數次，平均時間是雜訊；它慢不慢看的是開口時間與猜測間隔 */
-  const E = AI.LEVELS.easy, N = AI.LEVELS.normal;
-  check('猜中速度：簡單開口比普通晚、猜得比普通疏',
-    E.firstMs > N.firstMs && E.intervalMs > N.intervalMs, JSON.stringify({ easy: [E.firstMs, E.intervalMs], normal: [N.firstMs, N.intervalMs] }));
-  check('每個難度都至少猜中過一次', AI.LEVEL_KEYS.every((lv) => stats[lv].hits > 0), JSON.stringify(stats));
-
-  function last(arr) { return arr[arr.length - 1]; }
-
-  /** 電腦畫、同難度的電腦猜，統計猜中率與平均猜中時間 */
-  function simulate(level, trials) {
-    let hits = 0, sum = 0, guesses = 0;
-    for (let i = 0; i < trials; i++) {
-      const rng = RNG.createRng('sim:' + level + ':' + i);
-      const s = Rules.createState({
-        seed: 'S' + i,
-        players: [{ id: 'a', name: '畫家', ai: level }, { id: 'b', name: '猜手', ai: level }],
-        rounds: 1, drawSec: 80
-      });
-      Rules.start(s, 0);
-      const wid = AI.chooseWord(s.choices, level, rng);
-      Rules.pickWord(s, 'a', wid, 0);
-      const plan = AI.planDrawing(wid, level, rng, s.drawMs);
-      const g = AI.createGuesser('b', level);
-      let now = 0, pi = 0, done = false;
-      while (now <= s.drawMs && !done) {
-        while (pi < plan.length && plan[pi].at <= now) { Rules.addStroke(s, 'a', plan[pi].stroke); pi += 1; }
-        Rules.tick(s, now);
-        if (s.phase !== 'drawing') break;
-        const say = AI.think(g, Rules.toPublic(s, 'b'), now, rng);
-        if (say) {
-          guesses += 1;
-          const r = Rules.guess(s, 'b', say.text, now);
-          if (r.ok && r.verdict === 'hit') { hits += 1; sum += now; done = true; }
-        }
-        now += 500;
-      }
-    }
-    return { hits, rate: +(hits / trials).toFixed(3), avg: hits ? Math.round(sum / hits) : 999999, guesses };
-  }
-}
-
-section('電腦對手不會偷看答案');
-{
-  /* rankCandidates 只吃 toPublic 的結果；把答案抽掉也不影響它的輸出 */
-  const st = makeState({ seed: 'NOCHEAT', players: [{ id: 'd', name: 'D' }, { id: 'g', name: 'G', ai: 'hard' }] });
-  Rules.start(st, 0);
-  Rules.pickWord(st, st.drawerId, 'tree', 0);
-  const drawerId = st.drawerId;
-  for (const s of Words.strokesOf('tree')) Rules.addStroke(st, drawerId, { t: 'pen', p: s.p.map(Math.round) });
-  const guesserId = drawerId === 'd' ? 'g' : 'd';
-
-  const view = Rules.toPublic(st, guesserId);
-  const stripped = JSON.parse(JSON.stringify(view));
-  stripped.answer = null;
-  const a = AI.rankCandidates(view, 'hard').map((c) => c.id).join();
-  const b = AI.rankCandidates(stripped, 'hard').map((c) => c.id).join();
-  check('把答案欄位拿掉，AI 的候選排序完全不變', a === b);
-  check('AI 用的投影本來就沒有答案', view.answer === null, view.answer);
-}
-
-/* ================================================================
    房間狀態機
    ================================================================ */
 section('房間狀態機（lib/rooms.js）');
@@ -758,8 +619,6 @@ section('房間狀態機（lib/rooms.js）');
   check('觀戰者的投影不含答案', !sv.game.answer, sv.game.answer);
   check('觀戰者的權限旗標都是不能操作', !sv.you.can.draw && !sv.you.can.guess && !sv.you.can.pick);
 
-  /* 線上房間只有真人，畫家一定是真人 */
-  check('畫家一定是真人', room.state.drawerId.indexOf('ai') !== 0, room.state.drawerId);
   const drawerId = room.state.drawerId;
   const humanGuesser = ['u1', 'u2'].find((id) => id !== drawerId);
   if (room.state.phase === 'picking') room.pickWord(drawerId, room.state.choices[0], t);

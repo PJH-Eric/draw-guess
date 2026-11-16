@@ -2,7 +2,7 @@
  *
  * 這一層只有「狀態 + 行動 → 新狀態」，沒有畫面、沒有網路、沒有計時器。
  * 時間一律由呼叫端把 now（毫秒）傳進來，所以同一組 seed 加上同一串行動
- * 一定得到同一個結果，重播、AI 測試與多人同步都可重現。
+ * 一定得到同一個結果，重播、測試與多人同步都可重現。
  *
  * 隱藏資訊：答案只放在 state.wordId。要送給玩家的東西一律走 toPublic(state, viewerId)，
  * 只有當回合的畫家會拿到答案與選字清單，其他人拿到的是遮罩後的提示。
@@ -90,7 +90,7 @@
   /**
    * @param {object} opts
    *   seed      字串種子；同一個種子 + 同一批玩家 = 同一串題目與揭字順序
-   *   players   [{id, name, ai}]，順序不重要，內部會用種子洗牌決定畫家順序
+   *   players   [{id, name}]，順序不重要，內部會用種子洗牌決定畫家順序
    *   rounds    每個人當幾次畫家
    *   drawSec   每題作畫秒數
    *   diff      1/2/3 或 0＝混合難度
@@ -102,7 +102,6 @@
       return {
         id: String(p.id),
         name: String(p.name || ('P' + (i + 1))),
-        ai: p.ai || null,
         score: 0,
         drew: 0
       };
@@ -522,7 +521,7 @@
       }
 
       if (state.phase === 'drawing') {
-        /* 提示不再隨時間自動翻開：三張提示由畫家自己按（AI 畫家見 ai.js） */
+        /* 提示不再隨時間自動翻開：三張提示由畫家自己按 */
         var all = guesserIds(state).length > 0 && state.guessed.length >= guesserIds(state).length;
         if (all) {
           var e1 = endTurn(state, now, 'allcorrect');
@@ -656,7 +655,6 @@
     var entry = {
       id: String(p.id),
       name: String(p.name || ''),
-      ai: p.ai || null,
       score: Math.max(0, Number(p.score) || 0),
       drew: Math.max(0, Math.floor(Number(p.drew) || 0))
     };
@@ -702,7 +700,7 @@
       startedAt: state.startedAt,
       players: state.players.map(function (p) {
         return {
-          id: p.id, name: p.name, ai: p.ai, score: p.score, drew: p.drew,
+          id: p.id, name: p.name, score: p.score, drew: p.drew,
           guessed: hasGuessed(state, p.id),
           isDrawer: p.id === state.drawerId,
           wrong: state.wrong[p.id] || 0

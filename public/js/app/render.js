@@ -1,9 +1,9 @@
 /* ===== app/render.js — 對局畫面渲染 ===== */
 
-import { $, D, S, app, esc, secsLeft } from './core.js?v=a91e944bc5';
-import { renderReference } from './modal.js?v=a91e944bc5';
-import { sizeCanvas } from './canvas.js?v=a91e944bc5';
-import { renderAside, renderControls, renderOverlay } from './overlay.js?v=a91e944bc5';
+import { $, D, S, app, esc, secsLeft } from './core.js?v=9bf44e6972';
+import { renderReference } from './modal.js?v=9bf44e6972';
+import { sizeCanvas } from './canvas.js?v=9bf44e6972';
+import { renderAside, renderControls, renderOverlay } from './overlay.js?v=9bf44e6972';
 
 var w = window;
 
@@ -142,7 +142,7 @@ export function stateOf(p, g) {
   if (p.isDrawer) return g.phase === 'picking' ? (globalThis.I18N ? globalThis.I18N.t("text.151") : "選題目中") : (globalThis.I18N ? globalThis.I18N.t("text.150") : "作畫中");
   if (p.guessed) return (globalThis.I18N ? globalThis.I18N.t("text.149") : "已猜中");
   if (g.phase === 'drawing') return p.wrong ? ((globalThis.I18N ? globalThis.I18N.t("text.148") : "猜了 ") + p.wrong + (globalThis.I18N ? globalThis.I18N.t("text.147") : " 次")) : (globalThis.I18N ? globalThis.I18N.t("text.146") : "思考中");
-  return p.ai ? (globalThis.I18N ? globalThis.I18N.t("text.145") : "電腦") : (globalThis.I18N ? globalThis.I18N.t("text.008") : "等待中");
+  return (globalThis.I18N ? globalThis.I18N.t("text.008") : "等待中");
 }
 
 export function renderPlayers() {

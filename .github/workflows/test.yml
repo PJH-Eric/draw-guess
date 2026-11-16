@@ -22,7 +22,7 @@ jobs:
       - name: 安裝相依套件
         run: npm ci
 
-      - name: 題庫、規則、AI、房間狀態機與設定解析測試
+      - name: 題庫、規則、房間狀態機與設定解析測試
         run: npm test
 
       - name: 線上端對端測試（2 位玩家 + 1 位觀戰）

@@ -514,7 +514,6 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 }
 body.reduced-motion .confetti{display:none}
 @media (prefers-reduced-motion:reduce){.confetti{display:none}}
-.seatrow.ai{border-color:var(--sky-d);background:var(--sky-tint)}
 .seatrow.spec{border-color:var(--line);background:var(--muted-tint);color:var(--ink-soft);font-weight:700}
 /* 房號以前是整張卡最搶眼的東西，縮小一號讓位給下面的聊天室 */
 .roomcode{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:0 0 8px;padding:6px 10px;border:2px dashed var(--grape-d);border-radius:14px;background:var(--grape-tint)}

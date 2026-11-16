@@ -1,14 +1,14 @@
 /* ===== app/overlay.js — 疊層卡片：房間設定、選題、公布答案、結算 ===== */
 
-import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=a91e944bc5';
-import { askLeaveRoom, makeModal, modals } from './modal.js?v=a91e944bc5';
-import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=a91e944bc5';
-import { soloRefresh, soloStep, startSolo } from './solo.js?v=a91e944bc5';
-import { renderRecent } from './feed.js?v=a91e944bc5';
-import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=a91e944bc5';
-import { PHASE_LABEL, moodOf } from './render.js?v=a91e944bc5';
-import { copyText, newInvite, revokeInvite } from './game-settings.js?v=a91e944bc5';
-import { enterOnlineRoom, leaveGame, roomRuleChips, saveNick } from './lobby.js?v=a91e944bc5';
+import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=9bf44e6972';
+import { askLeaveRoom, makeModal, modals } from './modal.js?v=9bf44e6972';
+import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=9bf44e6972';
+import { soloRefresh, soloStep, startSolo } from './solo.js?v=9bf44e6972';
+import { renderRecent } from './feed.js?v=9bf44e6972';
+import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=9bf44e6972';
+import { PHASE_LABEL, moodOf } from './render.js?v=9bf44e6972';
+import { copyText, newInvite, revokeInvite } from './game-settings.js?v=9bf44e6972';
+import { enterOnlineRoom, leaveGame, roomRuleChips, saveNick } from './lobby.js?v=9bf44e6972';
 
 var w = window;
 
@@ -801,7 +801,7 @@ export function renderAside() {
       var cls = ['', p.isDrawer ? 'drawer' : '', p.id === v.you.id ? 'me' : ''].join(' ').trim();
       return '<li class="' + cls + '"><span class="sface" aria-hidden="true">' +
         S.face(indexOfPlayer(g, p.id), moodOf(p, g)) + '</span>' +
-        '<span class="sname">' + esc(p.name) + (p.ai ? (globalThis.I18N ? globalThis.I18N.t("text.061") : "（電腦）") : '') + '</span>' +
+        '<span class="sname">' + esc(p.name) + '</span>' +
         '<span class="spts">' + p.score + '</span></li>';
     }).join('');
   } else sl.innerHTML = '';
