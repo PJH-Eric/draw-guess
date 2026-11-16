@@ -58,5 +58,5 @@ assert.equal(Rules.toPublic(st, st.drawerId).referenceId, null);
 console.log(
   'References verified: ' +
     available +
-    '/3000 topics, staged geometry and drawer-only projection',
+    '/5000 topics, staged geometry and drawer-only projection',
 );

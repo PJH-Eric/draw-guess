@@ -516,6 +516,8 @@
     fairy: ['#9B7FD6', '#F2A6D2', '#F5D86B', '#6FC3D9'],
     earth: ['#C27C5A', '#5B9BD5', '#5AA469', '#E2C27D'],
     culture: ['#D9423E', '#F2B53B', '#3FA796', '#EAD9AE'],
+    shape: ['#4F9BD9', '#F2B94B', '#E5604F', '#7BC47F'],
+    science: ['#4F8FD6', '#E55A4F', '#F2C94C', '#9AA6B5'],
     // Subject colours override the category when the name says what it looks like.
     sun: ['#F5C842', '#F9E08A', '#F29B30', '#FFF0B8'],
     red: ['#D9423E', '#F27A6B', '#8E2E3A', '#F7B3A6'],

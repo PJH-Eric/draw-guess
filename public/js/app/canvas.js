@@ -1,9 +1,9 @@
 /* ===== app/canvas.js — 畫布與工具列 ===== */
 
-import { $, D, ME, Paint, Rules, S, Sound, Store, app, toast } from './core.js?v=1bfd7253e7';
-import { askConfirm } from './modal.js?v=1bfd7253e7';
-import { handleGameEvents, soloRefresh, startSolo, withWordPack } from './solo.js?v=1bfd7253e7';
-import { pushFeed } from './feed.js?v=1bfd7253e7';
+import { $, D, ME, Paint, Rules, S, Sound, Store, app, toast } from './core.js?v=0f7ef452a2';
+import { askConfirm } from './modal.js?v=0f7ef452a2';
+import { handleGameEvents, soloRefresh, startSolo, withWordPack } from './solo.js?v=0f7ef452a2';
+import { pushFeed } from './feed.js?v=0f7ef452a2';
 
 var w = window;
 
