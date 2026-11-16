@@ -504,6 +504,7 @@ async function main() {
     check(v.name + '：進入單機設定', info.activeScreen === 's-solo', info.activeScreen);
     assertLayout('單機設定', v, info);
     await shot(v.name + '-4-單機設定');
+    await cdp.eval('var category=document.getElementById("opt-category"); category.value="animal"; category.dispatchEvent(new Event("change",{bubbles:true})); return 1;');
 
     /* 對局畫面：單機沒有電腦對手了，練幾次、畫多久都不用設定，直接開始 */
     await cdp.eval(`
@@ -511,6 +512,8 @@ async function main() {
       return 1;
     `);
     await cdp.waitFor('window.DrawGuessApp.mode === "solo"', 6000, '進入對局');
+    check(v.name + '：單機選動物後候選都屬於動物，偏好也已儲存',
+      await cdp.eval('return window.Store.category()==="animal" && window.DrawGuessApp.solo.state.choices.every(function(id){return window.Words.byId(id).cat==="animal";});'));
     await sleep(500);
     info = await cdp.json('window.__probe.layout()');
     check(v.name + '：進入對局畫面', info.activeScreen === 's-game', info.activeScreen);
@@ -950,6 +953,7 @@ async function main() {
     roomModalLayout.inView && roomModalLayout.closeInHeader && roomModalLayout.footerInPanel && roomModalLayout.globalControlsHidden,
     JSON.stringify(roomModalLayout));
   await shot('線上-開房設定-手機直向');
+  await hostTab.eval('var category=document.getElementById("room-create-category"); category.value="animal"; category.dispatchEvent(new Event("change",{bubbles:true})); return 1;');
   await hostTab.send('Emulation.setDeviceMetricsOverride', { width: 1024, height: 768, deviceScaleFactor: 2, mobile: true });
   await sleep(250);
   await hostTab.eval('window.__probe.click("#room-create-rounds [data-v=\\"3\\"]"); window.__probe.click("#room-create-drawsec [data-v=\\"120\\"]"); window.__probe.click("#room-create-diff [data-v=\\"3\\"]"); return 1;');
@@ -962,6 +966,7 @@ async function main() {
   );
   check('只有房主時顯示已翻譯的開局提示', startBlockedMessage === '至少需要 2 位玩家。', startBlockedMessage);
   check('開房設定有套用', await hostTab.eval('var s=window.DrawGuessApp.view.room.settings; return s.rounds===3 && s.drawSec===120 && s.diff===3;'));
+  check('開房設定套用題目種類', await hostTab.eval('return window.DrawGuessApp.view.room.settings.category === "animal";'));
   check('線上房間沒有電腦對手的入口', await hostTab.eval('return !document.getElementById("room-create-ai") && !document.querySelector("[data-act=add-ai]");'));
   check('房間設定裡有離開／退出房間的按鈕', await hostTab.eval('var b=document.querySelector("[data-act=leave-room]"); return !!b && b.textContent.indexOf("房間") >= 0;'));
   const actionGap = await hostTab.eval('var a=document.getElementById("b-aside-toggle").getBoundingClientRect(); var b=document.getElementById("b-game-settings").getBoundingClientRect(); var c=document.getElementById("b-settings").getBoundingClientRect(); return {gap: Math.max(0, b.left-a.right, a.left-b.right), fabGap: Math.round(c.left-b.right), aside:a.toJSON(), settings:b.toJSON(), fab:c.toJSON()};');
@@ -1041,6 +1046,11 @@ async function main() {
   await mateTab.waitFor('window.DrawGuessApp.view.room.settings.rounds === 1', 4000, '同步單回合設定');
   check('開始前可把回合數調整為 1（結算瀏覽器流程）',
     await hostTab.eval('return window.DrawGuessApp.view.room.settings.rounds === 1;'));
+  await hostTab.eval('window.__probe.click("#overlay-card .ruledd-btn[data-field=set-category]"); return 1;');
+  await hostTab.waitFor('document.querySelector("#overlay-card .ruledd-opt[data-field=set-category][data-v=food]")', 3000, '種類選單展開');
+  await hostTab.eval('window.__probe.click("#overlay-card .ruledd-opt[data-field=set-category][data-v=food]"); return 1;');
+  await mateTab.waitFor('window.DrawGuessApp.view.room.settings.category === "food"', 4000, '種類設定同步');
+  check('房主更改種類後其他玩家同步收到食物設定', await hostTab.eval('return window.DrawGuessApp.view.room.settings.category === "food";'));
   check('不再出現「x / y 位玩家」的字樣',
     await hostTab.eval('return !/\\d+\\s*\\/\\s*\\d+\\s*位玩家/.test(document.getElementById("overlay-card").textContent);'));
   check('玩家名單改成一列一個玩家、寬度滿版、文字置左',
@@ -1130,6 +1140,8 @@ async function main() {
   const hostIsDrawer = await hostTab.eval('return !!window.DrawGuessApp.view.game.you.isDrawer;');
   const drawerTab = hostIsDrawer ? hostTab : mateTab;
   const guesserTab = hostIsDrawer ? mateTab : hostTab;
+  check('線上畫家只收到房間所選種類的候選題目',
+    await drawerTab.eval('return window.DrawGuessApp.view.game.choices.length===3 && window.DrawGuessApp.view.game.choices.every(function(word){return word.cat==="food";});'));
   for (const [label, tab] of [['觀戰者', watchTab], ['猜題者', guesserTab]]) {
     check(label + '拿不到範本識別碼也看不到入口', await tab.eval('return window.DrawGuessApp.view.game.referenceId === null && document.getElementById("b-reference").hidden;'));
   }

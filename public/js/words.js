@@ -1924,16 +1924,17 @@
   /** 依難度挑選候選題目；用可注入的種子亂數，讓同一場對局可以重播 */
   function pick(rng, count, opts) {
     var o = opts || {};
-    function poolOf(diff) {
+    function poolOf(diff, allowUsed) {
       return LIST.filter(function (w) {
         if (diff && w.diff !== diff) return false;
         if (o.cat && w.cat !== o.cat) return false;
-        if (o.exclude && o.exclude.indexOf(w.id) >= 0) return false;
+        if (!allowUsed && o.exclude && o.exclude.indexOf(w.id) >= 0) return false;
         return true;
       });
     }
     var all = poolOf(0);
-    if (!all.length) all = LIST.slice();
+    if (!all.length) all = poolOf(0, true);
+    if (!all.length) return [];
     var fixed = o.diff ? poolOf(o.diff) : null;
     if (fixed && !fixed.length) fixed = all;
     var mixed = {};
@@ -1964,6 +1965,12 @@
       if (taken[w2.id]) continue;
       taken[w2.id] = true;
       out.push(w2.id);
+    }
+    /* 指定難度不足三題時只放寬難度，仍留在選定種類內。 */
+    var remaining = all.filter(function (w) { return !taken[w.id]; });
+    while (out.length < count && remaining.length) {
+      var at = Math.floor(next() * remaining.length) % remaining.length;
+      out.push(remaining.splice(at, 1)[0].id);
     }
     return out;
   }

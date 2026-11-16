@@ -1263,6 +1263,31 @@ section('server URL 設定（config.js）');
     r('https://x.test/', '', 'file:', '').url === 'https://x.test');
 }
 
+section('題目種類篩選');
+{
+  Words.CATEGORY_KEYS.forEach((category) => {
+    [0, 1, 2, 3].forEach((diff) => {
+      const choices = Words.pick(RNG.createRng(category + diff), 3, { cat: category, diff });
+      check(category + ' 難度 ' + diff + ' 有三個不重複且同種類的候選',
+        choices.length === 3 && new Set(choices).size === 3 && choices.every((id) => Words.byId(id).cat === category));
+    });
+  });
+  const used = Words.inCategory('animal').map((word) => word.id);
+  const recycled = Words.pick(RNG.createRng('recycle'), 3, { cat: 'animal', exclude: used });
+  check('種類題庫用完後仍維持選定種類', recycled.length === 3 && recycled.every((id) => Words.byId(id).cat === 'animal'));
+  const state = Rules.createState({ seed: 'category', category: 'food', players: [{ id: 'a', name: 'A' }] });
+  Rules.start(state, Date.now());
+  check('遊戲引擎使用選定種類出題', state.choices.length === 3 && state.choices.every((id) => Words.byId(id).cat === 'food'));
+  const store = new RoomStore();
+  const created = store.create('cat-host', { name: '房主', settings: { category: 'animal' } });
+  const room = created.room;
+  check('開房可設定題目種類', created.ok && room.settings.category === 'animal');
+  check('房主可變更種類', room.setSettings('cat-host', { category: 'food' }).ok && room.settings.category === 'food');
+  check('無效種類不會部分套用其他設定', !room.setSettings('cat-host', { category: 'invalid', rounds: 3 }).ok && room.settings.rounds !== 3 && room.settings.category === 'food');
+  check('物件不能作為種類', !room.setSettings('cat-host', { category: { toString: null } }).ok);
+  check('全部種類可還原', room.setSettings('cat-host', { category: '' }).ok && room.settings.category === '');
+}
+
 /* ================================================================
    結果
    ================================================================ */

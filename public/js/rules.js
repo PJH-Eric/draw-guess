@@ -131,6 +131,7 @@
       pickMs: CONST.PICK_MS,
       revealMs: CONST.REVEAL_MS,
       diff: [1, 2, 3].indexOf(Number(o.diff)) >= 0 ? Number(o.diff) : 0,
+      category: Words.CATEGORY_KEYS.indexOf(o.category) >= 0 ? o.category : '',
       players: players,
       order: order,
       round: 1,
@@ -220,12 +221,13 @@
     var rng = RNG.createRng(state.seed + ':turn:' + state.turnNo);
     state.choices = Words.pick(rng, CONST.CHOICES, {
       diff: state.diff || 0,
+      cat: state.category,
       exclude: state.usedWords
     });
     /* 題庫用完了就從頭來，不要卡住 */
     if (state.choices.length < CONST.CHOICES) {
       state.usedWords = [];
-      state.choices = Words.pick(rng, CONST.CHOICES, { diff: state.diff || 0 });
+      state.choices = Words.pick(rng, CONST.CHOICES, { diff: state.diff || 0, cat: state.category });
     }
     return state;
   }

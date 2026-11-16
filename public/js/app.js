@@ -463,8 +463,21 @@
     });
   }
 
+  function categoryChoices() {
+    return [{ v: '', label: w.I18N.t('category.all') }].concat(Words.CATEGORY_KEYS.map(function (key) {
+      return { v: key, label: Words.CATEGORIES[key].emoji + ' ' + w.I18N.t('category.' + key) };
+    }));
+  }
+
+  function renderCategorySelect(id, value) {
+    $(id).innerHTML = categoryChoices().map(function (item) {
+      return '<option value="' + esc(item.v) + '"' + (item.v === value ? ' selected' : '') + '>' + esc(item.label) + '</option>';
+    }).join('');
+  }
+
   function renderSoloOptions() {
-    /* 單機只剩「題目難度」要選：練幾次、每題畫多久都不設限（見 startSolo） */
+    renderCategorySelect('opt-category', Store.category());
+    /* 單機可選種類與難度；練幾次、每題畫多久都不設限（見 startSolo） */
     buildChips('opt-worddiff', [
       { value: 0, get label() { return globalThis.I18N ? globalThis.I18N.t("text.119") : "混合"; } }, { value: 1, get label() { return globalThis.I18N ? globalThis.I18N.t("text.140") : "簡單"; } },
       { value: 2, get label() { return globalThis.I18N ? globalThis.I18N.t("text.139") : "普通"; } }, { value: 3, get label() { return globalThis.I18N ? globalThis.I18N.t("text.138") : "困難"; } }
@@ -473,6 +486,7 @@
 
   function setupSoloScreen() {
     renderSoloOptions();
+    $('opt-category').addEventListener('change', function () { Store.category(this.value); });
     $('b-solo-start').addEventListener('click', startSolo);
   }
 
@@ -492,7 +506,8 @@
       rounds: Rules.CONST.ROUNDS_MAX,
       drawSec: Rules.CONST.DRAW_SEC_MAX,
       unlimited: true,               // 真的不限時、不限次：不會逾時、不會跳結算（見 rules.js createState）
-      diff: Store.diff()
+      diff: Store.diff(),
+      category: Store.category()
     });
     var r = Rules.start(state, Date.now());
     if (!r.ok) { toast(r.error, 'error'); return; }
@@ -1466,6 +1481,7 @@
 
   function renderRoomCreateOptions() {
     var c = app.roomCreate;
+    renderCategorySelect('room-create-category', c.category || '');
     $('lobby-room-name').value = c.roomName;
     $('room-create-rounds').innerHTML = chips('create-rounds', ROUND_CHOICES, c.rounds);
     $('room-create-drawsec').innerHTML = chips('create-drawsec', SEC_CHOICES, c.drawSec);
@@ -1473,6 +1489,7 @@
   }
 
   function setupRoomCreate() {
+    $('room-create-category').addEventListener('change', function () { app.roomCreate.category = this.value; });
     roomCreateModal = makeModal('room-create-modal', 'room-create-panel', 'b-lobby-host');
     $('room-create-close').addEventListener('click', function () { roomCreateModal.close(); });
     $('room-create-cancel').addEventListener('click', function () { roomCreateModal.close(); });
@@ -1504,7 +1521,8 @@
       roomName: (Store.nick() || (globalThis.I18N ? globalThis.I18N.t("text.137") : "大家")) + (globalThis.I18N ? globalThis.I18N.t("text.136") : " 的房間"),
       rounds: 2,
       drawSec: 90,
-      diff: 0
+      diff: 0,
+      category: ''
     };
     renderRoomCreateOptions();
     roomCreateModal.open();
@@ -1519,7 +1537,7 @@
     w.Online.send('room:create', {
       name: Store.ensureNick(),
       roomName: roomName,
-      settings: { wordLang: w.I18N.lang, rounds: c.rounds, drawSec: c.drawSec, diff: c.diff }
+      settings: { wordLang: w.I18N.lang, rounds: c.rounds, drawSec: c.drawSec, diff: c.diff, category: c.category || '' }
     }, function (res) {
       $('room-create-submit').disabled = false;
       if (!res || !res.ok) return toast((res && w.I18N.message(res.error, res.params)) || (globalThis.I18N ? globalThis.I18N.t("text.134") : "開房失敗。"), 'error');
@@ -1568,12 +1586,15 @@
         (globalThis.I18N ? globalThis.I18N.t("text.126") : "<div class=\"rule-field\"><span>畫幾次</span>") + ruleDropdown('set-rounds', ROUND_CHOICES, r.settings.rounds) + '</div>' +
         (globalThis.I18N ? globalThis.I18N.t("text.125") : "<div class=\"rule-field\"><span>秒數</span>") + ruleDropdown('set-drawsec', SEC_CHOICES, r.settings.drawSec) + '</div>' +
         (globalThis.I18N ? globalThis.I18N.t("text.124") : "<div class=\"rule-field\"><span>題型</span>") + ruleDropdown('set-diff', DIFF_CHOICES, r.settings.diff) + '</div>' +
-        '</div></div>';
+        '</div><div class="rule-field category-rule"><span>' + esc(w.I18N.t('category.select')) + '</span>' +
+        ruleDropdown('set-category', categoryChoices(), r.settings.category || '') + '</div></div>';
     } else {
       var dl = DIFF_CHOICES.filter(function (d) { return d.v === r.settings.diff; })[0];
       rules = (globalThis.I18N ? globalThis.I18N.t("text.123") : "<div class=\"setupblock\"><h4>遊戲規則</h4>") +
         (globalThis.I18N ? globalThis.I18N.t("text.122") : "<p class=\"setupnote\">每人畫 ") + r.settings.rounds + (globalThis.I18N ? globalThis.I18N.t("text.121") : " 次・每題 ") + r.settings.drawSec + (globalThis.I18N ? globalThis.I18N.t("text.120") : " 秒・") +
         esc(dl ? dl.label : (globalThis.I18N ? globalThis.I18N.t("text.119") : "混合")) + (globalThis.I18N ? globalThis.I18N.t("text.118") : "難度（由房主決定）</p></div>");
+      rules += '<div class="setupblock"><h4>' + esc(w.I18N.t('category.select')) + '</h4><p class="setupnote">' +
+        esc(w.I18N.t(r.settings.category ? 'category.' + r.settings.category : 'category.all')) + '</p></div>';
     }
 
     /* ---- 邀請連結 ----
@@ -1810,8 +1831,8 @@
       renderOverlay();
     } else if (act === 'rule-opt') {
       var optField = el.getAttribute('data-field');
-      var optValue = Number(el.getAttribute('data-v'));
-      var key = optField === 'set-rounds' ? 'rounds' : optField === 'set-drawsec' ? 'drawSec' : optField === 'set-diff' ? 'diff' : null;
+      var optValue = optField === 'set-category' ? el.getAttribute('data-v') : Number(el.getAttribute('data-v'));
+      var key = optField === 'set-category' ? 'category' : optField === 'set-rounds' ? 'rounds' : optField === 'set-drawsec' ? 'drawSec' : optField === 'set-diff' ? 'diff' : null;
       if (key) {
         var payload = {};
         payload[key] = optValue;

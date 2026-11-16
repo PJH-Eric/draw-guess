@@ -10,6 +10,7 @@
     clientId: 'dg_client',
     tutorialDone: 'dg_tutorial',
     diff: 'dg_diff',
+    category: 'dg_category',
     stats: 'dg_stats',
     reduceMotion: 'dg_reduce_motion',
     bigTools: 'dg_big_tools',
@@ -108,6 +109,11 @@
   }
 
   w.Store = {
+    category: function (v) {
+      if (v === undefined) return get(KEY.category, '');
+      set(KEY.category, v);
+      return v;
+    },
     KEY: KEY,
     clientId: clientId,
     nick: function (v) { if (v === undefined) return get(KEY.nick, ''); set(KEY.nick, v); return v; },

@@ -1893,6 +1893,20 @@ I18N.register("zh-Hant", { "meta.title": "你畫我猜｜免費線上多人畫�
   if (typeof module === 'object' && module.exports) module.exports['zh-Hans'] = hans;
 })(typeof window !== 'undefined' ? window : globalThis);
 
+I18N.register('zh-Hant', {
+  'category.select': '題目種類',
+  'category.all': '全部種類',
+  'srv.err.categoryRange': '請選擇有效的題目種類。'
+}).register('zh-Hans', {
+  'category.select': '题目种类',
+  'category.all': '全部种类',
+  'srv.err.categoryRange': '请选择有效的题目种类。'
+}).register('en', {
+  'category.select': 'Topic category',
+  'category.all': 'All categories',
+  'srv.err.categoryRange': 'Choose a valid topic category.'
+});
+
 /* Server outage translations (shared by the custom notice component). */
 (function (root) {
   root.ServerOutageMessages = {
