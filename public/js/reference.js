@@ -519,6 +519,13 @@
     earth: ['#C27C5A', '#5B9BD5', '#5AA469', '#E2C27D'],
     culture: ['#D9423E', '#F2B53B', '#3FA796', '#EAD9AE'],
     outdoor: ['#4F9BD9', '#F2B94B', '#7BC47F', '#E5604F'],
+    birdbug: ['#7BC47F', '#F2B94B', '#E5604F', '#4F9BD9'],
+    fruitveg: ['#E5604F', '#7BC47F', '#F2B94B', '#9B6BC9'],
+    kitchen: ['#9FB2C4', '#E5604F', '#F2B94B', '#4F9BD9'],
+    clothes: ['#4F9BD9', '#E58FB0', '#F2B94B', '#7BC47F'],
+    tech: ['#5B6B7F', '#4F9BD9', '#9FB2C4', '#F2B94B'],
+    plant: ['#5FAF62', '#E58FB0', '#F2B94B', '#9B6BC9'],
+    sport: ['#E5604F', '#4F9BD9', '#F2B94B', '#7BC47F'],
     science: ['#4F8FD6', '#E55A4F', '#F2C94C', '#9AA6B5'],
     anime: ['#F2A0B8', '#F5D04A', '#4F9BD9', '#8E6BC9'],
     // Subject colours override the category when the name says what it looks like.

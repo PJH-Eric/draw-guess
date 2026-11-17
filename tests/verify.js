@@ -57,7 +57,7 @@ function toDrawing(st, t) {
    ================================================================ */
 section('題庫（words.js）');
 {
-  check('題目數量為 4363', Words.LIST.length === 4363, Words.LIST.length);
+  check('題目數量為 4416', Words.LIST.length === 4416, Words.LIST.length);
 
   const ids = new Set();
   let dupe = null;
@@ -67,11 +67,11 @@ section('題庫（words.js）');
 
   const cats = {};
   for (const w of Words.LIST) cats[w.cat] = (cats[w.cat] || 0) + 1;
-  check('二十個種類都有題目', Object.keys(cats).length === 20 && Words.CATEGORY_KEYS.length === 20, JSON.stringify(cats));
+  check('二十七個種類都有題目', Object.keys(cats).length === 27 && Words.CATEGORY_KEYS.length === 27, JSON.stringify(cats));
   check('每個分類至少 10 題', Object.values(cats).every((n) => n >= 10), JSON.stringify(cats));
   check('每個種類至少 100 題', Words.CATEGORY_KEYS.every((cat) => cats[cat] >= 100), JSON.stringify(cats));
   /* 不出題的題目仍留在原位，範本檔的分檔位置不能因為刪題而位移 */
-  check('範本排序位置包含不出題的題目', Words.slots().length === 5342 && Words.slotOf('w-outdoor-0') === 5256, Words.slots().length);
+  check('範本排序位置包含不出題的題目', Words.slots().length === 5395 && Words.slotOf('w-outdoor-0') === 5256, Words.slots().length);
   check('不出題的題目不會出現在題庫或被抽到', !Words.LIST.some((w) => w.text === '民主') && Words.byId(Words.slots().find((w) => w.text === '民主').id) === null);
   check('每一題都有分組，種類也都是有效的', Words.LIST.every((w) => w.group && !!Words.CATEGORIES[w.cat]));
 

@@ -5357,5 +5357,58 @@
     'w-outdoor-83': "earth oven|dirt oven", // 焢窯
     'w-outdoor-84': "parasailing|parasail", // 拖曳傘
     'w-outdoor-85': "wild hot spring|hot spring", // 野溪溫泉
+    'w-fruitveg-0': "green onion|scallion", // 青蔥
+    'w-fruitveg-1': "rambutan|hairy lychee", // 紅毛丹
+    'w-fruitveg-2': "burdock root|burdock", // 牛蒡
+    'w-fruitveg-3': "zucchini|courgette", // 櫛瓜
+    'w-fruitveg-4': "beetroot|beet", // 甜菜根
+    'w-fruitveg-5': "okra|lady's finger", // 秋葵
+    'w-fruitveg-6': "bok choy|pak choi", // 青江菜
+    'w-fruitveg-7': "king oyster mushroom|mushroom", // 杏鮑菇
+    'w-fruitveg-8': "raspberry|raspberries", // 覆盆子
+    'w-fruitveg-9': "blackberry|blackberries", // 黑莓
+    'w-fruitveg-10': "olive|olives", // 橄欖
+    'w-fruitveg-11': "winter melon|wax gourd", // 冬瓜
+    'w-fruitveg-12': "plum|green plum", // 梅子
+    'w-fruitveg-13': "cilantro|coriander", // 香菜
+    'w-fruitveg-14': "bean sprouts|sprouts", // 豆芽菜
+    'w-fruitveg-15': "radish|red radish", // 櫻桃蘿蔔
+    'w-fruitveg-16': "lettuce|romaine", // 萵苣
+    'w-fruitveg-17': "date|dates", // 椰棗
+    'w-fruitveg-18': "water caltrop|devil's horn nut", // 菱角
+    'w-fruitveg-19': "water bamboo|wild rice stem", // 茭白筍
+    'w-fruitveg-20': "kohlrabi|turnip", // 大頭菜
+    'w-kitchen-60': "mixing bowl|bowl", // 調理盆
+    'w-kitchen-61': "ice cube tray|ice tray", // 冰塊盒
+    'w-kitchen-62': "beer mug|beer stein", // 啤酒杯
+    'w-kitchen-63': "coaster|drink coaster", // 杯墊
+    'w-kitchen-64': "chopstick rest|chopstick holder", // 筷架
+    'w-kitchen-65': "grater|cheese grater", // 刨絲器
+    'w-kitchen-66': "pizza cutter|pizza wheel", // 披薩刀
+    'w-kitchen-67': "ice cream scoop|scoop", // 冰淇淋勺
+    'w-kitchen-68': "waffle maker|waffle iron", // 鬆餅機
+    'w-clothes-91': "fanny pack|waist bag", // 腰包
+    'w-clothes-92': "briefcase|attache case", // 公事包
+    'w-clothes-93': "crossbody bag|messenger bag", // 斜背包
+    'w-clothes-94': "top hat|tophat", // 禮帽
+    'w-clothes-95': "arm sleeves|sleeve cover", // 袖套
+    'w-clothes-96': "anklet|ankle bracelet", // 腳鍊
+    'w-clothes-97': "camouflage uniform|camo", // 迷彩服
+    'w-clothes-98': "straw sandals|straw shoes", // 草鞋
+    'w-clothes-99': "shawl|wrap", // 披肩
+    'w-tech-70': "instant camera|polaroid", // 拍立得
+    'w-tech-71': "humidifier|air humidifier", // 加濕器
+    'w-tech-72': "vinyl record|record", // 黑膠唱片
+    'w-tech-73': "cassette tape|cassette", // 卡帶
+    'w-tech-74': "portable cassette player|walkman", // 隨身聽
+    'w-tech-75': "brick phone|old mobile phone", // 大哥大
+    'w-tech-76': "video tape|VHS tape", // 錄影帶
+    'w-tech-77': "fax machine|fax", // 傳真機
+    'w-tech-78': "digital photo frame|photo frame", // 數位相框
+    'w-tech-79': "paper shredder|shredder", // 碎紙機
+    'w-tech-80': "bug zapper|mosquito lamp", // 捕蚊燈
+    'w-tech-81': "laser pointer|laser pen", // 雷射筆
+    'w-tech-82': "laminator|laminating machine", // 護貝機
+    'w-tech-83': "projector screen|projection screen", // 投影幕
   };
 }));
