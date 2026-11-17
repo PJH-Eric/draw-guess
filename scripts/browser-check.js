@@ -24,13 +24,15 @@
 
 const { spawn } = require('child_process');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
 const PORT = Number(process.env.CHECK_PORT || 3132);
 const BASE = 'http://127.0.0.1:' + PORT + '/';
 const DEBUG_PORT = Number(process.env.CDP_PORT || 9345);
-const PROFILE = path.join(ROOT, '.chrome-rwd-test');
+/* 瀏覽器 profile 放在系統暫存區，不寫進專案目錄；結束時刪除 */
+const PROFILE = fs.mkdtempSync(path.join(os.tmpdir(), 'draw-guess-rwd-'));
 const SHOTS = path.join(ROOT, 'screenshots');
 
 const VIEWPORTS = [
@@ -391,7 +393,12 @@ async function main() {
     '--remote-debugging-port=' + DEBUG_PORT, '--user-data-dir=' + PROFILE, 'about:blank'
   ], { stdio: 'ignore' });
 
-  const cleanup = () => { try { browser.kill(); } catch (e) {} try { server.kill(); } catch (e) {} };
+  const cleanup = () => {
+    try { browser.kill(); } catch (e) {}
+    try { server.kill(); } catch (e) {}
+    /* Chrome 關閉前可能還鎖著檔案，失敗就略過，不影響檢查結果 */
+    try { fs.rmSync(PROFILE, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }); } catch (e) {}
+  };
   process.on('exit', cleanup);
 
   let firstTarget = null;
