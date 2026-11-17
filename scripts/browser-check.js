@@ -519,6 +519,36 @@ async function main() {
     })()`);
     check(v.name + '：大廳聊天室氣泡不會蓋住頁面最下方說明',
       !lobbyBubble.available || !lobbyBubble.overlaps, JSON.stringify(lobbyBubble));
+    if (v.width > 640 && v.height > 500 && lobbyBubble.available) {
+      const lobbyBeforeChat = await cdp.json(`(function () {
+        var screen = document.getElementById('s-lobby');
+        var panel = screen.querySelector('.panel');
+        var rect = panel.getBoundingClientRect();
+        return { left: rect.left, width: rect.width, marginLeft: getComputedStyle(panel).marginLeft };
+      })()`);
+      await cdp.eval('window.__probe.click(".lc-bubble"); return 1;');
+      await cdp.waitFor('document.querySelector(".lc-root.lc-open .lc-panel:not([hidden])")', 3000, '大廳聊天室浮層展開');
+      const lobbyWithChat = await cdp.json(`(function () {
+        var screen = document.getElementById('s-lobby');
+        var panel = screen.querySelector('.panel');
+        var rect = panel.getBoundingClientRect();
+        var chat = document.querySelector('.lc-panel').getBoundingClientRect();
+        return {
+          left: rect.left, width: rect.width, marginLeft: getComputedStyle(panel).marginLeft,
+          chatInView: chat.left >= 0 && chat.right <= innerWidth + 1,
+          horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1,
+          wideOpenClass: document.documentElement.classList.contains('lc-wide-open')
+        };
+      })()`);
+      const unchanged = Math.abs(lobbyBeforeChat.left - lobbyWithChat.left) < 1 &&
+        Math.abs(lobbyBeforeChat.width - lobbyWithChat.width) < 1 &&
+        lobbyBeforeChat.marginLeft === lobbyWithChat.marginLeft;
+      check(v.name + '：展開聊天室以浮層覆蓋，大廳版面不位移',
+        unchanged && lobbyWithChat.chatInView && !lobbyWithChat.horizontalOverflow && !lobbyWithChat.wideOpenClass,
+        JSON.stringify({ before: lobbyBeforeChat, after: lobbyWithChat }));
+      await cdp.eval('window.__probe.click(".lc-root.lc-open .lc-min"); return 1;');
+      await cdp.waitFor('!document.querySelector(".lc-root.lc-open")', 3000, '大廳聊天室收合');
+    }
     await shot(v.name + '-線上大廳');
     await cdp.eval('window.__probe.click("#s-lobby [data-back=\\"s-home\\"]"); return 1;');
     await cdp.waitFor('document.querySelector(".screen.active").id === "s-home"', 3000, '離開線上大廳');

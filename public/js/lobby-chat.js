@@ -287,7 +287,6 @@
       if (open) { peek.hidden = true; stickBottom(true); }
       if (!open || !isNarrow()) dropHistory();
       document.documentElement.classList.toggle('lc-lock', open && isNarrow());
-      document.documentElement.classList.toggle('lc-wide-open', open && !isNarrow());
       placeFor(open && isNarrow());
       syncJoin();
     }

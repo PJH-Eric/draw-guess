@@ -292,10 +292,6 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 @media (min-width:1140px){
   .panel-head{position:static;background:none;border-bottom:0;-webkit-backdrop-filter:none;backdrop-filter:none}
 }
-/* 寬螢幕展開大廳聊天室時，把大廳內容往右讓，面板不壓在房間列表上 */
-@media (min-width:1220px){
-  html.lc-wide-open .screen#s-lobby .panel{margin-left:max(calc((100% - 880px) / 2),330px)}
-}
 .rc-rule[data-k=diff]{background:var(--lemon);border-color:var(--lemon-d)}
 .rc-rule[data-k=category]{background:var(--mint);border-color:var(--mint-d)}
 .rc-rule[data-k=lang]{background:var(--sky);border-color:var(--sky-d)}
@@ -1496,11 +1492,6 @@ body.reduced-motion .screen.active,body.reduced-motion .settings-modal.open .set
   .home-note{max-width:620px;font-size:1rem;margin-top:26px}
 }
 
-/* ---------- 平板寬度展開大廳聊天室：內容往右讓，不被面板蓋住 ---------- */
-@media (min-width:900px) and (max-width:1219px){
-  html.lc-wide-open .screen#s-lobby .panel{width:auto;max-width:none;margin-left:324px;margin-right:0}
-}
-
 /* ---------- 大廳聊天室：套用你畫我猜配色 ---------- */
 body .lc-root{
   --lc-accent:var(--grape-t);--lc-accent-ink:#fff;
@@ -1764,10 +1755,6 @@ body.no-tools:not(.solo-mode) .guessfeed{
   .lobby-card-ico .ico{width:22px;height:22px}
   .lobby-card h3{font-size:1rem}
 }
-@media (min-width:1220px){
-  html.lc-wide-open .screen#s-lobby .panel{width:min(100%,880px)}
-}
-
 /* ================================================================
  * 房間設定卡：空位、鎖定的語系欄位、邀請連結
  * ================================================================ */

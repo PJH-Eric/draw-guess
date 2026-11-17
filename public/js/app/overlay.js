@@ -1,15 +1,15 @@
 /* ===== app/overlay.js — 疊層卡片：房間設定、選題、公布答案、結算 ===== */
 
-import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=532d29308e';
-import { askLeaveRoom, makeModal, modals } from './modal.js?v=532d29308e';
-import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=532d29308e';
-import { soloRefresh, soloStep, startSolo } from './solo.js?v=532d29308e';
-import { renderRecent } from './feed.js?v=532d29308e';
-import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=532d29308e';
-import { PHASE_LABEL, moodOf } from './render.js?v=532d29308e';
-import { copyText, newInvite, revokeInvite } from './game-settings.js?v=532d29308e';
-import { enterOnlineRoom, leaveGame, roomRuleChips, saveNick } from './lobby.js?v=532d29308e';
-import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=532d29308e';
+import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=e6980d2999';
+import { askLeaveRoom, makeModal, modals } from './modal.js?v=e6980d2999';
+import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=e6980d2999';
+import { soloRefresh, soloStep, startSolo } from './solo.js?v=e6980d2999';
+import { renderRecent } from './feed.js?v=e6980d2999';
+import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=e6980d2999';
+import { PHASE_LABEL, moodOf } from './render.js?v=e6980d2999';
+import { copyText, newInvite, revokeInvite } from './game-settings.js?v=e6980d2999';
+import { enterOnlineRoom, leaveGame, roomRuleChips, saveNick } from './lobby.js?v=e6980d2999';
+import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=e6980d2999';
 
 var w = window;
 

@@ -89,10 +89,6 @@
 @media (min-width:1140px){
   .panel-head{position:static;background:none;border-bottom:0;-webkit-backdrop-filter:none;backdrop-filter:none}
 }
-/* 寬螢幕展開大廳聊天室時，把大廳內容往右讓，面板不壓在房間列表上 */
-@media (min-width:1220px){
-  html.lc-wide-open .screen#s-lobby .panel{margin-left:max(calc((100% - 880px) / 2),330px)}
-}
 .rc-rule[data-k=diff]{background:var(--lemon);border-color:var(--lemon-d)}
 .rc-rule[data-k=category]{background:var(--mint);border-color:var(--mint-d)}
 .rc-rule[data-k=lang]{background:var(--sky);border-color:var(--sky-d)}

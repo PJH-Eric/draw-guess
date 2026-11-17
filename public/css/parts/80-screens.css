@@ -49,10 +49,6 @@
   .lobby-card-ico .ico{width:22px;height:22px}
   .lobby-card h3{font-size:1rem}
 }
-@media (min-width:1220px){
-  html.lc-wide-open .screen#s-lobby .panel{width:min(100%,880px)}
-}
-
 /* ================================================================
  * 房間設定卡：空位、鎖定的語系欄位、邀請連結
  * ================================================================ */

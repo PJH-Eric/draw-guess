@@ -464,11 +464,6 @@ body.reduced-motion .screen.active,body.reduced-motion .settings-modal.open .set
   .home-note{max-width:620px;font-size:1rem;margin-top:26px}
 }
 
-/* ---------- 平板寬度展開大廳聊天室：內容往右讓，不被面板蓋住 ---------- */
-@media (min-width:900px) and (max-width:1219px){
-  html.lc-wide-open .screen#s-lobby .panel{width:auto;max-width:none;margin-left:324px;margin-right:0}
-}
-
 /* ---------- 大廳聊天室：套用你畫我猜配色 ---------- */
 body .lc-root{
   --lc-accent:var(--grape-t);--lc-accent-ink:#fff;
