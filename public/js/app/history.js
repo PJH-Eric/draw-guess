@@ -7,9 +7,9 @@
  * 回到主選單就把擋板收掉，再按一次返回才會真的離開網頁。
  */
 
-import { $, D, app, show } from './core.js?v=f39960ab13';
-import { modals } from './modal.js?v=f39960ab13';
-import { setAsideOpen } from './feed.js?v=f39960ab13';
+import { $, D, app, show } from './core.js?v=7470c6659e';
+import { modals } from './modal.js?v=7470c6659e';
+import { setAsideOpen } from './feed.js?v=7470c6659e';
 
 var w = window;
 var guarded = false;   // 目前有沒有墊著擋板
@@ -21,7 +21,7 @@ var inPop = false;     // 正在處理返回鍵
 var rearm = false;
 
 function topModal() {
-  var order = ['confirm', 'reference', 'game', 'roomCreate', 'settings'];
+  var order = ['confirm', 'gallery', 'reference', 'game', 'roomCreate', 'settings'];
   for (var i = 0; i < order.length; i++) {
     var m = modals[order[i]];
     if (m && m.isOpen()) return order[i];

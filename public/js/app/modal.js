@@ -1,7 +1,7 @@
 /* ===== app/modal.js — 彈窗、範本與確認對話框 ===== */
 
-import { $, D, S, Sound, Words, app, esc, navChanged } from './core.js?v=f39960ab13';
-import { leaveGame } from './lobby.js?v=f39960ab13';
+import { $, D, S, Sound, Words, app, esc, navChanged } from './core.js?v=7470c6659e';
+import { leaveGame } from './lobby.js?v=7470c6659e';
 
 var w = window;
 
@@ -63,7 +63,7 @@ export function makeModal(modalId, panelId, openerId) {
 }
 
 /* 各個彈窗的控制器（makeModal 的回傳值），在各自的 setup 裡建立 */
-export var modals = { settings: null, game: null, roomCreate: null, confirm: null, reference: null };
+export var modals = { settings: null, game: null, roomCreate: null, confirm: null, reference: null, gallery: null };
 export var referenceKey = '', referenceStep = 3;
 export var referenceRendered = '';
 

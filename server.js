@@ -449,6 +449,10 @@ io.on('connection', (socket) => {
 
   /* 公布答案時按表情：只收字串，其餘由規則核心擋 */
   socket.on('room:react', withRoom((room, p) => {
+    /* 連點太快就略過：每按一次都要廣播給全房，不能被拿來洗版 */
+    const t = now();
+    if (t - (socket.data.reactAt || 0) < 150) return;
+    socket.data.reactAt = t;
     const res = room.react(socket.data.clientId, str(p.kind));
     if (!res.ok) return fail(socket, res.error, res.code);
     syncRoom(room);
@@ -457,6 +461,10 @@ io.on('connection', (socket) => {
   /* 結算畫廊：筆畫量大，只在用戶端要的時候單獨回給他 */
   socket.on('room:gallery', withRoom((room, _p, ack) => {
     if (typeof ack !== 'function') return;
+    /* 畫廊整包筆畫很大：同一個連線 2 秒內只回一次 */
+    const t = now();
+    if (t - (socket.data.galleryAt || 0) < 2000) return ack({ ok: false, error: 'srv.err.tooFast', code: 'ratelimit' });
+    socket.data.galleryAt = t;
     ack(room.gallery());
   }));
 

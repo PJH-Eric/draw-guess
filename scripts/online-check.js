@@ -533,11 +533,15 @@ async function run() {
     watcher.clearErrors();
     watcher.emit('room:react', { kind: 'clap' });
     check('觀戰者不能按', await watcher.until((c) => !!c.lastError(), 3000), watcher.lastError());
+    /* 伺服器會略過 150ms 內的連點，等一下再送 */
+    await sleep(200);
     guesser.clearErrors();
     guesser.emit('room:react', { kind: { toString: null } });
     check('怪表情被擋下', await guesser.until((c) => !!c.lastError(), 3000), guesser.lastError());
     const earlyGallery = await guesser.ask('room:gallery', {});
     check('對局中拿不到畫廊', earlyGallery.ok === false, JSON.stringify(earlyGallery));
+    const spamGallery = await guesser.ask('room:gallery', {});
+    check('畫廊請求有限流', spamGallery.ok === false && spamGallery.code === 'ratelimit', JSON.stringify(spamGallery));
 
     section('操作摘要');
     check('摘要有這一題的回合紀錄',

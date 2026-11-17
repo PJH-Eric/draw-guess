@@ -5,9 +5,9 @@
  * 縮圖在本機用同一套畫布引擎（Paint.drawStroke，固定 1400×1400，油漆桶才會跟原圖一致）重畫後縮小。
  */
 
-import { $, D, app, esc, toast } from './core.js?v=f39960ab13';
-import { makeModal } from './modal.js?v=f39960ab13';
-import { renderOverlay } from './overlay.js?v=f39960ab13';
+import { $, D, app, esc, toast } from './core.js?v=7470c6659e';
+import { makeModal, modals } from './modal.js?v=7470c6659e';
+import { renderOverlay } from './overlay.js?v=7470c6659e';
 
 var w = window;
 var THUMB = 240;
@@ -199,6 +199,8 @@ function downloadCurrent() {
 
 export function setupGallery() {
   viewer.modal = makeModal('gallery-modal', 'gallery-panel', null);
+  /* 登記起來，手機返回鍵才會先關大圖，而不是問要不要離開對局 */
+  modals.gallery = viewer.modal;
   ['gallery-close', 'gallery-backdrop'].forEach(function (id) {
     $(id).addEventListener('click', function () { viewer.modal.close(); });
   });

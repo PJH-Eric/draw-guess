@@ -271,6 +271,14 @@ async function main() {
     check('大圖 ' + v.name + '：Escape 關閉且焦點回到縮圖', await cdp.eval('return !document.querySelector("#gallery-modal.open") && document.activeElement && document.activeElement.getAttribute("data-act")==="gallery-open"'));
   }
 
+  console.log('\n▍手機返回鍵先關大圖');
+  await cdp.eval('document.querySelector("#overlay-card [data-act=gallery-open]").click()');
+  await cdp.waitFor('document.querySelector("#gallery-modal.open")', 4000);
+  await cdp.eval('history.back()');
+  await sleep(500);
+  check('返回鍵關掉大圖', await cdp.eval('return !document.querySelector("#gallery-modal.open")'));
+  check('返回鍵沒有跳出離開確認、還在結算畫面', await cdp.eval('return !document.querySelector("#confirm-modal.open") && !!document.querySelector("#overlay-card .gallery-block")'));
+
   console.log('\n▍英文介面');
   await cdp.eval('I18N.setLang("en")');
   await sleep(400);
