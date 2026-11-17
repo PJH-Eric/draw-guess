@@ -1012,7 +1012,8 @@
     if (!textIndex) {
       var W = typeof module === 'object' && module.exports ? require('./words.js') : globalThis.Words;
       textIndex = {};
-      W.all().forEach(function (w) { textIndex[w.text] = w.id; });
+      /* 含不出題的題目，舊範本照樣載得進來 */
+      (W.slots ? W.slots() : W.all()).forEach(function (w) { textIndex[w.text] = w.id; });
     }
     var out = {};
     Object.keys(byText).forEach(function (text) {

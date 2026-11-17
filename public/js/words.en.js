@@ -5271,5 +5271,91 @@
     'w-festival-84': "marriage proposal|proposing", // 求婚
     'w-festival-85': "wedding banquet|wedding feast", // 喜宴
     'w-festival-86': "longevity peach bun|birthday peach bun", // 壽桃
+    'w-outdoor-0': "tarp|canopy|camping tarp", // 天幕
+    'w-outdoor-1': "camping lantern|lantern", // 營燈
+    'w-outdoor-2': "folding chair|camp chair", // 折疊椅
+    'w-outdoor-3': "hiking boots|hiking boot", // 登山鞋
+    'w-outdoor-4': "hiking backpack|backpack", // 登山背包
+    'w-outdoor-5': "cooler|cooler box", // 保冷箱
+    'w-outdoor-6': "firewood|logs", // 柴火
+    'w-outdoor-7': "skewer|kebab", // 烤肉串
+    'w-outdoor-8': "charcoal|coal", // 木炭
+    'w-outdoor-9': "picnic basket|basket", // 野餐籃
+    'w-outdoor-10': "picnic blanket|picnic mat", // 野餐墊
+    'w-outdoor-11': "lunch box|picnic box", // 野餐盒
+    'w-outdoor-12': "fishing net|dip net", // 撈魚網
+    'w-outdoor-13': "catching crabs|crab catching", // 抓螃蟹
+    'w-outdoor-14': "signpost|sign", // 指示牌
+    'w-outdoor-15': "trail|hiking trail", // 步道
+    'w-outdoor-16': "sun hat|bucket hat", // 遮陽帽
+    'w-outdoor-17': "beach umbrella|parasol", // 海灘傘
+    'w-outdoor-18': "beach chair|deck chair", // 海灘椅
+    'w-outdoor-19': "beach towel|towel", // 海灘巾
+    'w-outdoor-20': "flip-flops|flip flops", // 人字拖
+    'w-outdoor-21': "sunscreen|sunblock", // 防曬乳
+    'w-outdoor-22': "life jacket|life vest", // 救生衣
+    'w-outdoor-23': "sandcastle|sand castle", // 沙堡
+    'w-outdoor-24': "splashing water|playing in water", // 戲水
+    'w-outdoor-25': "swimming pool|pool", // 泳池
+    'w-outdoor-26': "climbing frame|jungle gym", // 攀爬架
+    'w-outdoor-27': "ball pit|ball pool", // 球池
+    'w-outdoor-28': "bouncy castle|bounce house", // 充氣城堡
+    'w-outdoor-29': "teacup ride|spinning teacups", // 旋轉茶杯
+    'w-outdoor-30': "fountain|water fountain", // 噴泉
+    'w-outdoor-31': "feeding pigeons|feeding birds", // 餵鴿子
+    'w-outdoor-32': "hiking|hike", // 健行
+    'w-outdoor-33': "feeding lambs|feeding sheep", // 餵小羊
+    'w-outdoor-34': "strawberry picking|picking strawberries", // 採草莓
+    'w-outdoor-35': "pony ride|riding a pony", // 騎小馬
+    'w-outdoor-36': "tent stake|tent peg", // 營釘
+    'w-outdoor-37': "camping table|folding table", // 露營桌
+    'w-outdoor-38': "headlamp|head torch", // 頭燈
+    'w-outdoor-39': "Swiss army knife|pocket knife", // 瑞士刀
+    'w-outdoor-40': "trekking pole|hiking pole", // 登山杖
+    'w-outdoor-41': "climbing rope|rope", // 登山繩
+    'w-outdoor-42': "ice axe|ice pick", // 冰斧
+    'w-outdoor-43': "bug spray|mosquito repellent", // 防蚊液
+    'w-outdoor-44': "camping stove|portable stove", // 卡式爐
+    'w-outdoor-45': "gas canister|gas can", // 瓦斯罐
+    'w-outdoor-46': "camping mug|steel cup", // 鋼杯
+    'w-outdoor-47': "camp cooking|cookout", // 野炊
+    'w-outdoor-48': "chopping wood|splitting wood", // 劈柴
+    'w-outdoor-49': "campfire party|bonfire party", // 營火晚會
+    'w-outdoor-50': "grill grate|grill", // 烤肉網
+    'w-outdoor-51': "thermos|vacuum flask", // 保溫壺
+    'w-outdoor-52': "bug box|insect box", // 昆蟲箱
+    'w-outdoor-53': "catching tadpoles|tadpole catching", // 抓蝌蚪
+    'w-outdoor-54': "skipping stones|stone skipping", // 打水漂
+    'w-outdoor-55': "driftwood|drift wood", // 漂流木
+    'w-outdoor-56': "mountain cable car|gondola", // 登山纜車
+    'w-outdoor-57': "lookout tower|watchtower", // 瞭望台
+    'w-outdoor-58': "mountain hut|cabin", // 山屋
+    'w-outdoor-59': "wetsuit|diving suit", // 潛水衣
+    'w-outdoor-60': "snorkel|breathing tube", // 呼吸管
+    'w-outdoor-61': "lifeguard tower|lifeguard stand", // 救生塔
+    'w-outdoor-62': "diving board|diving platform", // 跳水台
+    'w-outdoor-63': "paddleboard|SUP", // 立槳
+    'w-outdoor-64': "water skiing|water ski", // 滑水
+    'w-outdoor-65': "climbing pole|pole climbing", // 爬竿
+    'w-outdoor-66': "swing ride|chair swing ride", // 旋轉飛椅
+    'w-outdoor-67': "bumper boat|bumper boats", // 碰碰船
+    'w-outdoor-68': "corn maze|maze", // 玉米迷宮
+    'w-outdoor-69': "arcade basketball|basketball machine", // 投籃機
+    'w-outdoor-70': "cotton candy machine|candy floss machine", // 棉花糖機
+    'w-outdoor-71': "tandem bike|tandem bicycle", // 協力車
+    'w-outdoor-72': "bike lane|cycling path", // 自行車道
+    'w-outdoor-73': "cycling around Taiwan|round-island trip", // 環島
+    'w-outdoor-74': "sandboarding|sand sledding", // 滑沙
+    'w-outdoor-75': "sheep shearing|shearing", // 剪羊毛
+    'w-outdoor-76': "kicking a shuttlecock|jianzi", // 踢毽子
+    'w-outdoor-77': "hanging chair|swing chair", // 吊床椅
+    'w-outdoor-78': "tree climbing|climbing a tree", // 攀樹
+    'w-outdoor-79': "rock climbing|rock wall", // 爬岩壁
+    'w-outdoor-80': "city night view|night view", // 看夜景
+    'w-outdoor-81': "reaching the summit|summit", // 登頂
+    'w-outdoor-82': "planting a flag|flag", // 插旗
+    'w-outdoor-83': "earth oven|dirt oven", // 焢窯
+    'w-outdoor-84': "parasailing|parasail", // 拖曳傘
+    'w-outdoor-85': "wild hot spring|hot spring", // 野溪溫泉
   };
 }));

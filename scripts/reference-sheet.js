@@ -18,12 +18,12 @@ const arg = (name, fallback) => {
   const i = process.argv.indexOf('--' + name);
   return i > 0 ? process.argv[i + 1] : fallback;
 };
-const all = Words.all();
+const all = Words.slots(); // 原始排序（含不出題的題目），和範本檔的分檔一致
 let ids;
 if (arg('ids')) ids = arg('ids').split(',');
 else {
   const [a, b] = arg('range', '0-39').split('-').map(Number);
-  ids = all.slice(a, b + 1).map((w) => w.id);
+  ids = all.slice(a, b + 1).filter((w) => Words.byId(w.id)).map((w) => w.id);
 }
 if (arg('list')) {
   const [a, b] = arg('list').split('-').map(Number);

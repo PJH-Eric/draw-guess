@@ -7,7 +7,7 @@ const Words = require('../public/js/words.js');
 const Recipes = require('../public/js/reference-recipes.js');
 const Reference = require('../public/js/reference.js');
 
-const all = Words.all();
+const all = Words.slots(); // 原始排序（含不出題的題目），和範本檔的分檔一致
 const arg = process.argv[2];
 const starts =
   arg === 'all' ? Array.from({ length: Math.ceil(all.length / 40) }, (_, i) => i * 40) : [Number(arg)];
@@ -31,6 +31,7 @@ for (const start of starts) {
   const problems = [];
   let sizeSum = 0;
   for (const w of block) {
+    if (!Words.byId(w.id)) continue; // 不出題的題目
     const r = Recipes[w.id];
     if (!r) {
       problems.push(w.id + ' ' + w.text + ': no recipe');

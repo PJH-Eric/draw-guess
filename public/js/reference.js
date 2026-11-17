@@ -438,7 +438,9 @@
   function blockOf(id) {
     if (!indexOf) {
       indexOf = {};
-      Words.all().forEach(function (w, i) { indexOf[w.id] = i; });
+      /* 依題目在題庫的原始位置分檔（含不出題的題目），刪題不會讓範本錯位 */
+      var all = Words.slots ? Words.slots() : Words.all();
+      all.forEach(function (w, i) { indexOf[w.id] = i; });
     }
     return indexOf[id] === undefined ? -1 : Math.floor(indexOf[id] / BLOCK) * BLOCK;
   }
@@ -516,7 +518,7 @@
     fairy: ['#9B7FD6', '#F2A6D2', '#F5D86B', '#6FC3D9'],
     earth: ['#C27C5A', '#5B9BD5', '#5AA469', '#E2C27D'],
     culture: ['#D9423E', '#F2B53B', '#3FA796', '#EAD9AE'],
-    shape: ['#4F9BD9', '#F2B94B', '#E5604F', '#7BC47F'],
+    outdoor: ['#4F9BD9', '#F2B94B', '#7BC47F', '#E5604F'],
     science: ['#4F8FD6', '#E55A4F', '#F2C94C', '#9AA6B5'],
     anime: ['#F2A0B8', '#F5D04A', '#4F9BD9', '#8E6BC9'],
     // Subject colours override the category when the name says what it looks like.
