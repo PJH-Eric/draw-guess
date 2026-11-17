@@ -447,6 +447,19 @@ io.on('connection', (socket) => {
     syncRoom(room, true);
   }));
 
+  /* 公布答案時按表情：只收字串，其餘由規則核心擋 */
+  socket.on('room:react', withRoom((room, p) => {
+    const res = room.react(socket.data.clientId, str(p.kind));
+    if (!res.ok) return fail(socket, res.error, res.code);
+    syncRoom(room);
+  }));
+
+  /* 結算畫廊：筆畫量大，只在用戶端要的時候單獨回給他 */
+  socket.on('room:gallery', withRoom((room, _p, ack) => {
+    if (typeof ack !== 'function') return;
+    ack(room.gallery());
+  }));
+
   /* 「畫完了」只是通知，不會結束這一題 */
   socket.on('room:done', withRoom((room) => {
     const res = room.markDone(socket.data.clientId, now());

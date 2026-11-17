@@ -518,6 +518,27 @@ async function run() {
       await watcher.until((c) => c.privates.some((p) => p.kind === 'rejected'), 3000),
       JSON.stringify(watcher.privates));
 
+    section('公布答案時按表情');
+    check('全部猜中後進入公布答案', await watcher.until((c) => c.view.game.phase === 'reveal', 4000), watcher.view.game.phase);
+    check('公布時帶這一題的表情列', !!guesser.view.game.reactions && guesser.view.game.reactions.canReact === true,
+      JSON.stringify(guesser.view.game.reactions));
+    guesser.emit('room:react', { kind: 'heart' });
+    check('猜題者按的表情大家都看得到',
+      await watcher.until((c) => c.view.game.reactions && c.view.game.reactions.counts.heart === 1, 3000),
+      JSON.stringify(watcher.view.game.reactions));
+    check('自己按過的會標記', await guesser.until((c) => c.view.game.reactions.mine.indexOf('heart') >= 0, 3000));
+    drawer.clearErrors();
+    drawer.emit('room:react', { kind: 'heart' });
+    check('畫家不能幫自己按', await drawer.until((c) => !!c.lastError(), 3000), drawer.lastError());
+    watcher.clearErrors();
+    watcher.emit('room:react', { kind: 'clap' });
+    check('觀戰者不能按', await watcher.until((c) => !!c.lastError(), 3000), watcher.lastError());
+    guesser.clearErrors();
+    guesser.emit('room:react', { kind: { toString: null } });
+    check('怪表情被擋下', await guesser.until((c) => !!c.lastError(), 3000), guesser.lastError());
+    const earlyGallery = await guesser.ask('room:gallery', {});
+    check('對局中拿不到畫廊', earlyGallery.ok === false, JSON.stringify(earlyGallery));
+
     section('操作摘要');
     check('摘要有這一題的回合紀錄',
       host.view.room.summary.some((s) => s.kind === 'turn' || s.kind === 'pick'),

@@ -1268,6 +1268,93 @@ section('題目種類篩選');
   check('全部種類可還原', room.setSettings('cat-host', { category: '' }).ok && room.settings.category === '');
 }
 
+section('本局畫廊與表情（最佳畫家）');
+{
+  const STROKE = { t: 'pen', c: 1, w: 1, p: [10, 10, 200, 200] };
+  let t = 1000;
+  const st = toDrawing(makeState({ seed: 'GALLRY' }), t);
+  const d1 = st.drawerId;
+  const others = st.players.map((p) => p.id).filter((id) => id !== d1);
+  check('作畫中不能按表情', !Rules.react(st, others[0], 'heart').ok);
+  Rules.addStroke(st, d1, STROKE);
+  Rules.giveUp(st, d1, t += 1000);
+  check('有畫東西的題目進畫廊', st.gallery.length === 1 && st.gallery[0].strokes.length === 1 && st.gallery[0].drawerId === d1);
+  check('畫家不能幫自己按', Rules.react(st, d1, 'heart').code === 'forbidden');
+  check('未知表情被擋', !Rules.react(st, others[0], 'poop').ok);
+  check('物件不能當表情', !Rules.react(st, others[0], { toString: null }).ok);
+  check('非玩家（觀戰）不能按', !Rules.react(st, 'spectator', 'heart').ok);
+  const r1 = Rules.react(st, others[0], 'heart');
+  check('猜題者可以按', r1.ok && r1.on === true && r1.count === 1);
+  Rules.react(st, others[0], 'clap');
+  Rules.react(st, others[1], 'heart');
+  const pub = Rules.toPublic(st, others[0]);
+  check('投影帶出這一題的表情數與自己按過的', pub.reactions && pub.reactions.counts.heart === 2 && pub.reactions.counts.clap === 1 &&
+    pub.reactions.mine.join() === 'heart,clap' && pub.reactions.canReact === true, JSON.stringify(pub.reactions));
+  check('畫家看到的投影不能按', Rules.toPublic(st, d1).reactions.canReact === false);
+  check('觀戰投影不能按', Rules.toPublic(st, null).reactions.canReact === false);
+  const off = Rules.react(st, others[0], 'clap');
+  check('再按一次收回', off.ok && off.on === false && off.count === 0);
+  check('一般同步不帶畫廊筆畫', !('gallery' in pub) && pub.galleryCount === 1);
+  check('結束前拿不到畫廊', Rules.galleryOf(st).length === 0);
+
+  /* 第二題：空白畫布不進畫廊、不能按 */
+  Rules.nextTurn(st, t += 1000);
+  const d2 = st.drawerId;
+  Rules.pickWord(st, d2, st.choices[0], t);
+  Rules.giveUp(st, d2, t += 1000);
+  check('空白畫布不進畫廊', st.gallery.length === 1);
+  check('空白題目不能按表情', Rules.react(st, st.players.map((p) => p.id).find((id) => id !== d2), 'heart').code === 'empty');
+  check('空白題目投影沒有表情列', Rules.toPublic(st, d1).reactions === null);
+
+  /* 第三題：畫了但只拿 1 個 → 第一位畫家拿最佳畫家 */
+  Rules.nextTurn(st, t += 1000);
+  const d3 = st.drawerId;
+  Rules.pickWord(st, d3, st.choices[0], t);
+  Rules.addStroke(st, d3, STROKE);
+  Rules.giveUp(st, d3, t += 1000);
+  Rules.react(st, st.players.map((p) => p.id).find((id) => id !== d3), 'laugh');
+  Rules.nextTurn(st, t += 1000);
+  check('整局結束', st.phase === 'over');
+  check('最佳畫家是收到最多表情的人', st.bestDrawers.length === 1 && st.bestDrawers[0].id === d1 && st.bestDrawers[0].count === 2, JSON.stringify(st.bestDrawers));
+  const gal = Rules.galleryOf(st);
+  check('結算畫廊依題序帶出筆畫與表情數', gal.length === 2 && gal[0].turnNo === 1 && gal[0].reactions.heart === 2 && gal[1].reactions.laugh === 1 && gal[0].strokes.length === 1);
+  check('結算投影帶最佳畫家', Rules.toPublic(st, null).bestDrawers[0].id === d1);
+
+  const tie = { players: [], gallery: [
+    { drawerId: 'a', drawerName: 'A', reactions: { heart: ['x'], laugh: [], clap: [] } },
+    { drawerId: 'b', drawerName: 'B', reactions: { heart: [], laugh: ['y'], clap: [] } }
+  ] };
+  check('平手並列最佳畫家', Rules.bestDrawers(tie).map((x) => x.id).join() === 'a,b');
+  check('一個表情都沒有就從缺', Rules.bestDrawers({ players: [], gallery: [{ drawerId: 'a', drawerName: 'A', reactions: { heart: [], laugh: [], clap: [] } }] }).length === 0);
+
+  Rules.start(st, t += 1000);
+  check('重新開局清空畫廊與最佳畫家', st.gallery.length === 0 && st.bestDrawers.length === 0);
+
+  const solo = Rules.createState({ seed: 'SOLOGL', players: [{ id: 'me', name: '我' }], unlimited: true });
+  Rules.start(solo, t);
+  Rules.pickWord(solo, 'me', solo.choices[0], t);
+  Rules.addStroke(solo, 'me', STROKE);
+  Rules.giveUp(solo, 'me', t + 1);
+  check('單機練習不累積畫廊', solo.gallery.length === 0);
+
+  const store = new RoomStore({});
+  const room = store.create('g1', { name: '甲', now: t }).room;
+  room.join('g2', { name: '乙', role: 'player', now: t });
+  room.join('gs', { name: '丙', role: 'spectator', now: t });
+  room.setReady('g2', true);
+  check('房間可以開局', room.start('g1', t).ok);
+  check('對局中拿不到畫廊', !room.gallery().ok);
+  const dr = room.state.drawerId;
+  const gu = dr === 'g1' ? 'g2' : 'g1';
+  room.pickWord(dr, room.state.choices[0], t);
+  room.stroke(dr, STROKE, t);
+  room.skipTurn(dr, t + 1);
+  check('觀戰者不能按表情', !room.react('gs', 'heart').ok);
+  check('猜題者在房間裡可以按', room.react(gu, 'heart').ok);
+  const view = room.viewFor(gu, t + 2);
+  check('房間投影帶表情', view.game.reactions && view.game.reactions.counts.heart === 1);
+}
+
 /* ================================================================
    結果
    ================================================================ */

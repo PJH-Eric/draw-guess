@@ -2113,6 +2113,81 @@ I18N.register('zh-Hant', { 'result.winner': '獲勝！', 'result.tie': '平手�
   .register('zh-Hans', { 'result.winner': '获胜！', 'result.tie': '平手！' })
   .register('en', { 'result.winner': 'Winner!', 'result.tie': 'Tie!' });
 
+/* 表情、最佳畫家與本局畫廊 */
+I18N.register('zh-Hant', {
+  'react.title': '給這張圖一個表情',
+  'react.own': '大家正在幫你的作品按表情',
+  'react.watch': '玩家正在幫這張圖按表情',
+  'react.heart': '喜歡', 'react.laugh': '好好笑', 'react.clap': '畫得好',
+  'best.title': '最佳畫家',
+  'best.count': '收到 {n} 個表情',
+  'gallery.title': '本局畫廊',
+  'gallery.loading': '畫廊載入中…',
+  'gallery.empty': '這一局沒有留下作品。',
+  'gallery.fail': '畫廊載入失敗。',
+  'gallery.retry': '再試一次',
+  'gallery.open': '看大圖：{name} 畫的「{word}」',
+  'gallery.by': '{name} 畫的',
+  'gallery.download': '下載圖片',
+  'gallery.prev': '上一張', 'gallery.next': '下一張',
+  'gallery.close': '關閉',
+  'gallery.pos': '第 {i} / {n} 張',
+  'gallery.saved': 'PNG 圖片已送出下載。',
+  'srv.err.reactRevealOnly': '公布答案時才能按表情。',
+  'srv.err.badReaction': '沒有這個表情。',
+  'srv.err.nothingToReact': '這一題沒有作品可以按表情。',
+  'srv.err.ownDrawing': '不能幫自己的作品按表情。',
+  'srv.err.galleryNotReady': '整局結束後才能看畫廊。'
+}).register('zh-Hans', {
+  'react.title': '给这张图一个表情',
+  'react.own': '大家正在给你的作品按表情',
+  'react.watch': '玩家正在给这张图按表情',
+  'react.heart': '喜欢', 'react.laugh': '好好笑', 'react.clap': '画得好',
+  'best.title': '最佳画家',
+  'best.count': '收到 {n} 个表情',
+  'gallery.title': '本局画廊',
+  'gallery.loading': '画廊加载中…',
+  'gallery.empty': '这一局没有留下作品。',
+  'gallery.fail': '画廊加载失败。',
+  'gallery.retry': '再试一次',
+  'gallery.open': '看大图：{name} 画的「{word}」',
+  'gallery.by': '{name} 画的',
+  'gallery.download': '下载图片',
+  'gallery.prev': '上一张', 'gallery.next': '下一张',
+  'gallery.close': '关闭',
+  'gallery.pos': '第 {i} / {n} 张',
+  'gallery.saved': 'PNG 图片已开始下载。',
+  'srv.err.reactRevealOnly': '公布答案时才能按表情。',
+  'srv.err.badReaction': '没有这个表情。',
+  'srv.err.nothingToReact': '这一题没有作品可以按表情。',
+  'srv.err.ownDrawing': '不能给自己的作品按表情。',
+  'srv.err.galleryNotReady': '整局结束后才能看画廊。'
+}).register('en', {
+  'react.title': 'React to this drawing',
+  'react.own': 'Players are reacting to your drawing',
+  'react.watch': 'Players are reacting to this drawing',
+  'react.heart': 'Love it', 'react.laugh': 'Funny', 'react.clap': 'Well drawn',
+  'best.title': 'Best Artist',
+  'best.count': '{n} reactions',
+  'gallery.title': 'Game gallery',
+  'gallery.loading': 'Loading gallery…',
+  'gallery.empty': 'No drawings were saved this game.',
+  'gallery.fail': 'Could not load the gallery.',
+  'gallery.retry': 'Try again',
+  'gallery.open': 'View larger: "{word}" by {name}',
+  'gallery.by': 'by {name}',
+  'gallery.download': 'Download image',
+  'gallery.prev': 'Previous', 'gallery.next': 'Next',
+  'gallery.close': 'Close',
+  'gallery.pos': '{i} of {n}',
+  'gallery.saved': 'PNG download started.',
+  'srv.err.reactRevealOnly': 'You can react only while the answer is shown.',
+  'srv.err.badReaction': 'That reaction is not available.',
+  'srv.err.nothingToReact': 'There is no drawing to react to.',
+  'srv.err.ownDrawing': 'You cannot react to your own drawing.',
+  'srv.err.galleryNotReady': 'The gallery opens after the game ends.'
+});
+
 /* 題庫延遲載入 */
 I18N.register('zh-Hant', { 'words.loadFail': '題庫載入失敗，請檢查網路後再試一次。' })
   .register('zh-Hans', { 'words.loadFail': '题库加载失败，请检查网络后再试一次。' })

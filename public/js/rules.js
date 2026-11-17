@@ -50,6 +50,7 @@
     MAX_TOTAL_POINTS: 30000, // 一題全部點數上限
     GUESS_MAX: 40,           // 猜測字數上限（英文題目最長 32 個字元，要放得下）
     HINTS: 3,                      // 畫家手上的提示張數：字數 → 種類 → 揭一個字
+    GALLERY_MAX: 60,               // 本局畫廊最多留幾張（8 人 × 5 次 = 40 張，留一點餘裕）
     BOX: Words.BOX
   };
 
@@ -76,6 +77,10 @@
   var TOOL_KEYS = Object.keys(TOOLS);
 
   var PHASES = ['picking', 'drawing', 'reveal', 'over'];
+
+  /* 公布答案時，猜題者可以對這一題的作品按的表情。每個人每種表情一題只能按一次（再按一次收回）；
+     收到的表情總數最多的畫家在結算時拿到「最佳畫家」。只是好玩的稱號，不加分。 */
+  var REACTIONS = ['heart', 'laugh', 'clap'];
 
 
   /* 錯誤訊息一律是字典代碼（srv.err.＊）加參數，由畫面端依語系翻譯 */
@@ -151,6 +156,9 @@
       deadline: 0,
       startedAt: 0,
       log: [],
+      /* 本局畫廊：每一題結束時留下作品筆畫與表情（單機練習不限次數，不留） */
+      gallery: [],
+      bestDrawers: [],
       over: false,
       winners: []
     };
@@ -192,6 +200,8 @@
     state.winners = [];
     state.usedWords = [];
     state.log = [];
+    state.gallery = [];
+    state.bestDrawers = [];
     for (var i = 0; i < state.players.length; i++) {
       state.players[i].score = 0;
       state.players[i].drew = 0;
@@ -408,6 +418,20 @@
       at: now
     };
     state.log.push(entry);
+    /* 畫廊只收有畫東西的題目；空白畫布沒什麼好看，也不能按表情 */
+    if (!state.unlimited && w && state.strokes.length) {
+      state.gallery.push({
+        turnNo: state.turnNo,
+        drawerId: state.drawerId,
+        drawerName: entry.drawerName,
+        wordId: state.wordId,
+        word: w.text,
+        cat: w.cat,
+        strokes: state.strokes.slice(),
+        reactions: { heart: [], laugh: [], clap: [] }
+      });
+      if (state.gallery.length > CONST.GALLERY_MAX) state.gallery.shift();
+    }
     state.phase = 'reveal';
     state.deadline = now + state.revealMs;
     return ok({ entry: entry });
@@ -464,8 +488,92 @@
     var best = -1;
     for (var i = 0; i < state.players.length; i++) best = Math.max(best, state.players[i].score);
     state.winners = state.players.filter(function (p) { return p.score === best; }).map(function (p) { return p.id; });
+    state.bestDrawers = bestDrawers(state);
     state.endedAt = now;
     return ok({ state: state, winners: state.winners });
+  }
+
+  /* ------------------------------------------------------------ 表情與畫廊 */
+
+  function reactionTotal(item) {
+    var n = 0;
+    for (var i = 0; i < REACTIONS.length; i++) n += item.reactions[REACTIONS[i]].length;
+    return n;
+  }
+
+  /** 這一題（公布中）的畫廊項目；沒畫東西的題目沒有 */
+  function currentGalleryItem(state) {
+    var list = state.gallery || [];
+    var last = list.length ? list[list.length - 1] : null;
+    return last && last.turnNo === state.turnNo ? last : null;
+  }
+
+  /**
+   * 公布答案時對這一題的作品按表情（再按一次收回）。
+   * 只有這一局的玩家能按，畫家不能幫自己按；觀戰者不在 players 裡，自然按不了。
+   */
+  function react(state, playerId, kind) {
+    if (state.phase !== 'reveal') return err('srv.err.reactRevealOnly', 'phase');
+    if (!player(state, playerId)) return err('srv.err.notInGame', 'forbidden');
+    if (typeof kind !== 'string' || REACTIONS.indexOf(kind) < 0) return err('srv.err.badReaction', 'invalid');
+    var item = currentGalleryItem(state);
+    if (!item) return err('srv.err.nothingToReact', 'empty');
+    if (item.drawerId === playerId) return err('srv.err.ownDrawing', 'forbidden');
+    var list = item.reactions[kind];
+    var at = list.indexOf(playerId);
+    if (at >= 0) list.splice(at, 1); else list.push(playerId);
+    return ok({ kind: kind, on: at < 0, count: list.length });
+  }
+
+  /** 收到最多表情的畫家（平手並列；一個表情都沒有就從缺）。離開的畫家也算，名字取畫廊裡留的。 */
+  function bestDrawers(state) {
+    var by = {};
+    var order = [];
+    var list = state.gallery || [];
+    for (var i = 0; i < list.length; i++) {
+      var it = list[i];
+      if (!by[it.drawerId]) { by[it.drawerId] = { id: it.drawerId, name: it.drawerName, count: 0 }; order.push(it.drawerId); }
+      by[it.drawerId].count += reactionTotal(it);
+    }
+    var best = 0;
+    for (var j = 0; j < order.length; j++) best = Math.max(best, by[order[j]].count);
+    if (best <= 0) return [];
+    return order.filter(function (id) { return by[id].count === best; }).map(function (id) {
+      var p = player(state, id);
+      return { id: id, name: p ? p.name : by[id].name, count: best };
+    });
+  }
+
+  /** 結算後的畫廊（含筆畫）。只在整局結束後提供：作畫中的題目還沒公布，不能外流。 */
+  function galleryOf(state) {
+    if (state.phase !== 'over') return [];
+    return (state.gallery || []).map(function (it) {
+      var p = player(state, it.drawerId);
+      return {
+        turnNo: it.turnNo, drawerId: it.drawerId, drawerName: p ? p.name : it.drawerName,
+        word: it.word, cat: it.cat, strokes: it.strokes,
+        reactions: { heart: it.reactions.heart.length, laugh: it.reactions.laugh.length, clap: it.reactions.clap.length }
+      };
+    });
+  }
+
+  /** 公布中這一題的表情數，以及看的人自己按了哪些、能不能按 */
+  function publicReactions(state, viewerId) {
+    if (state.phase !== 'reveal') return null;
+    var item = currentGalleryItem(state);
+    if (!item) return null;
+    var counts = {}, mine = [];
+    for (var i = 0; i < REACTIONS.length; i++) {
+      var k = REACTIONS[i];
+      counts[k] = item.reactions[k].length;
+      if (viewerId && item.reactions[k].indexOf(viewerId) >= 0) mine.push(k);
+    }
+    return {
+      turnNo: item.turnNo,
+      counts: counts,
+      mine: mine,
+      canReact: !!viewerId && !!player(state, viewerId) && viewerId !== item.drawerId
+    };
   }
 
   /* ------------------------------------------------------------ 時間 */
@@ -707,6 +815,10 @@
       log: state.log.slice(-8),
       over: state.over,
       winners: state.winners,
+      bestDrawers: state.bestDrawers || [],
+      /* 畫廊筆畫量大，不跟每次同步一起送；這裡只給張數，結算時再另外要一次（galleryOf） */
+      galleryCount: state.gallery ? state.gallery.length : 0,
+      reactions: publicReactions(state, viewerId),
       you: viewerId ? {
         id: viewerId,
         isDrawer: isDrawer,
@@ -743,6 +855,10 @@
     TOOLS: TOOLS,
     TOOL_KEYS: TOOL_KEYS,
     PHASES: PHASES,
+    REACTIONS: REACTIONS,
+    react: react,
+    bestDrawers: bestDrawers,
+    galleryOf: galleryOf,
     createState: createState,
     start: start,
     beginTurn: beginTurn,
