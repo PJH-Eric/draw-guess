@@ -33,7 +33,7 @@
   var MASK_CHAR = '＿';            // 還沒提示的字，畫面上是一條底線
   var RAD = Math.PI / 180;
 
-  /* 玩家看到、可以篩選的種類。題庫內部分得比較細（見下面的 GROUPS），顯示時併成這 17 類。 */
+  /* 玩家看到、可以篩選的種類。題庫內部分得比較細（見下面的 GROUPS），顯示時併成這 20 類。 */
   var CATEGORIES = {
     animal: { key: 'animal', label: '動物昆蟲', emoji: '🐾' },
     food: { key: 'food', label: '食物飲料', emoji: '🍎' },
@@ -51,7 +51,10 @@
     idiom: { key: 'idiom', label: '成語故事', emoji: '📖' },
     history: { key: 'history', label: '歷史文化', emoji: '🏛' },
     science: { key: 'science', label: '科學宇宙', emoji: '🔭' },
-    trend: { key: 'trend', label: '時事影視', emoji: '📰' }
+    trend: { key: 'trend', label: '時事影視', emoji: '📰' },
+    anime: { key: 'anime', label: '卡通動漫', emoji: '🎞' },
+    taiwan: { key: 'taiwan', label: '台灣在地', emoji: '🧋' },
+    festival: { key: 'festival', label: '節慶節日', emoji: '🏮' }
   };
   var CATEGORY_KEYS = Object.keys(CATEGORIES);
 
@@ -62,8 +65,8 @@
     kitchen: 'home', tech: 'home', tool: 'home', clothes: 'home', phenomenon: 'nature',
     earth: 'nature', plant: 'nature', ocean: 'nature', toy: 'fun', sport: 'fun',
     hobby: 'fun', music: 'fun', people: 'job', medical: 'body', emotion: 'action',
-    expression: 'action', adjective: 'shape', city: 'place', farm: 'place', taiwan: 'geography',
-    fairy: 'fantasy', myth: 'fantasy', culture: 'history', festival: 'history', civics: 'history',
+    expression: 'action', adjective: 'shape', city: 'place', farm: 'place',
+    fairy: 'fantasy', myth: 'fantasy', culture: 'history', civics: 'history',
     physics: 'science', astro: 'science', star: 'trend', movie: 'trend'
   };
   function categoryOf(group) { return GROUPS[group] || group; }
@@ -1526,6 +1529,163 @@
     }
   };
 
+  /* ================================================================
+     第四批：卡通動漫（2026-11，+160 題）。作品與角色名稱都比照影視類只放困難。
+     ================================================================ */
+  var BANKS_4 = {
+    anime: {
+      hard: true,
+      3: [
+        '哆啦A夢|小叮噹 大雄 靜香 胖虎 小夫 任意門 魯夫 索隆 喬巴 娜美 香吉士 鳴人 佐助',
+        '卡卡西 我愛羅 龜派氣功 貝吉塔|達爾 比克 弗利沙 龜仙人 毛利小五郎 怪盜基德 阿笠博士',
+        '灰原哀 炭治郎 禰豆子 善逸 伊之助 櫻木花道 流川楓 我們這一家 烏龍派出所 忍者亂太郎',
+        '庫洛魔法使 數碼寶貝 遊戲王 鋼之鍊金術師 銀魂 排球少年 網球王子 足球小將翼 頭文字D',
+        '福音戰士 鋼彈 原子小金剛 怪醫黑傑克 小甜甜 凡爾賽玫瑰 城市獵人 亂馬 犬夜叉 殺生丸',
+        '幽遊白書 通靈王 妖精尾巴 咒術迴戰 五條悟 間諜家家酒 安妮亞 刀劍神域 中華一番',
+        '湯姆歷險記 小天使 一休和尚 魔法公主 風之谷 紅豬 波妞 無臉男 湯婆婆 貓巴士 煤炭精靈',
+        '傑尼龜 妙蛙種子 小火龍 伊布 卡比獸 胖丁 可達鴨 精靈球 月光仙子 夜禮服假面',
+        '忍者哈特利 小超人帕門 奇天烈大百科 Q太郎 野原廣志 風間 麵包超人 細菌人 巧虎 凱蒂貓',
+        '美樂蒂 大耳狗 布丁狗 酷洛米 蛋黃哥 角落生物 拉拉熊 米飛兔 嚕嚕米|姆明 史努比',
+        '加菲貓 米老鼠|米奇 米妮 唐老鴨 高飛 布魯托 小熊維尼 跳跳虎 屹耳 史迪奇 巴斯光年',
+        '胡迪 三眼怪 尼莫 多莉 閃電麥坤|麥坤 艾莎 安娜 辛巴 彭彭 丁滿 神燈精靈 茉莉公主',
+        '貝兒 愛麗兒 奇奇蒂蒂 海綿寶寶 派大星 章魚哥 蟹老闆 湯姆貓 傑利鼠 兔巴哥 崔弟',
+        '嗶嗶鳥 威利狼 粉紅豬小妹|佩佩豬 天線寶寶 汪汪隊 朵拉 小小兵 神偷奶爸 史瑞克',
+        '鞋貓劍客 冰原歷險記 里約大冒險 藍色小精靈 辛普森家庭 探險活寶 飛天小女警 史酷比',
+        '忍者龜 金剛戰士 鹹蛋超人|超人力霸王 假面騎士 哥吉拉|酷斯拉 無敵鐵金剛 科學小飛俠'
+      ]
+    }
+  };
+
+  /* 原本編在電影分組的動畫作品：題目 id 不能改，所以只把顯示種類改到卡通動漫 */
+  var ANIME_TITLES = [
+    '玩具總動員 冰雪奇緣 獅子王 海底總動員 怪獸電力公司 天外奇蹟 腦筋急轉彎 無敵破壞王',
+    '動物方城市 汽車總動員 超人特攻隊 瓦力 花木蘭 阿拉丁 美女與野獸 小美人魚 白雪公主',
+    '睡美人 灰姑娘 彼得潘 木偶奇遇記 龍貓 神隱少女 天空之城 魔女宅急便 功夫熊貓 馴龍高手',
+    '靈魂急轉彎 可可夜總會 勇敢傳說 海洋奇緣 魔髮奇緣 泰山 小飛象 小鹿斑比 名偵探柯南',
+    '火影忍者 七龍珠 鬼滅之刃 灌籃高手 櫻桃小丸子 蠟筆小新 美少女戰士 聖鬥士星矢 航海王',
+    '寶可夢 皮卡丘'
+  ].join(' ').split(' ');
+
+  /* ================================================================
+     第五批：台灣在地擴充（2026-11，+80 題）
+     ================================================================ */
+  var BANKS_5 = {
+    taiwan: {
+      2: [
+        '棺材板 虱目魚 烏魚子 筒仔米糕 蚵嗲 大腸包小腸 藥燉排骨 四神湯 鐵蛋 阿給 魚丸湯',
+        '牛舌餅 方塊酥 綠豆椪 萬巒豬腳 池上便當 文旦 愛文芒果 高山茶 彈珠汽水 沙士 高粱酒',
+        '貢糖 竹筒飯 小米酒 擂茶 客家花布 琉璃珠 石板屋 百步蛇 眷村 神豬 燒王船 宋江陣',
+        '搶孤 藝閣 土地公廟 城隍廟 機車瀑布 博愛座'
+      ],
+      3: [
+        '陽明山 象山 貓空 平溪 十分瀑布 福隆 礁溪 武陵農場 溪頭 集集 八卦山 三仙台',
+        '伯朗大道 池上 旗津 西子灣 愛河 佛光山 蓮池潭 月世界 恆春 七星潭 清水斷崖 雪山隧道',
+        '蘇花公路 西螺大橋 石門水庫 嘉南大圳 森林鐵路 總統府 圓山飯店 小巨蛋 行天宮 泰雅族',
+        '阿美族 達悟族 八部合音 關子嶺 三義 鶯歌'
+      ]
+    }
+  };
+
+  /* 編在其他分組、但其實是台灣題的題目：id 不能改，只把顯示種類改到台灣在地 */
+  var TAIWAN_TITLES = [
+    '台中 台東 宜蘭 新竹 嘉義 彰化 台北 高雄 台南 花蓮 北投 太平山 鹿港 布袋戲',
+    '歌仔戲 八家將 廟會 神轎 豐年祭 蜂炮 夜市 石虎 黑熊 帝雉 藍鵲 山羌 雲豹 鄭成功',
+    '劉銘傳 馬偕 八田與一 莫那魯道 海角七號 賽德克巴萊 艋舺 颱風假 經典賽 油桐花 蚵仔煎',
+    '臭豆腐 滷肉飯 大腸麵線 鹹酥雞 肉圓 碗粿 刈包 胡椒餅 豬血糕 擔仔麵 鳳梨酥 太陽餅',
+    '地瓜球 甜不辣 芒果冰'
+  ].join(' ').split(' ');
+
+  /* ================================================================
+     第六批：節慶節日補充（2026-11，+16 題）
+     ================================================================ */
+  var BANKS_6 = {
+    festival: {
+      1: ['聖誕禮物 生日派對 發紅包 掛燈籠 捧花'],
+      2: [
+        '尾牙 抽獎 大掃除 貼春聯 包粽子 聖誕大餐',
+        '南瓜派 情書 求婚 喜宴 壽桃'
+      ]
+    }
+  };
+
+  /* 編在其他分組的節慶題：id 不能改，只把顯示種類改到節慶節日 */
+  var FESTIVAL_TITLES = [
+    '潑水節 啤酒節 亡靈節 嘉年華 月餅 湯圓 年糕 年獸 吹蠟燭 拆禮物 包禮物 許願',
+    '寫卡片 看煙火 賞櫻 聖誕紅 婚禮 畢業典禮 運動會 氣球 彩帶 烤肉 肉粽'
+  ].join(' ').split(' ');
+
+  /* ================================================================
+     逐題檢查後的重新歸類（2026-11）：分組是整批對應到種類的，個別題目放錯的在這裡改。
+     寫法：種類代碼 → 要改歸到這一類的題目文字。之後發現放錯的題目，加在這裡即可。
+     ================================================================ */
+  var RECATEGORIZED = {
+    fun: [
+      '滑板 直排輪 運動會 潛水鏡 氧氣瓶 蛙鞋 回力鏢 風笛 太鼓 古箏 二胡 琵琶 賞櫻',
+      '玩具船 玩具飛機 卡拉OK'
+    ],
+    body: [
+      '繃帶 急救箱 捐血'
+    ],
+    taiwan: [
+      '珍珠奶茶 雞排 蔥抓餅 蚵仔麵線 媽祖 土地公'
+    ],
+    food: [
+      '竹筍 麵團 稻米'
+    ],
+    anime: [
+      '漫畫'
+    ],
+    job: [
+      '外送員 市長 里長 志工 街頭藝人 駭客 原始人 小丑 行人 導護'
+    ],
+    vehicle: [
+      '電動機車 安全帶 船錨 救生圈 客運'
+    ],
+    home: [
+      '行動電源 自拍棒 漁網 魚鉤 購物車 蒼蠅拍 捕蟲網 殺蟲劑 水族箱 空氣炸鍋 竹籃 藤椅',
+      '竹椅 茶具 紫砂壺'
+    ],
+    geography: [
+      '比薩斜塔'
+    ],
+    place: [
+      '法院 公所 補習班 碼頭 水壩 馬戲團 冰屋 樹屋 校門 收費站 跳蚤市場 民宿 理髮廳',
+      '電話亭'
+    ],
+    festival: [
+      '生日快樂歌 校慶'
+    ],
+    nature: [
+      '熱帶雨林 琥珀 冰河時期 稻穗 麥穗 秧苗 牧草 果樹 蘋果樹 花田 蓮花田 雪山 叢林'
+    ],
+    action: [
+      '校外教學 點名 下載 當機 採茶 播種 插秧 收割 澆水 施肥 擠牛奶 撿雞蛋 採果 種田',
+      '犁田 曬穀 養蜂 採蜜 摘菜 拔蘿蔔 挖地瓜 灌溉 割稻 升旗 午休 作文 美勞 下課 上課',
+      '段考'
+    ],
+    science: [
+      '光合作用 自轉 公轉 地軸'
+    ],
+    animal: [
+      '寄居蟹 海螺 虎鯨 海獅 海象 海牛 旗魚 飛魚 翻車魚 鯨鯊 鎚頭鯊 海參 扇貝 獨角鯨',
+      '藍鯨 鮟鱇魚 藤壺 抹香鯨 座頭鯨 鸚鵡螺 鳥巢 蜂窩 螞蟻窩 蜘蛛網 小鴨 小羊 小牛',
+      '公牛 羊群 牧羊犬 魚鰭 魚鱗 魚尾 魚骨 鯨尾 魚眼 魚嘴 魚鰓 海獺 海蛇 海鰻 皮皮蝦',
+      '帝王蟹 招潮蟹 石斑魚 鱈魚 鯖魚 海蜇 海蛞蝓 磷蝦 櫻花蝦 海百合 海鞘'
+    ],
+    trend: [
+      '電子郵件 電腦病毒 搜尋引擎 程式碼 雲端運算 機器學習 語音辨識 智慧家庭 衛星定位'
+    ],
+    history: [
+      '洞穴壁畫 石器 石斧 鑽木取火'
+    ],
+    fantasy: [
+      '寶藏'
+    ],
+    shape: [
+      '注音符號'
+    ]
+  };
+
   /** 「貓熊|熊貓」→ { text, alt } */
   function parseEntry(entry) {
     var names = entry.split('|');
@@ -1569,6 +1729,22 @@
   expandBanks(BANKS);
   expandBanks(BANKS_MORE);
   expandBanks(BANKS_3);
+  expandBanks(BANKS_4);
+  expandBanks(BANKS_5);
+  LIST.forEach(function (word) { if (TAIWAN_TITLES.indexOf(word.text) >= 0) word.cat = 'taiwan'; });
+  expandBanks(BANKS_6);
+  LIST.forEach(function (word) { if (FESTIVAL_TITLES.indexOf(word.text) >= 0) word.cat = 'festival'; });
+  (function () {
+    var target = {};
+    Object.keys(RECATEGORIZED).forEach(function (cat) {
+      if (!CATEGORIES[cat]) throw new Error('未知的分類：' + cat);
+      RECATEGORIZED[cat].join(' ').split(' ').forEach(function (text) { target[text] = cat; });
+    });
+    var seen = {};
+    LIST.forEach(function (word) { if (target[word.text]) { word.cat = target[word.text]; seen[word.text] = true; } });
+    Object.keys(target).forEach(function (text) { if (!seen[text]) throw new Error('重新歸類找不到題目：' + text); });
+  }());
+  LIST.forEach(function (word) { if (word.group === 'movie' && ANIME_TITLES.indexOf(word.text) >= 0) word.cat = 'anime'; });
 
   /* ================================================================
      形狀指令 → 筆畫（點陣列）

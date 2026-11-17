@@ -5015,5 +5015,261 @@
     'w-taiwan-77': "salt pan", // 鹽田
     'w-taiwan-78': "beiguan music", // 北管
     'w-taiwan-79': "neon light", // 霓虹燈
+    'w-anime-0': "doraemon", // 哆啦A夢
+    'w-anime-1': "nobita", // 大雄
+    'w-anime-2': "shizuka", // 靜香
+    'w-anime-3': "gian", // 胖虎
+    'w-anime-4': "suneo", // 小夫
+    'w-anime-5': "anywhere door|dokodemo door", // 任意門
+    'w-anime-6': "luffy|monkey d. luffy", // 魯夫
+    'w-anime-7': "zoro", // 索隆
+    'w-anime-8': "chopper", // 喬巴
+    'w-anime-9': "nami", // 娜美
+    'w-anime-10': "sanji", // 香吉士
+    'w-anime-11': "naruto uzumaki|naruto", // 鳴人
+    'w-anime-12': "sasuke", // 佐助
+    'w-anime-13': "kakashi", // 卡卡西
+    'w-anime-14': "gaara", // 我愛羅
+    'w-anime-15': "kamehameha", // 龜派氣功
+    'w-anime-16': "vegeta", // 貝吉塔
+    'w-anime-17': "piccolo", // 比克
+    'w-anime-18': "frieza", // 弗利沙
+    'w-anime-19': "master roshi", // 龜仙人
+    'w-anime-20': "kogoro mori", // 毛利小五郎
+    'w-anime-21': "kaito kid|phantom thief kid", // 怪盜基德
+    'w-anime-22': "professor agasa", // 阿笠博士
+    'w-anime-23': "ai haibara", // 灰原哀
+    'w-anime-24': "tanjiro", // 炭治郎
+    'w-anime-25': "nezuko", // 禰豆子
+    'w-anime-26': "zenitsu", // 善逸
+    'w-anime-27': "inosuke", // 伊之助
+    'w-anime-28': "hanamichi sakuragi|sakuragi", // 櫻木花道
+    'w-anime-29': "kaede rukawa|rukawa", // 流川楓
+    'w-anime-30': "atashinchi", // 我們這一家
+    'w-anime-31': "kochikame", // 烏龍派出所
+    'w-anime-32': "nintama rantaro", // 忍者亂太郎
+    'w-anime-33': "cardcaptor sakura", // 庫洛魔法使
+    'w-anime-34': "digimon", // 數碼寶貝
+    'w-anime-35': "yu-gi-oh|yugioh", // 遊戲王
+    'w-anime-36': "fullmetal alchemist", // 鋼之鍊金術師
+    'w-anime-37': "gintama", // 銀魂
+    'w-anime-38': "haikyu|haikyuu", // 排球少年
+    'w-anime-39': "prince of tennis", // 網球王子
+    'w-anime-40': "captain tsubasa", // 足球小將翼
+    'w-anime-41': "initial d", // 頭文字D
+    'w-anime-42': "evangelion", // 福音戰士
+    'w-anime-43': "gundam", // 鋼彈
+    'w-anime-44': "astro boy", // 原子小金剛
+    'w-anime-45': "black jack", // 怪醫黑傑克
+    'w-anime-46': "candy candy", // 小甜甜
+    'w-anime-47': "rose of versailles", // 凡爾賽玫瑰
+    'w-anime-48': "city hunter", // 城市獵人
+    'w-anime-49': "ranma", // 亂馬
+    'w-anime-50': "inuyasha", // 犬夜叉
+    'w-anime-51': "sesshomaru", // 殺生丸
+    'w-anime-52': "yu yu hakusho", // 幽遊白書
+    'w-anime-53': "shaman king", // 通靈王
+    'w-anime-54': "fairy tail", // 妖精尾巴
+    'w-anime-55': "jujutsu kaisen", // 咒術迴戰
+    'w-anime-56': "gojo satoru|gojo", // 五條悟
+    'w-anime-57': "spy x family|spy family", // 間諜家家酒
+    'w-anime-58': "anya forger|anya", // 安妮亞
+    'w-anime-59': "sword art online", // 刀劍神域
+    'w-anime-60': "cooking master boy|chuka ichiban", // 中華一番
+    'w-anime-61': "adventures of tom sawyer|tom sawyer", // 湯姆歷險記
+    'w-anime-62': "heidi|heidi girl of the alps", // 小天使
+    'w-anime-63': "ikkyu-san|ikkyu", // 一休和尚
+    'w-anime-64': "princess mononoke", // 魔法公主
+    'w-anime-65': "nausicaa", // 風之谷
+    'w-anime-66': "porco rosso", // 紅豬
+    'w-anime-67': "ponyo", // 波妞
+    'w-anime-68': "no-face|kaonashi", // 無臉男
+    'w-anime-69': "yubaba", // 湯婆婆
+    'w-anime-70': "catbus|cat bus", // 貓巴士
+    'w-anime-71': "soot sprite|susuwatari", // 煤炭精靈
+    'w-anime-72': "squirtle", // 傑尼龜
+    'w-anime-73': "bulbasaur", // 妙蛙種子
+    'w-anime-74': "charmander", // 小火龍
+    'w-anime-75': "eevee", // 伊布
+    'w-anime-76': "snorlax", // 卡比獸
+    'w-anime-77': "jigglypuff", // 胖丁
+    'w-anime-78': "psyduck", // 可達鴨
+    'w-anime-79': "poke ball|pokeball", // 精靈球
+    'w-anime-80': "sailor moon heroine|usagi tsukino", // 月光仙子
+    'w-anime-81': "tuxedo mask", // 夜禮服假面
+    'w-anime-82': "ninja hattori", // 忍者哈特利
+    'w-anime-83': "perman", // 小超人帕門
+    'w-anime-84': "kiteretsu", // 奇天烈大百科
+    'w-anime-85': "q-taro|obake no q-taro", // Q太郎
+    'w-anime-86': "hiroshi nohara", // 野原廣志
+    'w-anime-87': "kazama", // 風間
+    'w-anime-88': "anpanman", // 麵包超人
+    'w-anime-89': "baikinman", // 細菌人
+    'w-anime-90': "shimajiro", // 巧虎
+    'w-anime-91': "hello kitty", // 凱蒂貓
+    'w-anime-92': "my melody", // 美樂蒂
+    'w-anime-93': "cinnamoroll", // 大耳狗
+    'w-anime-94': "pompompurin", // 布丁狗
+    'w-anime-95': "kuromi", // 酷洛米
+    'w-anime-96': "gudetama", // 蛋黃哥
+    'w-anime-97': "sumikko gurashi", // 角落生物
+    'w-anime-98': "rilakkuma", // 拉拉熊
+    'w-anime-99': "miffy", // 米飛兔
+    'w-anime-100': "moomin", // 嚕嚕米
+    'w-anime-101': "snoopy", // 史努比
+    'w-anime-102': "garfield", // 加菲貓
+    'w-anime-103': "mickey mouse|mickey", // 米老鼠
+    'w-anime-104': "minnie mouse|minnie", // 米妮
+    'w-anime-105': "donald duck", // 唐老鴨
+    'w-anime-106': "goofy", // 高飛
+    'w-anime-107': "pluto the dog|pluto", // 布魯托
+    'w-anime-108': "winnie the pooh|pooh", // 小熊維尼
+    'w-anime-109': "tigger", // 跳跳虎
+    'w-anime-110': "eeyore", // 屹耳
+    'w-anime-111': "stitch", // 史迪奇
+    'w-anime-112': "buzz lightyear", // 巴斯光年
+    'w-anime-113': "woody", // 胡迪
+    'w-anime-114': "little green men|toy story aliens", // 三眼怪
+    'w-anime-115': "nemo", // 尼莫
+    'w-anime-116': "dory", // 多莉
+    'w-anime-117': "lightning mcqueen", // 閃電麥坤
+    'w-anime-118': "elsa", // 艾莎
+    'w-anime-119': "anna", // 安娜
+    'w-anime-120': "simba", // 辛巴
+    'w-anime-121': "pumbaa", // 彭彭
+    'w-anime-122': "timon", // 丁滿
+    'w-anime-123': "genie", // 神燈精靈
+    'w-anime-124': "princess jasmine|jasmine", // 茉莉公主
+    'w-anime-125': "belle", // 貝兒
+    'w-anime-126': "ariel", // 愛麗兒
+    'w-anime-127': "chip and dale|chip n dale", // 奇奇蒂蒂
+    'w-anime-128': "spongebob|spongebob squarepants", // 海綿寶寶
+    'w-anime-129': "patrick star|patrick", // 派大星
+    'w-anime-130': "squidward", // 章魚哥
+    'w-anime-131': "mr. krabs|mr krabs", // 蟹老闆
+    'w-anime-132': "tom cat|tom", // 湯姆貓
+    'w-anime-133': "jerry mouse|jerry", // 傑利鼠
+    'w-anime-134': "bugs bunny", // 兔巴哥
+    'w-anime-135': "tweety|tweety bird", // 崔弟
+    'w-anime-136': "road runner", // 嗶嗶鳥
+    'w-anime-137': "wile e. coyote|wile e coyote", // 威利狼
+    'w-anime-138': "peppa pig", // 粉紅豬小妹
+    'w-anime-139': "teletubbies", // 天線寶寶
+    'w-anime-140': "paw patrol", // 汪汪隊
+    'w-anime-141': "dora the explorer|dora", // 朵拉
+    'w-anime-142': "minions|minion", // 小小兵
+    'w-anime-143': "despicable me", // 神偷奶爸
+    'w-anime-144': "shrek", // 史瑞克
+    'w-anime-145': "puss in boots", // 鞋貓劍客
+    'w-anime-146': "ice age movie|ice age", // 冰原歷險記
+    'w-anime-147': "rio", // 里約大冒險
+    'w-anime-148': "the smurfs|smurfs", // 藍色小精靈
+    'w-anime-149': "the simpsons|simpsons", // 辛普森家庭
+    'w-anime-150': "adventure time", // 探險活寶
+    'w-anime-151': "powerpuff girls", // 飛天小女警
+    'w-anime-152': "scooby-doo|scooby doo", // 史酷比
+    'w-anime-153': "teenage mutant ninja turtles|ninja turtles", // 忍者龜
+    'w-anime-154': "power rangers", // 金剛戰士
+    'w-anime-155': "ultraman", // 鹹蛋超人
+    'w-anime-156': "kamen rider", // 假面騎士
+    'w-anime-157': "godzilla", // 哥吉拉
+    'w-anime-158': "mazinger z", // 無敵鐵金剛
+    'w-anime-159': "gatchaman", // 科學小飛俠
+    'w-taiwan-80': "coffin bread", // 棺材板
+    'w-taiwan-81': "milkfish", // 虱目魚
+    'w-taiwan-82': "mullet roe|karasumi", // 烏魚子
+    'w-taiwan-83': "tube rice pudding", // 筒仔米糕
+    'w-taiwan-84': "oyster fritter", // 蚵嗲
+    'w-taiwan-85': "sausage in sticky rice|taiwanese hot dog", // 大腸包小腸
+    'w-taiwan-86': "herbal pork rib soup", // 藥燉排骨
+    'w-taiwan-87': "four herbs soup", // 四神湯
+    'w-taiwan-88': "iron egg", // 鐵蛋
+    'w-taiwan-89': "a-gei|tamsui a-gei", // 阿給
+    'w-taiwan-90': "fish ball soup", // 魚丸湯
+    'w-taiwan-91': "ox tongue pastry", // 牛舌餅
+    'w-taiwan-92': "square cookie|cube pastry", // 方塊酥
+    'w-taiwan-93': "mung bean pastry", // 綠豆椪
+    'w-taiwan-94': "wanluan pork knuckle", // 萬巒豬腳
+    'w-taiwan-95': "chishang bento", // 池上便當
+    'w-taiwan-96': "wendan pomelo|pomelo", // 文旦
+    'w-taiwan-97': "irwin mango", // 愛文芒果
+    'w-taiwan-98': "high mountain tea", // 高山茶
+    'w-taiwan-99': "marble soda|ramune", // 彈珠汽水
+    'w-taiwan-100': "sarsaparilla|root beer", // 沙士
+    'w-taiwan-101': "kaoliang liquor|kaoliang", // 高粱酒
+    'w-taiwan-102': "peanut candy|kinmen peanut candy", // 貢糖
+    'w-taiwan-103': "bamboo tube rice", // 竹筒飯
+    'w-taiwan-104': "millet wine", // 小米酒
+    'w-taiwan-105': "lei cha|pounded tea", // 擂茶
+    'w-taiwan-106': "hakka floral fabric", // 客家花布
+    'w-taiwan-107': "glass beads|paiwan glass beads", // 琉璃珠
+    'w-taiwan-108': "slate house", // 石板屋
+    'w-taiwan-109': "hundred-pace snake|hundred pacer", // 百步蛇
+    'w-taiwan-110': "military dependents village", // 眷村
+    'w-taiwan-111': "holy pig|sacrificial pig", // 神豬
+    'w-taiwan-112': "burning of the king boat|king boat burning", // 燒王船
+    'w-taiwan-113': "song jiang battle array", // 宋江陣
+    'w-taiwan-114': "grappling with ghosts|qiang gu", // 搶孤
+    'w-taiwan-115': "parade float|yi ge float", // 藝閣
+    'w-taiwan-116': "earth god temple|tudigong temple", // 土地公廟
+    'w-taiwan-117': "city god temple", // 城隍廟
+    'w-taiwan-118': "scooter waterfall", // 機車瀑布
+    'w-taiwan-119': "priority seat", // 博愛座
+    'w-taiwan-120': "yangmingshan", // 陽明山
+    'w-taiwan-121': "elephant mountain|xiangshan", // 象山
+    'w-taiwan-122': "maokong", // 貓空
+    'w-taiwan-123': "pingxi", // 平溪
+    'w-taiwan-124': "shifen waterfall", // 十分瀑布
+    'w-taiwan-125': "fulong", // 福隆
+    'w-taiwan-126': "jiaoxi", // 礁溪
+    'w-taiwan-127': "wuling farm", // 武陵農場
+    'w-taiwan-128': "xitou", // 溪頭
+    'w-taiwan-129': "jiji", // 集集
+    'w-taiwan-130': "baguashan|bagua mountain", // 八卦山
+    'w-taiwan-131': "sanxiantai", // 三仙台
+    'w-taiwan-132': "brown boulevard|mr. brown avenue", // 伯朗大道
+    'w-taiwan-133': "chishang", // 池上
+    'w-taiwan-134': "cijin", // 旗津
+    'w-taiwan-135': "sizihwan", // 西子灣
+    'w-taiwan-136': "love river", // 愛河
+    'w-taiwan-137': "fo guang shan", // 佛光山
+    'w-taiwan-138': "lotus pond", // 蓮池潭
+    'w-taiwan-139': "moon world", // 月世界
+    'w-taiwan-140': "hengchun", // 恆春
+    'w-taiwan-141': "qixingtan", // 七星潭
+    'w-taiwan-142': "qingshui cliff", // 清水斷崖
+    'w-taiwan-143': "hsuehshan tunnel|xueshan tunnel", // 雪山隧道
+    'w-taiwan-144': "suhua highway", // 蘇花公路
+    'w-taiwan-145': "xiluo bridge", // 西螺大橋
+    'w-taiwan-146': "shimen reservoir", // 石門水庫
+    'w-taiwan-147': "chianan canal", // 嘉南大圳
+    'w-taiwan-148': "forest railway|alishan forest railway", // 森林鐵路
+    'w-taiwan-149': "presidential office building|presidential office", // 總統府
+    'w-taiwan-150': "grand hotel|grand hotel taipei", // 圓山飯店
+    'w-taiwan-151': "taipei arena", // 小巨蛋
+    'w-taiwan-152': "xingtian temple", // 行天宮
+    'w-taiwan-153': "atayal", // 泰雅族
+    'w-taiwan-154': "amis", // 阿美族
+    'w-taiwan-155': "tao people|yami", // 達悟族
+    'w-taiwan-156': "pasibutbut|eight-part polyphony", // 八部合音
+    'w-taiwan-157': "guanziling", // 關子嶺
+    'w-taiwan-158': "sanyi", // 三義
+    'w-taiwan-159': "yingge", // 鶯歌
+    'w-festival-71': "christmas present|christmas gift", // 聖誕禮物
+    'w-festival-72': "birthday party", // 生日派對
+    'w-festival-73': "giving red envelopes|handing out red envelopes", // 發紅包
+    'w-festival-74': "hanging lanterns|hang a lantern", // 掛燈籠
+    'w-festival-75': "bridal bouquet|wedding bouquet", // 捧花
+    'w-festival-76': "year-end party|weiya", // 尾牙
+    'w-festival-77': "lucky draw|raffle|prize draw", // 抽獎
+    'w-festival-78': "spring cleaning|big cleanup", // 大掃除
+    'w-festival-79': "putting up spring couplets|pasting couplets", // 貼春聯
+    'w-festival-80': "wrapping zongzi|making rice dumplings", // 包粽子
+    'w-festival-81': "christmas dinner|christmas feast", // 聖誕大餐
+    'w-festival-82': "pumpkin pie", // 南瓜派
+    'w-festival-83': "love letter", // 情書
+    'w-festival-84': "marriage proposal|proposing", // 求婚
+    'w-festival-85': "wedding banquet|wedding feast", // 喜宴
+    'w-festival-86': "longevity peach bun|birthday peach bun", // 壽桃
   };
 }));

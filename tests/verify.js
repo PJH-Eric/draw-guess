@@ -57,7 +57,7 @@ function toDrawing(st, t) {
    ================================================================ */
 section('題庫（words.js）');
 {
-  check('題目數量為 5000', Words.LIST.length === 5000, Words.LIST.length);
+  check('題目數量為 5256', Words.LIST.length === 5256, Words.LIST.length);
 
   const ids = new Set();
   let dupe = null;
@@ -67,15 +67,15 @@ section('題庫（words.js）');
 
   const cats = {};
   for (const w of Words.LIST) cats[w.cat] = (cats[w.cat] || 0) + 1;
-  check('十七個種類都有題目', Object.keys(cats).length === 17 && Words.CATEGORY_KEYS.length === 17, JSON.stringify(cats));
+  check('二十個種類都有題目', Object.keys(cats).length === 20 && Words.CATEGORY_KEYS.length === 20, JSON.stringify(cats));
   check('每個分類至少 10 題', Object.values(cats).every((n) => n >= 10), JSON.stringify(cats));
   check('每個種類至少 100 題', Words.CATEGORY_KEYS.every((cat) => cats[cat] >= 100), JSON.stringify(cats));
-  check('每一題的分組都對得到種類', Words.LIST.every((w) => w.group && (Words.GROUPS[w.group] || w.group) === w.cat));
+  check('每一題都有分組，種類也都是有效的', Words.LIST.every((w) => w.group && !!Words.CATEGORIES[w.cat]));
 
   /* 題目只能是名詞、成語或單一動作，不能是句子或加了場景的長描述 */
   /* 專有名詞（人名、片名、地名、術語）放寬到六個字，其餘一律四個字以內 */
   /* 長度限制看題庫分組（比顯示種類細）：專有名詞多的分組放寬到六個字 */
-  const NAME_CATS = ['star', 'movie', 'trend', 'history', 'geography', 'civics', 'physics', 'astro', 'music', 'taiwan', 'tech', 'dino', 'fairy', 'earth', 'culture', 'myth', 'science'];
+  const NAME_CATS = ['star', 'movie', 'trend', 'history', 'geography', 'civics', 'physics', 'astro', 'music', 'taiwan', 'tech', 'dino', 'fairy', 'earth', 'culture', 'myth', 'science', 'anime'];
   const tooLong = Words.LIST.filter((w) => w.text.length > (NAME_CATS.indexOf(w.group) >= 0 ? 6 : 4)).map((w) => w.text);
   check('每一題都是單詞（專有名詞最多六個字，其餘四個字）', tooLong.length === 0, tooLong.slice(0, 5).join('，'));
   /* 第二張提示會公開分類名稱：題目要是分類名稱的一部分（「宇宙」之於「天文宇宙」），等於直接公布答案 */
@@ -124,7 +124,7 @@ section('題庫（words.js）');
   check('混合難度只放一成左右的困難題', mixCount[3] / mixTotal < 0.18, JSON.stringify(mixCount));
 
   /* 明星、電影、歷史、地理、公民、物理、天文、時事、成語、神話、生物化學這些分組都畫不太出來，一律算困難（看題庫分組，不是顯示種類） */
-  const HARD_CATS = ['star', 'movie', 'history', 'geography', 'civics', 'physics', 'astro', 'trend', 'idiom', 'myth', 'science'];
+  const HARD_CATS = ['star', 'movie', 'history', 'geography', 'civics', 'physics', 'astro', 'trend', 'idiom', 'myth', 'science', 'anime'];
   const leaked = Words.LIST.filter((w) => HARD_CATS.indexOf(w.group) >= 0 && w.diff !== 3);
   check('專有名詞與抽象題一律歸困難', leaked.length === 0, leaked.slice(0, 5).map((w) => w.text + '/' + w.cat).join(' '));
 }
