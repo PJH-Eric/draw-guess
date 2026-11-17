@@ -1,7 +1,8 @@
 /* ================================================================
  * 線上大廳：暱稱＋狀態標籤一列，「開房」「用房號加入」兩張並排卡片
  * ================================================================ */
-.lobby-me{align-items:center;gap:10px 14px}
+.screen#s-lobby .panel{width:min(100%,1120px)}
+.lobby-me{align-items:center;gap:10px 14px;margin:2px 0 14px;padding:8px 10px;border:2px solid rgba(222,211,234,.88);border-radius:18px;background:rgba(255,253,248,.56)}
 .lobby-nick{flex:1 1 240px;max-width:440px}
 .lobby-status{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
 .lobby-status .lobby-state{
@@ -10,10 +11,10 @@
 }
 #lobby-state::before{content:"";flex:0 0 auto;width:9px;height:9px;border-radius:50%;background:var(--lemon-d)}
 #lobby-state[data-ok=true]::before{background:var(--ok)}
-.lobby-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr));gap:12px;margin:2px 0 4px}
+.lobby-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr));gap:14px;margin:4px 0 6px}
 .lobby-card{
   display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 12px;align-items:center;align-content:space-between;
-  padding:14px;border:3px solid var(--ink);border-radius:22px;background:var(--surface);box-shadow:0 6px 0 var(--shade-2);
+  min-height:184px;padding:16px;border:3px solid var(--ink);border-radius:22px;background:var(--surface);box-shadow:0 6px 0 var(--shade-2);
 }
 .lobby-card[data-tone=mint]{background:linear-gradient(165deg,var(--mint-tint),var(--surface) 72%)}
 .lobby-card[data-tone=grape]{background:linear-gradient(165deg,var(--grape-tint),var(--surface) 72%)}
@@ -22,6 +23,7 @@
 .lobby-card-ico .ico{width:26px;height:26px}
 .lobby-card h3{margin:0;font-size:1.1rem;letter-spacing:.03em}
 .lobby-card p{margin:2px 0 0;font-size:.8rem;line-height:1.55;color:var(--ink-soft)}
+.lobby-card-text{min-width:0}
 .lobby-card > .btn3d,.lobby-card > .lobby-join{grid-column:1 / -1}
 .lobby-card > .btn3d{width:100%}
 .lobby-card .lobby-join{flex-wrap:nowrap}
@@ -33,6 +35,23 @@
 .lobby-empty h3{margin:0 0 4px;font-size:1.15rem;color:var(--grape-t)}
 .lobby-empty p{margin:0 auto 14px;max-width:440px;color:var(--ink-soft);font-size:.9rem;line-height:1.7}
 .lobby-about{max-width:none;margin:14px 0 0}
+@media (max-width:620px){
+  .lobby-me{gap:6px 8px;margin-bottom:10px;padding:6px 8px}
+  .lobby-nick{flex:1 1 100%;max-width:none}
+  .lobby-status{width:100%;margin-left:0}
+  .lobby-card{min-height:0;gap:8px 10px;padding:12px}
+  .lobby-card > .btn3d{min-height:48px}
+  .lobby-card p{font-size:.82rem;line-height:1.45}
+}
+@media (max-width:400px){
+  .lobby-card{grid-template-columns:40px minmax(0,1fr);gap:8px 10px;padding:12px}
+  .lobby-card-ico{width:40px;height:40px;border-radius:13px}
+  .lobby-card-ico .ico{width:22px;height:22px}
+  .lobby-card h3{font-size:1rem}
+}
+@media (min-width:1220px){
+  html.lc-wide-open .screen#s-lobby .panel{width:min(100%,880px)}
+}
 
 /* ================================================================
  * 房間設定卡：空位、鎖定的語系欄位、邀請連結

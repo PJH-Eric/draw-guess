@@ -227,20 +227,22 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 }
 .lobby-join input{letter-spacing:.12em;text-transform:uppercase}
 .lobby-nick input:focus,.lobby-join input:focus{border-color:var(--grape-d);box-shadow:0 0 0 3px rgba(164,143,219,.28)}
-.lobby-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;flex-wrap:wrap}
-.lobby-bar .lbl{margin:0;flex:1 1 auto}
+.lobby-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:18px;padding:0 2px 8px;border-bottom:2px dashed var(--line);flex-wrap:wrap}
+.lobby-bar .lbl{display:flex;align-items:center;gap:9px;margin:0;flex:1 1 auto;color:var(--grape-t);font-size:1.06rem}
+.lobby-bar .lbl::before{content:"";width:10px;height:10px;flex:0 0 auto;border:2px solid var(--grape-d);border-radius:50%;background:var(--grape)}
 .lobby-state{margin:8px 4px;font-size:.85rem;font-weight:800;color:var(--ink-soft)}
-.roomlist{display:flex;flex-direction:column;gap:10px}
+.roomlist{display:flex;flex-direction:column;gap:12px;margin-top:10px}
 .roomcard{
-  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
-  border:3px solid var(--line);border-radius:20px;background:var(--surface);padding:11px 14px;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  border:3px solid var(--line);border-radius:22px;background:linear-gradient(110deg,var(--grape-wash),var(--surface) 46%);padding:13px 16px;
   box-shadow:0 4px 0 var(--shade-1)
 }
-.roomcard .rc-code{font-weight:900;font-size:1.15rem;letter-spacing:.14em;color:var(--grape-t);min-width:64px}
-.roomcard .rc-main{flex:1 1 200px;min-width:0}
-.roomcard .rc-name{font-weight:800;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.roomcard .rc-sub{font-size:.78rem;color:var(--ink-soft);font-weight:700}
-.roomcard .rc-btns{display:flex;gap:8px;flex-wrap:wrap}
+.roomcard .rc-code{display:grid;place-items:center;flex:0 0 78px;min-width:78px;min-height:46px;border:2px solid var(--grape-d);border-radius:14px;background:var(--grape-tint);font-weight:900;font-size:1.04rem;letter-spacing:.14em;color:var(--grape-t)}
+.roomcard .rc-main{flex:1 1 240px;min-width:0}
+.roomcard .rc-name{font-size:1rem;font-weight:900;letter-spacing:.02em;line-height:1.35;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.roomcard .rc-sub{display:block;margin-top:4px;font-size:.78rem;line-height:1.7;color:var(--ink-soft);font-weight:700}
+.roomcard .rc-btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.roomcard .rc-btns .btn3d{min-width:76px}
 /* 房間規則 chip：純顯示，放在房名／人數下面，放不下就換行，不擠壓右邊的加入／觀戰 */
 .rc-rules{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;min-width:0}
 .rc-rule{
@@ -251,26 +253,40 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 .rc-rule .ico{width:1.1em;height:1.1em}
 .rc-rule-t{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .rc-progress{margin-right:6px;font-weight:900;color:var(--ink)}
-.lobby-filter{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin:10px 0 2px}
-.lobby-filter-open{flex:0 0 auto;min-height:48px}
+.lobby-filter{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:10px;align-items:end;margin:12px 0 2px;padding:10px;border:2px solid var(--line);border-radius:18px;background:rgba(255,255,255,.58)}
+.lobby-filter-open{flex:0 0 auto;min-height:48px;white-space:normal}
 .pillbtn[aria-pressed=true]{background:var(--grape);border-color:var(--grape-d);color:var(--ink-deep)}
 .rc-faces{display:inline-flex;align-items:center;vertical-align:middle;margin-right:6px}
 .rc-face{width:20px;height:20px;margin-left:-5px;border-radius:50%;background:var(--surface)}
 .rc-face:first-child{margin-left:0}
 .rc-face svg{width:100%;height:100%;display:block}
 .rc-more{margin-left:3px;font-weight:900;font-size:.72rem;color:var(--ink)}
-.lobby-filter-field{flex:1 1 200px;min-width:0;display:flex;flex-direction:column;gap:4px;font-size:.8rem;font-weight:800;color:var(--ink-soft)}
+.lobby-filter-field{min-width:0;display:flex;flex-direction:column;gap:5px;font-size:.8rem;font-weight:800;color:var(--ink-soft)}
 #b-lobby-filter-clear{align-self:flex-start;margin-top:4px}
+.lobby-about{margin-top:12px;background:rgba(255,255,255,.72)}
+.lobby-about summary{justify-content:space-between;gap:12px;min-height:44px;list-style:none}
+.lobby-about summary::-webkit-details-marker{display:none}
+.lobby-about summary::after{content:"＋";display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;border:2px solid var(--line);border-radius:10px;background:var(--grape-wash);color:var(--grape-t);font-size:1.1rem;line-height:1}
+.lobby-about[open] summary{padding-bottom:8px;border-bottom:2px dashed var(--line)}
+.lobby-about[open] summary::after{content:"−"}
+.lobby-about summary:focus-visible{outline:3px solid var(--sky-d);outline-offset:3px;border-radius:8px}
 /* 窄版：房號與房名同一列、chip 佔滿整列、加入／觀戰各佔一半 */
 @media (max-width:560px){
   .roomcard{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;align-items:center;padding:10px 12px}
   .roomcard .rc-main{display:contents}
-  .roomcard .rc-code{min-width:0;grid-column:1;grid-row:1}
+  .roomcard .rc-code{grid-column:1;grid-row:1}
   .roomcard .rc-name{grid-column:2;grid-row:1}
   .roomcard .rc-sub,.roomcard .rc-rules,.roomcard .rc-btns{grid-column:1 / -1}
   .roomcard .rc-rules{margin-top:2px}
   .roomcard .rc-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
   .roomcard .rc-btns .btn3d{width:100%}
+}
+@media (max-width:620px){
+  .lobby-bar{margin-top:12px;gap:8px}
+  .lobby-bar .lbl{padding-left:56px}
+  .lobby-actions{gap:10px;margin-top:2px;margin-bottom:2px}
+  .lobby-filter{grid-template-columns:minmax(0,1fr);gap:8px;padding:9px}
+  .lobby-filter-open{width:100%;min-height:48px}
 }
 /* 夠寬時右上角按鈕落在面板外側，不會壓到內容，抬頭就不用黏住 */
 @media (min-width:1140px){
@@ -1700,7 +1716,8 @@ body.no-tools:not(.solo-mode) .guessfeed{
 /* ================================================================
  * 線上大廳：暱稱＋狀態標籤一列，「開房」「用房號加入」兩張並排卡片
  * ================================================================ */
-.lobby-me{align-items:center;gap:10px 14px}
+.screen#s-lobby .panel{width:min(100%,1120px)}
+.lobby-me{align-items:center;gap:10px 14px;margin:2px 0 14px;padding:8px 10px;border:2px solid rgba(222,211,234,.88);border-radius:18px;background:rgba(255,253,248,.56)}
 .lobby-nick{flex:1 1 240px;max-width:440px}
 .lobby-status{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
 .lobby-status .lobby-state{
@@ -1709,10 +1726,10 @@ body.no-tools:not(.solo-mode) .guessfeed{
 }
 #lobby-state::before{content:"";flex:0 0 auto;width:9px;height:9px;border-radius:50%;background:var(--lemon-d)}
 #lobby-state[data-ok=true]::before{background:var(--ok)}
-.lobby-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr));gap:12px;margin:2px 0 4px}
+.lobby-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr));gap:14px;margin:4px 0 6px}
 .lobby-card{
   display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 12px;align-items:center;align-content:space-between;
-  padding:14px;border:3px solid var(--ink);border-radius:22px;background:var(--surface);box-shadow:0 6px 0 var(--shade-2);
+  min-height:184px;padding:16px;border:3px solid var(--ink);border-radius:22px;background:var(--surface);box-shadow:0 6px 0 var(--shade-2);
 }
 .lobby-card[data-tone=mint]{background:linear-gradient(165deg,var(--mint-tint),var(--surface) 72%)}
 .lobby-card[data-tone=grape]{background:linear-gradient(165deg,var(--grape-tint),var(--surface) 72%)}
@@ -1721,6 +1738,7 @@ body.no-tools:not(.solo-mode) .guessfeed{
 .lobby-card-ico .ico{width:26px;height:26px}
 .lobby-card h3{margin:0;font-size:1.1rem;letter-spacing:.03em}
 .lobby-card p{margin:2px 0 0;font-size:.8rem;line-height:1.55;color:var(--ink-soft)}
+.lobby-card-text{min-width:0}
 .lobby-card > .btn3d,.lobby-card > .lobby-join{grid-column:1 / -1}
 .lobby-card > .btn3d{width:100%}
 .lobby-card .lobby-join{flex-wrap:nowrap}
@@ -1732,6 +1750,23 @@ body.no-tools:not(.solo-mode) .guessfeed{
 .lobby-empty h3{margin:0 0 4px;font-size:1.15rem;color:var(--grape-t)}
 .lobby-empty p{margin:0 auto 14px;max-width:440px;color:var(--ink-soft);font-size:.9rem;line-height:1.7}
 .lobby-about{max-width:none;margin:14px 0 0}
+@media (max-width:620px){
+  .lobby-me{gap:6px 8px;margin-bottom:10px;padding:6px 8px}
+  .lobby-nick{flex:1 1 100%;max-width:none}
+  .lobby-status{width:100%;margin-left:0}
+  .lobby-card{min-height:0;gap:8px 10px;padding:12px}
+  .lobby-card > .btn3d{min-height:48px}
+  .lobby-card p{font-size:.82rem;line-height:1.45}
+}
+@media (max-width:400px){
+  .lobby-card{grid-template-columns:40px minmax(0,1fr);gap:8px 10px;padding:12px}
+  .lobby-card-ico{width:40px;height:40px;border-radius:13px}
+  .lobby-card-ico .ico{width:22px;height:22px}
+  .lobby-card h3{font-size:1rem}
+}
+@media (min-width:1220px){
+  html.lc-wide-open .screen#s-lobby .panel{width:min(100%,880px)}
+}
 
 /* ================================================================
  * 房間設定卡：空位、鎖定的語系欄位、邀請連結
