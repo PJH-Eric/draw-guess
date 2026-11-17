@@ -92,8 +92,10 @@ if (lobby) {
 if (path.basename(root) === 'draw-guess') {
   const Words = require('../public/js/words.js');
   const hansWords = require('../public/js/words.zh-Hans.js');
-  assert.equal(Object.keys(hansWords).length, Words.LIST.length, '簡體題庫要涵蓋全部題目');
+  const slotIds = Words.slots().map((word) => word.id).sort();
+  assert.deepEqual(Object.keys(hansWords).sort(), slotIds, '簡體題庫要涵蓋所有範本題目（含保留題目）');
   for (const word of Words.LIST) {
+    assert.ok(Object.hasOwn(hansWords, word.id), `簡體題庫缺少上場題目：${word.id}`);
     const simplified = Words.localize(word, 'zh-Hans');
     assert.equal(simplified.lang, 'zh-Hans');
     assert.ok(simplified.text && simplified.id === word.id);
