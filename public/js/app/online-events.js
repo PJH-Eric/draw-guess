@@ -1,13 +1,13 @@
 /* ===== app/online-events.js — 線上事件 ===== */
 
-import { $, Sound, Store, Words, app, toast } from './core.js?v=7470c6659e';
-import { modals } from './modal.js?v=7470c6659e';
-import { localizeGame } from './solo.js?v=7470c6659e';
-import { pushFeed, replaceFeed } from './feed.js?v=7470c6659e';
-import { render } from './render.js?v=7470c6659e';
-import { renderAside } from './overlay.js?v=7470c6659e';
-import { renderGameSettings } from './game-settings.js?v=7470c6659e';
-import { forgetRoom, joinRoom, leaveGame, renderRoomList, saveNick, setLobbyEnabled } from './lobby.js?v=7470c6659e';
+import { $, Sound, Store, Words, app, toast } from './core.js?v=dc086ad2ad';
+import { modals } from './modal.js?v=dc086ad2ad';
+import { localizeGame } from './solo.js?v=dc086ad2ad';
+import { pushFeed, replaceFeed } from './feed.js?v=dc086ad2ad';
+import { render } from './render.js?v=dc086ad2ad';
+import { renderAside } from './overlay.js?v=dc086ad2ad';
+import { renderGameSettings } from './game-settings.js?v=dc086ad2ad';
+import { forgetRoom, joinRoom, leaveGame, renderRoomList, saveNick, setLobbyEnabled } from './lobby.js?v=dc086ad2ad';
 
 var w = window;
 

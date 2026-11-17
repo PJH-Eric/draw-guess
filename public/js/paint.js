@@ -177,6 +177,66 @@
     ctx.putImageData(img, 0, 0);
   }
 
+  /* ------------------------------------------------------------ 游標 */
+
+  /* 滑鼠移進畫布時，游標跟著工具變：鉛筆／筆刷／橡皮擦顯示「實際筆寬」的圓圈，
+     形狀工具是十字準星加上小圖示，油漆桶是倒出顏料的桶子。
+     樣式只掛在畫布上，離開畫布就回到一般游標。瀏覽器游標圖最大 128px，筆寬再大就封頂。 */
+  var CURSOR_MAX = 96;
+  var CURSOR_INK = '#4A3B55';
+
+  function svgCursor(svg, size, hx, hy) {
+    var body = '<svg xmlns="http://www.w3.org/2000/svg" width="' + size + '" height="' + size +
+      '" viewBox="0 0 ' + size + ' ' + size + '">' + svg + '</svg>';
+    return 'url("data:image/svg+xml,' + encodeURIComponent(body) + '") ' +
+      Math.round(hx) + ' ' + Math.round(hy) + ', crosshair';
+  }
+
+  /** tool：工具；c：色碼；diameter：筆寬在螢幕上的直徑（CSS px） */
+  function cursorFor(tool, c, diameter) {
+    var INK = CURSOR_INK;
+    if (tool === 'fill') {
+      /* 桶子傾斜，顏料從左邊流下來；熱點就在那一滴 */
+      return svgCursor(
+        '<path d="M9 13 L17 5 L27 15 L19 23 Z" fill="#fff" stroke="' + INK + '" stroke-width="2" stroke-linejoin="round"/>' +
+        '<path d="M12 14 L22 14 L19 23 Z" fill="' + c + '" stroke="' + INK + '" stroke-width="1.2" stroke-linejoin="round"/>' +
+        '<path d="M15 7 Q20 1 24 6" fill="none" stroke="' + INK + '" stroke-width="2" stroke-linecap="round"/>' +
+        '<path d="M9 13 Q3 17 4 25 Q5 29 8 26 Q9 21 11 17" fill="' + c + '" stroke="' + INK + '" stroke-width="1.5" stroke-linejoin="round"/>',
+        32, 5, 27);
+    }
+    if (tool === 'line' || tool === 'rect' || tool === 'ellipse') {
+      var glyph = tool === 'line'
+        ? '<path d="M20 29 L29 20" stroke="' + INK + '" stroke-width="4" stroke-linecap="round"/>' +
+          '<path d="M20 29 L29 20" stroke="' + c + '" stroke-width="2" stroke-linecap="round"/>'
+        : tool === 'rect'
+          ? '<rect x="19.5" y="21.5" width="10" height="7" rx="1" fill="' + c + '" stroke="' + INK + '" stroke-width="2"/>'
+          : '<ellipse cx="24.5" cy="25" rx="5.5" ry="4" fill="' + c + '" stroke="' + INK + '" stroke-width="2"/>';
+      var cross = 'M11 2 V8 M11 14 V20 M2 11 H8 M14 11 H20';
+      return svgCursor(
+        '<path d="' + cross + '" stroke="#fff" stroke-width="4" stroke-linecap="round"/>' +
+        '<path d="' + cross + '" stroke="' + INK + '" stroke-width="3" stroke-linecap="round"/>' +
+        '<path d="' + cross + '" stroke="' + c + '" stroke-width="1.4" stroke-linecap="round"/>' +
+        '<circle cx="11" cy="11" r="1.8" fill="' + c + '" stroke="' + INK + '" stroke-width="1"/>' +
+        glyph,
+        32, 11, 11);
+    }
+    /* pen / brush / erase：圓圈就是實際會畫到的範圍 */
+    var d = Math.max(4, Math.min(CURSOR_MAX, diameter));
+    var size = Math.ceil(d + 6);
+    if (size % 2) size += 1;
+    var mid = size / 2, r = d / 2;
+    var shape = tool === 'erase'
+      ? '<circle cx="' + mid + '" cy="' + mid + '" r="' + r + '" fill="rgba(255,253,248,.8)" stroke="#fff" stroke-width="3"/>' +
+        '<circle cx="' + mid + '" cy="' + mid + '" r="' + r + '" fill="none" stroke="' + INK + '" stroke-width="1.5" stroke-dasharray="3 2"/>'
+      /* 筆刷：外圈白、內圈深色勾邊，中間是目前顏色的實線圈＋半透明填色，淺色或白色也看得到 */
+      : '<circle cx="' + mid + '" cy="' + mid + '" r="' + r + '" fill="' + c + '" fill-opacity=".45" stroke="' + INK + '" stroke-width="4"/>' +
+        '<circle cx="' + mid + '" cy="' + mid + '" r="' + r + '" fill="none" stroke="' + c + '" stroke-width="2"/>' +
+        '<circle cx="' + mid + '" cy="' + mid + '" r="' + (r + 2) + '" fill="none" stroke="#fff" stroke-width="1"/>';
+    /* 中心點：小筆寬時也能精準對位 */
+    shape += '<circle cx="' + mid + '" cy="' + mid + '" r="1.2" fill="' + INK + '"/>';
+    return svgCursor(shape, size, mid, mid);
+  }
+
   /* ------------------------------------------------------------ 主體 */
 
   function create(view, opts) {
@@ -224,6 +284,23 @@
         view.height = ch;
       }
       dirty = true;
+      updateCursor();
+    }
+
+    /* 能畫時才換游標；筆寬換算成畫布在螢幕上的實際直徑，畫布縮放時跟著更新 */
+    var cursorKey = '';
+    function updateCursor() {
+      if (!enabled) {
+        if (cursorKey) { cursorKey = ''; view.style.cursor = ''; }
+        return;
+      }
+      var wi = tool === 'brush' ? Math.min(Rules.WIDTHS.length - 1, width + 1) : width;
+      var rectW = view.getBoundingClientRect().width || 0;
+      var dia = Math.round(Rules.WIDTHS[wi] * rectW / BOX);
+      var key = tool + '|' + color + '|' + dia;
+      if (key === cursorKey) return;
+      cursorKey = key;
+      view.style.cursor = cursorFor(tool, colorOf(color), dia);
     }
 
     function paintFrame() {
@@ -404,14 +481,15 @@
         enabled = !!v;
         if (!enabled) cancel();
         view.classList.toggle('drawable', enabled);
+        updateCursor();
       },
       isEnabled: function () { return enabled; },
 
-      setTool: function (t) { if (Rules.TOOLS[t]) { tool = t; cancel(); } return tool; },
+      setTool: function (t) { if (Rules.TOOLS[t]) { tool = t; cancel(); updateCursor(); } return tool; },
       getTool: function () { return tool; },
-      setColor: function (i) { color = clamp(i | 0, 0, Rules.COLORS.length - 1); return color; },
+      setColor: function (i) { color = clamp(i | 0, 0, Rules.COLORS.length - 1); updateCursor(); return color; },
       getColor: function () { return color; },
-      setWidth: function (i) { width = clamp(i | 0, 0, Rules.WIDTHS.length - 1); return width; },
+      setWidth: function (i) { width = clamp(i | 0, 0, Rules.WIDTHS.length - 1); updateCursor(); return width; },
       getWidth: function () { return width; },
       setFilled: function (v) { filled = !!v; return filled; },
       isFilled: function () { return filled; },
