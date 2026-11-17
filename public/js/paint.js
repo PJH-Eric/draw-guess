@@ -196,13 +196,24 @@
   function cursorFor(tool, c, diameter) {
     var INK = CURSOR_INK;
     if (tool === 'fill') {
-      /* 桶子傾斜，顏料從左邊流下來；熱點就在那一滴 */
+      /* 白色小桶往左上傾，桶口是目前顏色，顏料流成一滴；熱點就在那一滴 */
+      var bucket =
+        '<path d="M12.5 9 Q19 -1.5 25.5 9" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>' +
+        '<path d="M12.5 9 Q19 -1.5 25.5 9" fill="none" stroke="' + INK + '" stroke-width="1.8" stroke-linecap="round"/>' +
+        '<path d="M12 9 L26 9 L24 22 Q19 24.5 14 22 Z" fill="#fff" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>' +
+        '<path d="M12 9 L26 9 L24 22 Q19 24.5 14 22 Z" fill="#FFFDF8" stroke="' + INK + '" stroke-width="1.8" stroke-linejoin="round"/>' +
+        '<path d="M12.9 15 L25.1 15 L24.6 18 L13.4 18 Z" fill="#FFC6D6"/>' +
+        '<path d="M15 11.5 L15.8 20" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>' +
+        '<ellipse cx="19" cy="9" rx="7" ry="2.6" fill="' + c + '" stroke="' + INK + '" stroke-width="1.6"/>';
+      var pour = 'M11 13.2 Q6.5 15.5 6.2 21.5';
+      var drop = 'M6.2 20.5 Q2.6 25 6.2 28.6 Q9.8 25 6.2 20.5 Z';
       return svgCursor(
-        '<path d="M9 13 L17 5 L27 15 L19 23 Z" fill="#fff" stroke="' + INK + '" stroke-width="2" stroke-linejoin="round"/>' +
-        '<path d="M12 14 L22 14 L19 23 Z" fill="' + c + '" stroke="' + INK + '" stroke-width="1.2" stroke-linejoin="round"/>' +
-        '<path d="M15 7 Q20 1 24 6" fill="none" stroke="' + INK + '" stroke-width="2" stroke-linecap="round"/>' +
-        '<path d="M9 13 Q3 17 4 25 Q5 29 8 26 Q9 21 11 17" fill="' + c + '" stroke="' + INK + '" stroke-width="1.5" stroke-linejoin="round"/>',
-        32, 5, 27);
+        '<g transform="rotate(-35 19 14)">' + bucket + '</g>' +
+        '<path d="' + pour + '" fill="none" stroke="' + INK + '" stroke-width="4.6" stroke-linecap="round"/>' +
+        '<path d="' + pour + '" fill="none" stroke="' + c + '" stroke-width="2.4" stroke-linecap="round"/>' +
+        '<path d="' + drop + '" fill="' + c + '" stroke="' + INK + '" stroke-width="1.6" stroke-linejoin="round"/>' +
+        '<path d="M5 24.5 Q4.6 26 5.4 27" fill="none" stroke="#fff" stroke-width="1.1" stroke-linecap="round" opacity=".8"/>',
+        32, 6, 27);
     }
     if (tool === 'line' || tool === 'rect' || tool === 'ellipse') {
       var glyph = tool === 'line'
@@ -220,21 +231,90 @@
         glyph,
         32, 11, 11);
     }
-    /* pen / brush / erase：圓圈就是實際會畫到的範圍 */
+    /* pen / brush / erase：圓圈就是實際會畫到的範圍，右下角掛一個小工具圖示 */
     var d = Math.max(4, Math.min(CURSOR_MAX, diameter));
-    var size = Math.ceil(d + 6);
+    return ringCursor(tool, c, d);
+  }
+
+  /* 22×22 的小工具圖示，筆尖一律朝左上指向圓心 */
+  function toolIcon(tool, c) {
+    var INK = CURSOR_INK;
+    if (tool === 'erase') {
+      /* 粉紅橡皮擦＋天藍套筒 */
+      return '<g transform="rotate(-35 11 11)">' +
+        '<rect x="1" y="6" width="20" height="11" rx="3.5" fill="#fff" stroke="#fff" stroke-width="3.5"/>' +
+        '<rect x="1" y="6" width="20" height="11" rx="3.5" fill="#FFB0C4"/>' +
+        '<rect x="9" y="6" width="12" height="11" rx="3.5" fill="#9FD3FF"/>' +
+        '<rect x="9" y="6" width="4" height="11" fill="#9FD3FF"/>' +
+        '<path d="M4 9 H7" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".9"/>' +
+        '<path d="M12 9 H18" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".7"/>' +
+        '<path d="M9 6 V17" stroke="' + INK + '" stroke-width="1.4"/>' +
+        '<rect x="1" y="6" width="20" height="11" rx="3.5" fill="none" stroke="' + INK + '" stroke-width="1.8"/>' +
+        '</g>';
+    }
+    if (tool === 'brush') {
+      /* 水彩筆：木柄＋銀色金屬箍＋沾了目前顏色的圓胖筆毛 */
+      var tip = 'M1 11 Q2.5 5.8 8 7 L8 15 Q2.5 16.2 1 11 Z';
+      var handle = 'M12 8.6 L19.6 9.9 Q21.4 11 19.6 12.1 L12 13.4 Z';
+      return '<g transform="rotate(45 11 11)">' +
+        '<path d="' + tip + ' M8 7 H12 V15 H8 Z ' + handle + '" fill="#fff" stroke="#fff" stroke-width="3.5" stroke-linejoin="round"/>' +
+        '<path d="' + handle + '" fill="#E9A86B" stroke="' + INK + '" stroke-width="1.6" stroke-linejoin="round"/>' +
+        '<path d="M13 10 L18.5 10.6" stroke="#fff" stroke-width="1" stroke-linecap="round" opacity=".7"/>' +
+        '<rect x="8" y="7" width="4" height="8" rx=".8" fill="#D5DEEA" stroke="' + INK + '" stroke-width="1.6"/>' +
+        '<path d="' + tip + '" fill="' + c + '" stroke="' + INK + '" stroke-width="1.6" stroke-linejoin="round"/>' +
+        '<path d="M4 9.6 Q5.5 8.4 7 8.6" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round" opacity=".75"/>' +
+        '</g>';
+    }
+    /* 鉛筆：黃色筆身、木頭筆削，筆芯是目前顏色，尾端粉紅橡皮 */
+    return '<g transform="rotate(45 11 11)">' +
+      '<path d="M1.5 11 L7 7 H19 Q21 7 21 9 V13 Q21 15 19 15 H7 Z" fill="#fff" stroke="#fff" stroke-width="3.5" stroke-linejoin="round"/>' +
+      '<path d="M18 7 H19 Q21 7 21 9 V13 Q21 15 19 15 H18 Z" fill="#FFB0C4" stroke="' + INK + '" stroke-width="1.6" stroke-linejoin="round"/>' +
+      '<path d="M7 7 H18 V15 H7 Z" fill="#FFD45C" stroke="' + INK + '" stroke-width="1.6" stroke-linejoin="round"/>' +
+      '<path d="M7.8 11 H17.2" stroke="#E8AE2E" stroke-width="1.2"/>' +
+      '<path d="M8 8.8 H17" stroke="#fff" stroke-width="1" stroke-linecap="round" opacity=".7"/>' +
+      '<path d="M1.5 11 L7 7 V15 Z" fill="#F6D9AE" stroke="' + INK + '" stroke-width="1.6" stroke-linejoin="round"/>' +
+      '<path d="M1.5 11 L4 9.2 V12.8 Z" fill="' + c + '" stroke="' + INK + '" stroke-width="1.2" stroke-linejoin="round"/>' +
+      '</g>';
+  }
+
+  /* 圓圈游標，三種工具一眼分得出來：
+     鉛筆＝硬：不填色的俐落細線圈＋四個對位刻度；
+     筆刷＝軟：半透明色塊，外緣一圈圓點，像筆毛暈開；
+     橡皮擦＝白光暈＋虛線圈。
+     工具圖示貼在圓的 45° 外緣，小筆寬時往外推，不會蓋住中心點。 */
+  function ringCursor(tool, c, d) {
+    var INK = CURSOR_INK;
+    var r = d / 2;
+    var mid = Math.ceil(r + 6);
+    var ix = Math.round(mid + Math.max(r * 0.71, 6) - 5);
+    var size = Math.max(ix + 24, Math.ceil(mid * 2));
     if (size % 2) size += 1;
-    var mid = size / 2, r = d / 2;
-    var shape = tool === 'erase'
-      ? '<circle cx="' + mid + '" cy="' + mid + '" r="' + r + '" fill="rgba(255,253,248,.8)" stroke="#fff" stroke-width="3"/>' +
-        '<circle cx="' + mid + '" cy="' + mid + '" r="' + r + '" fill="none" stroke="' + INK + '" stroke-width="1.5" stroke-dasharray="3 2"/>'
-      /* 筆刷：外圈白、內圈深色勾邊，中間是目前顏色的實線圈＋半透明填色，淺色或白色也看得到 */
-      : '<circle cx="' + mid + '" cy="' + mid + '" r="' + r + '" fill="' + c + '" fill-opacity=".45" stroke="' + INK + '" stroke-width="4"/>' +
-        '<circle cx="' + mid + '" cy="' + mid + '" r="' + r + '" fill="none" stroke="' + c + '" stroke-width="2"/>' +
-        '<circle cx="' + mid + '" cy="' + mid + '" r="' + (r + 2) + '" fill="none" stroke="#fff" stroke-width="1"/>';
+    var at = 'cx="' + mid + '" cy="' + mid + '" r="' + r + '"';
+    var ring;
+    if (tool === 'erase') {
+      ring = '<circle ' + at + ' fill="#FFF7FA" fill-opacity=".55" stroke="#fff" stroke-width="4"/>' +
+        '<circle ' + at + ' fill="none" stroke="' + INK + '" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="' + (d < 14 ? '2 2' : '4 3') + '"/>';
+    } else if (tool === 'brush') {
+      var gap = (Math.PI * d) / Math.max(6, Math.round(Math.PI * d / 6));
+      var dots = ' stroke-linecap="round" stroke-dasharray="0 ' + gap.toFixed(2) + '"/>';
+      ring = '<circle ' + at + ' fill="' + c + '" fill-opacity=".45" stroke="#fff" stroke-width="3"/>' +
+        '<circle ' + at + ' fill="none" stroke="#fff" stroke-width="6.5"' + dots +
+        '<circle ' + at + ' fill="none" stroke="' + INK + '" stroke-width="4.5"' + dots +
+        '<circle ' + at + ' fill="none" stroke="' + c + '" stroke-width="2.4"' + dots;
+    } else {
+      var a = mid - r - 4, b = mid + r + 4;
+      var ticks = 'M' + mid + ' ' + a + ' V' + (mid - r - 1) + ' M' + mid + ' ' + b + ' V' + (mid + r + 1) +
+        ' M' + a + ' ' + mid + ' H' + (mid - r - 1) + ' M' + b + ' ' + mid + ' H' + (mid + r + 1);
+      ring = '<circle ' + at + ' fill="none" stroke="#fff" stroke-width="4"/>' +
+        '<circle ' + at + ' fill="none" stroke="' + INK + '" stroke-width="2.2"/>' +
+        '<circle ' + at + ' fill="none" stroke="' + c + '" stroke-width="1"/>' +
+        '<path d="' + ticks + '" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/>' +
+        '<path d="' + ticks + '" stroke="' + INK + '" stroke-width="1.6" stroke-linecap="round"/>';
+    }
     /* 中心點：小筆寬時也能精準對位 */
-    shape += '<circle cx="' + mid + '" cy="' + mid + '" r="1.2" fill="' + INK + '"/>';
-    return svgCursor(shape, size, mid, mid);
+    ring += '<circle cx="' + mid + '" cy="' + mid + '" r="1.4" fill="' + INK + '" stroke="#fff" stroke-width=".8"/>';
+    var icon = '<g transform="translate(' + ix + ' ' + ix + ')">' + toolIcon(tool, c) + '</g>';
+    return svgCursor(ring + icon, size, mid, mid);
   }
 
   /* ------------------------------------------------------------ 主體 */
