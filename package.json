@@ -17,6 +17,7 @@
     "build": "node scripts/build-locales.js && node scripts/build-css.js && node scripts/stamp-assets.js",
     "test:browser": "node scripts/browser-check.js",
     "test:scrollbars": "node scripts/scrollbar-check.cjs",
+    "test:gallery": "node scripts/gallery-check.cjs",
     "test:localization": "node tests/localization.js",
     "test:analytics": "node tests/analytics.js"
   },

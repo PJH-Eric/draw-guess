@@ -1,14 +1,15 @@
 /* ===== app/overlay.js — 疊層卡片：房間設定、選題、公布答案、結算 ===== */
 
-import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=461ff44c67';
-import { askLeaveRoom, makeModal, modals } from './modal.js?v=461ff44c67';
-import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=461ff44c67';
-import { soloRefresh, soloStep, startSolo } from './solo.js?v=461ff44c67';
-import { renderRecent } from './feed.js?v=461ff44c67';
-import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=461ff44c67';
-import { PHASE_LABEL, moodOf } from './render.js?v=461ff44c67';
-import { copyText, newInvite, revokeInvite } from './game-settings.js?v=461ff44c67';
-import { enterOnlineRoom, leaveGame, roomRuleChips, saveNick } from './lobby.js?v=461ff44c67';
+import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=f39960ab13';
+import { askLeaveRoom, makeModal, modals } from './modal.js?v=f39960ab13';
+import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=f39960ab13';
+import { soloRefresh, soloStep, startSolo } from './solo.js?v=f39960ab13';
+import { renderRecent } from './feed.js?v=f39960ab13';
+import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=f39960ab13';
+import { PHASE_LABEL, moodOf } from './render.js?v=f39960ab13';
+import { copyText, newInvite, revokeInvite } from './game-settings.js?v=f39960ab13';
+import { enterOnlineRoom, leaveGame, roomRuleChips, saveNick } from './lobby.js?v=f39960ab13';
+import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=f39960ab13';
 
 var w = window;
 
@@ -34,8 +35,10 @@ export function renderOverlay() {
   } else if (g && g.phase === 'reveal') {
     html = revealHtml(g);
   } else if (g && g.phase === 'over') {
+    ensureGallery(g);
     html = overHtml(v, g);
   }
+  if (!(g && g.phase === 'over') || (v.room && v.room.closed)) resetGallery();
 
   /* 房間設定卡比其他卡大得多：寬螢幕要改兩欄（.setup-card），而且它開著的時候
      提示訊息要改到上方出現，不然會蓋住卡片底部的「準備／開始」（body.setup-open）。 */
@@ -449,11 +452,31 @@ export function revealHtml(g) {
   return ("<h3>" + esc(I18N.t("text.089")) + "</h3><div class=\"revealword\">") + esc(g.answer || (last ? last.word : '—')) + '</div>' +
     '<p>' + subline + '</p>' +
     '<ul class="resultlist">' + (rows || ("<li><span class=\"rname\">" + esc(I18N.t("text.088")) + "</span></li>")) + '</ul>' +
+    reactionBarHtml(g) +
     '<p>' + (app.mode === 'solo' ? (globalThis.I18N ? globalThis.I18N.t("text.087") : "馬上出下一題…") : (globalThis.I18N ? globalThis.I18N.t("text.086") : "馬上換下一位畫家…")) + '</p>';
 }
 
 /* 結算的彩帶：純裝飾，位置與延遲用固定公式算（同一份 HTML 才不會每次重畫都變），
    開了「減少動態」就不放。 */
+/** 公布答案時的表情列：玩家（非畫家）可以按，其他人只看數字 */
+export function reactionBarHtml(g) {
+  var r = g.reactions;
+  if (app.mode !== 'online' || !r) return '';
+  var note = r.canReact ? w.I18N.t('react.title') : w.I18N.t(g.you && g.you.isDrawer ? 'react.own' : 'react.watch');
+  var btns = (Rules.REACTIONS || ['heart', 'laugh', 'clap']).map(function (k) {
+    var on = r.mine.indexOf(k) >= 0;
+    var label = w.I18N.t('react.' + k) + ' ' + r.counts[k];
+    return '<button class="react-btn' + (on ? ' on' : '') + '" type="button" data-act="react" data-kind="' + k + '"' +
+      ' aria-pressed="' + on + '" aria-label="' + esc(label) + '"' + (r.canReact ? '' : ' disabled') + '>' +
+      '<span class="react-emoji" aria-hidden="true">' + reactionEmoji(k) + '</span>' +
+      '<b class="react-count" aria-hidden="true">' + r.counts[k] + '</b></button>';
+  }).join('');
+  var thumb = revealThumbUrl(r.turnNo);
+  return '<div class="react-bar" role="group" aria-label="' + esc(w.I18N.t('react.title')) + '">' +
+    (thumb ? '<img class="react-thumb" src="' + thumb + '" alt="" width="240" height="240">' : '') +
+    '<div class="react-side"><span class="react-note">' + esc(note) + '</span><div class="react-btns">' + btns + '</div></div></div>';
+}
+
 export function confettiHtml() {
   if (Store.reduceMotion()) return '';
   var colors = ['#FFE3A0', '#C9B6F5', '#A9E7D2', '#FFB8CF', '#AED9F5'];
@@ -524,7 +547,8 @@ export function overHtml(v, g) {
     if (v.you.can.rematch) btns += ("<button class=\"btn3d\" data-color=\"mint\" data-act=\"rematch\">" + esc(I18N.t("text.081")) + "</button>");
     btns += ("<button class=\"btn3d small\" data-color=\"cream\" data-act=\"home\">" + esc(I18N.t("text.080")) + "</button>");
   }
-  return confettiHtml() + '<section data-result-share class="result-share-card">' + ("<div class=\"result-heading\"><h3>" + esc(I18N.t("text.079")) + "</h3><span>" + esc(I18N.t("text.079.2")) + "</span></div>") + hero + '<ol class="resultlist">' + rows + '</ol>' + note + '</section>' +
+  return confettiHtml() + '<section data-result-share class="result-share-card">' + ("<div class=\"result-heading\"><h3>" + esc(I18N.t("text.079")) + "</h3><span>" + esc(I18N.t("text.079.2")) + "</span></div>") + hero + bestDrawerHtml(g) + '<ol class="resultlist">' + rows + '</ol>' + note + '</section>' +
+    galleryHtml(g) +
     (app.mode === 'online' ? chatBlockHtml(v) : '') +
     /* 主要動作（再來一局）自己一列，其餘次要鈕在下一列平分寬度，不會落單一顆 */
     '<div class="overlay-btns result-btns">' + btns + '</div>';
@@ -625,6 +649,9 @@ export function onOverlayAct(el) {
   }
   else if (act === 'return-room') w.Online.send('room:return', {});
   else if (act === 'online-rematch') w.Online.send('room:rematch', {});
+  else if (act === 'react') w.Online.send('room:react', { kind: el.getAttribute('data-kind') });
+  else if (act === 'gallery-open') openGalleryItem(Number(el.getAttribute('data-i')));
+  else if (act === 'gallery-retry') retryGallery();
   else if (act === 'lobby') leaveGame('s-lobby');
   else if (act === 'home') leaveGame('s-home');
   else if (act === 'rule-toggle') {

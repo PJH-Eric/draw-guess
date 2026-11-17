@@ -111,7 +111,8 @@
 
 /* 疊在畫布上的卡片：選題、等待、結算、房間結束 */
 .stage-overlay{
-  position:absolute;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;
+  /* 疊在猜題框（z-index 60）上面：選題與公布時猜題框本來就不能用，矮的橫向螢幕上它會蓋住卡片底部的按鈕 */
+  position:absolute;inset:0;z-index:61;display:flex;align-items:center;justify-content:center;
   padding:10px;background:rgba(74,59,85,.34);backdrop-filter:blur(2px);
   /* 卡片頂端讓出右上角那排固定按鈕（對局設定、操作摘要、系統設定）的高度：
      手機上卡片是滿版的，不讓位的話「房間設定」標題會被那三顆鈕蓋住。

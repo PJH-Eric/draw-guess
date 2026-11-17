@@ -28,17 +28,17 @@
 <meta name="twitter:image:alt" content="你畫我猜 遊戲封面">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"你畫我猜","url":"https://pjh-eric.github.io/draw-guess/","description":"免費免下載的你畫我猜，輪流當畫家，用畫筆、形狀與油漆桶畫出題目，猜中答案搶積分。單機練習或開房間邀朋友同樂，支援觀戰與猜題紀錄，手機平板都能作畫。","applicationCategory":"GameApplication","operatingSystem":"Any","inLanguage":"zh-Hant","genre":"畫圖猜謎","offers":{"@type":"Offer","price":"0","priceCurrency":"TWD"},"image":"https://pjh-eric.github.io/draw-guess/assets/images/seo.webp","thumbnailUrl":"https://pjh-eric.github.io/draw-guess/assets/images/seo.webp","isPartOf":{"@type":"WebSite","url":"https://pjh-eric.github.io/game-lobby/"}}</script>
 <!--SEO:END-->
-<link rel="stylesheet" href="css/style.css?v=461ff44c67">
-<link rel="stylesheet" href="css/scrollbars.css?v=461ff44c67">
-<link rel="stylesheet" href="css/lobby-chat.css?v=461ff44c67">
-<link rel="stylesheet" href="css/latency.css?v=461ff44c67">
+<link rel="stylesheet" href="css/style.css?v=f39960ab13">
+<link rel="stylesheet" href="css/scrollbars.css?v=f39960ab13">
+<link rel="stylesheet" href="css/lobby-chat.css?v=f39960ab13">
+<link rel="stylesheet" href="css/latency.css?v=f39960ab13">
 
 <link rel="icon" type="image/png" sizes="96x96" href="favicon-96.png">
 <link rel="icon" type="image/svg+xml" sizes="any" href="favicon.svg">
 <link rel="shortcut icon" href="favicon.ico">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<link rel="stylesheet" href="css/server-outage.css?v=461ff44c67">
-<script src="js/server-outage.js?v=461ff44c67"></script>
+<link rel="stylesheet" href="css/server-outage.css?v=f39960ab13">
+<script src="js/server-outage.js?v=f39960ab13"></script>
 </head>
 <body>
 <div id="bgdeco" aria-hidden="true"></div>
@@ -484,6 +484,31 @@
     </section>
   </div>
 
+  <!-- ============================== 本局畫廊：看大圖 ============================== -->
+  <div class="settings-modal gallery-modal" id="gallery-modal" role="dialog" aria-modal="true"
+       aria-labelledby="gallery-view-word" aria-hidden="true">
+    <div class="settings-backdrop" id="gallery-backdrop"></div>
+    <section class="settings-panel gallery-panel" id="gallery-panel" tabindex="-1">
+      <div class="settings-head">
+        <h2><span id="gallery-view-word"></span></h2>
+        <button class="settings-close" id="gallery-close" type="button" aria-label="關閉" data-i18n-attr="aria-label=gallery.close">✕</button>
+      </div>
+      <div class="gallery-view-body">
+        <div class="gallery-view-picture" id="gallery-view-picture"></div>
+        <div class="gallery-view-meta">
+          <span class="gallery-view-by" id="gallery-view-by"></span>
+          <span class="gallery-view-reacts" id="gallery-view-reacts"></span>
+        </div>
+      </div>
+      <div class="settings-foot gallery-foot">
+        <button class="pillbtn" id="gallery-prev" type="button"><span aria-hidden="true">◀</span> <span data-i18n="gallery.prev">上一張</span></button>
+        <span class="gallery-view-pos" id="gallery-view-pos" aria-live="polite"></span>
+        <button class="pillbtn" id="gallery-next" type="button"><span data-i18n="gallery.next">下一張</span> <span aria-hidden="true">▶</span></button>
+        <button class="btn3d small" data-color="mint" id="gallery-download" type="button"><span data-i18n="gallery.download">下載圖片</span></button>
+      </div>
+    </section>
+  </div>
+
   <!-- ============================== 系統設定彈窗 ============================== -->
   <div class="settings-modal" id="settings-modal" role="dialog" aria-modal="true"
        aria-labelledby="settings-title" aria-hidden="true">
@@ -635,30 +660,30 @@
   <div class="toast" id="toast" role="status" aria-live="assertive" hidden></div>
 </div>
 
-<script src="js/analytics.js?v=461ff44c67"></script>
-<script src="js/i18n.js?v=461ff44c67"></script>
+<script src="js/analytics.js?v=f39960ab13"></script>
+<script src="js/i18n.js?v=f39960ab13"></script>
 <!-- 介面字典只先載預設的繁中；其他語系與英文／簡中題庫用到才載入（js/lazy-packs.js） -->
-<script src="js/locales/ui.zh-Hant.js?v=461ff44c67"></script>
-<script src="js/lazy-packs.js?v=461ff44c67"></script>
-<script src="js/keyboard.js?v=461ff44c67"></script>
-<script src="js/config.js?v=461ff44c67"></script>
-<script src="js/rng.js?v=461ff44c67"></script>
-<script src="js/words.js?v=461ff44c67"></script>
-<script src="js/reference-path.js?v=461ff44c67"></script>
-<script src="js/reference-kit.js?v=461ff44c67"></script>
-<script src="js/reference-recipes.js?v=461ff44c67"></script>
-<script src="js/reference.js?v=461ff44c67"></script>
-<script src="js/meaning-reference.js?v=461ff44c67"></script>
-<script src="js/rules.js?v=461ff44c67"></script>
-<script src="js/drawing-file.js?v=461ff44c67"></script>
-<script src="js/storage.js?v=461ff44c67"></script>
-<script src="js/audio.js?v=461ff44c67"></script>
-<script src="js/svgui.js?v=461ff44c67"></script>
-<script src="js/paint.js?v=461ff44c67"></script>
-<script src="js/latency.js?v=461ff44c67" data-skin="draw-guess"></script>
-<script src="js/lobby-chat.js?v=461ff44c67"></script>
-<script src="js/online.js?v=461ff44c67"></script>
-<script type="module" src="js/app/main.js?v=461ff44c67"></script>
+<script src="js/locales/ui.zh-Hant.js?v=f39960ab13"></script>
+<script src="js/lazy-packs.js?v=f39960ab13"></script>
+<script src="js/keyboard.js?v=f39960ab13"></script>
+<script src="js/config.js?v=f39960ab13"></script>
+<script src="js/rng.js?v=f39960ab13"></script>
+<script src="js/words.js?v=f39960ab13"></script>
+<script src="js/reference-path.js?v=f39960ab13"></script>
+<script src="js/reference-kit.js?v=f39960ab13"></script>
+<script src="js/reference-recipes.js?v=f39960ab13"></script>
+<script src="js/reference.js?v=f39960ab13"></script>
+<script src="js/meaning-reference.js?v=f39960ab13"></script>
+<script src="js/rules.js?v=f39960ab13"></script>
+<script src="js/drawing-file.js?v=f39960ab13"></script>
+<script src="js/storage.js?v=f39960ab13"></script>
+<script src="js/audio.js?v=f39960ab13"></script>
+<script src="js/svgui.js?v=f39960ab13"></script>
+<script src="js/paint.js?v=f39960ab13"></script>
+<script src="js/latency.js?v=f39960ab13" data-skin="draw-guess"></script>
+<script src="js/lobby-chat.js?v=f39960ab13"></script>
+<script src="js/online.js?v=f39960ab13"></script>
+<script type="module" src="js/app/main.js?v=f39960ab13"></script>
 <!--SEO:GAMEPLAY-->
 <noscript><div class="seo-gameplay"><section lang="zh-Hant">
 <h2>你畫我猜</h2>
@@ -679,9 +704,9 @@
 <p><strong>How to play: </strong>The artist draws on the canvas; guessers type their answers</p>
 </section></div></noscript>
 <!--SEO:GAMEPLAY:END-->
-  <script defer src="js/locales/result-share.js?v=461ff44c67"></script>
-  <script defer src="js/result-share.js?v=461ff44c67"></script>
-  <script defer src="js/dropdowns.js?v=461ff44c67"></script>
-  <script defer src="js/scrollbars.js?v=461ff44c67"></script>
+  <script defer src="js/locales/result-share.js?v=f39960ab13"></script>
+  <script defer src="js/result-share.js?v=f39960ab13"></script>
+  <script defer src="js/dropdowns.js?v=f39960ab13"></script>
+  <script defer src="js/scrollbars.js?v=f39960ab13"></script>
 </body>
 </html>

@@ -19,6 +19,7 @@ desktop.ini
 # 測試產生的暫存檔
 .chrome-rwd-test/
 .chrome-measure/
+.chrome-gallery-test/
 screenshots/
 
 # 可重新產生的測試截圖、暫存與快取

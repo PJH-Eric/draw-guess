@@ -402,7 +402,8 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background
 
 /* 疊在畫布上的卡片：選題、等待、結算、房間結束 */
 .stage-overlay{
-  position:absolute;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;
+  /* 疊在猜題框（z-index 60）上面：選題與公布時猜題框本來就不能用，矮的橫向螢幕上它會蓋住卡片底部的按鈕 */
+  position:absolute;inset:0;z-index:61;display:flex;align-items:center;justify-content:center;
   padding:10px;background:rgba(74,59,85,.34);backdrop-filter:blur(2px);
   /* 卡片頂端讓出右上角那排固定按鈕（對局設定、操作摘要、系統設定）的高度：
      手機上卡片是滿版的，不讓位的話「房間設定」標題會被那三顆鈕蓋住。
@@ -1853,6 +1854,81 @@ body.no-tools:not(.solo-mode) .guessfeed{
 .result-btns .btn3d:not(.sub){flex:1 1 100%}
 .result-btns .btn3d.sub{flex:1 1 0;min-width:0;white-space:nowrap}
 .result-btns .btn3d.small:not(.sub){flex:1 1 0}
+
+/* >>> parts/85-gallery.css */
+/* ===== 公布時的表情列、結算的最佳畫家與本局畫廊 ===== */
+
+/* 表情列：在公布答案卡片的得分清單下面 */
+.react-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 12px;margin:4px 0 6px}
+.react-thumb{flex:0 0 auto;width:84px;height:84px;border:2px solid var(--line);border-radius:14px;background:var(--paper)}
+.react-side{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.react-note{font-size:.82rem;font-weight:800;color:var(--ink-soft);text-align:center;overflow-wrap:anywhere}
+.react-btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.react-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:72px;min-height:48px;padding:6px 12px;
+  border:3px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);font:inherit;font-weight:900;
+  box-shadow:0 3px 0 var(--shade-2);cursor:pointer;transition:transform .12s,background-color .12s,border-color .12s}
+.react-btn .react-emoji{font-size:1.35rem;line-height:1}
+.react-btn .react-count{min-width:1ch;font-variant-numeric:tabular-nums}
+.react-btn:hover:not(:disabled){transform:translateY(-1px);border-color:var(--rose-d)}
+.react-btn:active:not(:disabled){transform:translateY(2px);box-shadow:0 1px 0 var(--shade-2)}
+.react-btn.on{border-color:var(--rose-d);background:#FFE6EF;box-shadow:0 3px 0 var(--rose-d)}
+.react-btn:disabled{cursor:default;box-shadow:none;opacity:.85}
+.react-btn:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.react-btn{transition:none}}
+body.reduced-motion .react-btn{transition:none}
+
+/* 最佳畫家：放在獲勝者下面，分享成圖片時也會帶到 */
+.best-drawer{display:flex;align-items:center;gap:10px;margin:0 0 10px;padding:8px 12px;border:2px solid var(--rose-d);border-radius:16px;
+  background:linear-gradient(110deg,#FFE6EF,#FFF7FA)}
+.best-drawer-badge{flex:0 0 auto;display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:var(--surface);font-size:1.3rem;box-shadow:inset 0 0 0 2px var(--rose)}
+.best-drawer-text{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;min-width:0}
+.best-drawer-tag{font-size:.75rem;font-weight:900;color:#A2456A;letter-spacing:.04em}
+.best-drawer-name{font-size:1rem;overflow-wrap:anywhere}
+.best-drawer-count{font-size:.78rem;font-weight:800;color:var(--ink-soft)}
+
+/* 本局畫廊 */
+.gallery-block{margin:4px 0 10px;text-align:left}
+.gallery-block h4{margin:0 0 8px;font-size:.95rem}
+.gal-status{margin:0;padding:10px;border-radius:14px;background:var(--muted-tint);font-size:.85rem;font-weight:800;text-align:center}
+.gal-retry{min-height:46px;margin-left:6px}
+.gal-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px}
+.gal-item{min-width:0}
+.gal-thumb{display:flex;flex-direction:column;align-items:stretch;gap:3px;width:100%;min-height:46px;padding:5px;border:2px solid var(--line);border-radius:14px;
+  background:var(--surface);color:var(--ink);font:inherit;text-align:left;cursor:pointer;box-shadow:0 2px 0 var(--shade-1)}
+.gal-thumb img{display:block;width:100%;height:auto;aspect-ratio:1;border-radius:9px;background:var(--paper);border:1px solid var(--line)}
+.gal-thumb:hover{border-color:var(--grape-d)}
+.gal-thumb:focus-visible{outline:3px solid var(--sky-d);outline-offset:2px}
+.gal-word{font-size:.84rem;font-weight:900;line-height:1.2;overflow-wrap:anywhere}
+.gal-by{font-size:.72rem;font-weight:700;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gal-reacts,.gallery-view-reacts{display:flex;flex-wrap:wrap;gap:4px;min-height:1px}
+.gal-react{display:inline-flex;align-items:center;gap:2px;padding:1px 6px;border-radius:999px;background:var(--grape-tint);font-size:.72rem}
+.gal-react b{font-variant-numeric:tabular-nums}
+
+/* 看大圖彈窗（沿用設定彈窗的外框） */
+.gallery-modal{z-index:2147483002}
+.gallery-panel{width:min(620px,calc(100vw - 24px));max-height:calc(100dvh - 24px);display:flex;flex-direction:column}
+.gallery-panel .settings-head{flex:0 0 auto;gap:10px}
+.gallery-panel .settings-head h2{min-width:0;overflow-wrap:anywhere;font-size:clamp(1.1rem,4vw,1.5rem)}
+.gallery-view-body{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 16px}
+.gallery-view-picture{flex:1 1 auto;min-height:0;display:flex;justify-content:center;width:100%}
+.gallery-view-canvas{display:block;width:auto;height:auto;max-width:100%;max-height:min(62dvh,540px);aspect-ratio:1;border:2px solid var(--line);border-radius:16px;background:var(--paper)}
+.gallery-view-meta{flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 10px;font-size:.88rem;font-weight:800}
+.gallery-view-by{color:var(--ink-soft);overflow-wrap:anywhere}
+.gallery-foot{flex:0 0 auto;display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center}
+.gallery-foot .pillbtn{min-height:48px;padding:6px 12px;white-space:nowrap}
+.gallery-view-pos{text-align:center;font-weight:900;font-variant-numeric:tabular-nums;font-size:.88rem}
+.gallery-foot #gallery-download{grid-column:1 / -1;width:100%}
+
+/* 矮的橫向螢幕：圖放左邊、資訊與按鈕放右邊 */
+@media (orientation:landscape) and (max-height:560px){
+  .gallery-panel{width:min(760px,calc(100vw - 24px));display:grid;grid-template-columns:minmax(0,auto) minmax(200px,1fr);grid-template-rows:auto minmax(0,1fr) auto}
+  .gallery-panel .settings-head{grid-column:1 / -1;padding:6px 14px}
+  .gallery-view-body{display:contents}
+  .gallery-view-picture{grid-column:1;grid-row:2 / span 2;padding:0 0 10px 12px}
+  .gallery-view-canvas{max-height:calc(100dvh - 110px)}
+  .gallery-view-meta{grid-column:2;grid-row:2;align-self:center;flex-direction:column;padding:0 12px}
+  .gallery-foot{grid-column:2;grid-row:3;padding:8px 12px}
+}
 
 /* >>> parts/90-motion.css */
 /* ================================================================
