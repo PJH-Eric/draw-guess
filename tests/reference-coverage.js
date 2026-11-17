@@ -6,7 +6,7 @@ const Reference = require('../public/js/reference.js');
 const MeaningReference = require('../public/js/meaning-reference.js');
 
 const topics = Words.all();
-assert.equal(topics.length, 4416, 'The reference covers the complete prompt bank');
+assert.equal(topics.length, 5000, 'The reference covers the complete prompt bank');
 
 for (const word of topics) {
   for (const step of [1, 2, 3]) {
