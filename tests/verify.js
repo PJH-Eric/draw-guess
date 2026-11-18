@@ -1178,7 +1178,7 @@ section('畫家斷線 15 秒沒回來就先跳過這一題');
   check('15 秒內還在等他', room.state.phase === 'drawing' && room.state.drawerId === d);
   room.tick(3000 + 15000);
   check('15 秒到了就跳過這一題', room.state.phase === 'reveal', room.state.phase);
-  check('沒畫到的這一題不算他畫過', Rules.player(room.state, d).drew === 0);
+  check('斷線逾時跳過會用掉這次作畫機會', Rules.player(room.state, d).drew === 1);
   check('座位還在（還沒被踢）', !!room.member(d));
 }
 {
@@ -1189,6 +1189,23 @@ section('畫家斷線 15 秒沒回來就先跳過這一題');
   room.join(d, { name: d.toUpperCase(), role: 'player', now: 8000 });
   room.tick(3000 + 20000);
   check('15 秒內回來就繼續畫（時間到之前不會被跳過）', room.state.drawerId === d);
+}
+
+section('最後一位畫家選題時斷線，跳過後進入結算');
+{
+  const room = startedRoom(['a', 'b'], 1);
+  const now = finishTurn(room, 2000);
+  const d = room.state.drawerId;
+  room.disconnect(d, now);
+  room.tick(now + 15000);
+  check('沒有選題的回合已跳過', room.state.phase === 'reveal' &&
+    room.summary.some((entry) => entry.key === 'srv.sum.noWord'));
+  room.tick(now + 23000);
+  room.tick(now + 31000);
+  check('題數維持 2／2 並完成結算', room.phase === 'finished' && room.state.over &&
+    room.state.turnNo === 2 && room.state.totalTurns === 2,
+    room.state.turnNo + '/' + room.state.totalTurns + ' ' + room.phase);
+  check('結算後斷線玩家仍可回到保留座位', room.join(d, { now: now + 32000 }).reconnected && room.phase === 'finished');
 }
 
 section('用戶端亂送東西不會讓伺服器當掉');
