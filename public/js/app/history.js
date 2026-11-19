@@ -7,9 +7,9 @@
  * 回到主選單就把擋板收掉，再按一次返回才會真的離開網頁。
  */
 
-import { $, D, app, show } from './core.js?v=b634029478';
-import { modals } from './modal.js?v=b634029478';
-import { setAsideOpen } from './feed.js?v=b634029478';
+import { $, D, app, show } from './core.js?v=32e34c2986';
+import { modals } from './modal.js?v=32e34c2986';
+import { setAsideOpen } from './feed.js?v=32e34c2986';
 
 var w = window;
 var guarded = false;   // 目前有沒有墊著擋板

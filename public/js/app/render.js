@@ -1,10 +1,10 @@
 /* ===== app/render.js — 對局畫面渲染 ===== */
 
-import { $, D, S, app, esc, secsLeft } from './core.js?v=b634029478';
-import { renderReference } from './modal.js?v=b634029478';
-import { sizeCanvas } from './canvas.js?v=b634029478';
-import { renderAside, renderControls, renderOverlay } from './overlay.js?v=b634029478';
-import { isRelayGame, relayPhaseLabel, relayStripHtml, relayTick, renderRelayWordbar } from './relay.js?v=b634029478';
+import { $, D, S, app, esc, secsLeft } from './core.js?v=32e34c2986';
+import { renderReference } from './modal.js?v=32e34c2986';
+import { sizeCanvas } from './canvas.js?v=32e34c2986';
+import { renderAside, renderControls, renderOverlay } from './overlay.js?v=32e34c2986';
+import { isRelayGame, relayPhaseLabel, relayStripHtml, relayTick, renderRelayWordbar } from './relay.js?v=32e34c2986';
 
 var w = window;
 

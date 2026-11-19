@@ -1,0 +1,17 @@
+/* ---------- 你出我畫他猜（Beta） ----------
+ * 主色是 rose（玫瑰）：首頁入口、大廳說明、房間徽章、角色列都用同一個色系，
+ * 跟一般模式（grape）、接力模式（peach）一眼分得開。
+ * 版面元件大多沿用接力的樣式（relay-*），這裡只換顏色並補上這個模式自己的元件。 */
+:root{
+  --pd:#FFB8CF; --pd-d:#E88CAA; --pd-t:#A8456A; --pd-tint:#FFEFF4;
+}
+
+/* 大廳：說明條與標題色 */
+.pickdraw-lobby-note{border-color:var(--pd-d);background:var(--pd-tint)}
+body.lobby-pickdraw #lobby-title{color:var(--pd-t)}
+/* 模式名稱比較長：窄手機縮一點字、收緊字距，標題才放得進一行 */
+@media (max-width:480px){body.lobby-pickdraw #lobby-title{font-size:1.05rem;letter-spacing:0}}
+
+/* 房間卡片與房間設定卡的模式標記 */
+.rc-rule[data-k=pdmode]{background:var(--pd);border-color:var(--pd-d)}
+.pickdraw-badge{border-color:var(--pd-d);background:var(--pd)}

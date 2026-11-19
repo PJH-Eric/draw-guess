@@ -308,6 +308,17 @@
         '<path d="M12 84 q4 -24 24 -24 q20 0 24 24 Z" fill="#FFE3A0" ' + S + '/>' +
         '<path d="M60 84 q4 -18 16 -18 q12 0 14 18 Z" fill="#AED9F5" ' + S + '/>', (globalThis.I18N ? globalThis.I18N.t("text.034") : "玩家"));
     },
+    /* 你出我畫他猜：三個圓點（三個人）用箭頭繞成一圈，中間一枝鉛筆（純裝飾） */
+    pickdraw: function () {
+      return ico('<circle cx="50" cy="16" r="10" fill="#FFB8CF" ' + S + '/>' +
+        '<circle cx="18" cy="74" r="10" fill="#AED9F5" ' + S + '/>' +
+        '<circle cx="82" cy="74" r="10" fill="#A9E7D2" ' + S + '/>' +
+        '<path d="M64 24 Q80 36 82 56" fill="none" ' + S + '/>' +
+        '<path d="M66 84 Q50 92 34 84" fill="none" ' + S + '/>' +
+        '<path d="M18 56 Q20 36 36 24" fill="none" ' + S + '/>' +
+        '<g transform="rotate(35 50 52)"><rect x="44" y="34" width="12" height="26" rx="2" fill="#FFE3A0" ' + S + '/>' +
+        '<path d="M44 60 L50 70 L56 60 Z" fill="#FFF0DE" ' + S + '/></g>', '');
+    },
     /* 接力：一枝當接力棒的鉛筆，前後兩道箭頭表示「交給下一個人」（純裝飾） */
     relay: function () {
       return ico('<path d="M14 64 Q14 30 46 26" fill="none" ' + S + '/>' +

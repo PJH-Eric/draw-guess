@@ -1,14 +1,14 @@
 /* ===== app/online-events.js — 線上事件 ===== */
 
-import { $, Sound, Store, Words, app, toast } from './core.js?v=b634029478';
-import { modals } from './modal.js?v=b634029478';
-import { localizeGame } from './solo.js?v=b634029478';
-import { pushFeed, replaceFeed } from './feed.js?v=b634029478';
-import { render } from './render.js?v=b634029478';
-import { renderAside } from './overlay.js?v=b634029478';
-import { renderGameSettings } from './game-settings.js?v=b634029478';
-import { isRelayGame, relayRecord, relayTransition, showCheer } from './relay.js?v=b634029478';
-import { forgetRoom, joinRoom, leaveGame, renderRoomList, saveNick, setLobbyEnabled, subscribeLobby } from './lobby.js?v=b634029478';
+import { $, Sound, Store, Words, app, toast } from './core.js?v=32e34c2986';
+import { modals } from './modal.js?v=32e34c2986';
+import { localizeGame } from './solo.js?v=32e34c2986';
+import { pushFeed, replaceFeed } from './feed.js?v=32e34c2986';
+import { render } from './render.js?v=32e34c2986';
+import { renderAside } from './overlay.js?v=32e34c2986';
+import { renderGameSettings } from './game-settings.js?v=32e34c2986';
+import { isRelayGame, relayRecord, relayTransition, showCheer } from './relay.js?v=32e34c2986';
+import { forgetRoom, joinRoom, leaveGame, lobbyModeKey, renderRoomList, saveNick, setLobbyEnabled, subscribeLobby } from './lobby.js?v=32e34c2986';
 
 var w = window;
 
@@ -62,7 +62,7 @@ export function setupOnlineEvents() {
 
   O.on('lobby:rooms', function (p) {
     /* 剛從一般大廳切到接力大廳（或反過來）時，舊模式的列表可能還在路上：不是這個大廳的就略過 */
-    if (p.mode && p.mode !== (app.lobbyMode === 'relay' ? 'relay' : 'classic')) return;
+    if (p.mode && p.mode !== lobbyModeKey()) return;
     app.onlineCount = Number.isInteger(p.online) && p.online >= 0 ? p.online : null;
     renderOnlineCount();
     renderRoomList(p.rooms);
@@ -79,7 +79,7 @@ export function setupOnlineEvents() {
     }, { result: v.game.winners && v.game.winners.indexOf(v.you.id) >= 0 ? 'win' : 'lose' });
     app.roomCode = v.room.code;
     /* 回大廳時回到跟這間房同一種的大廳（邀請連結進來的人一開始不知道是哪一種） */
-    app.lobbyMode = v.room.mode === 'relay' ? 'relay' : 'classic';
+    app.lobbyMode = v.room.mode === 'relay' || v.room.mode === 'pickdraw' ? v.room.mode : 'classic';
     /* 房間用的題目語系本機還沒載入（別人開的英文／簡中房）：補載，好了再重畫一次 */
     if (v.game && v.game.lang && w.LazyPacks && !Words.hasLang(v.game.lang)) {
       w.LazyPacks.words(v.game.lang, function (ok) { if (ok && app.mode === 'online' && app.view) render(); });

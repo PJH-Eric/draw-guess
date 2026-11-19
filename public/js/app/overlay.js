@@ -1,16 +1,16 @@
 /* ===== app/overlay.js — 疊層卡片：房間設定、選題、公布答案、結算 ===== */
 
-import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=b634029478';
-import { askLeaveRoom, makeModal, modals } from './modal.js?v=b634029478';
-import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=b634029478';
-import { soloRefresh, soloStep, startSolo } from './solo.js?v=b634029478';
-import { renderRecent } from './feed.js?v=b634029478';
-import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=b634029478';
-import { PHASE_LABEL, moodOf } from './render.js?v=b634029478';
-import { copyText, newInvite, revokeInvite } from './game-settings.js?v=b634029478';
-import { enterOnlineRoom, leaveGame, roomRuleChips, saveNick } from './lobby.js?v=b634029478';
-import { hideRelayUi, isRelayGame, relayAwardsHtml, relayCanDo, relayBarMode, relayOverlayHtml, relayPhaseLabel, relayToolsShown, relayVote, renderRelayAssist, renderRelayBanner } from './relay.js?v=b634029478';
-import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=b634029478';
+import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=32e34c2986';
+import { askLeaveRoom, makeModal, modals } from './modal.js?v=32e34c2986';
+import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=32e34c2986';
+import { soloRefresh, soloStep, startSolo } from './solo.js?v=32e34c2986';
+import { renderRecent } from './feed.js?v=32e34c2986';
+import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=32e34c2986';
+import { PHASE_LABEL, moodOf } from './render.js?v=32e34c2986';
+import { copyText, newInvite, revokeInvite } from './game-settings.js?v=32e34c2986';
+import { enterOnlineRoom, leaveGame, lobbyModeKey, roomRuleChips, saveNick } from './lobby.js?v=32e34c2986';
+import { hideRelayUi, isRelayGame, relayAwardsHtml, relayCanDo, relayBarMode, relayOverlayHtml, relayPhaseLabel, relayToolsShown, relayVote, renderRelayAssist, renderRelayBanner } from './relay.js?v=32e34c2986';
+import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=32e34c2986';
 
 var w = window;
 
@@ -170,6 +170,15 @@ export function batonChoices() {
   return list.map(function (n) { return { v: n, label: w.I18N.t('relay.opt.sec', { n: n }) }; });
 }
 
+/* 你出我畫他猜的兩個欄位：圈數（1–5，一圈 3 題）、每題作畫秒數（30／60／90） */
+export function lapChoices() {
+  return [1, 2, 3, 4, 5].map(function (n) { return { v: n, label: w.I18N.t('pickdraw.opt.laps', { n: n, q: n * 3 }) }; });
+}
+export function pdSecChoices() {
+  var list = (w.PickdrawRules && w.PickdrawRules.CONST.DRAW_SEC) || [30, 60, 90];
+  return list.map(function (n) { return { v: n, label: w.I18N.t('pickdraw.opt.sec', { n: n }) }; });
+}
+
 export function chips(act, list, current) {
   return '<div class="chiprow">' + list.map(function (o) {
     var val = (o.v !== undefined ? o.v : o);
@@ -234,16 +243,19 @@ export function renderRoomCreateOptions() {
   fillSelect('room-create-drawsec', SEC_CHOICES, c.drawSec);
   fillSelect('room-create-guessrounds', guessRoundChoices(), c.guessRounds || 1);
   fillSelect('room-create-baton', batonChoices(), c.batonSec || 12);
+  fillSelect('room-create-laps', lapChoices(), c.laps || 2);
+  fillSelect('room-create-pdsec', pdSecChoices(), c.pdDrawSec || 60);
   fillSelect('room-create-diff', DIFF_CHOICES, c.diff);
-  /* 一般房與接力房共用同一個彈窗：只顯示這個模式用得到的欄位 */
-  var relay = c.mode === 'relay';
-  var only = D.querySelectorAll('#room-create-modal .classic-only, #room-create-modal .relay-only');
+  /* 一般房、接力房與你出我畫他猜房共用同一個彈窗：只顯示這個模式用得到的欄位 */
+  var mode = c.mode === 'relay' || c.mode === 'pickdraw' ? c.mode : 'classic';
+  var only = D.querySelectorAll('#room-create-modal .classic-only, #room-create-modal .relay-only, #room-create-modal .pickdraw-only');
   for (var i = 0; i < only.length; i++) {
-    only[i].hidden = only[i].classList.contains('relay-only') ? !relay : relay;
+    only[i].hidden = !only[i].classList.contains(mode + '-only');
   }
+  var titleKey = { relay: 'relay.createTitle', pickdraw: 'pickdraw.createTitle' }[mode] || 'text.374';
   var title = $('room-create-title').querySelector('[data-i18n]');
-  title.setAttribute('data-i18n', relay ? 'relay.createTitle' : 'text.374');
-  title.textContent = w.I18N.t(relay ? 'relay.createTitle' : 'text.374');
+  title.setAttribute('data-i18n', titleKey);
+  title.textContent = w.I18N.t(titleKey);
 }
 
 export function setupRoomCreate() {
@@ -263,6 +275,8 @@ export function setupRoomCreate() {
   $('room-create-diff').addEventListener('change', function () { app.roomCreate.diff = Number(this.value); });
   $('room-create-guessrounds').addEventListener('change', function () { app.roomCreate.guessRounds = Number(this.value); });
   $('room-create-baton').addEventListener('change', function () { app.roomCreate.batonSec = Number(this.value); });
+  $('room-create-laps').addEventListener('change', function () { app.roomCreate.laps = Number(this.value); });
+  $('room-create-pdsec').addEventListener('change', function () { app.roomCreate.pdDrawSec = Number(this.value); });
 
   $('lobby-room-name').addEventListener('input', function () {
     app.roomCreate.roomName = this.value.slice(0, 24);
@@ -278,9 +292,11 @@ export function openRoomCreate() {
     diff: 0,
     category: '',
     wordLang: Store.wordLang(),
-    mode: app.lobbyMode === 'relay' ? 'relay' : 'classic',
+    mode: lobbyModeKey(),
     guessRounds: 1,
-    batonSec: 12
+    batonSec: 12,
+    laps: 2,
+    pdDrawSec: 60
   };
   renderRoomCreateOptions();
   modals.roomCreate.open();
@@ -292,14 +308,16 @@ export function createRoomFromSettings() {
   c.roomName = roomName;
   saveNick($('lobby-nick'));
   $('room-create-submit').disabled = true;
-  var relay = c.mode === 'relay';
+  var relay = c.mode === 'relay', pickdraw = c.mode === 'pickdraw';
   var settings = relay
     ? { wordLang: c.wordLang || Store.wordLang(), guessRounds: c.guessRounds || 1, batonSec: c.batonSec || 12, diff: c.diff, category: c.category || '' }
-    : { wordLang: c.wordLang || Store.wordLang(), rounds: c.rounds, drawSec: c.drawSec, diff: c.diff, category: c.category || '' };
+    : pickdraw
+      ? { wordLang: c.wordLang || Store.wordLang(), laps: c.laps || 2, drawSec: c.pdDrawSec || 60, diff: c.diff, category: c.category || '' }
+      : { wordLang: c.wordLang || Store.wordLang(), rounds: c.rounds, drawSec: c.drawSec, diff: c.diff, category: c.category || '' };
   w.Online.send('room:create', {
     name: Store.ensureNick(),
     roomName: roomName,
-    mode: relay ? 'relay' : 'classic',
+    mode: relay ? 'relay' : (pickdraw ? 'pickdraw' : 'classic'),
     settings: settings
   }, function (res) {
     $('room-create-submit').disabled = false;
@@ -356,7 +374,25 @@ export function roomSetupHtml(v) {
   /* ---- 遊戲規則 ---- */
   var rules;
   var relay = r.mode === 'relay';
-  if (relay) {
+  var pickdraw = r.mode === 'pickdraw';
+  if (pickdraw) {
+    /* 你出我畫他猜房：圈數、每題秒數、題型，再加種類；下面一句話講清楚角色怎麼輪 */
+    var pdNote = '<p class="setupnote relay-rules-note">' + esc(w.I18N.t('pickdraw.rulesNote')) + '</p>';
+    rules = host
+      ? '<div class="setupblock"><h4>' + esc(w.I18N.t('text.123')) + '</h4>' +
+        '<div class="rules-row">' +
+        '<div class="rule-field"><span>' + esc(w.I18N.t('pickdraw.field.laps')) + '</span>' + ruleDropdown('set-laps', lapChoices(), r.settings.laps) + '</div>' +
+        '<div class="rule-field"><span>' + esc(w.I18N.t('pickdraw.field.drawSec')) + '</span>' + ruleDropdown('set-pdsec', pdSecChoices(), r.settings.drawSec) + '</div>' +
+        '<div class="rule-field"><span>' + esc(w.I18N.t('text.124')) + '</span>' + ruleDropdown('set-diff', DIFF_CHOICES, r.settings.diff) + '</div>' +
+        '</div><div class="rule-field category-rule"><span>' + esc(w.I18N.t('category.select')) + '</span>' +
+        ruleDropdown('set-category', categoryChoices(), r.settings.category || '') + '</div>' +
+        langField + pdNote + '</div>'
+      : '<div class="setupblock"><h4>' + esc(w.I18N.t('text.123')) + '</h4>' +
+        '<div class="setup-rulechips" id="room-wordlang-note">' + roomRuleChips({
+          mode: 'pickdraw', laps: r.settings.laps, drawSec: r.settings.drawSec, diff: r.settings.diff,
+          category: r.settings.category || '', wordLang: r.settings.wordLang
+        }) + '</div>' + pdNote + '</div>';
+  } else if (relay) {
     /* 接力房：猜題次數、每棒秒數、題型，再加種類；下面一句話講清楚怎麼玩 */
     var relayNote = '<p class="setupnote relay-rules-note">' + esc(w.I18N.t('relay.rulesNote')) + '</p>';
     rules = host
@@ -449,7 +485,8 @@ export function roomSetupHtml(v) {
      內容分成兩欄（.setup-col）：寬螢幕並排（左：房號、名單、規則；右：邀請、聊天室），
      一個畫面就看得完不用捲；窄螢幕兩欄上下接著排，跟以前一樣是一欄。 */
   return ("<h3>" + esc(I18N.t("text.103")) +
-    (relay ? ' <span class="relay-badge"><span class="ico" data-ico="relay" aria-hidden="true"></span>' + esc(w.I18N.t('relay.name')) + '</span>' : '') + "</h3>") +
+    (relay ? ' <span class="relay-badge"><span class="ico" data-ico="relay" aria-hidden="true"></span>' + esc(w.I18N.t('relay.name')) + '</span>' : '') +
+    (pickdraw ? ' <span class="relay-badge pickdraw-badge"><span class="ico" data-ico="pickdraw" aria-hidden="true"></span>' + esc(w.I18N.t('pickdraw.name')) + '</span>' : '') + "</h3>") +
     '<div class="setup-cols"><div class="setup-col">' +
     '<div class="roomcode"><b>' + esc(r.code) + ("</b><span>" + esc(I18N.t("text.102")) + "</span></div>") +
     '<div class="seatlist">' + (seats || ("<div class=\"seatrow\">" + esc(I18N.t("text.101")) + "</div>")) +
@@ -720,7 +757,8 @@ export function onOverlayAct(el) {
     var optField = el.getAttribute('data-field');
     var optValue = optField === 'set-category' ? el.getAttribute('data-v') : Number(el.getAttribute('data-v'));
     var key = optField === 'set-category' ? 'category' : optField === 'set-rounds' ? 'rounds' : optField === 'set-drawsec' ? 'drawSec' : optField === 'set-diff' ? 'diff'
-      : optField === 'set-guessrounds' ? 'guessRounds' : optField === 'set-batonsec' ? 'batonSec' : null;
+      : optField === 'set-guessrounds' ? 'guessRounds' : optField === 'set-batonsec' ? 'batonSec'
+      : optField === 'set-laps' ? 'laps' : optField === 'set-pdsec' ? 'drawSec' : null;
     if (key) {
       var payload = {};
       payload[key] = optValue;
