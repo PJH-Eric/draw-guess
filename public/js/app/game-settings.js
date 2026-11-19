@@ -1,10 +1,10 @@
 /* ===== app/game-settings.js — 對局設定彈窗與邀請連結 ===== */
 
-import { $, Cfg, D, S, Sound, app, esc, toast } from './core.js?v=7ce230ca1a';
-import { askConfirm, askLeaveGame, makeModal, modals } from './modal.js?v=7ce230ca1a';
-import { doSkip } from './canvas.js?v=7ce230ca1a';
-import { renderOverlay } from './overlay.js?v=7ce230ca1a';
-import { renderKickBanner } from './render.js?v=7ce230ca1a';
+import { $, Cfg, D, S, Sound, app, esc, toast } from './core.js?v=73830c6027';
+import { askConfirm, askLeaveGame, makeModal, modals } from './modal.js?v=73830c6027';
+import { doSkip } from './canvas.js?v=73830c6027';
+import { renderOverlay } from './overlay.js?v=73830c6027';
+import { renderKickBanner } from './render.js?v=73830c6027';
 
 var w = window;
 
@@ -87,7 +87,8 @@ export function newInvite() {
   }, function (res) {
     if (!res || !res.ok) return toast((res && w.I18N.message(res.error, res.params)) || (globalThis.I18N ? globalThis.I18N.t("text.045") : "邀請連結產生失敗。"), 'error');
     app.inviteToken = res.token;
-    app.inviteUrl = Cfg.inviteUrl(app.roomCode, res.token);
+    var address = Cfg.inviteUrl(app.roomCode, res.token);
+    app.inviteUrl = window.GameBackend?.pinInvite(address) ?? address;
     app.lastOverlayHtml = null;
     renderOverlay();
     toast((globalThis.I18N ? globalThis.I18N.t("text.044") : "邀請連結好了，按「複製」傳給朋友。"), 'ok');

@@ -7,8 +7,8 @@
  * 共用接力做好的元件：放棄鈕（#b-relay-giveup）、表情列（#relay-cheers）、飄過畫布的表情、倒數大字與獎項卡樣式。
  */
 
-import { $, D, S, Sound, app, esc, secsLeft } from './core.js?v=7ce230ca1a';
-import { reactionBarHtml } from './overlay.js?v=7ce230ca1a';
+import { $, D, S, Sound, app, esc, secsLeft } from './core.js?v=73830c6027';
+import { reactionBarHtml } from './overlay.js?v=73830c6027';
 
 var w = window;
 function t(key, params) { return w.I18N.t(key, params); }

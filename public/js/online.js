@@ -80,10 +80,10 @@
   }
 
   /** socket.io 用戶端腳本是由伺服器提供的，所以要從 server URL 載入 */
-  function loadScript() {
+  function loadScript(base) {
     if (w.io) return Promise.resolve();
     if (loading) return loading;
-    var src = Config.url('/socket.io/socket.io.js');
+    var src = base ? base + '/socket.io/socket.io.js' : null;
     if (!src) return Promise.reject(new Error((globalThis.I18N ? globalThis.I18N.t("text.311") : "沒有設定遊戲伺服器位址。")));
     setStatus('loading');
     loading = new Promise(function (resolve, reject) {
@@ -114,11 +114,14 @@
 
     var generation = connectionGeneration;
     if (w.ServerOutage) w.ServerOutage.state('begin');
-    return loadScript().then(function () {
+    var selected = w.GameBackend?.select(Config.serverUrl) ?? Config.serverUrl;
+    return Promise.resolve(selected).then(async function (base) {
+      if (generation !== connectionGeneration) throw new Error('Connection cancelled');
+      await loadScript(base);
       if (generation !== connectionGeneration) throw new Error('Connection cancelled');
       if (socket) { socket.connect(); return waitHello(identity); }
       setStatus('connecting');
-      socket = w.io(Config.serverUrl, {
+      socket = w.io(base, {
         transports: ['websocket', 'polling'],
         reconnection: true,
         reconnectionDelay: 800,
