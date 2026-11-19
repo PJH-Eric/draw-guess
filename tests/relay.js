@@ -300,5 +300,86 @@ section('表情互動與隱藏資訊');
   check('公布後猜題者也看得到答案', Relay.toPublic(st, 'p1').answer === answer(st));
 }
 
+section('房間層（lib/rooms.js）');
+{
+  const { RoomStore, RELAY_AWAY_MS } = require('../lib/rooms.js');
+  const store = new RoomStore({ idleMs: 0 });
+  let t = T0;
+  const made = store.create('h', { name: '房主', roomName: '接力房', settings: { guessRounds: 2, batonSec: 7 }, now: t, mode: 'relay' });
+  check('可以開接力房', made.ok && made.room.mode === 'relay');
+  const room = made.room;
+  check('接力設定套用（猜題 2 次、每棒 7 秒）', room.settings.guessRounds === 2 && room.settings.batonSec === 7);
+  check('每棒秒數只收 7／12／17', !room.setSettings('h', { batonSec: 10 }).ok);
+  check('猜題次數只收 1–5', !room.setSettings('h', { guessRounds: 6 }).ok && room.setSettings('h', { guessRounds: 1 }).ok);
+  const classic = store.create('c', { name: '一般', roomName: '一般房', now: t });
+  check('一般大廳看不到接力房', store.list().every((r) => r.mode === 'classic') && store.list().some((r) => r.code === classic.room.code));
+  check('接力大廳只列接力房', store.list('relay').length === 1 && store.list('relay')[0].code === room.code);
+
+  room.join('a', { name: '阿明', now: t });
+  room.setReady('a', true);
+  check('兩人不能開始（至少 3 人）', !room.start('h', t).ok);
+  room.join('b', { name: '小華', now: t });
+  room.setReady('b', true);
+  const st = room.start('h', t);
+  check('三人可以開始', st.ok && room.state.mode === 'relay');
+
+  const gid = room.state.guesserId;
+  const painters = room.state.order.slice();
+  const gv = room.viewFor(gid, t);
+  check('猜題者的房間投影沒有候選題與答案', gv.game.choices.length === 0 && gv.game.answer === null && gv.you.can.vote === false);
+  const pv = room.viewFor(painters[0], t);
+  check('畫家可以投票', pv.you.can.vote && pv.game.choices.length === 4);
+  check('猜題者不能聊天', !room.chat(gid, '我猜是…', t + 600).ok);
+  check('畫家對局中可以聊天', room.chat(painters[0], '畫大一點', t + 600).ok);
+  check('猜題者看不到畫家聊天', room.viewFor(gid, t).room.chat.length === 0 && room.viewFor(painters[1], t).room.chat.length === 1);
+  check('一般模式的選題與跳過在接力房被擋', !room.pickWord(painters[0], room.state.choices[0], t).ok && !room.skipTurn(painters[0], t).ok);
+
+  for (const id of painters) room.vote(id, room.state.choices[2], t + 1000);
+  check('投完提前進倒數', room.state.phase === 'countdown');
+  const summaryText = JSON.stringify(room.summary) + JSON.stringify(room.feed);
+  const ans = Words.byId(room.state.wordId, room.state.lang).text;
+  check('摘要與紀錄在公布前沒有答案', !summaryText.includes(ans));
+  t += 1000 + C.COUNTDOWN_MS;
+  room.tick(t);
+  check('倒數完第一棒開始', room.state.phase === 'drawing');
+  const drawer = room.state.drawerId;
+  check('只有當棒的人能畫', room.stroke(drawer, { t: 'pen', p: [1, 1, 9, 9] }, t).ok && !room.stroke(gid, { t: 'pen', p: [1, 1, 9, 9] }, t).ok);
+  check('猜題者打字會亮輸入中', room.typing(gid, true, t) && room.viewFor(painters[0], t).room.guesserTypingUntil > t && room.viewFor(gid, t).room.guesserTypingUntil === 0);
+  const waiting = painters.find((id) => id !== drawer);
+  check('等待的畫家可以丟表情', room.cheer(waiting, 'cheer', t).ok);
+  check('猜題者不能丟表情', !room.cheer(gid, 'cheer', t).ok);
+  check('猜題者可以用提示', room.giveHint(gid, t).ok && room.state.hints === 1);
+  const miss = room.guess(gid, '一定不是這個ZZ', t + 500);
+  check('猜錯會進猜題紀錄（大家都看得到）', miss.ok && miss.kind === 'miss' && room.feed[room.feed.length - 1].text === '一定不是這個ZZ');
+  const hit = room.guess(gid, ans, t + 1000);
+  check('猜中：用了一張提示的第一棒 180 分', hit.ok && hit.kind === 'hit' && hit.points === 180, hit);
+  check('公布後摘要才有答案', JSON.stringify(room.summary).includes(ans));
+  check('公布時猜題者也看得到答案', room.viewFor(gid, t + 1000).game.answer === ans);
+
+  /* 下一題：猜題者斷線就公布 */
+  t += 1000 + C.REVEAL_MS;
+  room.tick(t);
+  const g2 = room.state.guesserId;
+  check('換下一位猜題者', room.state.phase === 'voting' && g2 !== gid);
+  room.disconnect(g2, t);
+  room.tick(t + RELAY_AWAY_MS - 1);
+  check('斷線緩衝內不公布', room.state.phase === 'voting');
+  room.tick(t + RELAY_AWAY_MS);
+  check('猜題者斷線超過緩衝：這題公布答案', room.state.phase === 'reveal' && room.state.log[room.state.log.length - 1].reason === 'guesserleft');
+  room.join(g2, { name: '', now: t + RELAY_AWAY_MS + 10 });
+
+  /* 中途加入：先觀戰，下一題才上場 */
+  room.join('d', { name: '新人', now: t + 5000 });
+  check('對局中加入當玩家：這題先觀戰', room.viewFor('d', t + 5000).game.you.role === 'pending');
+
+  /* 離開到剩兩人：結算 */
+  room.leave('d', t + 6000);
+  room.leave('b', t + 6000);
+  room.leave('a', t + 6000);
+  check('人數低於 3 人就結算', room.phase === 'finished');
+  check('結算後可以拿畫廊', room.gallery().ok && room.gallery().mode === 'relay');
+  check('簡報帶接力設定', room.brief().mode === 'relay' && room.brief().batonSec === 7);
+}
+
 console.log('\n' + (failed ? '✗ ' : '✓ ') + '接力規則：' + passed + ' 通過，' + failed + ' 失敗');
 if (failed) process.exit(1);

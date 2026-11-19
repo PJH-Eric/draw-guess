@@ -75,6 +75,11 @@ class Client {
     this.socket.on('room:error', (p) => { this.errors.push(p); });
     this.socket.on('room:closed', (p) => { this.closed = p; });
     this.socket.on('lobby:rooms', (p) => { this.rooms = p.rooms; this.online = p.online; });
+    this.cheers = [];
+    this.socket.on('room:cheer', (p) => { this.cheers.push(p); });
+    /* 收過的所有房間投影（序列化），用來檢查猜題者從頭到尾都沒拿到答案 */
+    this.seen = [];
+    this.socket.on('room:sync', (v) => { if (this.keepSeen) this.seen.push(JSON.stringify(v)); });
   }
 
   connect() {
@@ -645,6 +650,153 @@ async function run() {
   check('伺服器上已經沒有這間房', !finalRooms.rooms.some((r) => r.code === code), JSON.stringify(finalRooms.rooms.map((r) => r.code)));
 
   [host, mate2, watcher, extra, lobbyWatcher].forEach((c) => c.close());
+
+  await runRelay();
+}
+
+/* ------------------------------------------------------------ 接力模式（Beta） */
+
+async function runRelay() {
+  const Words = require('../public/js/words.js');
+  const RelayRules = require('../public/js/relay-rules.js');
+  section('接力模式：開房與大廳分流');
+  const a = new Client('relay-a', 'client-relay-aaaa', '接力甲');
+  const b = new Client('relay-b', 'client-relay-bbbb', '接力乙');
+  const c = new Client('relay-c', 'client-relay-cccc', '接力丙');
+  const w = new Client('relay-w', 'client-relay-wwww', '接力觀');
+  const classicLobby = new Client('lobby-c', 'client-lobby-cccc', '一般大廳');
+  const relayLobby = new Client('lobby-r', 'client-lobby-rrrr', '接力大廳');
+  for (const x of [a, b, c, w, classicLobby, relayLobby]) await x.connect();
+  classicLobby.emit('lobby:subscribe', {});
+  relayLobby.emit('lobby:subscribe', { mode: 'relay' });
+
+  const created = await a.ask('room:create', { name: '接力甲', roomName: '接力測試房', mode: 'relay', settings: { guessRounds: 1, batonSec: 7 } });
+  check('可以開接力房', created.ok === true && created.mode === 'relay', JSON.stringify(created));
+  const code = created.code;
+  check('接力大廳看得到接力房', await relayLobby.until((x) => (x.rooms || []).some((r) => r.code === code && r.mode === 'relay'), 4000));
+  await sleep(200);
+  check('一般大廳看不到接力房', !(classicLobby.rooms || []).some((r) => r.code === code), JSON.stringify(classicLobby.rooms));
+  const api = await (await fetch(BASE + '/api/rooms')).json();
+  check('/api/rooms（一般列表）不含接力房', !api.rooms.some((r) => r.code === code));
+
+  for (const x of [b, c]) {
+    const j = await x.ask('room:join', { code, name: x.name, role: 'player' });
+    check(x.name + ' 加入接力房', j.ok === true, JSON.stringify(j));
+  }
+  const jw = await w.ask('room:join', { code, name: w.name, role: 'spectator' });
+  check('觀戰者加入接力房', jw.ok === true && jw.role === 'spectator');
+  b.emit('room:ready', { ready: true });
+  c.emit('room:ready', { ready: true });
+  await a.until((x) => x.view && x.view.you.can.start, 3000);
+  for (const x of [a, b, c, w]) x.keepSeen = true;
+  a.emit('room:start', {});
+  check('三人開始接力', await a.until((x) => x.view && x.view.game && x.view.game.mode === 'relay' && x.view.game.phase === 'voting', 4000));
+
+  section('接力模式：投票、接力與猜題');
+  const byId = {};
+  for (const x of [a, b, c]) byId[x.id] = x;
+  let total = a.view.game.totalQuestions;
+  check('總題數 = 3（每人當一次猜題者）', total === 3, total);
+  let answers = [];
+  for (let q = 0; q < 3; q++) {
+    await a.until((x) => x.view.game.phase === 'voting' && x.view.game.questionNo === q + 1, 12000);
+    const gid = a.view.game.guesserId;
+    const guesser = byId[gid];
+    const painters = [a, b, c].filter((x) => x.id !== gid);
+    await guesser.until((x) => x.view && x.view.game.questionNo === q + 1, 3000);
+    check('第 ' + (q + 1) + ' 題：猜題者看不到候選題', guesser.view.game.choices.length === 0 && !guesser.view.you.can.vote);
+    await painters[0].until((x) => x.view.game.choices.length === 4, 3000);
+    const choice = painters[0].view.game.choices[1].id;
+    painters[0].emit('room:vote', { wordId: choice });
+    check('投票後只顯示票數', await painters[1].until((x) => x.view.game.choices.some((ch) => ch.votes === 1), 3000) &&
+      !JSON.stringify(painters[1].view.game).includes(painters[0].id + '":"'));
+    painters[1].emit('room:vote', { wordId: choice });
+    check('全部投完提前開始（倒數）', await a.until((x) => ['countdown', 'drawing'].indexOf(x.view.game.phase) >= 0, 3000));
+    await a.until((x) => x.view.game.phase === 'drawing', 5000);
+    const ans = w.view && w.view.game.answer;
+    answers.push(ans);
+    check('觀戰者看得到答案', !!ans, JSON.stringify(w.view && w.view.game.answer));
+    check('猜題者的投影沒有答案', guesser.view.game.answer === null);
+    const drawerId = a.view.game.drawerId;
+    const drawer = byId[drawerId];
+    const waiting = painters.find((x) => x.id !== drawerId);
+    drawer.emit('room:stroke', { stroke: { t: 'pen', c: 0, w: 1, p: [100, 100, 300, 300] } });
+    check('當棒畫家的筆畫廣播給大家', await guesser.until((x) => x.strokes.length > 0, 3000));
+    guesser.strokes = [];
+    waiting.emit('room:stroke', { stroke: { t: 'pen', c: 0, w: 1, p: [1, 1, 2, 2] } });
+    check('不是這一棒的畫家畫不了', await waiting.until((x) => x.errors.length > 0, 3000));
+    waiting.clearErrors();
+    if (q === 0) {
+      waiting.emit('room:chat', { text: '加油畫大一點' });
+      check('畫家之間可以聊天', await drawer.until((x) => (x.view.room.chat || []).some((m) => m.text === '加油畫大一點'), 3000));
+      await sleep(200);
+      check('猜題者看不到畫家聊天', (guesser.view.room.chat || []).length === 0);
+      guesser.emit('room:chat', { text: '偷看' });
+      check('猜題者不能在對局中聊天', await guesser.until((x) => x.errors.length > 0, 3000));
+      guesser.clearErrors();
+      waiting.emit('room:cheer', { kind: 'cheer' });
+      check('表情送到當下作畫者', await drawer.until((x) => x.cheers.some((ch) => ch.kind === 'cheer'), 3000));
+      await sleep(200);
+      check('猜題者收不到表情', guesser.cheers.length === 0);
+      guesser.emit('room:typing', { on: true });
+      check('畫家看得到「輸入中…」', await waiting.until((x) => x.view.room.guesserTypingUntil > 0, 3000));
+      guesser.emit('room:guess', { text: '這個一定猜錯QQ' });
+      check('猜錯內容大家都看得到', await w.until((x) => x.feed.some((e) => e && e.text === '這個一定猜錯QQ'), 3000));
+      await sleep(450);
+      guesser.emit('room:guess', { text: ans });
+      check('猜題者猜中 → 公布答案', await a.until((x) => x.view.game.phase === 'reveal', 4000));
+      check('第一棒猜中 300 分', await guesser.until((x) => x.privates.some((p) => p.kind === 'hit' && p.points === 300), 3000),
+        JSON.stringify(guesser.privates));
+      const scores = a.view.game.players.filter((p) => p.score === 300).map((p) => p.id).sort();
+      check('猜題者與當下作畫者同分', scores.join() === [gid, drawerId].sort().join(), JSON.stringify(a.view.game.players));
+    } else if (q === 1) {
+      guesser.emit('room:hint', {});
+      check('猜題者自己用提示', await guesser.until((x) => x.view.game.hint && x.view.game.hint.step === 1, 3000));
+      guesser.emit('room:giveUp', {});
+      check('放棄 → 公布答案、沒人得分', await a.until((x) => x.view.game.phase === 'reveal' && x.view.game.log.slice(-1)[0].reason === 'giveup', 4000));
+    } else {
+      /* 等一棒跑完進緩衝，再在緩衝中猜中：算上一棒 */
+      check('一棒畫滿進入換棒緩衝', await a.until((x) => x.view.game.phase === 'handoff', 9000));
+      const next = byId[a.view.game.nextDrawerId];
+      check('下一棒的人收到「換你畫」標記', !!next && next.view.game.you.isNext === true);
+      guesser.emit('room:guess', { text: ans });
+      check('緩衝中猜中 → 公布', await a.until((x) => x.view.game.phase === 'reveal', 4000));
+      const last = a.view.game.log.slice(-1)[0];
+      check('緩衝中猜中算上一棒', last.drawerId === drawerId && last.points === 300, JSON.stringify(last));
+    }
+    check('公布後猜題者也看得到答案', await guesser.until((x) => x.view.game.answer === ans, 3000));
+  }
+
+  section('接力模式：結算');
+  check('三題後結算', await a.until((x) => x.view.room.phase === 'finished', 12000));
+  const g = a.view.game;
+  check('結算有三個獎項', !!g.awards && Array.isArray(g.awards.guess) && Array.isArray(g.awards.relay) && Array.isArray(g.awards.key));
+  const gal = await a.ask('room:gallery', {});
+  check('畫廊放每題完成圖並列出參與畫家', gal.ok && gal.items.length >= 1 && Array.isArray(gal.items[0].painters) && gal.items[0].painters.length >= 1,
+    JSON.stringify(gal && gal.items && gal.items.map((i) => i.painters)));
+
+  /* 猜題者整場收過的投影：當他是猜題者的那幾題，公布前一個答案字都沒有 */
+  for (let q = 0; q < 3; q++) {
+    const ans = answers[q];
+    if (!ans) continue;
+    const owner = [a, b, c].find((x) => x.seen.some((s) => {
+      const v = JSON.parse(s);
+      return v.game && v.game.questionNo === q + 1 && v.game.guesserId === x.id;
+    }));
+    if (!owner) continue;
+    const leaked = owner.seen.some((s) => {
+      const v = JSON.parse(s);
+      return v.game && v.game.questionNo === q + 1 && RelayRules.ACTIVE.indexOf(v.game.phase) >= 0 && s.includes(ans);
+    });
+    check('第 ' + (q + 1) + ' 題猜題者在公布前從沒收到答案', !leaked);
+  }
+  check('題庫答案確實存在（檢查有效）', answers.every((x) => !!x && Words.LIST.length > 0));
+
+  a.emit('room:rematch', {});
+  check('房主可以直接再來一局', await a.until((x) => x.view.room.phase === 'playing' && x.view.game.questionNo === 1, 4000));
+  c.emit('room:leave', {});
+  check('剩兩人時直接結算', await a.until((x) => x.view.room.phase === 'finished', 5000));
+  [a, b, c, w, classicLobby, relayLobby].forEach((x) => x.close());
 }
 
 run()

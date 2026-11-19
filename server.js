@@ -116,6 +116,8 @@ const roomSockets = new Map();
 const lobbySockets = new Set();
 
 const now = () => Date.now();
+/** 接力房的開房公告：房名前加這個標記（emoji＋英文，三種語系都看得懂） */
+const RELAY_ROOM_TAG = '🔁Relay β｜';
 
 /*
  * 公開 id 與私密 clientId 分開：
@@ -195,11 +197,16 @@ function syncOne(socket, room, full) {
   socket.emit('room:sync', viewPayload(room, socket.data.clientId, !!full));
 }
 
+/* 一般大廳與接力大廳各自只看得到自己模式的房間；在線人數與房間總數兩邊共用 */
 function syncLobby() {
   if (!lobbySockets.size) return;
   const online = new Set([...io.sockets.sockets.values()].map(s => s.data.clientId).filter(Boolean)).size;
-  const payload = { rooms: store.list(), total: store.size(), online };
-  for (const s of lobbySockets) s.emit('lobby:rooms', payload);
+  const payloads = {};
+  for (const s of lobbySockets) {
+    const mode = s.data.lobbyMode === 'relay' ? 'relay' : 'classic';
+    if (!payloads[mode]) payloads[mode] = { rooms: store.list(mode), total: store.size(), online, mode };
+    s.emit('lobby:rooms', payloads[mode]);
+  }
 }
 
 /** 猜題紀錄的增量：某人猜了什麼、猜對了誰。沒有自由聊天。 */
@@ -299,7 +306,9 @@ io.on('connection', (socket) => {
     syncLobby();
   });
 
-  socket.on('lobby:subscribe', () => {
+  socket.on('lobby:subscribe', (payload) => {
+    /* 帶 mode: 'relay' 就是接力大廳；舊版用戶端沒帶就是一般大廳 */
+    socket.data.lobbyMode = payload && payload.mode === 'relay' ? 'relay' : 'classic';
     leaveCurrentRoom(socket);
     lobbySockets.add(socket);
     syncLobby();
@@ -316,6 +325,7 @@ io.on('connection', (socket) => {
       roomName: p.roomName,
       private: !!p.private,
       settings: p.settings,
+      mode: p.mode === 'relay' ? 'relay' : 'classic',
       now: now()
     });
     if (!res.ok) { fail(socket, res.error, res.code); if (typeof ack === 'function') ack(res); return; }
@@ -323,10 +333,16 @@ io.on('connection', (socket) => {
     attach(socket, room.code);
     room.system(socket.data.name + ' 開了這間房。把房號或邀請連結傳給朋友，大家準備好就能開始。', now());
     /* 先回 ack：用戶端要先知道自己進了哪一間房，才收得下後面的投影 */
-    if (typeof ack === 'function') ack({ ok: true, code: room.code });
+    if (typeof ack === 'function') ack({ ok: true, code: room.code, mode: room.mode });
     syncRoom(room, true);
     syncLobby();
-    lobbyChat.roomOpened({ code: room.code, roomName: room.name, host: socket.data.name, isPrivate: !!p.private });
+    /* 大廳聊天室是共用元件：不改它，只在房名前面加上接力標記，公告就看得出是接力房 */
+    lobbyChat.roomOpened({
+      code: room.code,
+      roomName: (room.relay ? RELAY_ROOM_TAG : '') + room.name,
+      host: socket.data.name,
+      isPrivate: !!p.private
+    });
   });
 
   socket.on('room:join', (payload, ack) => {
@@ -500,6 +516,12 @@ io.on('connection', (socket) => {
       socket.emit('room:private', { kind: 'close', message: '「' + res.text + '」很接近了，再想一下！' });
       return;
     }
+    if (res.kind === 'hit' && res.relay) {
+      socket.emit('room:private', { kind: 'hit', message: 'srv.private.relayHit', params: { points: res.points }, points: res.points });
+      syncRoom(room, true);
+      syncLobby();
+      return;
+    }
     if (res.kind === 'hit') {
       socket.emit('room:private', { kind: 'hit', message: '猜對了！+' + res.points + ' 分（第 ' + res.order + ' 個）', points: res.points });
       syncRoom(room);
@@ -507,7 +529,39 @@ io.on('connection', (socket) => {
     }
   }));
 
-  /* 等待畫面的自由聊天：room.chat() 自己會擋掉對局進行中的訊息，這裡不用再判斷一次。 */
+  /* ---------------- 接力模式（Beta）專用 ---------------- */
+
+  /* 畫家投票選題：投完（或全部投完提前開始）都要讓大家看到最新票數 */
+  socket.on('room:vote', withRoom((room, p) => {
+    const res = room.vote(socket.data.clientId, str(p.wordId), now());
+    if (!res.ok) return fail(socket, res.error, res.code);
+    syncRoom(room, !!res.settled);
+  }));
+
+  /* 猜題者放棄：公布答案、這題沒人得分 */
+  socket.on('room:giveUp', withRoom((room) => {
+    const res = room.relayGiveUp(socket.data.clientId, now());
+    if (!res.ok) return fail(socket, res.error, res.code);
+    syncRoom(room, true);
+  }));
+
+  /* 猜題者打字中：狀態有變才廣播（不是每個按鍵都送） */
+  socket.on('room:typing', withRoom((room, p) => {
+    if (room.typing(socket.data.clientId, !!p.on, now())) syncRoom(room);
+  }));
+
+  /* 畫家對當下作畫者丟表情：一次性的動畫，不進房間狀態；猜題者收不到 */
+  socket.on('room:cheer', withRoom((room, p) => {
+    const res = room.cheer(socket.data.clientId, str(p.kind), now());
+    if (!res.ok) return fail(socket, res.error, res.code);
+    const payload = { kind: res.kind, from: res.from, fromName: res.fromName, to: res.to };
+    for (const s of socketsOf(room.code)) {
+      if (s.data.clientId !== res.guesserId) s.emit('room:cheer', payload);
+    }
+  }));
+
+  /* 等待畫面的自由聊天：room.chat() 自己會擋掉對局進行中的訊息，這裡不用再判斷一次。
+     接力房例外：畫家對局中也能聊天，猜題者送不出也看不到（room.chat／viewFor 擋）。 */
   socket.on('room:chat', withRoom((room, p) => {
     const res = room.chat(socket.data.clientId, p.text, now());
     if (!res.ok) return fail(socket, res.error, res.code);
@@ -589,7 +643,7 @@ io.on('connection', (socket) => {
     /* 先標記斷線並保留座位，讓重新整理的人可以憑 clientId 回到原位；
        超過保留時間還沒回來，定時工作才會把他踢掉並檢查房間要不要關。 */
     room.disconnect(socket.data.clientId, now());
-    const isDrawer = !!(room.state && room.phase === 'playing' && room.state.drawerId === member.id &&
+    const isDrawer = !room.relay && !!(room.state && room.phase === 'playing' && room.state.drawerId === member.id &&
       (room.state.phase === 'picking' || room.state.phase === 'drawing'));
     room.system(isDrawer
       ? '畫家 ' + member.name + ' 斷線了，等他 15 秒，沒回來就先跳過這一題。'
@@ -613,7 +667,8 @@ function sweepTick() {
     for (const st of item.strokes) broadcastStroke(item.room, st);
     for (const entry of item.feed) broadcastFeed(item.room, entry);
     const bigChange = item.events.some((e) =>
-      e.type === 'turnstart' || e.type === 'turnend' || e.type === 'autopick' || e.type === 'aipick' || e.type === 'gameover');
+      e.type === 'turnstart' || e.type === 'turnend' || e.type === 'autopick' || e.type === 'aipick' || e.type === 'gameover' ||
+      e.type === 'questionstart' || e.type === 'questionend');
     if (item.events.length) syncRoom(item.room, bigChange);
   }
   for (const item of res.kicked) ejectKicked(item.room, item.id);
