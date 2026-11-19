@@ -175,6 +175,7 @@ I18N.register("en", {
   "pickdraw.rulesNote": "Seats rotate: A picks, B draws, C guesses; the last artist picks next. One lap is 3 rounds, so everyone plays each role once.",
   "pickdraw.tip.guesser": "You are the guesser: type your answer below.",
   "pickdraw.tip.picker": "You are the picker: watch and send reactions.",
+  "pickdraw.tip.wait": "You can draw once the word is picked and the countdown ends.",
   "pickdraw.word.answer": "Answer",
   "pickdraw.word.draw": "Draw this",
   "pickdraw.word.guess": "Guess",

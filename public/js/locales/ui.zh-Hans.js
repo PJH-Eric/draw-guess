@@ -175,6 +175,7 @@ I18N.register("zh-Hans", {
   "pickdraw.rulesNote": "照座位轮流：A 出题、B 画、C 猜，下一题上一题的画家变出题者。一圈 3 题，每人三种角色各当一次。",
   "pickdraw.tip.guesser": "你是猜题者：把答案打进猜题框。",
   "pickdraw.tip.picker": "你是出题者：只能看，可以丢表情。",
+  "pickdraw.tip.wait": "等出题者挑好、倒数结束就能画。",
   "pickdraw.word.answer": "答案",
   "pickdraw.word.draw": "你要画的是",
   "pickdraw.word.guess": "猜猜看",

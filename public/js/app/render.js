@@ -1,10 +1,11 @@
 /* ===== app/render.js — 對局畫面渲染 ===== */
 
-import { $, D, S, app, esc, secsLeft } from './core.js?v=32e34c2986';
-import { renderReference } from './modal.js?v=32e34c2986';
-import { sizeCanvas } from './canvas.js?v=32e34c2986';
-import { renderAside, renderControls, renderOverlay } from './overlay.js?v=32e34c2986';
-import { isRelayGame, relayPhaseLabel, relayStripHtml, relayTick, renderRelayWordbar } from './relay.js?v=32e34c2986';
+import { $, D, S, app, esc, secsLeft } from './core.js?v=642809baed';
+import { renderReference } from './modal.js?v=642809baed';
+import { sizeCanvas } from './canvas.js?v=642809baed';
+import { renderAside, renderControls, renderOverlay } from './overlay.js?v=642809baed';
+import { isRelayGame, relayPhaseLabel, relayStripHtml, relayTick, renderRelayWordbar } from './relay.js?v=642809baed';
+import { isPickdrawGame, pickdrawPhaseLabel, pickdrawStripHtml, pickdrawTick, renderPickdrawWordbar } from './pickdraw.js?v=642809baed';
 
 var w = window;
 
@@ -38,9 +39,11 @@ export function render() {
     phaseChip.setAttribute('data-p', 'picking');
   } else if (g) {
     var relay = isRelayGame(g);
-    phaseChip.textContent = relay ? relayPhaseLabel(g.phase) : (PHASE_LABEL[g.phase] || g.phase);
+    var pickdraw = isPickdrawGame(g);
+    phaseChip.textContent = relay ? relayPhaseLabel(g.phase) : (pickdraw ? pickdrawPhaseLabel(g.phase) : (PHASE_LABEL[g.phase] || g.phase));
     /* 接力的階段沿用一般模式的配色：投票／倒數同選題、換棒同作畫 */
-    phaseChip.setAttribute('data-p', relay ? ({ voting: 'picking', countdown: 'picking', handoff: 'drawing' }[g.phase] || g.phase) : g.phase);
+    phaseChip.setAttribute('data-p', relay ? ({ voting: 'picking', countdown: 'picking', handoff: 'drawing' }[g.phase] || g.phase)
+      : (pickdraw ? ({ countdown: 'picking' }[g.phase] || g.phase) : g.phase));
   }
   $('round-chip').textContent = g ? turnLabel(g) : (globalThis.I18N ? globalThis.I18N.t("text.160") : "尚未開始");
 
@@ -53,6 +56,8 @@ export function render() {
     wb.hidden = true;
   } else if (isRelayGame(g)) {
     renderRelayWordbar(v, g);
+  } else if (isPickdrawGame(g)) {
+    renderPickdrawWordbar(v, g);
   } else if (g.hint) {
     var mine = g.you.isDrawer;
     var h = g.hint;
@@ -150,6 +155,7 @@ export function updateTimers() {
   /* 接力每棒只有 7–17 秒：最後 3 秒才標紅，不然整棒都在閃 */
   chip.setAttribute('data-urgent', String(g.phase === 'drawing' && s <= (isRelayGame(g) ? 3 : 10)));
   if (isRelayGame(g)) relayTick(v, g);
+  if (isPickdrawGame(g)) pickdrawTick(v, g);
   var sum = $('sum-timer');
   if (sum) sum.textContent = s + (globalThis.I18N ? globalThis.I18N.t("text.152") : " 秒");
 }
@@ -173,8 +179,9 @@ export function renderPlayers() {
   var host = $('playerstrip');
   if (!g) { host.innerHTML = ''; app.lastScores = null; return; }
   /* 接力：玩家列同時就是接力順序（猜題者第一，標出正在畫與下一棒） */
-  if (isRelayGame(g)) {
-    var rhtml = relayStripHtml(v, g);
+  /* 你出我畫他猜：玩家列照「出題 → 畫 → 猜」排，每張卡標出這題的角色 */
+  if (isRelayGame(g) || isPickdrawGame(g)) {
+    var rhtml = isRelayGame(g) ? relayStripHtml(v, g) : pickdrawStripHtml(v, g);
     var rprev = app.lastScores || {}, rcur = {}, rgain = [];
     if (host.getAttribute('data-sig') !== rhtml) { host.setAttribute('data-sig', rhtml); host.innerHTML = rhtml; }
     var cardsEl = host.querySelectorAll('.pcard');

@@ -1,9 +1,10 @@
 /* ===== app/canvas.js — 畫布與工具列 ===== */
 
-import { $, D, ME, Paint, Rules, S, Sound, Store, app, toast } from './core.js?v=32e34c2986';
-import { askConfirm } from './modal.js?v=32e34c2986';
-import { handleGameEvents, soloRefresh, startSolo, withWordPack } from './solo.js?v=32e34c2986';
-import { pushFeed } from './feed.js?v=32e34c2986';
+import { $, D, ME, Paint, Rules, S, Sound, Store, app, toast } from './core.js?v=642809baed';
+import { pickdrawBlockedTip } from './pickdraw.js?v=642809baed';
+import { askConfirm } from './modal.js?v=642809baed';
+import { handleGameEvents, soloRefresh, startSolo, withWordPack } from './solo.js?v=642809baed';
+import { pushFeed } from './feed.js?v=642809baed';
 
 var w = window;
 
@@ -22,6 +23,8 @@ export function ensurePaint() {
     onBlocked: function () {
       var v = app.view;
       if (!v || !v.game) return;
+      var pdTip = v.game.mode === 'pickdraw' ? pickdrawBlockedTip(v) : null;
+      if (pdTip) { toolHint(pdTip, 'error'); Sound.play('blocked'); return; }
       if (v.game.mode === 'relay' && v.you && v.you.role !== 'spectator' && !v.game.you.isGuesser) {
         toolHint(w.I18N.t('relay.tip.locked'), 'error');
         Sound.play('blocked');
@@ -281,8 +284,8 @@ export function syncDoneButtons() {
     $('b-solo-next').disabled = !drawing;
     return;
   }
-  /* 接力模式每棒都要畫滿秒數：沒有「畫完了」也沒有「跳過」 */
-  var relay = !!(g && g.mode === 'relay');
+  /* 接力模式每棒都要畫滿秒數、你出我畫他猜由猜題者決定放棄：兩種都沒有「畫完了」也沒有「跳過」 */
+  var relay = !!(g && (g.mode === 'relay' || g.mode === 'pickdraw'));
   done.hidden = relay;
   skip.hidden = relay;
   if (relay) return;

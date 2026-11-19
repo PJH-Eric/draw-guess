@@ -1,14 +1,15 @@
 /* ===== app/online-events.js — 線上事件 ===== */
 
-import { $, Sound, Store, Words, app, toast } from './core.js?v=32e34c2986';
-import { modals } from './modal.js?v=32e34c2986';
-import { localizeGame } from './solo.js?v=32e34c2986';
-import { pushFeed, replaceFeed } from './feed.js?v=32e34c2986';
-import { render } from './render.js?v=32e34c2986';
-import { renderAside } from './overlay.js?v=32e34c2986';
-import { renderGameSettings } from './game-settings.js?v=32e34c2986';
-import { isRelayGame, relayRecord, relayTransition, showCheer } from './relay.js?v=32e34c2986';
-import { forgetRoom, joinRoom, leaveGame, lobbyModeKey, renderRoomList, saveNick, setLobbyEnabled, subscribeLobby } from './lobby.js?v=32e34c2986';
+import { $, Sound, Store, Words, app, toast } from './core.js?v=642809baed';
+import { modals } from './modal.js?v=642809baed';
+import { localizeGame } from './solo.js?v=642809baed';
+import { pushFeed, replaceFeed } from './feed.js?v=642809baed';
+import { render } from './render.js?v=642809baed';
+import { renderAside } from './overlay.js?v=642809baed';
+import { renderGameSettings } from './game-settings.js?v=642809baed';
+import { isRelayGame, relayRecord, relayTransition, showCheer } from './relay.js?v=642809baed';
+import { isPickdrawGame, pickdrawRecord, pickdrawTransition } from './pickdraw.js?v=642809baed';
+import { forgetRoom, joinRoom, leaveGame, lobbyModeKey, renderRoomList, saveNick, setLobbyEnabled, subscribeLobby } from './lobby.js?v=642809baed';
 
 var w = window;
 
@@ -74,8 +75,9 @@ export function setupOnlineEvents() {
     var prev = app.view;
     app.view = v;
     if (v.room.mode === 'relay' && w.GameAnalytics) GameAnalytics.pageView('relay_room');
+    if (v.room.mode === 'pickdraw' && w.GameAnalytics) GameAnalytics.pageView('pickdraw_room');
     if (v.game) GameAnalytics.sync(v.room.phase, v.room.code + '|' + v.game.seed, {
-      mode: v.room.mode === 'relay' ? 'relay' : 'online', difficulty: v.game.diff, players: v.game.players.length, spectator: v.you.role !== 'player'
+      mode: v.room.mode === 'relay' || v.room.mode === 'pickdraw' ? v.room.mode : 'online', difficulty: v.game.diff, players: v.game.players.length, spectator: v.you.role !== 'player'
     }, { result: v.game.winners && v.game.winners.indexOf(v.you.id) >= 0 ? 'win' : 'lose' });
     app.roomCode = v.room.code;
     /* 回大廳時回到跟這間房同一種的大廳（邀請連結進來的人一開始不知道是哪一種） */
@@ -94,7 +96,7 @@ export function setupOnlineEvents() {
     if (key !== app.lastTurnKey) {
       app.lastTurnKey = key;
       /* 接力每一棒都會進 drawing：音效與震動交給 relayTransition，只提醒該提醒的人 */
-      if (v.game && v.game.phase === 'drawing' && !isRelayGame(v.game)) Sound.play('turn');
+      if (v.game && v.game.phase === 'drawing' && !isRelayGame(v.game) && !isPickdrawGame(v.game)) Sound.play('turn');
       if (v.game && v.game.phase === 'over') {
         Sound.play(v.game.winners.indexOf(v.you.id) >= 0 ? 'win' : 'lose');
         recordResult(v);
@@ -108,6 +110,7 @@ export function setupOnlineEvents() {
     }
 
     if (isRelayGame(v.game)) relayTransition(prev, v);
+    if (isPickdrawGame(v.game)) pickdrawTransition(prev, v);
     if (v.room.feed) replaceFeed(v.room.feed);
     render();
     if (modals.game && modals.game.isOpen()) renderGameSettings();
@@ -205,8 +208,8 @@ export function recordResult(v) {
   for (var i = 0; i < v.game.players.length; i++) if (v.game.players[i].id === v.you.id) me = v.game.players[i];
   if (!me) return;
   var correct = 0;
-  if (isRelayGame(v.game)) {
-    var rr = relayRecord(v);
+  if (isRelayGame(v.game) || isPickdrawGame(v.game)) {
+    var rr = isRelayGame(v.game) ? relayRecord(v) : pickdrawRecord(v);
     Store.recordGame('online', { win: v.game.winners.indexOf(v.you.id) >= 0, correct: rr.correct, drawn: rr.drawn, score: me.score });
     return;
   }

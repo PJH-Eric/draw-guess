@@ -6,9 +6,9 @@
  * 角色（game.you.role）：guesser 猜題者／drawer 正在畫／painter 等下一棒的畫家／pending 下一題才加入／spectator 觀戰
  */
 
-import { $, D, S, Sound, app, esc, netNow, secsLeft, toast } from './core.js?v=32e34c2986';
-import { askConfirm } from './modal.js?v=32e34c2986';
-import { reactionBarHtml } from './overlay.js?v=32e34c2986';
+import { $, D, S, Sound, app, esc, netNow, secsLeft, toast } from './core.js?v=642809baed';
+import { askConfirm } from './modal.js?v=642809baed';
+import { reactionBarHtml } from './overlay.js?v=642809baed';
 
 var w = window;
 function t(key, params) { return w.I18N.t(key, params); }
@@ -383,9 +383,11 @@ export function setupRelayControls() {
   });
   $('b-relay-giveup').addEventListener('click', function () {
     Sound.play('click');
+    /* 放棄鈕跟你出我畫他猜共用：那邊放棄是出題者拿 300 分，說明文字要換 */
+    var pd = !!(app.view && app.view.game && app.view.game.mode === 'pickdraw');
     askConfirm({
-      get title() { return t('relay.giveUp.title'); },
-      get text() { return t('relay.giveUp.confirm'); },
+      get title() { return t(pd ? 'pickdraw.giveUp.title' : 'relay.giveUp.title'); },
+      get text() { return t(pd ? 'pickdraw.giveUp.confirm' : 'relay.giveUp.confirm'); },
       get ok() { return t('relay.giveUp'); },
       get cancel() { return t('text.272'); }
     }, function () { w.Online.send('room:giveUp', {}); });
