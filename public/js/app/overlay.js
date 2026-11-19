@@ -1,17 +1,17 @@
 /* ===== app/overlay.js — 疊層卡片：房間設定、選題、公布答案、結算 ===== */
 
-import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=d9b580ef2d';
-import { askLeaveRoom, makeModal, modals } from './modal.js?v=d9b580ef2d';
-import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=d9b580ef2d';
-import { soloRefresh, soloStep, startSolo } from './solo.js?v=d9b580ef2d';
-import { renderRecent } from './feed.js?v=d9b580ef2d';
-import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=d9b580ef2d';
-import { PHASE_LABEL, moodOf } from './render.js?v=d9b580ef2d';
-import { copyText, newInvite, revokeInvite } from './game-settings.js?v=d9b580ef2d';
-import { enterOnlineRoom, leaveGame, lobbyModeKey, roomRuleChips, saveNick } from './lobby.js?v=d9b580ef2d';
-import { hideRelayUi, isRelayGame, relayAwardsHtml, relayCanDo, relayBarMode, relayOverlayHtml, relayPhaseLabel, relayToolsShown, relayVote, renderRelayAssist, renderRelayBanner } from './relay.js?v=d9b580ef2d';
-import { hidePickdrawUi, isPickdrawGame, pickdrawAwardsHtml, pickdrawCanDo, pickdrawOverlayHtml, pickdrawPhaseLabel, pickdrawRoleLabel, pickdrawToolsShown, renderPickdrawAssist } from './pickdraw.js?v=d9b580ef2d';
-import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=d9b580ef2d';
+import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=b57785ee7e';
+import { askLeaveRoom, makeModal, modals } from './modal.js?v=b57785ee7e';
+import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=b57785ee7e';
+import { soloRefresh, soloStep, startSolo } from './solo.js?v=b57785ee7e';
+import { renderRecent } from './feed.js?v=b57785ee7e';
+import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=b57785ee7e';
+import { PHASE_LABEL, moodOf } from './render.js?v=b57785ee7e';
+import { copyText, newInvite, revokeInvite } from './game-settings.js?v=b57785ee7e';
+import { enterOnlineRoom, leaveGame, lobbyModeKey, roomRuleChips, saveNick } from './lobby.js?v=b57785ee7e';
+import { hideRelayUi, isRelayGame, relayAwardsHtml, relayCanDo, relayBarMode, relayOverlayHtml, relayPhaseLabel, relayToolsShown, relayVote, renderRelayAssist, renderRelayBanner } from './relay.js?v=b57785ee7e';
+import { hidePickdrawUi, isPickdrawGame, pickdrawAwardsHtml, pickdrawCanDo, pickdrawOverlayHtml, pickdrawPhaseLabel, pickdrawRoleLabel, pickdrawToolsShown, renderPickdrawAssist } from './pickdraw.js?v=b57785ee7e';
+import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=b57785ee7e';
 
 var w = window;
 

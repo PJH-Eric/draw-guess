@@ -1,10 +1,10 @@
 /* ===== app/canvas.js — 畫布與工具列 ===== */
 
-import { $, D, ME, Paint, Rules, S, Sound, Store, app, toast } from './core.js?v=d9b580ef2d';
-import { pickdrawBlockedTip } from './pickdraw.js?v=d9b580ef2d';
-import { askConfirm } from './modal.js?v=d9b580ef2d';
-import { handleGameEvents, soloRefresh, startSolo, withWordPack } from './solo.js?v=d9b580ef2d';
-import { pushFeed } from './feed.js?v=d9b580ef2d';
+import { $, D, ME, Paint, Rules, S, Sound, Store, app, toast } from './core.js?v=b57785ee7e';
+import { pickdrawBlockedTip } from './pickdraw.js?v=b57785ee7e';
+import { askConfirm } from './modal.js?v=b57785ee7e';
+import { handleGameEvents, soloRefresh, startSolo, withWordPack } from './solo.js?v=b57785ee7e';
+import { pushFeed } from './feed.js?v=b57785ee7e';
 
 var w = window;
 
@@ -284,10 +284,12 @@ export function syncDoneButtons() {
     $('b-solo-next').disabled = !drawing;
     return;
   }
-  /* 接力模式每棒都要畫滿秒數、你出我畫他猜由猜題者決定放棄：兩種都沒有「畫完了」也沒有「跳過」 */
-  var relay = !!(g && (g.mode === 'relay' || g.mode === 'pickdraw'));
+  /* 接力模式每棒都要畫滿秒數：沒有「畫完了」也沒有「跳過」。
+     你出我畫他猜：有「畫完了」（跟一般模式一樣只是通知），但沒有「跳過」——放棄由猜題者決定。 */
+  var relay = !!(g && g.mode === 'relay');
+  var pickdraw = !!(g && g.mode === 'pickdraw');
   done.hidden = relay;
-  skip.hidden = relay;
+  skip.hidden = relay || pickdraw;
   if (relay) return;
   /* 線上房間：這顆鈕只要輪到你畫就一直能按，按過也不鎖、不改字 ——
      補了幾筆想再叫大家看一次是很自然的事，伺服器那邊同樣不擋重複。 */

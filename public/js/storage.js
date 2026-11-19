@@ -49,23 +49,28 @@
 
   var EMPTY_STATS = {
     solo: { games: 0, win: 0, correct: 0, drawn: 0, best: 0 },
-    online: { games: 0, win: 0, correct: 0, drawn: 0, best: 0 }
+    online: { games: 0, win: 0, correct: 0, drawn: 0, best: 0 },
+    relay: { games: 0, win: 0, correct: 0, drawn: 0, best: 0 },
+    pickdraw: { games: 0, win: 0, correct: 0, drawn: 0, best: 0 }
   };
+  var STAT_MODES = ['solo', 'online', 'relay', 'pickdraw'];
 
   function stats() {
     var s = getJson(KEY.stats, null);
     if (!s || !s.solo || !s.online) return JSON.parse(JSON.stringify(EMPTY_STATS));
+    /* 舊版只有 solo／online 兩欄：缺的模式補成 0（以前的接力局記在 online 裡，分不回來就留著） */
+    STAT_MODES.forEach(function (k) { if (!s[k]) s[k] = JSON.parse(JSON.stringify(EMPTY_STATS[k])); });
     return s;
   }
 
   /**
    * 記一場的結果。
-   * @param {'solo'|'online'} mode
+   * @param {'solo'|'online'|'relay'|'pickdraw'} mode
    * @param {{win:boolean, correct:number, drawn:number, score:number}} result
    */
   function recordGame(mode, result) {
     var s = stats();
-    var b = s[mode === 'online' ? 'online' : 'solo'];
+    var b = s[STAT_MODES.indexOf(mode) >= 0 ? mode : 'solo'];
     b.games += 1;
     if (result.win) b.win += 1;
     b.correct += Math.max(0, Number(result.correct) || 0);

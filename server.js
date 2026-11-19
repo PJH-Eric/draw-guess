@@ -655,7 +655,13 @@ io.on('connection', (socket) => {
     room.disconnect(socket.data.clientId, now());
     const isDrawer = !room.relay && !room.pickdraw && !!(room.state && room.phase === 'playing' && room.state.drawerId === member.id &&
       (room.state.phase === 'picking' || room.state.phase === 'drawing'));
-    room.system(isDrawer
+    /* 你出我畫他猜：畫家或猜題者斷線，等 15 秒沒回來這題就直接公布 */
+    const pdAway = room.pickdraw ? room.pickdrawAway().role : null;
+    room.system(pdAway === 'drawer'
+      ? '畫家 ' + member.name + ' 斷線了，等他 15 秒，沒回來這一題就直接公布答案。'
+      : pdAway === 'guesser'
+        ? '猜題者 ' + member.name + ' 斷線了，等他 15 秒，沒回來這一題就直接公布答案。'
+        : isDrawer
       ? '畫家 ' + member.name + ' 斷線了，等他 15 秒，沒回來就先跳過這一題。'
       : member.name + ' 斷線了，座位會先保留一分鐘。', now());
     syncRoom(room);

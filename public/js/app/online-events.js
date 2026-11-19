@@ -1,15 +1,15 @@
 /* ===== app/online-events.js — 線上事件 ===== */
 
-import { $, Sound, Store, Words, app, toast } from './core.js?v=d9b580ef2d';
-import { modals } from './modal.js?v=d9b580ef2d';
-import { localizeGame } from './solo.js?v=d9b580ef2d';
-import { pushFeed, replaceFeed } from './feed.js?v=d9b580ef2d';
-import { render } from './render.js?v=d9b580ef2d';
-import { renderAside } from './overlay.js?v=d9b580ef2d';
-import { renderGameSettings } from './game-settings.js?v=d9b580ef2d';
-import { isRelayGame, relayRecord, relayTransition, showCheer } from './relay.js?v=d9b580ef2d';
-import { isPickdrawGame, pickdrawRecord, pickdrawTransition } from './pickdraw.js?v=d9b580ef2d';
-import { forgetRoom, joinRoom, leaveGame, lobbyModeKey, renderRoomList, saveNick, setLobbyEnabled, subscribeLobby } from './lobby.js?v=d9b580ef2d';
+import { $, Sound, Store, Words, app, toast } from './core.js?v=b57785ee7e';
+import { modals } from './modal.js?v=b57785ee7e';
+import { localizeGame } from './solo.js?v=b57785ee7e';
+import { pushFeed, replaceFeed } from './feed.js?v=b57785ee7e';
+import { render } from './render.js?v=b57785ee7e';
+import { renderAside } from './overlay.js?v=b57785ee7e';
+import { renderGameSettings } from './game-settings.js?v=b57785ee7e';
+import { isRelayGame, relayRecord, relayTransition, showCheer } from './relay.js?v=b57785ee7e';
+import { isPickdrawGame, pickdrawRecord, pickdrawTransition } from './pickdraw.js?v=b57785ee7e';
+import { forgetRoom, joinRoom, leaveGame, lobbyModeKey, renderRoomList, saveNick, setLobbyEnabled, subscribeLobby } from './lobby.js?v=b57785ee7e';
 
 var w = window;
 
@@ -210,7 +210,7 @@ export function recordResult(v) {
   var correct = 0;
   if (isRelayGame(v.game) || isPickdrawGame(v.game)) {
     var rr = isRelayGame(v.game) ? relayRecord(v) : pickdrawRecord(v);
-    Store.recordGame('online', { win: v.game.winners.indexOf(v.you.id) >= 0, correct: rr.correct, drawn: rr.drawn, score: me.score });
+    Store.recordGame(isRelayGame(v.game) ? 'relay' : 'pickdraw', { win: v.game.winners.indexOf(v.you.id) >= 0, correct: rr.correct, drawn: rr.drawn, score: me.score });
     return;
   }
   for (var j = 0; j < v.game.log.length; j++) {

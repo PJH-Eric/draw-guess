@@ -181,6 +181,55 @@ section('隱藏資訊（toPublic）');
   check('公布答案後畫家沒有範本', PD.toPublic(st, 'b').referenceId === null);
 }
 
+section('斷線（tick 的 away）');
+{
+  const st = make();
+  let t = toDrawing(st, T0);
+  PD.tick(st, t + 1000, { away: ['b'] });
+  check('畫家斷線：公布、原因 drawerleft', st.phase === 'reveal' && st.log[0].reason === 'drawerleft');
+  check('畫家斷線：三人都 0 分', st.players.every((p) => p.score === 0));
+
+  const st2 = make();
+  PD.tick(st2, T0 + 1000, { away: ['b', 'c'] });
+  check('挑題中畫家斷線：先不公布（還沒有題目）', st2.phase === 'picking');
+  PD.pick(st2, 'a', st2.choices[0], T0 + 2000);
+  PD.tick(st2, T0 + 2000, { away: ['c'] });
+  check('挑完進倒數時猜題者已斷線：直接公布', st2.phase === 'reveal' && st2.log[0].reason === 'guesserleft');
+
+  const st3 = make();
+  t = toDrawing(st3, T0);
+  PD.tick(st3, t + 1000, { away: ['a'] });
+  check('出題者斷線不影響這一題', st3.phase === 'drawing');
+}
+
+section('戰績分模式（storage.js）');
+{
+  const vm = require('vm');
+  const fs = require('fs');
+  const path = require('path');
+  const mem = {};
+  const box = {
+    localStorage: {
+      getItem: (k) => (k in mem ? mem[k] : null),
+      setItem: (k, v) => { mem[k] = String(v); },
+      removeItem: (k) => { delete mem[k]; }
+    },
+    crypto: { getRandomValues: (a) => a }, Math, Date, JSON
+  };
+  box.window = box; box.globalThis = box;
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../public/js/storage.js'), 'utf8'), box);
+  const Store = box.Store || box.window.Store;
+  /* 舊版存檔只有 solo／online 兩欄 */
+  mem.dg_stats = JSON.stringify({ solo: { games: 1, win: 0, correct: 2, drawn: 1, best: 50 }, online: { games: 3, win: 1, correct: 4, drawn: 3, best: 600 } });
+  const s0 = Store.stats();
+  check('舊存檔讀得出來，新模式補 0、舊數字不動', s0.online.games === 3 && s0.solo.best === 50 && s0.relay.games === 0 && s0.pickdraw.games === 0);
+  Store.recordGame('pickdraw', { win: true, correct: 2, drawn: 3, score: 900 });
+  Store.recordGame('relay', { win: false, correct: 1, drawn: 2, score: 300 });
+  const s1 = Store.stats();
+  check('你出我畫他猜記在自己那一欄', s1.pickdraw.games === 1 && s1.pickdraw.win === 1 && s1.pickdraw.best === 900);
+  check('接力記在自己那一欄，一般線上不受影響', s1.relay.games === 1 && s1.relay.win === 0 && s1.online.games === 3);
+}
+
 section('離開與結算');
 {
   const st = make();
@@ -262,7 +311,9 @@ section('房間層（lib/rooms.js）');
   check('畫家可以給提示、猜題者不行', room.giveHint('a', t).ok && !room.giveHint('b', t).ok && room.state.hints === 1);
   check('權限旗標：畫家 hint、猜題者 giveUp、出題者 cheer', room.viewFor('a', t).you.can.hint && room.viewFor('b', t).you.can.giveUp && room.viewFor('h', t).you.can.cheer);
   check('出題者可以丟表情、畫家不行', room.cheer('h', 'cheer', t).ok && !room.cheer('a', 'cheer', t).ok);
-  check('沒有「跳過」與「畫完了」', !room.skipTurn('a', t).ok && !room.markDone('a', t).ok);
+  check('沒有「跳過」', !room.skipTurn('a', t).ok);
+  check('出題者與猜題者不能按「畫完了」', !room.markDone('h', t).ok && !room.markDone('b', t).ok);
+  check('畫家可以按「畫完了」（只是通知）', room.markDone('a', t).ok && room.viewFor('b', t).room.drawerDone === true && room.state.phase === 'drawing');
   const miss = room.guess('b', '一定不是這個ZZ', t + 500);
   check('猜錯進猜題紀錄（大家看得到）', miss.ok && miss.kind === 'miss' && room.feed[room.feed.length - 1].text === '一定不是這個ZZ');
   check('出題者不能猜', !room.guess('h', ans, t + 600).ok);
@@ -277,6 +328,25 @@ section('房間層（lib/rooms.js）');
   t += C.PICK_MS;
   room.tick(t);
   check('挑題逾時自動隨機', room.state.phase === 'countdown' && room.feed.some((e) => e.key === 'srv.feed.pickdrawAutoPicked'));
+  check('新的一題「畫完了」重新計算', room.viewFor('b', t).room.drawerDone === false);
+
+  /* 猜題者斷線：15 秒內照常，題目列標出斷線的是猜題者；超過就公布、這題不計分 */
+  const before = room.state.players.map((p) => p.score).join();
+  room.disconnect('h', t);
+  t += C.COUNTDOWN_MS;
+  room.tick(t);
+  check('猜題者剛斷線：照常開始作畫', room.state.phase === 'drawing');
+  const av = room.viewFor('a', t);
+  check('題目列資訊：斷線的是猜題者', av.room.awayRole === 'guesser' && av.room.drawerAwayUntil > t);
+  room.tick(t + 15000 - C.COUNTDOWN_MS - 1);
+  check('斷線 15 秒內不公布', room.state.phase === 'drawing');
+  room.tick(t + 15000);
+  const last = room.state.log[room.state.log.length - 1];
+  check('猜題者斷線超過 15 秒：公布答案', room.state.phase === 'reveal' && last.reason === 'guesserleft');
+  check('斷線那題三人都不得分（出題者不白拿 300）', room.state.players.map((p) => p.score).join() === before && last.points.picker === 0);
+  check('斷線公布寫進紀錄', room.feed.some((e) => e.key === 'srv.feed.pickdrawGuesserLeft'));
+  room.join('h', { name: '房主', now: t + 15010 });
+  check('回來後斷線提示消失', room.viewFor('a', t + 15010).room.awayRole === null);
 
   room.leave('b', t + 10);
   check('剩不到 3 人立即結算', room.phase === 'finished' && room.state.over);

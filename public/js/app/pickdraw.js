@@ -7,8 +7,8 @@
  * 共用接力做好的元件：放棄鈕（#b-relay-giveup）、表情列（#relay-cheers）、飄過畫布的表情、倒數大字與獎項卡樣式。
  */
 
-import { $, D, S, Sound, app, esc, secsLeft } from './core.js?v=d9b580ef2d';
-import { reactionBarHtml } from './overlay.js?v=d9b580ef2d';
+import { $, D, S, Sound, app, esc, secsLeft } from './core.js?v=b57785ee7e';
+import { reactionBarHtml } from './overlay.js?v=b57785ee7e';
 
 var w = window;
 function t(key, params) { return w.I18N.t(key, params); }
@@ -100,6 +100,8 @@ function resultLine(last) {
   if (!last) return '';
   if (last.reason === 'hit') return esc(t('pickdraw.reveal.hit', { name: last.guesserName }));
   if (last.reason === 'giveup') return esc(t('pickdraw.reveal.giveup', { name: last.guesserName }));
+  if (last.reason === 'drawerleft') return esc(t('pickdraw.reveal.drawerleft', { name: last.drawerName }));
+  if (last.reason === 'guesserleft') return esc(t('pickdraw.reveal.guesserleft', { name: last.guesserName }));
   return esc(t('pickdraw.reveal.timeup'));
 }
 

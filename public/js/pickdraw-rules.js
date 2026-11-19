@@ -346,7 +346,9 @@
     if (state.phase !== 'countdown' && state.phase !== 'drawing') return err('srv.err.turnEnded', 'phase');
     var pts;
     if (reason === 'hit') pts = scoresAt(state, now);
-    else pts = { picker: CONST.HIGH, drawer: 0, guesser: 0 };
+    else if (reason === 'timeup' || reason === 'giveup') pts = { picker: CONST.HIGH, drawer: 0, guesser: 0 };
+    /* 畫家或猜題者斷線（drawerleft／guesserleft）：這題作廢，三人都不得分，出題者不能白拿 300 */
+    else pts = { picker: 0, drawer: 0, guesser: 0 };
     credit(state, state.pickerId, pts.picker, 'pickPts');
     credit(state, state.drawerId, pts.drawer, 'drawPts');
     credit(state, state.guesserId, pts.guesser, 'guessPts');
@@ -424,11 +426,32 @@
   /* ------------------------------------------------------------ 時間 */
 
   /** 推進時間：挑題逾時隨機、倒數結束開畫、作畫時間到公布、公布結束換下一題 */
-  function tick(state, now) {
+  function awayFn(opts) {
+    var a = opts && opts.away;
+    if (!a) return function () { return false; };
+    if (typeof a === 'function') return a;
+    var list = Array.isArray(a) ? a : Array.from(a);
+    return function (id) { return list.indexOf(id) >= 0; };
+  }
+
+  /**
+   * @param {object} [opts] { away: Set|Array|function } 斷線超過緩衝時間的玩家（由房間層決定緩衝多久）：
+   *   倒數或作畫中，畫家或猜題者斷線 → 這題直接公布、三人都不得分。出題者斷線不影響（挑題逾時本來就會隨機）。
+   */
+  function tick(state, now, opts) {
+    var isAway = awayFn(opts);
     var events = [];
     for (var guard = 0; guard < 16; guard++) {
       var ph = state.phase;
       if (ph === 'over' || ph === 'idle') break;
+      if (ph === 'countdown' || ph === 'drawing') {
+        var gone = isAway(state.drawerId) ? 'drawerleft' : (isAway(state.guesserId) ? 'guesserleft' : null);
+        if (gone) {
+          var gl = endQuestion(state, now, gone);
+          if (gl.ok) events.push({ type: 'questionend', entry: gl.entry });
+          continue;
+        }
+      }
       if (now < state.deadline) break;
 
       if (ph === 'picking') {

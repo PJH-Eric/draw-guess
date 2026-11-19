@@ -1,11 +1,11 @@
 /* ===== app/render.js — 對局畫面渲染 ===== */
 
-import { $, D, S, app, esc, secsLeft } from './core.js?v=d9b580ef2d';
-import { renderReference } from './modal.js?v=d9b580ef2d';
-import { sizeCanvas } from './canvas.js?v=d9b580ef2d';
-import { renderAside, renderControls, renderOverlay } from './overlay.js?v=d9b580ef2d';
-import { isRelayGame, relayPhaseLabel, relayStripHtml, relayTick, renderRelayWordbar } from './relay.js?v=d9b580ef2d';
-import { isPickdrawGame, pickdrawPhaseLabel, pickdrawStripHtml, pickdrawTick, renderPickdrawWordbar } from './pickdraw.js?v=d9b580ef2d';
+import { $, D, S, app, esc, secsLeft } from './core.js?v=b57785ee7e';
+import { renderReference } from './modal.js?v=b57785ee7e';
+import { sizeCanvas } from './canvas.js?v=b57785ee7e';
+import { renderAside, renderControls, renderOverlay } from './overlay.js?v=b57785ee7e';
+import { isRelayGame, relayPhaseLabel, relayStripHtml, relayTick, renderRelayWordbar } from './relay.js?v=b57785ee7e';
+import { isPickdrawGame, pickdrawPhaseLabel, pickdrawStripHtml, pickdrawTick, renderPickdrawWordbar } from './pickdraw.js?v=b57785ee7e';
 
 var w = window;
 
@@ -84,7 +84,10 @@ export function render() {
   }
   /* 畫家斷線中：告訴大家不是當機，15 秒沒回來就會跳過這一題（伺服器算的） */
   if (v.room && v.room.drawerAwayUntil && !wb.hidden) {
-    $('wordbar-meta').textContent = (globalThis.I18N ? globalThis.I18N.t("text.154") : "畫家斷線了，最多等 15 秒・") + $('wordbar-meta').textContent;
+    /* 你出我畫他猜：斷線的也可能是猜題者 */
+    var awayText = v.room.awayRole === 'guesser' ? w.I18N.t('pickdraw.away.guesser')
+      : (globalThis.I18N ? globalThis.I18N.t("text.154") : "畫家斷線了，最多等 15 秒・");
+    $('wordbar-meta').textContent = awayText + $('wordbar-meta').textContent;
   }
 
   renderPlayers();

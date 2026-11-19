@@ -242,6 +242,18 @@ async function main() {
   console.log('\n【首頁與你出我畫他猜大廳】');
   check('首頁有「你出我畫他猜（Beta）」入口', await host.eval('var b=document.getElementById("b-pickdraw"); return !!b && /你出我畫他猜/.test(b.textContent);'));
   await sweep(host, '01-首頁', { one: !process.env.PD_HOME_ALL });
+
+  /* 玩法教學：最後兩段是接力與你出我畫他猜 */
+  await host.click('#b-help');
+  await host.waitFor('document.getElementById("s-help").classList.contains("active")', 4000, '玩法教學');
+  const tutTotal = await host.eval('return document.querySelectorAll("#tut-progress .tut-dots i").length;');
+  for (let i = 1; i < tutTotal - 1; i++) await host.click('#b-tut-next');
+  check('教學有接力模式那一段', await host.eval('return /接力模式/.test(document.querySelector("#tut-box h3").textContent);'));
+  await host.click('#b-tut-next');
+  check('教學最後一段是你出我畫他猜', await host.eval('return /你出我畫他猜/.test(document.querySelector("#tut-box h3").textContent) && /出題者/.test(document.getElementById("tut-box").textContent);'));
+  await sweep(host, '00-教學-你出我畫他猜', { list: [VIEWPORTS[0], BASE_VP] });
+  await host.click('#b-tut-skip');
+  await host.waitFor('document.getElementById("s-home").classList.contains("active")', 4000, '回首頁');
   await host.click('#b-pickdraw');
   await host.waitFor('window.Online && window.Online.isConnected() && !document.getElementById("b-lobby-host").disabled', 15000, '大廳連線');
   check('大廳標題與說明', await host.eval('return /你出我畫他猜/.test(document.getElementById("lobby-title").textContent) && !document.getElementById("pickdraw-lobby-note").hidden && document.getElementById("relay-lobby-note").hidden;'));
@@ -383,7 +395,9 @@ async function pickdrawGame(host, p2, p3, watch, tabs) {
   check('猜題者畫面上沒有答案', !(await r1.guesser.eval('return document.body.innerText.indexOf(' + JSON.stringify(answer) + ') >= 0;')));
   check('畫家題目列顯示答案', await r1.drawer.eval('return document.getElementById("wordbar-mask").textContent === ' + JSON.stringify(answer) + ';'));
   check('出題者題目列顯示自己出的題', await r1.picker.eval('return document.getElementById("wordbar-mask").textContent === ' + JSON.stringify(answer) + ';'));
-  check('沒有「畫完了／跳過」', !(await r1.drawer.eval(visible('#b-done'))) && !(await r1.drawer.eval(visible('#b-skip'))));
+  check('畫家有「畫完了」、沒有「跳過」', await r1.drawer.eval(visible('#b-done')) && !(await r1.drawer.eval(visible('#b-skip'))));
+  await r1.drawer.click('#b-done');
+  check('按「畫完了」通知大家、這題照常進行', await r1.guesser.waitFor('window.DrawGuessApp.view.room.drawerDone === true && window.DrawGuessApp.view.game.phase === "drawing"', 4000, '畫完了').catch(() => false));
   /* 查看範本：只有畫家有入口，打開看得到範本圖 */
   check('畫家有「查看範本」', await r1.drawer.eval(visible('#b-reference')));
   check('出題者、猜題者、觀戰者沒有「查看範本」', !(await r1.picker.eval(visible('#b-reference'))) &&
@@ -472,6 +486,15 @@ async function pickdrawGame(host, p2, p3, watch, tabs) {
   /* ---- 有人離開：剩不到 3 人立即結算 ---- */
   await e1.picker.eval('window.Online.send("room:leave", {}); return 1;');
   check('剩不到 3 人立即結算', await (e1.drawer).waitFor('window.DrawGuessApp.view.room.phase === "finished"', 6000, '結算').catch(() => false));
+
+  /* ---- 戰績：你出我畫他猜記在自己那一欄，戰績頁有這張卡 ---- */
+  check('戰績記在你出我畫他猜一欄', await host.eval('var s=window.Store.stats(); return s.pickdraw.games >= 1 && s.online.games === 0;'));
+  await e1.drawer.click('#overlay-card [data-act=home]');
+  await e1.drawer.waitFor('document.getElementById("s-home").classList.contains("active")', 4000, '回首頁');
+  await e1.drawer.click('#b-stats');
+  await e1.drawer.waitFor('document.querySelectorAll("#statgrid .statcard").length === 4', 4000, '戰績四張卡');
+  check('戰績頁有一般、單機、接力、你出我畫他猜四張卡', await e1.drawer.eval('return /Pick, Draw, Guess/.test(document.getElementById("statgrid").textContent);'));
+  await sweep(e1.drawer, '16-戰績-en', { list: [VIEWPORTS[0], VIEWPORTS[5], BASE_VP] });
 }
 
 async function finish(tabs) {
