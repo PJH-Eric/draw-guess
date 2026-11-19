@@ -172,10 +172,13 @@ section('隱藏資訊（toPublic）');
   const ans = answer(st);
   const gc = PD.toPublic(st, 'c');
   check('作畫中猜題者拿不到答案', gc.answer === null && !JSON.stringify(gc).includes(ans) && !JSON.stringify(gc).includes(st.wordId));
+  check('參考範本只給畫家', PD.toPublic(st, 'b').referenceId === st.wordId);
+  check('出題者、猜題者、觀戰者拿不到範本', PD.toPublic(st, 'a').referenceId === null && gc.referenceId === null && PD.toPublic(st, null).referenceId === null);
   check('畫家、出題者、觀戰者看得到答案', PD.toPublic(st, 'b').answer === ans && PD.toPublic(st, 'a').answer === ans && PD.toPublic(st, null).answer === ans);
   check('權限旗標', PD.toPublic(st, 'b').you.canDraw && PD.toPublic(st, 'b').you.canHint && gc.you.canGuess && gc.you.canGiveUp && PD.toPublic(st, 'a').you.canCheer);
   PD.giveUp(st, 'c', T0 + 9000);
   check('公布時猜題者看得到答案', PD.toPublic(st, 'c').answer === ans);
+  check('公布答案後畫家沒有範本', PD.toPublic(st, 'b').referenceId === null);
 }
 
 section('離開與結算');

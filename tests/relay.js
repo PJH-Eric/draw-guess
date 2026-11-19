@@ -296,7 +296,12 @@ section('表情互動與隱藏資訊');
   check('猜題者的投影沒有候選題', gv.choices.length === 0 && !raw.includes(st.wordId));
   const sv = Relay.toPublic(st, null);
   check('觀戰者看得到答案', sv.answer === answer(st) && sv.you.role === 'spectator');
+  check('參考範本只給當棒畫家', Relay.toPublic(st, st.drawerId).referenceId === st.wordId);
+  const waitingPainter = st.order.find((id) => id !== st.drawerId);
+  check('等待中的畫家、猜題者、觀戰者拿不到範本', Relay.toPublic(st, waitingPainter).referenceId === null &&
+    gv.referenceId === null && sv.referenceId === null);
   Relay.giveUp(st, 'p1', t);
+  check('公布答案後沒有範本', Relay.toPublic(st, st.batons[st.batonNo]).referenceId === null);
   check('公布後猜題者也看得到答案', Relay.toPublic(st, 'p1').answer === answer(st));
 }
 

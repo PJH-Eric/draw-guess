@@ -362,6 +362,15 @@ async function relayGame(host, p2, p3, watch, tabs) {
   check('猜題者有猜題框、提示與放棄', await guesser.eval(visible('#guess-input')) && await guesser.eval(visible('#b-hint-1')) && await guesser.eval(visible('#b-relay-giveup')));
   check('猜題者畫面上沒有答案', !(await guesser.eval('return document.body.innerText.indexOf(' + JSON.stringify(answer) + ') >= 0;')));
   check('畫家題目列顯示答案', await waiting.eval('return document.getElementById("wordbar-mask").textContent === ' + JSON.stringify(answer) + ';'));
+  /* 查看範本：只有當棒畫家有入口，打開看得到範本圖 */
+  check('當棒畫家有「查看範本」', await drawer.eval(visible('#b-reference')));
+  check('等待中的畫家、猜題者、觀戰者沒有「查看範本」', !(await waiting.eval(visible('#b-reference'))) &&
+    !(await guesser.eval(visible('#b-reference'))) && !(await watch.eval(visible('#b-reference'))));
+  await drawer.click('#b-reference');
+  check('範本視窗打開並畫出範本圖', await drawer.waitFor('document.getElementById("reference-modal").classList.contains("open") && !!document.querySelector("#reference-picture svg")', 4000, '範本').catch(() => false));
+  await shot(drawer, '08-作畫-當棒畫家-範本-tablet-land');
+  await drawer.click('#reference-close');
+  await drawer.waitFor('!document.getElementById("reference-modal").classList.contains("open")', 3000, '關閉範本').catch(() => {});
   check('等待中的畫家底部框是畫家聊天', await waiting.eval('return document.getElementById("guessbar").getAttribute("data-mode") === "chat";'));
   check('玩家列標出正在畫與下一棒', await host.eval('return !!document.querySelector("#playerstrip .relay-now") && !!document.querySelector("#playerstrip .relay-guesser");'));
   await drag(drawer, 0.25, 0.3, 0.75, 0.7);

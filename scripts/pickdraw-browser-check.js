@@ -384,6 +384,15 @@ async function pickdrawGame(host, p2, p3, watch, tabs) {
   check('畫家題目列顯示答案', await r1.drawer.eval('return document.getElementById("wordbar-mask").textContent === ' + JSON.stringify(answer) + ';'));
   check('出題者題目列顯示自己出的題', await r1.picker.eval('return document.getElementById("wordbar-mask").textContent === ' + JSON.stringify(answer) + ';'));
   check('沒有「畫完了／跳過」', !(await r1.drawer.eval(visible('#b-done'))) && !(await r1.drawer.eval(visible('#b-skip'))));
+  /* 查看範本：只有畫家有入口，打開看得到範本圖 */
+  check('畫家有「查看範本」', await r1.drawer.eval(visible('#b-reference')));
+  check('出題者、猜題者、觀戰者沒有「查看範本」', !(await r1.picker.eval(visible('#b-reference'))) &&
+    !(await r1.guesser.eval(visible('#b-reference'))) && !(await watch.eval(visible('#b-reference'))));
+  await r1.drawer.click('#b-reference');
+  check('範本視窗打開並畫出範本圖', await r1.drawer.waitFor('document.getElementById("reference-modal").classList.contains("open") && !!document.querySelector("#reference-picture svg")', 4000, '範本').catch(() => false));
+  await shot(r1.drawer, '08-作畫-畫家-範本-tablet-land');
+  await r1.drawer.click('#reference-close');
+  await r1.drawer.waitFor('!document.getElementById("reference-modal").classList.contains("open")', 3000, '關閉範本').catch(() => {});
   await drag(r1.drawer, 0.25, 0.3, 0.75, 0.7);
   await drag(r1.drawer, 0.7, 0.25, 0.3, 0.75);
   check('畫家畫得出筆畫，其他人同步收到', await r1.guesser.waitFor('window.DrawGuessApp.paint.count() >= 2', 4000, '筆畫同步').catch(() => false));

@@ -778,6 +778,8 @@
         revealed: state.revealed.length
       } : null,
       answer: (!hide && w) ? w.text : null,
+      /* 畫家參考範本：只給這一棒正在畫的人（等待中的畫家與觀戰者看得到答案，但不需要範本） */
+      referenceId: role === 'drawer' && state.phase === 'drawing' && w ? w.id : null,
       answerCat: (!hide && w) ? w.cat : null,
       wrong: state.wrong,
       log: state.log.slice(-8),
