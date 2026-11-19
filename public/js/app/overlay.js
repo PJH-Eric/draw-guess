@@ -1,16 +1,16 @@
 /* ===== app/overlay.js — 疊層卡片：房間設定、選題、公布答案、結算 ===== */
 
-import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=47fdd4e7c4';
-import { askLeaveRoom, makeModal, modals } from './modal.js?v=47fdd4e7c4';
-import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=47fdd4e7c4';
-import { soloRefresh, soloStep, startSolo } from './solo.js?v=47fdd4e7c4';
-import { renderRecent } from './feed.js?v=47fdd4e7c4';
-import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=47fdd4e7c4';
-import { PHASE_LABEL, moodOf } from './render.js?v=47fdd4e7c4';
-import { copyText, newInvite, revokeInvite } from './game-settings.js?v=47fdd4e7c4';
-import { enterOnlineRoom, leaveGame, roomRuleChips, saveNick } from './lobby.js?v=47fdd4e7c4';
-import { hideRelayUi, isRelayGame, relayAwardsHtml, relayCanDo, relayBarMode, relayOverlayHtml, relayPhaseLabel, relayToolsShown, relayVote, renderRelayAssist, renderRelayBanner } from './relay.js?v=47fdd4e7c4';
-import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=47fdd4e7c4';
+import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=b634029478';
+import { askLeaveRoom, makeModal, modals } from './modal.js?v=b634029478';
+import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=b634029478';
+import { soloRefresh, soloStep, startSolo } from './solo.js?v=b634029478';
+import { renderRecent } from './feed.js?v=b634029478';
+import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=b634029478';
+import { PHASE_LABEL, moodOf } from './render.js?v=b634029478';
+import { copyText, newInvite, revokeInvite } from './game-settings.js?v=b634029478';
+import { enterOnlineRoom, leaveGame, roomRuleChips, saveNick } from './lobby.js?v=b634029478';
+import { hideRelayUi, isRelayGame, relayAwardsHtml, relayCanDo, relayBarMode, relayOverlayHtml, relayPhaseLabel, relayToolsShown, relayVote, renderRelayAssist, renderRelayBanner } from './relay.js?v=b634029478';
+import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=b634029478';
 
 var w = window;
 

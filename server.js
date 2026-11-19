@@ -118,6 +118,10 @@ const lobbySockets = new Set();
 const now = () => Date.now();
 /** 接力房的開房公告：房名前加這個標記（emoji＋英文，三種語系都看得懂） */
 const RELAY_ROOM_TAG = '🔁Relay β｜';
+/** 你出我畫他猜房的開房公告標記 */
+const PICKDRAW_ROOM_TAG = '🎯Pick·Draw·Guess β｜';
+const LOBBY_MODES = ['classic', 'relay', 'pickdraw'];
+const lobbyModeOf = (m) => (LOBBY_MODES.indexOf(m) >= 0 ? m : 'classic');
 
 /*
  * 公開 id 與私密 clientId 分開：
@@ -203,7 +207,7 @@ function syncLobby() {
   const online = new Set([...io.sockets.sockets.values()].map(s => s.data.clientId).filter(Boolean)).size;
   const payloads = {};
   for (const s of lobbySockets) {
-    const mode = s.data.lobbyMode === 'relay' ? 'relay' : 'classic';
+    const mode = lobbyModeOf(s.data.lobbyMode);
     if (!payloads[mode]) payloads[mode] = { rooms: store.list(mode), total: store.size(), online, mode };
     s.emit('lobby:rooms', payloads[mode]);
   }
@@ -307,8 +311,8 @@ io.on('connection', (socket) => {
   });
 
   socket.on('lobby:subscribe', (payload) => {
-    /* 帶 mode: 'relay' 就是接力大廳；舊版用戶端沒帶就是一般大廳 */
-    socket.data.lobbyMode = payload && payload.mode === 'relay' ? 'relay' : 'classic';
+    /* 帶 mode: 'relay'／'pickdraw' 就是該模式的大廳；舊版用戶端沒帶就是一般大廳 */
+    socket.data.lobbyMode = lobbyModeOf(payload && payload.mode);
     leaveCurrentRoom(socket);
     lobbySockets.add(socket);
     syncLobby();
@@ -325,7 +329,7 @@ io.on('connection', (socket) => {
       roomName: p.roomName,
       private: !!p.private,
       settings: p.settings,
-      mode: p.mode === 'relay' ? 'relay' : 'classic',
+      mode: lobbyModeOf(p.mode),
       now: now()
     });
     if (!res.ok) { fail(socket, res.error, res.code); if (typeof ack === 'function') ack(res); return; }
@@ -339,7 +343,7 @@ io.on('connection', (socket) => {
     /* 大廳聊天室是共用元件：不改它，只在房名前面加上接力標記，公告就看得出是接力房 */
     lobbyChat.roomOpened({
       code: room.code,
-      roomName: (room.relay ? RELAY_ROOM_TAG : '') + room.name,
+      roomName: (room.relay ? RELAY_ROOM_TAG : (room.pickdraw ? PICKDRAW_ROOM_TAG : '')) + room.name,
       host: socket.data.name,
       isPrivate: !!p.private
     });
@@ -516,6 +520,12 @@ io.on('connection', (socket) => {
       socket.emit('room:private', { kind: 'close', message: '「' + res.text + '」很接近了，再想一下！' });
       return;
     }
+    if (res.kind === 'hit' && res.pickdraw) {
+      socket.emit('room:private', { kind: 'hit', message: 'srv.private.pickdrawHit', params: { points: res.points }, points: res.points });
+      syncRoom(room, true);
+      syncLobby();
+      return;
+    }
     if (res.kind === 'hit' && res.relay) {
       socket.emit('room:private', { kind: 'hit', message: 'srv.private.relayHit', params: { points: res.points }, points: res.points });
       syncRoom(room, true);
@@ -643,7 +653,7 @@ io.on('connection', (socket) => {
     /* 先標記斷線並保留座位，讓重新整理的人可以憑 clientId 回到原位；
        超過保留時間還沒回來，定時工作才會把他踢掉並檢查房間要不要關。 */
     room.disconnect(socket.data.clientId, now());
-    const isDrawer = !room.relay && !!(room.state && room.phase === 'playing' && room.state.drawerId === member.id &&
+    const isDrawer = !room.relay && !room.pickdraw && !!(room.state && room.phase === 'playing' && room.state.drawerId === member.id &&
       (room.state.phase === 'picking' || room.state.phase === 'drawing'));
     room.system(isDrawer
       ? '畫家 ' + member.name + ' 斷線了，等他 15 秒，沒回來就先跳過這一題。'
@@ -668,7 +678,7 @@ function sweepTick() {
     for (const entry of item.feed) broadcastFeed(item.room, entry);
     const bigChange = item.events.some((e) =>
       e.type === 'turnstart' || e.type === 'turnend' || e.type === 'autopick' || e.type === 'aipick' || e.type === 'gameover' ||
-      e.type === 'questionstart' || e.type === 'questionend');
+      e.type === 'questionstart' || e.type === 'questionend' || e.type === 'picked' || e.type === 'drawstart');
     if (item.events.length) syncRoom(item.room, bigChange);
   }
   for (const item of res.kicked) ejectKicked(item.room, item.id);

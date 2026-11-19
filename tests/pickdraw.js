@@ -214,5 +214,75 @@ section('離開與結算');
   check('再來一局：分數歸零重新從第 1 題', again.ok && full.questionNo === 1 && full.players.every((p) => p.score === 0) && full.phase === 'picking');
 }
 
+section('房間層（lib/rooms.js）');
+{
+  const { RoomStore } = require('../lib/rooms.js');
+  const store = new RoomStore({ idleMs: 0 });
+  let t = T0;
+  const made = store.create('h', { name: '房主', roomName: '三人房', settings: { laps: 1, drawSec: 30 }, now: t, mode: 'pickdraw' });
+  check('可以開你出我畫他猜房', made.ok && made.room.mode === 'pickdraw' && made.room.pickdraw);
+  const room = made.room;
+  check('設定套用（1 圈、30 秒）、人數上限 3', room.settings.laps === 1 && room.settings.drawSec === 30 && room.settings.maxPlayers === 3);
+  check('秒數只收 30／60／90', !room.setSettings('h', { drawSec: 45 }).ok && room.setSettings('h', { drawSec: 60 }).ok);
+  check('圈數只收 1–5', !room.setSettings('h', { laps: 6 }).ok && !room.setSettings('h', { laps: 0 }).ok && room.setSettings('h', { laps: 1 }).ok);
+  store.create('r', { name: '接力', roomName: '接力房', now: t, mode: 'relay' });
+  store.create('c', { name: '一般', roomName: '一般房', now: t });
+  check('一般大廳與接力大廳看不到這種房', store.list().every((r) => r.mode === 'classic') && store.list('relay').every((r) => r.mode === 'relay'));
+  check('你出我畫他猜大廳只列這種房', store.list('pickdraw').length === 1 && store.list('pickdraw')[0].code === room.code && store.list('pickdraw')[0].laps === 1);
+
+  room.join('a', { name: '阿明', now: t + 1 });
+  check('只有 2 人不能開始', !room.start('h', t).ok && room.canStart().error === 'srv.err.pickdrawNeedThree');
+  room.join('b', { name: '小美', now: t + 2 });
+  const fourth = room.join('d', { name: '路人', now: t + 3 });
+  check('第 4 人只能觀戰', fourth.ok && fourth.downgraded && room.member('d').role === 'spectator');
+  check('觀戰者沒位子不能下場', !room.becomePlayer('d', t).ok);
+  room.setReady('a', true); room.setReady('b', true);
+  const st = room.start('h', t);
+  check('剛好 3 人可以開始', st.ok && room.phase === 'playing' && room.state.phase === 'picking');
+  check('座位照進房順序：房主出題、阿明畫、小美猜', room.state.pickerId === 'h' && room.state.drawerId === 'a' && room.state.guesserId === 'b');
+
+  const vh = room.viewFor('h', t), va = room.viewFor('a', t), vb = room.viewFor('b', t), vd = room.viewFor('d', t);
+  check('出題者看得到 3 個候選並可挑題', vh.game.choices.length === 3 && vh.you.can.pick);
+  check('畫家、猜題者、觀戰者都拿不到候選題', va.game.choices.length === 0 && vb.game.choices.length === 0 && vd.game.choices.length === 0);
+  check('出題者對局中聊天被擋', room.chat('h', '哈囉', t).error === 'srv.err.pickerCantChat');
+  check('畫家不能挑題', !room.pickWord('a', room.state.choices[0], t).ok);
+  const want = room.state.choices[1];
+  check('出題者挑題', room.pickWord('h', want, t + 100).ok && room.state.phase === 'countdown');
+  t += 100 + C.COUNTDOWN_MS;
+  room.tick(t);
+  check('倒數完開始作畫', room.state.phase === 'drawing');
+  const ans = Words.byId(want, room.state.lang).text;
+  const gv = room.viewFor('b', t);
+  check('猜題者的視圖沒有答案', gv.game.answer === null && !JSON.stringify(gv).includes(ans));
+  check('觀戰者看得到答案', room.viewFor('d', t).game.answer === ans);
+  check('只有畫家能畫', room.stroke('a', { t: 'pen', p: [1, 1, 9, 9] }, t).ok && !room.stroke('h', { t: 'pen', p: [1, 1, 9, 9] }, t).ok && !room.stroke('b', { t: 'pen', p: [1, 1, 9, 9] }, t).ok);
+  check('畫家可以給提示、猜題者不行', room.giveHint('a', t).ok && !room.giveHint('b', t).ok && room.state.hints === 1);
+  check('權限旗標：畫家 hint、猜題者 giveUp、出題者 cheer', room.viewFor('a', t).you.can.hint && room.viewFor('b', t).you.can.giveUp && room.viewFor('h', t).you.can.cheer);
+  check('出題者可以丟表情、畫家不行', room.cheer('h', 'cheer', t).ok && !room.cheer('a', 'cheer', t).ok);
+  check('沒有「跳過」與「畫完了」', !room.skipTurn('a', t).ok && !room.markDone('a', t).ok);
+  const miss = room.guess('b', '一定不是這個ZZ', t + 500);
+  check('猜錯進猜題紀錄（大家看得到）', miss.ok && miss.kind === 'miss' && room.feed[room.feed.length - 1].text === '一定不是這個ZZ');
+  check('出題者不能猜', !room.guess('h', ans, t + 600).ok);
+  const hit = room.guess('b', ans, t + 1000);
+  check('猜中回報 pickdraw', hit.ok && hit.kind === 'hit' && hit.pickdraw && hit.points > 0, hit);
+  check('公布後摘要與猜題者視圖才有答案', JSON.stringify(room.summary).includes(ans) && room.viewFor('b', t + 1000).game.answer === ans);
+
+  /* 下一題：上一題畫家變出題者 */
+  t += 1000 + C.REVEAL_MS;
+  room.tick(t);
+  check('第 2 題：阿明出題、小美畫、房主猜', room.state.pickerId === 'a' && room.state.drawerId === 'b' && room.state.guesserId === 'h');
+  t += C.PICK_MS;
+  room.tick(t);
+  check('挑題逾時自動隨機', room.state.phase === 'countdown' && room.feed.some((e) => e.key === 'srv.feed.pickdrawAutoPicked'));
+
+  room.leave('b', t + 10);
+  check('剩不到 3 人立即結算', room.phase === 'finished' && room.state.over);
+  check('結算後可拿畫廊', room.gallery().ok && room.gallery().mode === 'pickdraw' && room.gallery().items.length === 1);
+  check('結算帶三個獎項', !!room.viewFor('h', t + 20).game.awards && 'pick' in room.viewFor('h', t + 20).game.awards);
+  check('2 人不能再來一局', !room.canRematch('h'));
+  check('觀戰者可以補位下場', room.becomePlayer('d', t + 30).ok);
+  check('補滿 3 人可以再來一局', room.canRematch('h'));
+}
+
 console.log('\n' + (failed ? '✗ ' : '✓ ') + '你出我畫他猜規則：' + passed + ' 通過，' + failed + ' 失敗');
 if (failed) process.exit(1);
