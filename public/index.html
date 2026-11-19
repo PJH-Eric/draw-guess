@@ -28,17 +28,17 @@
 <meta name="twitter:image:alt" content="你畫我猜 遊戲封面">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"你畫我猜","url":"https://pjh-eric.github.io/draw-guess/","description":"免費免下載的你畫我猜，輪流當畫家用畫筆、形狀與油漆桶畫出題目，猜中搶積分。新推出接力模式（Beta）大家輪流接力作畫給一人猜，以及你出我畫他猜（Beta）三人輪流出題、作畫、猜題。支援觀戰，手機平板都能玩。","applicationCategory":"GameApplication","operatingSystem":"Any","inLanguage":"zh-Hant","genre":"畫圖猜謎","offers":{"@type":"Offer","price":"0","priceCurrency":"TWD"},"image":"https://pjh-eric.github.io/draw-guess/assets/images/seo.webp","thumbnailUrl":"https://pjh-eric.github.io/draw-guess/assets/images/seo.webp","isPartOf":{"@type":"WebSite","url":"https://pjh-eric.github.io/game-lobby/"}}</script>
 <!--SEO:END-->
-<link rel="stylesheet" href="css/style.css?v=b57785ee7e">
-<link rel="stylesheet" href="css/scrollbars.css?v=b57785ee7e">
-<link rel="stylesheet" href="css/lobby-chat.css?v=b57785ee7e">
-<link rel="stylesheet" href="css/latency.css?v=b57785ee7e">
+<link rel="stylesheet" href="css/style.css?v=7ce230ca1a">
+<link rel="stylesheet" href="css/scrollbars.css?v=7ce230ca1a">
+<link rel="stylesheet" href="css/lobby-chat.css?v=7ce230ca1a">
+<link rel="stylesheet" href="css/latency.css?v=7ce230ca1a">
 
 <link rel="icon" type="image/png" sizes="96x96" href="favicon-96.png">
 <link rel="icon" type="image/svg+xml" sizes="any" href="favicon.svg">
 <link rel="shortcut icon" href="favicon.ico">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<link rel="stylesheet" href="css/server-outage.css?v=b57785ee7e">
-<script src="js/server-outage.js?v=b57785ee7e"></script>
+<link rel="stylesheet" href="css/server-outage.css?v=7ce230ca1a">
+<script src="js/server-outage.js?v=7ce230ca1a"></script>
 </head>
 <body>
 <div id="bgdeco" aria-hidden="true"></div>
@@ -258,6 +258,10 @@
           <label class="setting-text" for="lobby-room-name">
             <span><b><span data-i18n="text.376">房間名稱</span></b><small><span data-i18n="text.377">讓朋友在房間列表裡一眼認出來</span></small></span>
             <input id="lobby-room-name" type="text" maxlength="24" autocomplete="off" spellcheck="false" placeholder="大家的畫畫房" data-i18n-attr="placeholder=text.452">
+          </label>
+          <label class="setting-toggle" for="room-create-private">
+            <span><b id="room-create-private-label" data-i18n="room.private">私人房間</b><small id="room-create-private-help" data-i18n="room.privateHelp">不會出現在大廳，朋友須使用邀請連結加入。</small></span>
+            <input id="room-create-private" type="checkbox" role="switch" aria-labelledby="room-create-private-label" aria-describedby="room-create-private-help">
           </label>
         </div>
 
@@ -683,32 +687,32 @@
   <div class="toast" id="toast" role="status" aria-live="assertive" hidden></div>
 </div>
 
-<script src="js/analytics.js?v=b57785ee7e"></script>
-<script src="js/i18n.js?v=b57785ee7e"></script>
+<script src="js/analytics.js?v=7ce230ca1a"></script>
+<script src="js/i18n.js?v=7ce230ca1a"></script>
 <!-- 介面字典只先載預設的繁中；其他語系與英文／簡中題庫用到才載入（js/lazy-packs.js） -->
-<script src="js/locales/ui.zh-Hant.js?v=b57785ee7e"></script>
-<script src="js/lazy-packs.js?v=b57785ee7e"></script>
-<script src="js/keyboard.js?v=b57785ee7e"></script>
-<script src="js/config.js?v=b57785ee7e"></script>
-<script src="js/rng.js?v=b57785ee7e"></script>
-<script src="js/words.js?v=b57785ee7e"></script>
-<script src="js/reference-path.js?v=b57785ee7e"></script>
-<script src="js/reference-kit.js?v=b57785ee7e"></script>
-<script src="js/reference-recipes.js?v=b57785ee7e"></script>
-<script src="js/reference.js?v=b57785ee7e"></script>
-<script src="js/meaning-reference.js?v=b57785ee7e"></script>
-<script src="js/rules.js?v=b57785ee7e"></script>
-<script src="js/relay-rules.js?v=b57785ee7e"></script>
-<script src="js/pickdraw-rules.js?v=b57785ee7e"></script>
-<script src="js/drawing-file.js?v=b57785ee7e"></script>
-<script src="js/storage.js?v=b57785ee7e"></script>
-<script src="js/audio.js?v=b57785ee7e"></script>
-<script src="js/svgui.js?v=b57785ee7e"></script>
-<script src="js/paint.js?v=b57785ee7e"></script>
-<script src="js/latency.js?v=b57785ee7e" data-skin="draw-guess"></script>
-<script src="js/lobby-chat.js?v=b57785ee7e"></script>
-<script src="js/online.js?v=b57785ee7e"></script>
-<script type="module" src="js/app/main.js?v=b57785ee7e"></script>
+<script src="js/locales/ui.zh-Hant.js?v=7ce230ca1a"></script>
+<script src="js/lazy-packs.js?v=7ce230ca1a"></script>
+<script src="js/keyboard.js?v=7ce230ca1a"></script>
+<script src="js/config.js?v=7ce230ca1a"></script>
+<script src="js/rng.js?v=7ce230ca1a"></script>
+<script src="js/words.js?v=7ce230ca1a"></script>
+<script src="js/reference-path.js?v=7ce230ca1a"></script>
+<script src="js/reference-kit.js?v=7ce230ca1a"></script>
+<script src="js/reference-recipes.js?v=7ce230ca1a"></script>
+<script src="js/reference.js?v=7ce230ca1a"></script>
+<script src="js/meaning-reference.js?v=7ce230ca1a"></script>
+<script src="js/rules.js?v=7ce230ca1a"></script>
+<script src="js/relay-rules.js?v=7ce230ca1a"></script>
+<script src="js/pickdraw-rules.js?v=7ce230ca1a"></script>
+<script src="js/drawing-file.js?v=7ce230ca1a"></script>
+<script src="js/storage.js?v=7ce230ca1a"></script>
+<script src="js/audio.js?v=7ce230ca1a"></script>
+<script src="js/svgui.js?v=7ce230ca1a"></script>
+<script src="js/paint.js?v=7ce230ca1a"></script>
+<script src="js/latency.js?v=7ce230ca1a" data-skin="draw-guess"></script>
+<script src="js/lobby-chat.js?v=7ce230ca1a"></script>
+<script src="js/online.js?v=7ce230ca1a"></script>
+<script type="module" src="js/app/main.js?v=7ce230ca1a"></script>
 <!--SEO:GAMEPLAY-->
 <noscript><div class="seo-gameplay"><section lang="zh-Hant">
 <h2>你畫我猜</h2>
@@ -729,9 +733,9 @@
 <p><strong>How to play: </strong>The artist draws on the canvas; guessers type their answers</p>
 </section></div></noscript>
 <!--SEO:GAMEPLAY:END-->
-  <script defer src="js/locales/result-share.js?v=b57785ee7e"></script>
-  <script defer src="js/result-share.js?v=b57785ee7e"></script>
-  <script defer src="js/dropdowns.js?v=b57785ee7e"></script>
-  <script defer src="js/scrollbars.js?v=b57785ee7e"></script>
+  <script defer src="js/locales/result-share.js?v=7ce230ca1a"></script>
+  <script defer src="js/result-share.js?v=7ce230ca1a"></script>
+  <script defer src="js/dropdowns.js?v=7ce230ca1a"></script>
+  <script defer src="js/scrollbars.js?v=7ce230ca1a"></script>
 </body>
 </html>

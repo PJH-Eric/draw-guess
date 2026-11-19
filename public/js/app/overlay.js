@@ -1,17 +1,17 @@
 /* ===== app/overlay.js — 疊層卡片：房間設定、選題、公布答案、結算 ===== */
 
-import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=b57785ee7e';
-import { askLeaveRoom, makeModal, modals } from './modal.js?v=b57785ee7e';
-import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=b57785ee7e';
-import { soloRefresh, soloStep, startSolo } from './solo.js?v=b57785ee7e';
-import { renderRecent } from './feed.js?v=b57785ee7e';
-import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=b57785ee7e';
-import { PHASE_LABEL, moodOf } from './render.js?v=b57785ee7e';
-import { copyText, newInvite, revokeInvite } from './game-settings.js?v=b57785ee7e';
-import { enterOnlineRoom, leaveGame, lobbyModeKey, roomRuleChips, saveNick } from './lobby.js?v=b57785ee7e';
-import { hideRelayUi, isRelayGame, relayAwardsHtml, relayCanDo, relayBarMode, relayOverlayHtml, relayPhaseLabel, relayToolsShown, relayVote, renderRelayAssist, renderRelayBanner } from './relay.js?v=b57785ee7e';
-import { hidePickdrawUi, isPickdrawGame, pickdrawAwardsHtml, pickdrawCanDo, pickdrawOverlayHtml, pickdrawPhaseLabel, pickdrawRoleLabel, pickdrawToolsShown, renderPickdrawAssist } from './pickdraw.js?v=b57785ee7e';
-import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=b57785ee7e';
+import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=7ce230ca1a';
+import { askLeaveRoom, makeModal, modals } from './modal.js?v=7ce230ca1a';
+import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=7ce230ca1a';
+import { soloRefresh, soloStep, startSolo } from './solo.js?v=7ce230ca1a';
+import { renderRecent } from './feed.js?v=7ce230ca1a';
+import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=7ce230ca1a';
+import { PHASE_LABEL, moodOf } from './render.js?v=7ce230ca1a';
+import { copyText, newInvite, revokeInvite } from './game-settings.js?v=7ce230ca1a';
+import { enterOnlineRoom, leaveGame, lobbyModeKey, roomRuleChips, saveNick } from './lobby.js?v=7ce230ca1a';
+import { hideRelayUi, isRelayGame, relayAwardsHtml, relayCanDo, relayBarMode, relayOverlayHtml, relayPhaseLabel, relayToolsShown, relayVote, renderRelayAssist, renderRelayBanner } from './relay.js?v=7ce230ca1a';
+import { hidePickdrawUi, isPickdrawGame, pickdrawAwardsHtml, pickdrawCanDo, pickdrawOverlayHtml, pickdrawPhaseLabel, pickdrawRoleLabel, pickdrawToolsShown, renderPickdrawAssist } from './pickdraw.js?v=7ce230ca1a';
+import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=7ce230ca1a';
 
 var w = window;
 
@@ -243,6 +243,7 @@ export function renderRoomCreateOptions() {
   renderCategorySelect('room-create-category', c.category || '');
   renderWordLangSelect('room-create-wordlang', c.wordLang);
   $('lobby-room-name').value = c.roomName;
+  $('room-create-private').checked = c.private;
   fillSelect('room-create-rounds', ROUND_CHOICES, c.rounds);
   fillSelect('room-create-drawsec', SEC_CHOICES, c.drawSec);
   fillSelect('room-create-guessrounds', guessRoundChoices(), c.guessRounds || 1);
@@ -263,6 +264,7 @@ export function renderRoomCreateOptions() {
 }
 
 export function setupRoomCreate() {
+  $('room-create-private').addEventListener('change', function () { app.roomCreate.private = this.checked; });
   $('room-create-category').addEventListener('change', function () { app.roomCreate.category = this.value; });
   $('room-create-wordlang').addEventListener('change', function () {
     app.roomCreate.wordLang = Store.wordLang(this.value);
@@ -290,6 +292,7 @@ export function setupRoomCreate() {
 
 export function openRoomCreate() {
   app.roomCreate = {
+    private: false,
     roomName: (Store.nick() || (globalThis.I18N ? globalThis.I18N.t("text.137") : "大家")) + (globalThis.I18N ? globalThis.I18N.t("text.136") : " 的房間"),
     rounds: 2,
     drawSec: 90,
@@ -321,6 +324,7 @@ export function createRoomFromSettings() {
   w.Online.send('room:create', {
     name: Store.ensureNick(),
     roomName: roomName,
+    private: c.private,
     mode: relay ? 'relay' : (pickdraw ? 'pickdraw' : 'classic'),
     settings: settings
   }, function (res) {
@@ -492,7 +496,8 @@ export function roomSetupHtml(v) {
     (relay ? ' <span class="relay-badge"><span class="ico" data-ico="relay" aria-hidden="true"></span>' + esc(w.I18N.t('relay.name')) + '</span>' : '') +
     (pickdraw ? ' <span class="relay-badge pickdraw-badge"><span class="ico" data-ico="pickdraw" aria-hidden="true"></span>' + esc(w.I18N.t('pickdraw.name')) + '</span>' : '') + "</h3>") +
     '<div class="setup-cols"><div class="setup-col">' +
-    '<div class="roomcode"><b>' + esc(r.code) + ("</b><span>" + esc(I18N.t("text.102")) + "</span></div>") +
+    '<div class="roomcode"><b>' + esc(r.code) + '</b><span>' +
+    esc(w.I18N.t(r.private ? 'room.privateInvite' : 'text.102')) + '</span></div>' +
     '<div class="seatlist">' + (seats || ("<div class=\"seatrow\">" + esc(I18N.t("text.101")) + "</div>")) +
     openSeats +
     (specs.length ? '<div class="seatrow spec"><span class="ico" data-ico="eye" aria-hidden="true"></span> ' + specs.length + (esc(I18N.t("text.100")) + "</div>") : '') + '</div>' +

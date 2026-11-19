@@ -2110,7 +2110,10 @@ I18N.register('zh-Hant', {
   'lobby.empty.title': '來當第一個開房的人',
   'lobby.about': '房間什麼時候會關閉？',
   'room.openSeats': '還有 {n} 個空位，邀請朋友一起玩',
-  'room.langLocked': '開房後固定'
+  'room.langLocked': '開房後固定',
+  'room.private': '私人房間',
+  'room.privateHelp': '不會出現在大廳，朋友須使用邀請連結加入。',
+  'room.privateInvite': '私人房間・請用邀請連結加入'
 }).register('zh-Hans', {
   'lobby.host.title': '自己开一间',
   'lobby.host.desc': '当房主设定规则，再把房号或邀请链接发给朋友。',
@@ -2118,7 +2121,10 @@ I18N.register('zh-Hant', {
   'lobby.empty.title': '来当第一个开房的人',
   'lobby.about': '房间什么时候会关闭？',
   'room.openSeats': '还有 {n} 个空位，邀请朋友一起玩',
-  'room.langLocked': '开房后固定'
+  'room.langLocked': '开房后固定',
+  'room.private': '私人房间',
+  'room.privateHelp': '不会出现在大厅，好友须使用邀请链接加入。',
+  'room.privateInvite': '私人房间・请用邀请链接加入'
 }).register('en', {
   'lobby.host.title': 'Host a room',
   'lobby.host.desc': 'Set the rules as host, then send the room code or invite link to friends.',
@@ -2126,7 +2132,10 @@ I18N.register('zh-Hant', {
   'lobby.empty.title': 'Be the first to host',
   'lobby.about': 'When do rooms close?',
   'room.openSeats': '{n} open seats. Invite friends to join',
-  'room.langLocked': 'Fixed after creation'
+  'room.langLocked': 'Fixed after creation',
+  'room.private': 'Private room',
+  'room.privateHelp': 'Hidden from the lobby. Friends need an invite link to join.',
+  'room.privateInvite': 'Private room · Invite link required'
 });
 
 /* 結算 */

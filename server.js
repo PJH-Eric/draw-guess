@@ -335,7 +335,8 @@ io.on('connection', (socket) => {
     if (!res.ok) { fail(socket, res.error, res.code); if (typeof ack === 'function') ack(res); return; }
     const room = res.room;
     attach(socket, room.code);
-    room.system(socket.data.name + ' 開了這間房。把房號或邀請連結傳給朋友，大家準備好就能開始。', now());
+    if (room.private) room.system('room.privateInvite', {}, now());
+    else room.system(socket.data.name + ' 開了這間房。把房號或邀請連結傳給朋友，大家準備好就能開始。', now());
     /* 先回 ack：用戶端要先知道自己進了哪一間房，才收得下後面的投影 */
     if (typeof ack === 'function') ack({ ok: true, code: room.code, mode: room.mode });
     syncRoom(room, true);
@@ -345,7 +346,7 @@ io.on('connection', (socket) => {
       code: room.code,
       roomName: (room.relay ? RELAY_ROOM_TAG : (room.pickdraw ? PICKDRAW_ROOM_TAG : '')) + room.name,
       host: socket.data.name,
-      isPrivate: !!p.private
+      isPrivate: room.private
     });
   });
 

@@ -550,8 +550,32 @@ async function main() {
       await cdp.waitFor('!document.querySelector(".lc-root.lc-open")', 3000, '大廳聊天室收合');
     }
     await shot(v.name + '-線上大廳');
-    await cdp.eval('window.__probe.click("#s-lobby [data-back=\\"s-home\\"]"); return 1;');
-    await cdp.waitFor('document.querySelector(".screen.active").id === "s-home"', 3000, '離開線上大廳');
+    const roomModes = v.mobile ? [['classic', null]] :
+      [['classic', null], ['relay', '#b-relay'], ['pickdraw', '#b-pickdraw']];
+    for (const [mode, entry] of roomModes) {
+      if (entry) await cdp.eval('window.__probe.click(' + JSON.stringify(entry) + ');');
+      await cdp.waitFor('document.querySelector("#s-lobby.active") && !document.getElementById("b-lobby-host").disabled', 5000, '大廳可開房');
+      await cdp.eval('window.__probe.click("#b-lobby-host");');
+      await cdp.waitFor('document.querySelector("#room-create-modal.open")', 3000, '開房間設定');
+      const privacy = await cdp.eval(`
+        var toggle = document.getElementById('room-create-private');
+        var initial = toggle.checked;
+        toggle.click();
+        return { initial: initial, checked: toggle.checked, visible: toggle.getBoundingClientRect().width > 0 };
+      `);
+      check(v.name + ' ' + mode + '：私人房開關可切換，預設為公開',
+        privacy.visible && !privacy.initial && privacy.checked);
+      await shot(v.name + '-私人房設定-' + mode);
+      await cdp.eval('window.__probe.click("#room-create-submit");');
+      await cdp.waitFor('window.DrawGuessApp.view && window.DrawGuessApp.view.room.private', 5000, '私人房建立成功');
+      check(v.name + ' ' + mode + '：建立私人房並顯示邀請連結提示',
+        await cdp.eval('return window.DrawGuessApp.view.room.mode === ' + JSON.stringify(mode) +
+          ' && document.querySelector(".roomcode span").textContent === window.I18N.t("room.privateInvite");'));
+      await cdp.eval('window.__probe.click("[data-act=leave-room]"); window.__probe.click("#confirm-ok");');
+      await cdp.waitFor('document.querySelector("#s-lobby.active")', 3000, '返回線上大廳');
+      await cdp.eval('document.querySelector(\'#s-lobby [data-back="s-home"]\').click();');
+      await cdp.waitFor('document.querySelector("#s-home.active")', 3000, '返回主選單');
+    }
 
     /* 設定彈窗 */
     await cdp.eval('window.__probe.click("#b-settings"); return 1;');

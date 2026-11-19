@@ -6,9 +6,9 @@
  * 角色（game.you.role）：guesser 猜題者／drawer 正在畫／painter 等下一棒的畫家／pending 下一題才加入／spectator 觀戰
  */
 
-import { $, D, S, Sound, app, esc, netNow, secsLeft, toast } from './core.js?v=b57785ee7e';
-import { askConfirm } from './modal.js?v=b57785ee7e';
-import { reactionBarHtml } from './overlay.js?v=b57785ee7e';
+import { $, D, S, Sound, app, esc, netNow, secsLeft, toast } from './core.js?v=7ce230ca1a';
+import { askConfirm } from './modal.js?v=7ce230ca1a';
+import { reactionBarHtml } from './overlay.js?v=7ce230ca1a';
 
 var w = window;
 function t(key, params) { return w.I18N.t(key, params); }

@@ -89,6 +89,28 @@ async function main() {
     assert.deepEqual(store.sweep(120000).forget, [room]);
     assert.equal(store.getAny(room.code), null);
   });
+  for (const mode of ['classic', 'relay', 'pickdraw']) {
+    await check(mode + ' 私人房從大廳隱藏且須持邀請連結加入', async () => {
+      const host = await client('private-host');
+      const guest = await client('private-guest');
+      const { code } = await request(host, 'room:create', { mode, private: true });
+      assert.equal(store.get(code).mode, mode);
+      let lobby;
+      guest.once('lobby:rooms', payload => { lobby = payload; });
+      guest.emit('lobby:subscribe', { mode });
+      await until(() => lobby);
+      assert.deepEqual(lobby.rooms, []);
+      for (const role of ['player', 'spectator']) {
+        const denied = await request(guest, 'room:join', { code, role });
+        assert.equal(denied.code, 'private');
+      }
+      const invite = await request(host, 'room:invite', { role: 'any' });
+      const joined = await request(guest, 'room:join', { code, token: invite.token, role: 'player' });
+      assert.equal(joined.ok, true);
+      assert.equal(joined.mode, mode);
+      assert.equal(joined.role, 'player');
+    });
+  }
   io.close(); server.close();
   process.exit(failures ? 1 : 0);
 }
