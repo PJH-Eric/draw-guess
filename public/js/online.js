@@ -262,7 +262,7 @@
     if (evt === 'room:leave' && w.GameAnalytics) w.GameAnalytics.roomLeft();
     if (ack) socket.emit(evt, payload || {}, function (res) {
       if (res && res.ok && w.GameAnalytics && (evt === 'room:create' || evt === 'room:join')) {
-        w.GameAnalytics.roomAccepted(evt === 'room:create' ? 'create' : 'join', res.code || (payload && payload.code), payload && payload.token ? 'invite_link' : 'lobby');
+        w.GameAnalytics.roomAccepted(evt === 'room:create' ? 'create' : 'join', res.code || (payload && payload.code), payload && payload.token ? 'invite_link' : 'lobby', res.mode);
       }
       ack(res);
     });

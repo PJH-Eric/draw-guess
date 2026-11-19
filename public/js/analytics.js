@@ -53,8 +53,9 @@
       var value = params[key];
       if ((typeof value === 'string' || typeof value === 'number') && /^[a-zA-Z0-9_-]{1,40}$/.test(String(value))) out[key] = String(value);
     });
-    if (['solo', 'ai', 'online', 'practice', 'solo_random'].indexOf(params.mode) !== -1) {
-      out.mode = params.mode === 'online' ? 'online' :
+    if (['solo', 'ai', 'online', 'relay', 'practice', 'solo_random'].indexOf(params.mode) !== -1) {
+      /* relay：你畫我猜的接力模式（Beta），跟一般線上房間分開統計 */
+      out.mode = params.mode === 'online' || params.mode === 'relay' ? params.mode :
         (params.mode === 'ai' || params.players > 1 ? 'ai' : 'solo');
       if (params.mode === 'practice' || params.mode === 'solo_random') out.variant = params.mode;
     }
@@ -114,11 +115,11 @@
     else if (action === 'leave') roomLeft();
   }
 
-  function roomAccepted(action, key, via) {
+  function roomAccepted(action, key, via, mode) {
     if (action !== 'create' && action !== 'join') return;
     if (key != null && key === joinedRoom) return;
     joinedRoom = key == null ? null : key;
-    track('room_' + action, { mode: 'online', via: via || 'lobby' });
+    track('room_' + action, { mode: mode === 'relay' ? 'relay' : 'online', via: via || 'lobby' });
   }
 
   function roomLeft() { pendingRoom = null; joinedRoom = null; active = null; }
@@ -137,7 +138,8 @@
     try {
       if (typeof global.gtag === 'function') global.gtag('event', 'page_view', {
         game_id: config.game_id,
-        page_location: config.page_location + '#/' + screen,
+        /* 接力大廳與接力房（relay_＊）用虛擬路徑 /relay，報表裡跟一般模式分得開 */
+        page_location: config.page_location + (screen.indexOf('relay') === 0 ? 'relay#/' : '#/') + screen,
         page_referrer: cleanUrl(global.document.referrer),
         page_title: global.document.title + ' - ' + screen,
         screen_name: screen

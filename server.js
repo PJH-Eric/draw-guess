@@ -368,7 +368,7 @@ io.on('connection', (socket) => {
       ? res.member.name + ' 重新連上線了。'
       : res.member.name + ' 加入了（' + (res.member.role === 'player' ? '玩家' : '觀戰') + '）。', now());
     if (typeof ack === 'function') {
-      ack({ ok: true, code: room.code, role: res.member.role, downgraded: !!res.downgraded, reconnected: !!res.reconnected });
+      ack({ ok: true, code: room.code, mode: room.mode, role: res.member.role, downgraded: !!res.downgraded, reconnected: !!res.reconnected });
     }
     syncRoom(room, true);
     syncLobby();

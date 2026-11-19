@@ -1,11 +1,11 @@
 /* ===== app/lobby.js — 線上大廳 ===== */
 
-import { $, Cfg, D, S, Sound, Store, Words, app, esc, paintIcons, show, toast } from './core.js?v=95f17e75a6';
-import { WORD_LANGS, categoryChoices, wordLangLabel } from './menus.js?v=95f17e75a6';
-import { startLoop, stopLoop } from './solo.js?v=95f17e75a6';
-import { ensurePaint } from './canvas.js?v=95f17e75a6';
-import { render } from './render.js?v=95f17e75a6';
-import { DIFF_CHOICES, morphChildren, openRoomCreate } from './overlay.js?v=95f17e75a6';
+import { $, Cfg, D, S, Sound, Store, Words, app, esc, paintIcons, show, toast } from './core.js?v=47fdd4e7c4';
+import { WORD_LANGS, categoryChoices, wordLangLabel } from './menus.js?v=47fdd4e7c4';
+import { startLoop, stopLoop } from './solo.js?v=47fdd4e7c4';
+import { ensurePaint } from './canvas.js?v=47fdd4e7c4';
+import { render } from './render.js?v=47fdd4e7c4';
+import { DIFF_CHOICES, morphChildren, openRoomCreate } from './overlay.js?v=47fdd4e7c4';
 
 var w = window;
 
@@ -173,6 +173,8 @@ export function applyLobbyMode() {
   setI18nKey($('lobby-title').querySelector('[data-i18n]'), relay ? 'relay.name' : 'text.211');
   setI18nKey(D.querySelector('#s-lobby [data-i18n="lobby.host.desc"], #s-lobby [data-i18n="relay.hostDesc"]'), relay ? 'relay.hostDesc' : 'lobby.host.desc');
   $('relay-lobby-note').hidden = !relay;
+  /* GA4：接力大廳送虛擬路徑 /relay 的 page_view（一般大廳維持原本的統計方式） */
+  if (relay && w.GameAnalytics) w.GameAnalytics.pageView('relay_lobby');
 }
 
 /** 連線之前先把會送出請求的按鈕停用，避免按了卻沒有送出去 */

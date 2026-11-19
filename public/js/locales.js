@@ -1242,10 +1242,10 @@ I18N.register("zh-Hant", {
   "difficulty.3": "Hard"
 });
 
-I18N.register("zh-Hant", { "meta.description": "免費免下載的你畫我猜，輪流當畫家，用畫筆、形狀與油漆桶畫出題目，猜中答案搶積分。單機練習或開房間邀朋友同樂，支援觀戰與猜題紀錄，手機平板都能作畫。", "tool.undoTitle": "復原（Ctrl+Z）", "tool.redoTitle": "重做（Ctrl+Y）" }).register("en", { "meta.description": "Draw & Guess: practice drawing solo or draw and guess online with friends.", "tool.undoTitle": "Undo (Ctrl+Z)", "tool.redoTitle": "Redo (Ctrl+Y)" });
+I18N.register("zh-Hant", { "meta.description": "免費免下載的你畫我猜，輪流當畫家用畫筆、形狀與油漆桶畫出題目，猜中搶積分。新推出接力模式（Beta）：投票選題、大家輪流接力作畫給一人猜。支援觀戰，手機平板都能玩。", "tool.undoTitle": "復原（Ctrl+Z）", "tool.redoTitle": "重做（Ctrl+Y）" }).register("en", { "meta.description": "Draw clues and guess answers with friends online, or practice solo. New Relay (Beta): vote on a prompt and take turns drawing for one guesser. Free on phones, tablets and computers.", "tool.undoTitle": "Undo (Ctrl+Z)", "tool.redoTitle": "Redo (Ctrl+Y)" });
 
-I18N.register("zh-Hant", { "meta.title": "你畫我猜｜免費線上多人畫圖猜謎", "meta.desc": "免費免下載的你畫我猜，輪流當畫家，用畫筆、形狀與油漆桶畫出題目，猜中答案搶積分。單機練習或開房間邀朋友同樂，支援觀戰與猜題紀錄，手機平板都能作畫。" })
-  .register("en", { "meta.title": "Draw & Guess | Free Online Drawing Game", "meta.desc": "Draw clues and guess answers with friends online, or practice solo. Free to play on phones, tablets and computers." });
+I18N.register("zh-Hant", { "meta.title": "你畫我猜｜免費線上多人畫圖猜謎・接力模式（Beta）", "meta.desc": "免費免下載的你畫我猜，輪流當畫家用畫筆、形狀與油漆桶畫出題目，猜中搶積分。新推出接力模式（Beta）：投票選題、大家輪流接力作畫給一人猜。支援觀戰，手機平板都能玩。" })
+  .register("en", { "meta.title": "Draw & Guess | Free Online Drawing Game + Relay (Beta)", "meta.desc": "Draw clues and guess answers with friends online, or practice solo. New Relay (Beta): vote on a prompt and take turns drawing for one guesser. Free on phones, tablets and computers." });
 
 // 由繁體中文介面字典轉換；動態參數（暱稱、分數等）維持原值。
 (function (root) {
@@ -1861,11 +1861,11 @@ I18N.register("zh-Hant", { "meta.title": "你畫我猜｜免費線上多人畫�
     "difficulty.1": "简单",
     "difficulty.2": "普通",
     "difficulty.3": "困难",
-    "meta.description": "免费免下载的你画我猜，轮流当画家，用画笔、形状与油漆桶画出题目，猜中答案抢积分。单机练习或开房间邀朋友同乐，支援观战与猜题纪录，手机平板都能作画。",
+    "meta.description": "免费免下载的你画我猜，轮流当画家用画笔、形状与油漆桶画出题目，猜中抢积分。新推出接力模式（Beta）：投票选题、大家轮流接力作画给一人猜。支援观战，手机平板都能玩。",
     "tool.undoTitle": "复原（Ctrl+Z）",
     "tool.redoTitle": "重做（Ctrl+Y）",
-    "meta.title": "你画我猜｜免费线上多人画图猜谜",
-    "meta.desc": "免费免下载的你画我猜，轮流当画家，用画笔、形状与油漆桶画出题目，猜中答案抢积分。单机练习或开房间邀朋友同乐，支援观战与猜题纪录，手机平板都能作画。"
+    "meta.title": "你画我猜｜免费线上多人画图猜谜・接力模式（Beta）",
+    "meta.desc": "免费免下载的你画我猜，轮流当画家用画笔、形状与油漆桶画出题目，猜中抢积分。新推出接力模式（Beta）：投票选题、大家轮流接力作画给一人猜。支援观战，手机平板都能玩。"
   };
   hans['lobby.onlineCount'] = '当前在线：{n} 人';
   if (root.I18N) root.I18N.register('zh-Hans', hans);

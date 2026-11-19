@@ -1,14 +1,14 @@
 /* ===== app/online-events.js — 線上事件 ===== */
 
-import { $, Sound, Store, Words, app, toast } from './core.js?v=95f17e75a6';
-import { modals } from './modal.js?v=95f17e75a6';
-import { localizeGame } from './solo.js?v=95f17e75a6';
-import { pushFeed, replaceFeed } from './feed.js?v=95f17e75a6';
-import { render } from './render.js?v=95f17e75a6';
-import { renderAside } from './overlay.js?v=95f17e75a6';
-import { renderGameSettings } from './game-settings.js?v=95f17e75a6';
-import { isRelayGame, relayRecord, relayTransition, showCheer } from './relay.js?v=95f17e75a6';
-import { forgetRoom, joinRoom, leaveGame, renderRoomList, saveNick, setLobbyEnabled, subscribeLobby } from './lobby.js?v=95f17e75a6';
+import { $, Sound, Store, Words, app, toast } from './core.js?v=47fdd4e7c4';
+import { modals } from './modal.js?v=47fdd4e7c4';
+import { localizeGame } from './solo.js?v=47fdd4e7c4';
+import { pushFeed, replaceFeed } from './feed.js?v=47fdd4e7c4';
+import { render } from './render.js?v=47fdd4e7c4';
+import { renderAside } from './overlay.js?v=47fdd4e7c4';
+import { renderGameSettings } from './game-settings.js?v=47fdd4e7c4';
+import { isRelayGame, relayRecord, relayTransition, showCheer } from './relay.js?v=47fdd4e7c4';
+import { forgetRoom, joinRoom, leaveGame, renderRoomList, saveNick, setLobbyEnabled, subscribeLobby } from './lobby.js?v=47fdd4e7c4';
 
 var w = window;
 
@@ -73,8 +73,9 @@ export function setupOnlineEvents() {
     if (app.mode !== 'online') return;
     var prev = app.view;
     app.view = v;
+    if (v.room.mode === 'relay' && w.GameAnalytics) GameAnalytics.pageView('relay_room');
     if (v.game) GameAnalytics.sync(v.room.phase, v.room.code + '|' + v.game.seed, {
-      mode: 'online', difficulty: v.game.diff, players: v.game.players.length, spectator: v.you.role !== 'player'
+      mode: v.room.mode === 'relay' ? 'relay' : 'online', difficulty: v.game.diff, players: v.game.players.length, spectator: v.you.role !== 'player'
     }, { result: v.game.winners && v.game.winners.indexOf(v.you.id) >= 0 ? 'win' : 'lose' });
     app.roomCode = v.room.code;
     /* 回大廳時回到跟這間房同一種的大廳（邀請連結進來的人一開始不知道是哪一種） */
