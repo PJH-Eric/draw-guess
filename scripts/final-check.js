@@ -1,11 +1,11 @@
 /*
- * scripts/final-check.js — 接力模式最後確認的有界迭代執行器
+ * scripts/final-check.js — 接力模式與你出我畫他猜（Beta）最後確認的有界迭代執行器
  *
  *   node scripts/final-check.js [--max=10]
  *
  * 防護（對應 loop-engineering 的原則 4 與 3）：
  *   - 預算出口：每個套件有逾時，整體最多跑 --max 輪（預設 10）。
- *   - 防作弊不變量：tests/relay.js 與 scripts/online-check.js 的通過項數不得少於
+ *   - 防作弊不變量：npm test、scripts/online-check.js 與你出我畫他猜瀏覽器巡檢的通過項數不得少於
  *     scripts/final-check.baseline.json 記錄的數字；測試被刪或弱化就失敗。
  *   - 無進展偵測：同一組失敗項目連續兩輪出現，就停下來交給人。
  */
@@ -24,7 +24,8 @@ const SUITES = [
   { name: 'npm test', cmd: 'npm', args: ['test'], pass: /通過 \d+ 項，失敗 0 項/ },
   { name: 'test:online', cmd: 'npm', args: ['run', '-s', 'test:online'], pass: /失敗 0 項/ },
   { name: 'browser-check', cmd: process.execPath, args: [path.join(ROOT, 'scripts/browser-check.js')], pass: /瀏覽器檢查全部通過/ },
-  { name: 'relay-browser-check', cmd: process.execPath, args: [path.join(ROOT, 'scripts/relay-browser-check.js')], pass: /接力瀏覽器巡檢通過/ }
+  { name: 'relay-browser-check', cmd: process.execPath, args: [path.join(ROOT, 'scripts/relay-browser-check.js')], pass: /接力瀏覽器巡檢通過/ },
+  { name: 'pickdraw-browser-check', cmd: process.execPath, args: [path.join(ROOT, 'scripts/pickdraw-browser-check.js')], pass: /你出我畫他猜瀏覽器巡檢通過/ }
 ];
 
 /** 防作弊：統計測試檔裡通過的檢查項數（✓ 行），不能少於基準 */
@@ -70,7 +71,8 @@ function main() {
     /* 防作弊不變量：relay 測試與線上測試的通過項數不得下降 */
     const counts = {
       'tests/relay.js': countPasses(results[0].out),
-      'online-check': countPasses(results[1].out)
+      'online-check': countPasses(results[1].out),
+      'pickdraw-browser': countPasses(results[4].out)
     };
     let invariantOk = true;
     if (baseline) {
@@ -84,9 +86,11 @@ function main() {
 
     if (results.every((r) => r.ok) && invariantOk) {
       console.log('\n✓ 第 ' + i + ' 輪全部通過，停止迭代。');
-      if (!baseline) {
-        fs.writeFileSync(BASELINE, JSON.stringify({ counts: counts }, null, 2) + '\n');
-        console.log('已寫入通過項基準：' + JSON.stringify(counts));
+      /* 基準只往上補：新加入的套件才寫入，已有的數字不會被調低 */
+      if (!baseline || Object.keys(counts).some((k) => !(k in baseline.counts))) {
+        const merged = Object.assign({}, counts, baseline ? baseline.counts : {});
+        fs.writeFileSync(BASELINE, JSON.stringify({ counts: merged }, null, 2) + '\n');
+        console.log('已寫入通過項基準：' + JSON.stringify(merged));
       }
       return 0;
     }

@@ -1,6 +1,7 @@
 {
   "counts": {
     "tests/relay.js": 626,
-    "online-check": 191
+    "online-check": 191,
+    "pickdraw-browser": 276
   }
 }
