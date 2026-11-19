@@ -1952,6 +1952,33 @@ body.reduced-motion .react-btn{transition:none}
   .gallery-foot{grid-column:2;grid-row:3;padding:8px 12px}
 }
 
+/* >>> parts/87-relay.css */
+/* ---------- 接力模式（Beta） ----------
+ * 接力的主色是 peach（蜜桃）：首頁入口、大廳說明、房間徽章、接力順序列都用同一個色系，
+ * 一眼就分得出現在是接力房，不會跟一般模式（grape）搞混。 */
+:root{
+  --relay:#FFC2B4; --relay-d:#E89C8B; --relay-t:#B35A45; --relay-tint:#FFF1EC;
+}
+
+/* 大廳：接力大廳的說明條與標題色 */
+.relay-lobby-note{
+  display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:10px 14px;
+  border:3px solid var(--relay-d);border-radius:18px;background:var(--relay-tint);
+  font-weight:800;font-size:.92rem;line-height:1.6;color:var(--ink)
+}
+.relay-lobby-note .ico{flex:0 0 auto;width:30px;height:30px}
+body.lobby-relay #lobby-title{color:var(--relay-t)}
+
+/* 房間卡片與房間設定卡的接力標記 */
+.rc-rule[data-k=mode]{background:var(--relay);border-color:var(--relay-d)}
+.relay-badge{
+  display:inline-flex;align-items:center;gap:4px;vertical-align:middle;margin-left:6px;
+  padding:2px 10px 2px 6px;border:2px solid var(--relay-d);border-radius:999px;background:var(--relay);
+  font-size:.78rem;font-weight:900;color:var(--ink);white-space:nowrap
+}
+.relay-badge .ico{width:1.2em;height:1.2em}
+.relay-rules-note{margin:8px 0 0}
+
 /* >>> parts/90-motion.css */
 /* ================================================================
  * 動態回饋：hover、按下、卡片與提示進場、得分飄字

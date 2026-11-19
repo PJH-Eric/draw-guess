@@ -28,17 +28,17 @@
 <meta name="twitter:image:alt" content="你畫我猜 遊戲封面">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"你畫我猜","url":"https://pjh-eric.github.io/draw-guess/","description":"免費免下載的你畫我猜，輪流當畫家，用畫筆、形狀與油漆桶畫出題目，猜中答案搶積分。單機練習或開房間邀朋友同樂，支援觀戰與猜題紀錄，手機平板都能作畫。","applicationCategory":"GameApplication","operatingSystem":"Any","inLanguage":"zh-Hant","genre":"畫圖猜謎","offers":{"@type":"Offer","price":"0","priceCurrency":"TWD"},"image":"https://pjh-eric.github.io/draw-guess/assets/images/seo.webp","thumbnailUrl":"https://pjh-eric.github.io/draw-guess/assets/images/seo.webp","isPartOf":{"@type":"WebSite","url":"https://pjh-eric.github.io/game-lobby/"}}</script>
 <!--SEO:END-->
-<link rel="stylesheet" href="css/style.css?v=024b3bae29">
-<link rel="stylesheet" href="css/scrollbars.css?v=024b3bae29">
-<link rel="stylesheet" href="css/lobby-chat.css?v=024b3bae29">
-<link rel="stylesheet" href="css/latency.css?v=024b3bae29">
+<link rel="stylesheet" href="css/style.css?v=9d685e6883">
+<link rel="stylesheet" href="css/scrollbars.css?v=9d685e6883">
+<link rel="stylesheet" href="css/lobby-chat.css?v=9d685e6883">
+<link rel="stylesheet" href="css/latency.css?v=9d685e6883">
 
 <link rel="icon" type="image/png" sizes="96x96" href="favicon-96.png">
 <link rel="icon" type="image/svg+xml" sizes="any" href="favicon.svg">
 <link rel="shortcut icon" href="favicon.ico">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<link rel="stylesheet" href="css/server-outage.css?v=024b3bae29">
-<script src="js/server-outage.js?v=024b3bae29"></script>
+<link rel="stylesheet" href="css/server-outage.css?v=9d685e6883">
+<script src="js/server-outage.js?v=9d685e6883"></script>
 </head>
 <body>
 <div id="bgdeco" aria-hidden="true"></div>
@@ -58,6 +58,8 @@
       <div class="home-btns">
         <button class="btn3d big" data-color="mint" id="b-solo"><span class="ico" data-ico="board"></span><span data-i18n="text.334">單機練習（自己畫著玩）</span></button>
         <button class="btn3d big" data-color="grape" id="b-online"><span class="ico" data-ico="people"></span><span data-i18n="text.335">線上對戰（找朋友）</span></button>
+        <!-- 接力模式（Beta）：只有線上，跟一般模式分開入口，大廳只列接力房 -->
+        <button class="btn3d big home-relay" data-color="peach" id="b-relay"><span class="ico" data-ico="relay"></span><span data-i18n="relay.home">接力模式（Beta）</span></button>
         <div class="home-row">
           <button class="btn3d" data-color="sky" id="b-help"><span data-i18n="text.336">玩法教學</span></button>
           <button class="btn3d" data-color="lemon" id="b-stats"><span class="ico" data-ico="trophy"></span><span data-i18n="text.337">我的戰績</span></button>
@@ -141,9 +143,11 @@
     <div class="panel">
       <div class="panel-head">
         <button class="btn3d small" data-color="cream" data-back="s-home"><span data-i18n="text.339">◀ 返回</span></button>
-        <h2><span data-i18n="text.211">線上對戰</span></h2>
+        <h2 id="lobby-title"><span data-i18n="text.211">線上對戰</span></h2>
         <span class="spacer"></span>
       </div>
+      <!-- 接力大廳才出現：一句話講清楚接力怎麼玩 -->
+      <p class="relay-lobby-note" id="relay-lobby-note" hidden><span class="ico" data-ico="relay" aria-hidden="true"></span><span data-i18n="relay.lobbyNote">每題一人猜，其餘玩家投票選題後輪流接力作畫，猜題者隨時可猜。3–8 人。</span></p>
 
       <!-- 沒有伺服器時：講清楚原因與怎麼開，不做假的房間列表 -->
       <div class="lobby-off" id="lobby-off" hidden>
@@ -264,8 +268,10 @@
             <select id="room-create-wordlang"></select>
           </label>
           <div class="rules-row create-rules">
-            <label class="rule-field" for="room-create-rounds"><span data-i18n="text.126">畫幾次</span><select id="room-create-rounds"></select></label>
-            <label class="rule-field" for="room-create-drawsec"><span data-i18n="text.125">秒數</span><select id="room-create-drawsec"></select></label>
+            <label class="rule-field classic-only" for="room-create-rounds"><span data-i18n="text.126">畫幾次</span><select id="room-create-rounds"></select></label>
+            <label class="rule-field classic-only" for="room-create-drawsec"><span data-i18n="text.125">秒數</span><select id="room-create-drawsec"></select></label>
+            <label class="rule-field relay-only" for="room-create-guessrounds" hidden><span data-i18n="relay.field.guessRounds">猜題次數</span><select id="room-create-guessrounds"></select></label>
+            <label class="rule-field relay-only" for="room-create-baton" hidden><span data-i18n="relay.field.baton">每棒秒數</span><select id="room-create-baton"></select></label>
             <label class="rule-field" for="room-create-diff"><span data-i18n="text.124">題型</span><select id="room-create-diff"></select></label>
           </div>
         </div>
@@ -660,30 +666,31 @@
   <div class="toast" id="toast" role="status" aria-live="assertive" hidden></div>
 </div>
 
-<script src="js/analytics.js?v=024b3bae29"></script>
-<script src="js/i18n.js?v=024b3bae29"></script>
+<script src="js/analytics.js?v=9d685e6883"></script>
+<script src="js/i18n.js?v=9d685e6883"></script>
 <!-- 介面字典只先載預設的繁中；其他語系與英文／簡中題庫用到才載入（js/lazy-packs.js） -->
-<script src="js/locales/ui.zh-Hant.js?v=024b3bae29"></script>
-<script src="js/lazy-packs.js?v=024b3bae29"></script>
-<script src="js/keyboard.js?v=024b3bae29"></script>
-<script src="js/config.js?v=024b3bae29"></script>
-<script src="js/rng.js?v=024b3bae29"></script>
-<script src="js/words.js?v=024b3bae29"></script>
-<script src="js/reference-path.js?v=024b3bae29"></script>
-<script src="js/reference-kit.js?v=024b3bae29"></script>
-<script src="js/reference-recipes.js?v=024b3bae29"></script>
-<script src="js/reference.js?v=024b3bae29"></script>
-<script src="js/meaning-reference.js?v=024b3bae29"></script>
-<script src="js/rules.js?v=024b3bae29"></script>
-<script src="js/drawing-file.js?v=024b3bae29"></script>
-<script src="js/storage.js?v=024b3bae29"></script>
-<script src="js/audio.js?v=024b3bae29"></script>
-<script src="js/svgui.js?v=024b3bae29"></script>
-<script src="js/paint.js?v=024b3bae29"></script>
-<script src="js/latency.js?v=024b3bae29" data-skin="draw-guess"></script>
-<script src="js/lobby-chat.js?v=024b3bae29"></script>
-<script src="js/online.js?v=024b3bae29"></script>
-<script type="module" src="js/app/main.js?v=024b3bae29"></script>
+<script src="js/locales/ui.zh-Hant.js?v=9d685e6883"></script>
+<script src="js/lazy-packs.js?v=9d685e6883"></script>
+<script src="js/keyboard.js?v=9d685e6883"></script>
+<script src="js/config.js?v=9d685e6883"></script>
+<script src="js/rng.js?v=9d685e6883"></script>
+<script src="js/words.js?v=9d685e6883"></script>
+<script src="js/reference-path.js?v=9d685e6883"></script>
+<script src="js/reference-kit.js?v=9d685e6883"></script>
+<script src="js/reference-recipes.js?v=9d685e6883"></script>
+<script src="js/reference.js?v=9d685e6883"></script>
+<script src="js/meaning-reference.js?v=9d685e6883"></script>
+<script src="js/rules.js?v=9d685e6883"></script>
+<script src="js/relay-rules.js?v=9d685e6883"></script>
+<script src="js/drawing-file.js?v=9d685e6883"></script>
+<script src="js/storage.js?v=9d685e6883"></script>
+<script src="js/audio.js?v=9d685e6883"></script>
+<script src="js/svgui.js?v=9d685e6883"></script>
+<script src="js/paint.js?v=9d685e6883"></script>
+<script src="js/latency.js?v=9d685e6883" data-skin="draw-guess"></script>
+<script src="js/lobby-chat.js?v=9d685e6883"></script>
+<script src="js/online.js?v=9d685e6883"></script>
+<script type="module" src="js/app/main.js?v=9d685e6883"></script>
 <!--SEO:GAMEPLAY-->
 <noscript><div class="seo-gameplay"><section lang="zh-Hant">
 <h2>你畫我猜</h2>
@@ -704,9 +711,9 @@
 <p><strong>How to play: </strong>The artist draws on the canvas; guessers type their answers</p>
 </section></div></noscript>
 <!--SEO:GAMEPLAY:END-->
-  <script defer src="js/locales/result-share.js?v=024b3bae29"></script>
-  <script defer src="js/result-share.js?v=024b3bae29"></script>
-  <script defer src="js/dropdowns.js?v=024b3bae29"></script>
-  <script defer src="js/scrollbars.js?v=024b3bae29"></script>
+  <script defer src="js/locales/result-share.js?v=9d685e6883"></script>
+  <script defer src="js/result-share.js?v=9d685e6883"></script>
+  <script defer src="js/dropdowns.js?v=9d685e6883"></script>
+  <script defer src="js/scrollbars.js?v=9d685e6883"></script>
 </body>
 </html>

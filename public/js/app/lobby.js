@@ -1,11 +1,11 @@
 /* ===== app/lobby.js — 線上大廳 ===== */
 
-import { $, Cfg, D, S, Sound, Store, Words, app, esc, paintIcons, show, toast } from './core.js?v=024b3bae29';
-import { WORD_LANGS, categoryChoices, wordLangLabel } from './menus.js?v=024b3bae29';
-import { startLoop, stopLoop } from './solo.js?v=024b3bae29';
-import { ensurePaint } from './canvas.js?v=024b3bae29';
-import { render } from './render.js?v=024b3bae29';
-import { DIFF_CHOICES, morphChildren, openRoomCreate } from './overlay.js?v=024b3bae29';
+import { $, Cfg, D, S, Sound, Store, Words, app, esc, paintIcons, show, toast } from './core.js?v=9d685e6883';
+import { WORD_LANGS, categoryChoices, wordLangLabel } from './menus.js?v=9d685e6883';
+import { startLoop, stopLoop } from './solo.js?v=9d685e6883';
+import { ensurePaint } from './canvas.js?v=9d685e6883';
+import { render } from './render.js?v=9d685e6883';
+import { DIFF_CHOICES, morphChildren, openRoomCreate } from './overlay.js?v=9d685e6883';
 
 var w = window;
 
@@ -40,7 +40,7 @@ export function setupLobby() {
   $('lobby-code').addEventListener('keydown', function (ev) {
     if (ev.key === 'Enter' && !ev.isComposing) { ev.preventDefault(); $('b-lobby-join').click(); }
   });
-  $('b-lobby-refresh').addEventListener('click', function () { w.Online.send('lobby:subscribe', {}); });
+  $('b-lobby-refresh').addEventListener('click', subscribeLobby);
   resetRoomFilter();
   setupRoomFilter();
   $('b-lobby-retry').addEventListener('click', connectOnline);
@@ -154,6 +154,27 @@ export function leaveGame(target) {
   if (target === 's-lobby') connectOnline();
 }
 
+/** 訂閱大廳：帶上目前是一般大廳還是接力大廳，伺服器只推那一種房間 */
+export function subscribeLobby() {
+  w.Online.send('lobby:subscribe', { mode: app.lobbyMode === 'relay' ? 'relay' : 'classic' });
+}
+
+/* 一般大廳與接力大廳共用同一個畫面：標題、說明與開房說明跟著模式換。
+   換的是 data-i18n 的 key，切換語系時 I18N 會照新的 key 重新套用。 */
+function setI18nKey(el, key) {
+  if (!el) return;
+  el.setAttribute('data-i18n', key);
+  el.textContent = w.I18N.t(key);
+}
+
+export function applyLobbyMode() {
+  var relay = app.lobbyMode === 'relay';
+  D.body.classList.toggle('lobby-relay', relay);
+  setI18nKey($('lobby-title').querySelector('[data-i18n]'), relay ? 'relay.name' : 'text.211');
+  setI18nKey(D.querySelector('#s-lobby [data-i18n="lobby.host.desc"], #s-lobby [data-i18n="relay.hostDesc"]'), relay ? 'relay.hostDesc' : 'lobby.host.desc');
+  $('relay-lobby-note').hidden = !relay;
+}
+
 /** 連線之前先把會送出請求的按鈕停用，避免按了卻沒有送出去 */
 export function setLobbyEnabled(on) {
   ['b-lobby-host', 'b-lobby-join', 'b-lobby-refresh', 'b-lobby-quick', 'b-lobby-invite-player', 'b-lobby-invite-spectator'].forEach(function (id) {
@@ -171,6 +192,7 @@ export function setLobbyState(key, tail) {
 }
 
 export function connectOnline() {
+  applyLobbyMode();
   $('lobby-nick').value = Store.ensureNick();
   setLobbyEnabled(false);
   if (!Cfg.isOnlineEnabled()) {
@@ -187,7 +209,7 @@ export function connectOnline() {
       $('lobby-off').hidden = true;
       $('lobby-live').hidden = false;
       setLobbyEnabled(true);
-      w.Online.send('lobby:subscribe', {});
+      subscribeLobby();
       setLobbyState('text.017');
       checkPendingInvite();
       /* 重新整理前在房間裡：自動回去（有邀請連結的話以邀請為準） */
@@ -238,6 +260,12 @@ export function checkPendingInvite() {
    純顯示（不是按鈕），窄螢幕自動換行；舊版伺服器沒送的欄位就不畫那一顆。 */
 export function roomRuleChips(r) {
   var list = [];
+  /* 接力房：猜題次數與每棒秒數取代一般模式的「畫幾次／每題秒數」 */
+  if (r.mode === 'relay') {
+    list.push({ k: 'mode', ico: 'relay', label: w.I18N.t('relay.badge') });
+    if (r.guessRounds) list.push({ k: 'rounds', ico: 'pen', label: w.I18N.t('relay.rule.guessRounds', { n: r.guessRounds }) });
+    if (r.batonSec) list.push({ k: 'sec', ico: 'clock', label: w.I18N.t('relay.rule.baton', { n: r.batonSec }) });
+  }
   if (r.rounds) list.push({ k: 'rounds', ico: 'pen', label: (r.rounds === 1 ? w.I18N.t('lobby.rule.roundsOne') : w.I18N.t('lobby.rule.rounds', { n: r.rounds })) });
   if (r.drawSec) list.push({ k: 'sec', ico: 'clock', label: w.I18N.t('lobby.rule.sec', { n: r.drawSec }) });
   if (r.diff !== undefined) {
@@ -373,7 +401,7 @@ export function renderRoomList(rooms) {
   if (!total) {
     /* 沒有公開房間：給一張有下一步的空狀態卡，不要只丟一行字 */
     html = '<div class="lobby-empty"><span class="lobby-empty-face" aria-hidden="true">' + S.face(4, 'idle') + '</span>' +
-      '<h3>' + esc(w.I18N.t('lobby.empty.title')) + '</h3><p>' + esc(w.I18N.t('text.009')) + '</p>' +
+      '<h3>' + esc(w.I18N.t('lobby.empty.title')) + '</h3><p>' + esc(w.I18N.t(app.lobbyMode === 'relay' ? 'relay.emptyText' : 'text.009')) + '</p>' +
       '<button class="btn3d" data-color="mint" data-act="host">' + esc(w.I18N.t('text.362')) + '</button></div>';
   } else {
     var list = visibleRooms(rooms);

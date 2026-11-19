@@ -307,6 +307,15 @@
         '<circle cx="68" cy="42" r="12" fill="#AED9F5" ' + S + '/>' +
         '<path d="M12 84 q4 -24 24 -24 q20 0 24 24 Z" fill="#FFE3A0" ' + S + '/>' +
         '<path d="M60 84 q4 -18 16 -18 q12 0 14 18 Z" fill="#AED9F5" ' + S + '/>', (globalThis.I18N ? globalThis.I18N.t("text.034") : "玩家"));
+    },
+    /* 接力：一枝當接力棒的鉛筆，前後兩道箭頭表示「交給下一個人」（純裝飾） */
+    relay: function () {
+      return ico('<path d="M14 64 Q14 30 46 26" fill="none" ' + S + '/>' +
+        '<path d="M38 16 L48 26 L38 36" fill="none" ' + S + '/>' +
+        '<path d="M86 36 Q86 70 54 74" fill="none" ' + S + '/>' +
+        '<path d="M62 64 L52 74 L62 84" fill="none" ' + S + '/>' +
+        '<g transform="rotate(45 50 50)"><rect x="42" y="30" width="16" height="34" rx="3" fill="#FFE3A0" ' + S + '/>' +
+        '<path d="M42 64 L50 76 L58 64 Z" fill="#FFB8CF" ' + S + '/></g>', '');
     }
   };
 

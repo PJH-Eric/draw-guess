@@ -1,13 +1,13 @@
 /* ===== app/online-events.js — 線上事件 ===== */
 
-import { $, Sound, Store, Words, app, toast } from './core.js?v=024b3bae29';
-import { modals } from './modal.js?v=024b3bae29';
-import { localizeGame } from './solo.js?v=024b3bae29';
-import { pushFeed, replaceFeed } from './feed.js?v=024b3bae29';
-import { render } from './render.js?v=024b3bae29';
-import { renderAside } from './overlay.js?v=024b3bae29';
-import { renderGameSettings } from './game-settings.js?v=024b3bae29';
-import { forgetRoom, joinRoom, leaveGame, renderRoomList, saveNick, setLobbyEnabled } from './lobby.js?v=024b3bae29';
+import { $, Sound, Store, Words, app, toast } from './core.js?v=9d685e6883';
+import { modals } from './modal.js?v=9d685e6883';
+import { localizeGame } from './solo.js?v=9d685e6883';
+import { pushFeed, replaceFeed } from './feed.js?v=9d685e6883';
+import { render } from './render.js?v=9d685e6883';
+import { renderAside } from './overlay.js?v=9d685e6883';
+import { renderGameSettings } from './game-settings.js?v=9d685e6883';
+import { forgetRoom, joinRoom, leaveGame, renderRoomList, saveNick, setLobbyEnabled, subscribeLobby } from './lobby.js?v=9d685e6883';
 
 var w = window;
 
@@ -60,6 +60,8 @@ export function setupOnlineEvents() {
   });
 
   O.on('lobby:rooms', function (p) {
+    /* 剛從一般大廳切到接力大廳（或反過來）時，舊模式的列表可能還在路上：不是這個大廳的就略過 */
+    if (p.mode && p.mode !== (app.lobbyMode === 'relay' ? 'relay' : 'classic')) return;
     app.onlineCount = Number.isInteger(p.online) && p.online >= 0 ? p.online : null;
     renderOnlineCount();
     renderRoomList(p.rooms);
@@ -74,6 +76,8 @@ export function setupOnlineEvents() {
       mode: 'online', difficulty: v.game.diff, players: v.game.players.length, spectator: v.you.role !== 'player'
     }, { result: v.game.winners && v.game.winners.indexOf(v.you.id) >= 0 ? 'win' : 'lose' });
     app.roomCode = v.room.code;
+    /* 回大廳時回到跟這間房同一種的大廳（邀請連結進來的人一開始不知道是哪一種） */
+    app.lobbyMode = v.room.mode === 'relay' ? 'relay' : 'classic';
     /* 房間用的題目語系本機還沒載入（別人開的英文／簡中房）：補載，好了再重畫一次 */
     if (v.game && v.game.lang && w.LazyPacks && !Words.hasLang(v.game.lang)) {
       w.LazyPacks.words(v.game.lang, function (ok) { if (ok && app.mode === 'online' && app.view) render(); });
@@ -167,7 +171,7 @@ export function setupOnlineEvents() {
     if (app.mode === 'online' && app.roomCode) {
       joinRoom(app.roomCode, null, null, { rejoin: true });
     } else if (app.screen === 's-lobby') {
-      O.send('lobby:subscribe', {});
+      subscribeLobby();
     }
   });
 }
