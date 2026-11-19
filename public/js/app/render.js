@@ -1,9 +1,10 @@
 /* ===== app/render.js — 對局畫面渲染 ===== */
 
-import { $, D, S, app, esc, secsLeft } from './core.js?v=9d685e6883';
-import { renderReference } from './modal.js?v=9d685e6883';
-import { sizeCanvas } from './canvas.js?v=9d685e6883';
-import { renderAside, renderControls, renderOverlay } from './overlay.js?v=9d685e6883';
+import { $, D, S, app, esc, secsLeft } from './core.js?v=95f17e75a6';
+import { renderReference } from './modal.js?v=95f17e75a6';
+import { sizeCanvas } from './canvas.js?v=95f17e75a6';
+import { renderAside, renderControls, renderOverlay } from './overlay.js?v=95f17e75a6';
+import { isRelayGame, relayPhaseLabel, relayStripHtml, relayTick, renderRelayWordbar } from './relay.js?v=95f17e75a6';
 
 var w = window;
 
@@ -36,8 +37,10 @@ export function render() {
     phaseChip.textContent = (globalThis.I18N ? globalThis.I18N.t("text.070") : "等待開始");
     phaseChip.setAttribute('data-p', 'picking');
   } else if (g) {
-    phaseChip.textContent = PHASE_LABEL[g.phase] || g.phase;
-    phaseChip.setAttribute('data-p', g.phase);
+    var relay = isRelayGame(g);
+    phaseChip.textContent = relay ? relayPhaseLabel(g.phase) : (PHASE_LABEL[g.phase] || g.phase);
+    /* 接力的階段沿用一般模式的配色：投票／倒數同選題、換棒同作畫 */
+    phaseChip.setAttribute('data-p', relay ? ({ voting: 'picking', countdown: 'picking', handoff: 'drawing' }[g.phase] || g.phase) : g.phase);
   }
   $('round-chip').textContent = g ? turnLabel(g) : (globalThis.I18N ? globalThis.I18N.t("text.160") : "尚未開始");
 
@@ -48,6 +51,8 @@ export function render() {
   var wb = $('wordbar');
   if (!g || closed) {
     wb.hidden = true;
+  } else if (isRelayGame(g)) {
+    renderRelayWordbar(v, g);
   } else if (g.hint) {
     var mine = g.you.isDrawer;
     var h = g.hint;
@@ -142,7 +147,9 @@ export function updateTimers() {
   /* 選題卡上的「N 秒內沒選…」也跟著倒數（卡片本身只在收到投影時才更新） */
   var ps = D.querySelector('#overlay-card .pick-secs');
   if (ps && ps.textContent !== String(s)) ps.textContent = s;
-  chip.setAttribute('data-urgent', String(g.phase === 'drawing' && s <= 10));
+  /* 接力每棒只有 7–17 秒：最後 3 秒才標紅，不然整棒都在閃 */
+  chip.setAttribute('data-urgent', String(g.phase === 'drawing' && s <= (isRelayGame(g) ? 3 : 10)));
+  if (isRelayGame(g)) relayTick(v, g);
   var sum = $('sum-timer');
   if (sum) sum.textContent = s + (globalThis.I18N ? globalThis.I18N.t("text.152") : " 秒");
 }
@@ -165,6 +172,26 @@ export function renderPlayers() {
   var v = app.view, g = v.game;
   var host = $('playerstrip');
   if (!g) { host.innerHTML = ''; app.lastScores = null; return; }
+  /* 接力：玩家列同時就是接力順序（猜題者第一，標出正在畫與下一棒） */
+  if (isRelayGame(g)) {
+    var rhtml = relayStripHtml(v, g);
+    var rprev = app.lastScores || {}, rcur = {}, rgain = [];
+    if (host.getAttribute('data-sig') !== rhtml) { host.setAttribute('data-sig', rhtml); host.innerHTML = rhtml; }
+    var cardsEl = host.querySelectorAll('.pcard');
+    for (var ri = 0; ri < g.players.length; ri++) {
+      var rp = g.players[ri];
+      rcur[rp.id] = rp.score;
+      if (rprev[rp.id] !== undefined && rp.score > rprev[rp.id]) rgain.push({ name: rp.name, n: rp.score - rprev[rp.id] });
+    }
+    app.lastScores = rcur;
+    for (var rk = 0; rk < rgain.length; rk++) {
+      for (var rc = 0; rc < cardsEl.length; rc++) {
+        var nm = cardsEl[rc].querySelector('.pname');
+        if (nm && nm.textContent === rgain[rk].name) floatGain(cardsEl[rc], rgain[rk].n);
+      }
+    }
+    return;
+  }
   var html = '';
   var prev = app.lastScores || {}, cur = {}, gains = [];
   for (var i = 0; i < g.players.length; i++) {

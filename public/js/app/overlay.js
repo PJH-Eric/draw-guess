@@ -1,15 +1,16 @@
 /* ===== app/overlay.js — 疊層卡片：房間設定、選題、公布答案、結算 ===== */
 
-import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=9d685e6883';
-import { askLeaveRoom, makeModal, modals } from './modal.js?v=9d685e6883';
-import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=9d685e6883';
-import { soloRefresh, soloStep, startSolo } from './solo.js?v=9d685e6883';
-import { renderRecent } from './feed.js?v=9d685e6883';
-import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=9d685e6883';
-import { PHASE_LABEL, moodOf } from './render.js?v=9d685e6883';
-import { copyText, newInvite, revokeInvite } from './game-settings.js?v=9d685e6883';
-import { enterOnlineRoom, leaveGame, roomRuleChips, saveNick } from './lobby.js?v=9d685e6883';
-import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=9d685e6883';
+import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=95f17e75a6';
+import { askLeaveRoom, makeModal, modals } from './modal.js?v=95f17e75a6';
+import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=95f17e75a6';
+import { soloRefresh, soloStep, startSolo } from './solo.js?v=95f17e75a6';
+import { renderRecent } from './feed.js?v=95f17e75a6';
+import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=95f17e75a6';
+import { PHASE_LABEL, moodOf } from './render.js?v=95f17e75a6';
+import { copyText, newInvite, revokeInvite } from './game-settings.js?v=95f17e75a6';
+import { enterOnlineRoom, leaveGame, roomRuleChips, saveNick } from './lobby.js?v=95f17e75a6';
+import { hideRelayUi, isRelayGame, relayAwardsHtml, relayCanDo, relayBarMode, relayOverlayHtml, relayPhaseLabel, relayToolsShown, relayVote, renderRelayAssist, renderRelayBanner } from './relay.js?v=95f17e75a6';
+import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=95f17e75a6';
 
 var w = window;
 
@@ -30,6 +31,9 @@ export function renderOverlay() {
       ("<button class=\"btn3d small\" data-color=\"cream\" data-act=\"home\">" + esc(I18N.t("text.141")) + "</button></div>");
   } else if (v.room && v.room.phase === 'waiting') {
     html = roomSetupHtml(v);
+  } else if (isRelayGame(g) && g.phase !== 'over') {
+    /* 接力：投票、倒數、公布答案用卡片；作畫與換棒緩衝不蓋住畫布 */
+    html = relayOverlayHtml(v, g);
   } else if (g && g.phase === 'picking') {
     html = pickingHtml(v, g);
   } else if (g && g.phase === 'reveal') {
@@ -596,7 +600,7 @@ export function overHtml(v, g) {
     if (v.you.can.rematch) btns += ("<button class=\"btn3d\" data-color=\"mint\" data-act=\"rematch\">" + esc(I18N.t("text.081")) + "</button>");
     btns += ("<button class=\"btn3d small\" data-color=\"cream\" data-act=\"home\">" + esc(I18N.t("text.080")) + "</button>");
   }
-  return confettiHtml() + '<section data-result-share class="result-share-card">' + ("<div class=\"result-heading\"><h3>" + esc(I18N.t("text.079")) + "</h3><span>" + esc(I18N.t("text.079.2")) + "</span></div>") + hero + bestDrawerHtml(g) + '<ol class="resultlist">' + rows + '</ol>' + note + '</section>' +
+  return confettiHtml() + '<section data-result-share class="result-share-card">' + ("<div class=\"result-heading\"><h3>" + esc(I18N.t("text.079")) + "</h3><span>" + esc(I18N.t("text.079.2")) + "</span></div>") + hero + (isRelayGame(g) ? relayAwardsHtml(g) : bestDrawerHtml(g)) + '<ol class="resultlist">' + rows + '</ol>' + note + '</section>' +
     galleryHtml(g) +
     (app.mode === 'online' ? chatBlockHtml(v) : '') +
     /* 主要動作（再來一局）自己一列，其餘次要鈕在下一列平分寬度，不會落單一顆 */
@@ -699,6 +703,7 @@ export function onOverlayAct(el) {
   else if (act === 'return-room') w.Online.send('room:return', {});
   else if (act === 'online-rematch') w.Online.send('room:rematch', {});
   else if (act === 'react') w.Online.send('room:react', { kind: el.getAttribute('data-kind') });
+  else if (act === 'relay-vote') relayVote(el.getAttribute('data-word'));
   else if (act === 'gallery-open') openGalleryItem(Number(el.getAttribute('data-i')));
   else if (act === 'gallery-retry') retryGallery();
   else if (act === 'lobby') leaveGame('s-lobby');
@@ -744,6 +749,8 @@ export function sendChatMessage() {
 
 export function renderControls() {
   var v = app.view, g = v.game;
+  if (isRelayGame(g)) { renderRelayControls(v, g); return; }
+  hideRelayUi();
   var canDraw = !!(g && v.you.can.draw);
   var canGuess = !!(g && v.you.can.guess);
   var spectator = v.you.role === 'spectator';
@@ -781,6 +788,53 @@ export function renderControls() {
     input.placeholder = guessed ? (globalThis.I18N ? globalThis.I18N.t("text.078") : "你已經猜對了，等其他人…")
       : (g && g.phase === 'drawing' ? (globalThis.I18N ? globalThis.I18N.t("text.077") : "猜猜看這是什麼？") : (globalThis.I18N ? globalThis.I18N.t("text.076") : "等畫家開始畫…"));
   }
+}
+
+/**
+ * 接力模式的操作列：
+ *   正在畫的人（與換棒緩衝中的下一棒）有工具列；猜題者有猜題框、提示與放棄；
+ *   其他畫家與觀戰者的底部框改成「畫家聊天」（猜題者看不到），沒在畫的畫家還有表情列。
+ */
+export function renderRelayControls(v, g) {
+  var closed = !!(v.room && v.room.closed);
+  var tools = !closed && relayToolsShown(g);
+  var canDraw = !closed && !!v.you.can.draw;
+  $('toolbar').hidden = !tools;
+  $('solo-file-actions').hidden = true;
+  D.body.classList.toggle('no-tools', !tools);
+  placeCanvasTop();
+  placeSoloActions();
+  placeGuessFeed();
+  if (app.paint) app.paint.setEnabled(canDraw);
+  if (tools) {
+    syncToolbar();
+    if (!$('tool-hint').textContent) toolHint(TOOL_TIP[app.paint.getTool()]);
+  }
+  if (closed) { $('hintrow').hidden = true; } else renderRelayAssist(v, g);
+  if (closed) hideRelayUi(); else renderRelayBanner(v, g);
+  syncDoneButtons();
+
+  var bar = $('guessbar'), input = $('guess-input'), btn = $('b-guess');
+  var mode = closed ? null : relayBarMode(v, g);
+  bar.hidden = !mode;
+  if (mode) {
+    var chat = mode === 'chat';
+    var sig = mode + ':' + w.I18N.lang;
+    if (bar.getAttribute('data-sig') !== sig) {
+      if (bar.getAttribute('data-mode') !== mode) input.value = '';
+      bar.setAttribute('data-mode', mode);
+      bar.setAttribute('data-sig', sig);
+      S.setLabel(btn, esc(w.I18N.t(chat ? 'text.128' : 'text.393')));
+      S.setColor(btn, chat ? 'sky' : 'mint');
+    }
+    input.maxLength = chat ? 200 : 24;
+    var canGuess = !!v.you.can.guess;
+    input.disabled = chat ? false : !canGuess;
+    btn.disabled = chat ? false : !canGuess;
+    input.placeholder = chat ? w.I18N.t('relay.chat.placeholder')
+      : w.I18N.t(canGuess ? 'relay.guess.placeholder' : 'relay.guess.wait');
+  }
+  syncGuessbarSpace();
 }
 
 /** 橫向的線上對局：玩家列與提示搬進右側那一欄的最上面（下面接工具列或猜題框）。
@@ -852,12 +906,13 @@ export function renderHintRow(g, canDraw) {
 
 export function renderAside() {
   var v = app.view, g = v.game;
-  var youRole = v.you.role === 'spectator' ? (globalThis.I18N ? globalThis.I18N.t("text.036") : "觀戰者")
+  var relayRole = isRelayGame(g) && v.you.role !== 'spectator' ? w.I18N.t('relay.role.' + (g.you.role === 'spectator' ? 'painter' : g.you.role)) : '';
+  var youRole = relayRole ? relayRole : v.you.role === 'spectator' ? (globalThis.I18N ? globalThis.I18N.t("text.036") : "觀戰者")
     : (g && g.you.isDrawer ? (globalThis.I18N ? globalThis.I18N.t("text.035") : "這一題的畫家") : (globalThis.I18N ? globalThis.I18N.t("text.072") : "猜題者"));
 
   $('sum-phase').textContent = (v.room && v.room.closed) ? (globalThis.I18N ? globalThis.I18N.t("text.071") : "房間已結束")
     : (v.room && v.room.phase === 'waiting' ? (globalThis.I18N ? globalThis.I18N.t("text.070") : "等待開始")
-      : (g ? (PHASE_LABEL[g.phase] || g.phase) : '—'));
+      : (g ? (isRelayGame(g) ? relayPhaseLabel(g.phase) : (PHASE_LABEL[g.phase] || g.phase)) : '—'));
   $('sum-drawer').textContent = g ? drawerName(g) : '—';
   $('sum-role').textContent = youRole;
   $('sum-can').textContent = canDoText(v, g);
@@ -908,6 +963,7 @@ export function canDoText(v, g) {
     return v.you.ready ? (globalThis.I18N ? globalThis.I18N.t("text.057") : "已準備，等房主按開始。") : (globalThis.I18N ? globalThis.I18N.t("text.056") : "按「準備好了」讓房主可以開始。");
   }
   if (!g) return '—';
+  if (isRelayGame(g) && g.phase !== 'over') return relayCanDo(v, g);
   if (v.you.role === 'spectator') return (globalThis.I18N ? globalThis.I18N.t("text.055") : "觀戰中：可以看畫與猜題紀錄，不能畫也不能猜。");
   if (g.phase === 'picking') return g.you.canPick ? (globalThis.I18N ? globalThis.I18N.t("text.054") : "從三個題目裡挑一個。") : (globalThis.I18N ? globalThis.I18N.t("text.053") : "等畫家挑題目。");
   if (g.phase === 'drawing') {

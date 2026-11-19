@@ -2626,7 +2626,7 @@ I18N.register('zh-Hant', {
   'relay.chat.title': 'Artist chat (hidden from guesser)',
   'relay.chat.placeholder': 'Message the other artists…',
   'relay.chat.empty': 'The guesser cannot see this chat. Plan your drawing here.',
-  'relay.guess.placeholder': 'Guess anytime, no limit',
+  'relay.guess.placeholder': 'Guess anytime',
   'relay.guess.wait': 'Waiting for the relay to start…',
   'relay.tip.locked': 'Not your turn yet. Your device buzzes at handoff.'
 });

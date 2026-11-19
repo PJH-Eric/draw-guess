@@ -47,6 +47,7 @@
     'room:private',
     'room:error',
     'room:closed',
+    'room:cheer',
     'room:left',
     'lobbychat:history',
     'lobbychat:msg',

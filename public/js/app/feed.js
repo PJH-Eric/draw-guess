@@ -1,7 +1,7 @@
 /* ===== app/feed.js — 猜題紀錄與左側摘要欄 ===== */
 
-import { $, RECENT_MAX, app, esc } from './core.js?v=9d685e6883';
-import { layoutStage } from './canvas.js?v=9d685e6883';
+import { $, RECENT_MAX, app, esc } from './core.js?v=95f17e75a6';
+import { layoutStage } from './canvas.js?v=95f17e75a6';
 
 var w = window;
 
@@ -46,6 +46,14 @@ export function recentEvents() {
       text: m.kind === 'guess' ? (m.from + (w.I18N ? w.I18N.t("text.202") : " 猜「") + m.text + '」') : m.text,
       mine: !!(m.fromId && v && v.you && m.fromId === v.you.id)
     });
+  }
+  /* 接力：對局中的畫家聊天也併進同一條時間軸（猜題者的投影裡本來就沒有聊天） */
+  if (v && v.game && v.game.mode === 'relay' && v.room && v.room.phase === 'playing' && v.room.chat) {
+    for (i = 0; i < v.room.chat.length; i++) {
+      var c = v.room.chat[i];
+      if ((c.at || 0) < (v.game.startedAt || 0)) continue;
+      out.push({ at: c.at || 0, kind: 'chat', text: c.from + '：' + c.text, mine: !!(v.you && c.fromId === v.you.id) });
+    }
   }
   out.sort(function (a, b) { return (a.at || 0) - (b.at || 0); });
   return out;

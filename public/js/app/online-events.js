@@ -1,13 +1,14 @@
 /* ===== app/online-events.js — 線上事件 ===== */
 
-import { $, Sound, Store, Words, app, toast } from './core.js?v=9d685e6883';
-import { modals } from './modal.js?v=9d685e6883';
-import { localizeGame } from './solo.js?v=9d685e6883';
-import { pushFeed, replaceFeed } from './feed.js?v=9d685e6883';
-import { render } from './render.js?v=9d685e6883';
-import { renderAside } from './overlay.js?v=9d685e6883';
-import { renderGameSettings } from './game-settings.js?v=9d685e6883';
-import { forgetRoom, joinRoom, leaveGame, renderRoomList, saveNick, setLobbyEnabled, subscribeLobby } from './lobby.js?v=9d685e6883';
+import { $, Sound, Store, Words, app, toast } from './core.js?v=95f17e75a6';
+import { modals } from './modal.js?v=95f17e75a6';
+import { localizeGame } from './solo.js?v=95f17e75a6';
+import { pushFeed, replaceFeed } from './feed.js?v=95f17e75a6';
+import { render } from './render.js?v=95f17e75a6';
+import { renderAside } from './overlay.js?v=95f17e75a6';
+import { renderGameSettings } from './game-settings.js?v=95f17e75a6';
+import { isRelayGame, relayRecord, relayTransition, showCheer } from './relay.js?v=95f17e75a6';
+import { forgetRoom, joinRoom, leaveGame, renderRoomList, saveNick, setLobbyEnabled, subscribeLobby } from './lobby.js?v=95f17e75a6';
 
 var w = window;
 
@@ -91,7 +92,8 @@ export function setupOnlineEvents() {
     }
     if (key !== app.lastTurnKey) {
       app.lastTurnKey = key;
-      if (v.game && v.game.phase === 'drawing') Sound.play('turn');
+      /* 接力每一棒都會進 drawing：音效與震動交給 relayTransition，只提醒該提醒的人 */
+      if (v.game && v.game.phase === 'drawing' && !isRelayGame(v.game)) Sound.play('turn');
       if (v.game && v.game.phase === 'over') {
         Sound.play(v.game.winners.indexOf(v.you.id) >= 0 ? 'win' : 'lose');
         recordResult(v);
@@ -104,6 +106,7 @@ export function setupOnlineEvents() {
       O.send('room:resync', {});
     }
 
+    if (isRelayGame(v.game)) relayTransition(prev, v);
     if (v.room.feed) replaceFeed(v.room.feed);
     render();
     if (modals.game && modals.game.isOpen()) renderGameSettings();
@@ -125,6 +128,12 @@ export function setupOnlineEvents() {
     if (list.length > p.count) app.paint.setStrokes(list.slice(0, p.count));
     else if (list.length < p.count) O.send('room:resync', {});
     Sound.play('undo');
+  });
+
+  /* 接力：別的畫家丟給當下作畫者的表情（猜題者收不到） */
+  O.on('room:cheer', function (p) {
+    if (app.mode !== 'online') return;
+    showCheer(p);
   });
 
   O.on('room:feed', function (p) {
@@ -195,6 +204,11 @@ export function recordResult(v) {
   for (var i = 0; i < v.game.players.length; i++) if (v.game.players[i].id === v.you.id) me = v.game.players[i];
   if (!me) return;
   var correct = 0;
+  if (isRelayGame(v.game)) {
+    var rr = relayRecord(v);
+    Store.recordGame('online', { win: v.game.winners.indexOf(v.you.id) >= 0, correct: rr.correct, drawn: rr.drawn, score: me.score });
+    return;
+  }
   for (var j = 0; j < v.game.log.length; j++) {
     var g = v.game.log[j].guessed || [];
     for (var k = 0; k < g.length; k++) if (g[k].id === v.you.id) correct++;

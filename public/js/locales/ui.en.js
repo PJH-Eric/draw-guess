@@ -161,7 +161,7 @@ I18N.register("en", {
   "relay.giveUp.confirm": "The answer is revealed right away and nobody scores this round.",
   "relay.giveUp.title": "Give up this round?",
   "relay.go": "Go!",
-  "relay.guess.placeholder": "Guess anytime, no limit",
+  "relay.guess.placeholder": "Guess anytime",
   "relay.guess.wait": "Waiting for the relay to start…",
   "relay.handoff.last": "Last turn done. Revealing the answer…",
   "relay.handoff.lock": "Handoff. The canvas is locked",

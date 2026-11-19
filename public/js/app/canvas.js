@@ -1,9 +1,9 @@
 /* ===== app/canvas.js — 畫布與工具列 ===== */
 
-import { $, D, ME, Paint, Rules, S, Sound, Store, app, toast } from './core.js?v=9d685e6883';
-import { askConfirm } from './modal.js?v=9d685e6883';
-import { handleGameEvents, soloRefresh, startSolo, withWordPack } from './solo.js?v=9d685e6883';
-import { pushFeed } from './feed.js?v=9d685e6883';
+import { $, D, ME, Paint, Rules, S, Sound, Store, app, toast } from './core.js?v=95f17e75a6';
+import { askConfirm } from './modal.js?v=95f17e75a6';
+import { handleGameEvents, soloRefresh, startSolo, withWordPack } from './solo.js?v=95f17e75a6';
+import { pushFeed } from './feed.js?v=95f17e75a6';
 
 var w = window;
 
@@ -22,6 +22,11 @@ export function ensurePaint() {
     onBlocked: function () {
       var v = app.view;
       if (!v || !v.game) return;
+      if (v.game.mode === 'relay' && v.you && v.you.role !== 'spectator' && !v.game.you.isGuesser) {
+        toolHint(w.I18N.t('relay.tip.locked'), 'error');
+        Sound.play('blocked');
+        return;
+      }
       toolHint(v.you && v.you.role === 'spectator'
         ? (globalThis.I18N ? globalThis.I18N.t("text.201") : "你是觀戰者，不能畫也不能猜。")
         : (v.game.you.isDrawer ? (globalThis.I18N ? globalThis.I18N.t("text.200") : "還不能畫，先挑一個題目。") : (globalThis.I18N ? globalThis.I18N.t("text.199") : "現在不是你畫，換你猜猜看！")), 'error');
@@ -276,6 +281,11 @@ export function syncDoneButtons() {
     $('b-solo-next').disabled = !drawing;
     return;
   }
+  /* 接力模式每棒都要畫滿秒數：沒有「畫完了」也沒有「跳過」 */
+  var relay = !!(g && g.mode === 'relay');
+  done.hidden = relay;
+  skip.hidden = relay;
+  if (relay) return;
   /* 線上房間：這顆鈕只要輪到你畫就一直能按，按過也不鎖、不改字 ——
      補了幾筆想再叫大家看一次是很自然的事，伺服器那邊同樣不擋重複。 */
   done.hidden = false;

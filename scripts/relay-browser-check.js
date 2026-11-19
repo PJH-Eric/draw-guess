@@ -41,6 +41,8 @@ const VIEWPORTS = [
   { key: 'desktop', name: '桌機寬版', width: 1440, height: 900, mobile: false, dsf: 1 }
 ];
 const BASE_VP = VIEWPORTS[6];
+const FIRST_HALF = VIEWPORTS.slice(0, 4);
+const SECOND_HALF = VIEWPORTS.slice(4);
 
 const failures = [];
 function check(label, condition, detail) {
@@ -97,7 +99,9 @@ class CDP {
   async waitFor(expr, ms, label) {
     const end = Date.now() + (ms || 8000);
     while (Date.now() < end) {
-      if (await this.eval('try { return !!(' + expr + '); } catch (e) { return false; }')) return true;
+      /* 以 var／return 開頭的是一段程式（例如先宣告變數），否則當成一個運算式 */
+      const body = /^\s*(var|return)\b/.test(expr) ? expr : 'return !!(' + expr + ');';
+      if (await this.eval('try { ' + body + ' } catch (e) { return false; }')) return true;
       await sleep(120);
     }
     throw new Error(this.label + '：等不到 ' + (label || expr));
@@ -186,7 +190,7 @@ async function shot(cdp, name) {
 /** 在每一種尺寸下截圖並檢查版面，最後回到基準尺寸 */
 async function sweep(cdp, name, opts) {
   const o = opts || {};
-  const list = ALL_SIZES && !o.one ? VIEWPORTS : [BASE_VP];
+  const list = o.list ? (ALL_SIZES ? o.list : [BASE_VP]) : (ALL_SIZES && !o.one ? VIEWPORTS : [BASE_VP]);
   for (const v of list) {
     await setViewport(cdp, v);
     await sleep(o.settle || 260);
@@ -285,7 +289,163 @@ async function main() {
   return finish(tabs);
 }
 
-async function relayGame() { /* 第四階段補上 */ }
+const GAME = 'var g=window.DrawGuessApp.view&&window.DrawGuessApp.view.game;';
+
+async function gameOf(tab) {
+  return tab.eval(GAME + 'var v=window.DrawGuessApp.view; return g ? {phase:g.phase,q:g.questionNo,role:g.you.role,isNext:g.you.isNext,answer:g.answer,guesser:g.guesserId,me:v.you.id,roomPhase:v.room.phase} : (v ? {roomPhase:v.room.phase} : null);');
+}
+
+async function findTab(tabs, test) {
+  for (const t of tabs) { const g = await gameOf(t); if (g && test(g)) return t; }
+  return null;
+}
+
+async function drag(tab, fx, fy, tx, ty) {
+  const r = await tab.eval('var b=document.getElementById("board").getBoundingClientRect(); return {x:b.left,y:b.top,w:b.width,h:b.height};');
+  const at = (fxr, fyr) => ({ x: Math.round(r.x + r.w * fxr), y: Math.round(r.y + r.h * fyr) });
+  const a = at(fx, fy), b = at(tx, ty);
+  await tab.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: a.x, y: a.y, button: 'left', clickCount: 1 });
+  for (let i = 1; i <= 8; i++) {
+    await tab.send('Input.dispatchMouseEvent', { type: 'mouseMoved', button: 'left', buttons: 1, x: Math.round(a.x + (b.x - a.x) * i / 8), y: Math.round(a.y + (b.y - a.y) * i / 8) });
+  }
+  await tab.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: b.x, y: b.y, button: 'left', clickCount: 1 });
+  await sleep(150);
+}
+
+async function typeAndSend(tab, text) {
+  await tab.eval('var i=document.getElementById("guess-input"); i.value=' + JSON.stringify(text) + '; i.dispatchEvent(new Event("input",{bubbles:true})); document.getElementById("guessbar").requestSubmit(); return 1;');
+  await sleep(500);
+}
+
+const visible = (sel) => 'var e=document.querySelector(' + JSON.stringify(sel) + '); return !!e && !e.hidden && !e.closest("[hidden]") && e.getBoundingClientRect().width > 0;';
+
+async function waitPhase(tab, phase, ms) {
+  await tab.waitFor(GAME + 'return g && g.phase === ' + JSON.stringify(phase) + ';', ms || 12000, '階段 ' + phase);
+}
+
+async function relayGame(host, p2, p3, watch, tabs) {
+  console.log('\n【接力對局】');
+  const players = [host, p2, p3];
+  await host.click('[data-act=start]');
+  for (const t of tabs) await waitPhase(t, 'voting', 6000);
+  const guesser = await findTab(players, (g) => g.role === 'guesser');
+  const painters = [];
+  for (const t of players) if (t !== guesser) painters.push(t);
+  check('有一位猜題者、兩位畫家', !!guesser && painters.length === 2);
+
+  /* ---- 投票 ---- */
+  check('畫家看到 4 個候選題可以投', await painters[0].eval('return document.querySelectorAll("#overlay-card [data-act=relay-vote]:not([disabled])").length === 4;'));
+  check('猜題者看不到候選題', await guesser.eval('return document.querySelectorAll("#overlay-card [data-act=relay-vote]").length === 0 && /猜題者/.test(document.getElementById("overlay-card").textContent);'));
+  /* 投票只有 10 秒：這一題先截前半的尺寸，後半留到第二題 */
+  await sweep(painters[0], '06-投票-畫家', { list: FIRST_HALF });
+  await shot(guesser, '06-投票-猜題者-tablet-land');
+  await shot(watch, '06-投票-觀戰-tablet-land');
+  await painters[0].click('#overlay-card [data-act=relay-vote]');
+  check('投票後顯示票數（不顯示誰投的）', await painters[1].waitFor('document.querySelector("#overlay-card .relay-votes[data-n=\\"1\\"]")', 4000, '票數更新').catch(() => false));
+  await painters[1].click('#overlay-card [data-act=relay-vote]');
+
+  /* ---- 倒數 ---- */
+  await waitPhase(host, 'countdown', 6000).catch(() => {});
+  const cd = await host.eval('var n=document.querySelector("#overlay-card .relay-count-n"); return n ? n.textContent : "";');
+  check('投完提前進入 3、2、1 倒數', /^[123]$/.test(cd) || cd === '開始！', cd);
+  await shot(host, '07-倒數-tablet-land');
+  await shot(guesser, '07-倒數-猜題者-phone');
+
+  /* ---- 作畫中：四種角色 ---- */
+  for (const t of tabs) await waitPhase(t, 'drawing', 8000);
+  const drawer = await findTab(players, (g) => g.role === 'drawer');
+  const waiting = painters.find((t) => t !== drawer);
+  const answer = (await gameOf(watch)).answer;
+  check('觀戰者看得到答案', !!answer, answer);
+  check('當棒畫家有工具列', await drawer.eval(visible('#toolbar')));
+  check('等待中的畫家沒有工具列、有表情列', !(await waiting.eval(visible('#toolbar'))) && await waiting.eval(visible('#relay-cheers')));
+  check('猜題者有猜題框、提示與放棄', await guesser.eval(visible('#guess-input')) && await guesser.eval(visible('#b-hint-1')) && await guesser.eval(visible('#b-relay-giveup')));
+  check('猜題者畫面上沒有答案', !(await guesser.eval('return document.body.innerText.indexOf(' + JSON.stringify(answer) + ') >= 0;')));
+  check('畫家題目列顯示答案', await waiting.eval('return document.getElementById("wordbar-mask").textContent === ' + JSON.stringify(answer) + ';'));
+  check('等待中的畫家底部框是畫家聊天', await waiting.eval('return document.getElementById("guessbar").getAttribute("data-mode") === "chat";'));
+  check('玩家列標出正在畫與下一棒', await host.eval('return !!document.querySelector("#playerstrip .relay-now") && !!document.querySelector("#playerstrip .relay-guesser");'));
+  await drag(drawer, 0.25, 0.3, 0.75, 0.7);
+  await drag(drawer, 0.7, 0.25, 0.3, 0.75);
+  check('當棒畫家畫得出筆畫，其他人同步收到', await guesser.waitFor('window.DrawGuessApp.paint.count() >= 2', 4000, '筆畫同步').catch(() => false));
+  check('等待中的畫家點畫布畫不出來', await (async () => { const before = await waiting.eval('return window.DrawGuessApp.paint.count();'); await drag(waiting, 0.2, 0.2, 0.4, 0.4); return (await waiting.eval('return window.DrawGuessApp.paint.count();')) === before; })());
+
+  await typeAndSend(waiting, '畫大一點啦');
+  check('畫家聊天出現在其他畫家的紀錄', await drawer.waitFor('Array.from(document.querySelectorAll("#sum-list li[data-k=chat], #guess-feed li[data-k=chat]")).some(function(li){return /畫大一點啦/.test(li.textContent);})', 4000, '聊天').catch(() => false));
+  check('猜題者看不到畫家聊天', !(await guesser.eval('return /畫大一點啦/.test(document.body.innerText);')));
+  await waiting.click('#relay-cheers [data-cheer=lol]');
+  check('表情飄到當棒畫家的畫布上', await drawer.waitFor('document.querySelector("#relay-cheer-layer .relay-cheer")', 3000, '表情').catch(() => false));
+  check('猜題者看不到表情', !(await guesser.eval('return !!document.querySelector("#relay-cheer-layer .relay-cheer");')));
+  await guesser.eval('var i=document.getElementById("guess-input"); i.value="貓"; i.dispatchEvent(new Event("input",{bubbles:true})); return 1;');
+  check('畫家看得到「輸入中…」', await waiting.waitFor('(function(){var c=document.getElementById("relay-typing-chip"); return c && !c.hidden && /輸入中/.test(c.textContent);})()', 4000, '輸入中').catch(() => false));
+  await guesser.eval('document.getElementById("guess-input").value=""; return 1;');
+
+  await sweep(drawer, '08-作畫-當棒畫家');
+  await sweep(waiting, '08-作畫-等待畫家');
+  await sweep(guesser, '08-作畫-猜題者');
+  await shot(watch, '08-作畫-觀戰-tablet-land');
+
+  /* ---- 換棒 ---- */
+  await waitPhase(host, 'handoff', 20000);
+  const next = await findTab(players, (g) => g.isNext);
+  check('換棒時下一棒看到「換你畫！」', !!next && await next.eval('var b=document.getElementById("relay-banner"); return !b.hidden && /換你畫/.test(b.textContent);'));
+  check('換棒緩衝中畫布鎖住', !(await drawer.eval('return window.DrawGuessApp.view.you.can.draw;')));
+  if (next) await sweep(next, '09-換棒-下一棒', { one: !ALL_SIZES });
+  await shot(guesser, '09-換棒-猜題者-tablet-land');
+
+  /* ---- 猜錯、提示、猜中 ---- */
+  await typeAndSend(guesser, '一定不是這個');
+  check('猜錯內容大家都看得到', await watch.waitFor('/一定不是這個/.test(document.getElementById("sum-list").textContent)', 4000, '猜錯紀錄').catch(() => false));
+  await waitPhase(host, 'drawing', 6000).catch(() => {});
+  await guesser.click('#b-hint-1');
+  check('猜題者用了提示（字數）', await guesser.waitFor(GAME + 'return g.hint && g.hint.step === 1;', 4000, '提示').catch(() => false));
+  await typeAndSend(guesser, answer);
+  await waitPhase(host, 'reveal', 6000);
+  check('猜中後公布答案', (await gameOf(guesser)).answer === answer);
+  await guesser.click('#overlay-card [data-act=react][data-kind=heart]');
+  check('公布時可以對整張圖按愛心', await host.waitFor(GAME + 'return g.reactions && g.reactions.counts.heart === 1;', 4000, '表情').catch(() => false));
+  /* 公布只停 7 秒：一樣分兩題截 */
+  await sweep(guesser, '10-公布', { list: FIRST_HALF });
+
+  /* ---- 其餘題目：放棄，直到結算 ---- */
+  for (let q = 2; q <= 3; q++) {
+    for (const t of tabs) await waitPhase(t, 'voting', 12000);
+    const gTab = await findTab(players, (g) => g.role === 'guesser');
+    const pTab = players.find((t) => t !== gTab);
+    if (q === 2) await sweep(pTab, '06-投票-畫家', { list: SECOND_HALF });
+    if (q === 3) await sweep(gTab, '06-投票-猜題者', { list: FIRST_HALF });
+    for (const t of players) if (t !== gTab) await t.click('#overlay-card [data-act=relay-vote]');
+    await waitPhase(gTab, 'drawing', 8000);
+    await gTab.click('#b-relay-giveup');
+    await gTab.waitFor('document.getElementById("confirm-modal").classList.contains("open")', 3000, '放棄確認');
+    if (q === 2) await shot(gTab, '11-放棄確認-tablet-land');
+    await gTab.click('#confirm-ok');
+    await waitPhase(host, 'reveal', 5000);
+    check('第 ' + q + ' 題放棄 → 公布答案', true);
+    if (q === 2) await sweep(gTab, '10-公布', { list: SECOND_HALF });
+  }
+  await host.waitFor('window.DrawGuessApp.view.room.phase === "finished"', 12000, '結算');
+  await host.waitFor('document.querySelectorAll("#overlay-card .gal-item").length >= 1', 8000, '畫廊').catch(() => {});
+  check('結算有三個獎項', await host.eval('return document.querySelectorAll("#overlay-card .relay-award").length === 3;'));
+  check('畫廊列出接力畫家', await host.eval('var b=document.querySelector("#overlay-card .gal-by"); return !!b && b.textContent.length > 0;'));
+  await sweep(host, '12-結算');
+
+  /* ---- 英文版：再來一局 ---- */
+  console.log('\n【英文版】');
+  for (const t of tabs) await t.eval('window.I18N.setLang("en"); return 1;');
+  await sleep(300);
+  await sweep(host, '13-結算-en', { one: !ALL_SIZES });
+  await host.click('[data-act=online-rematch]');
+  for (const t of tabs) await waitPhase(t, 'voting', 6000);
+  const eg = await findTab(players, (g) => g.role === 'guesser');
+  const ep = players.find((t) => t !== eg);
+  await sweep(ep, '14-投票-en');
+  for (const t of players) if (t !== eg) await t.click('#overlay-card [data-act=relay-vote]');
+  await waitPhase(eg, 'drawing', 8000);
+  const ed = await findTab(players, (g) => g.role === 'drawer');
+  await sweep(eg, '15-作畫-猜題者-en');
+  await sweep(ed, '15-作畫-當棒畫家-en', { one: true });
+  check('英文版的接力文字沒有中文殘留', !(await eg.eval('var t=[document.getElementById("phase-chip"),document.getElementById("wordbar"),document.getElementById("hintrow"),document.getElementById("playerstrip")].map(function(e){return e?e.innerText:"";}).join(" "); return /[\\u3400-\\u9fff]/.test(t.replace(/玩家[乙丙]|房主小明|觀戰者/g,""));')));
+}
 
 async function finish(tabs) {
   for (const t of tabs) check(t.label + '：主控台沒有錯誤', t.errors.length === 0, t.errors.slice(0, 3).join(' | '));

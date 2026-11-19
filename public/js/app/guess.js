@@ -1,8 +1,8 @@
 /* ===== app/guess.js — 猜題列 ===== */
 
-import { $, ME, Rules, Sound, app, toast } from './core.js?v=9d685e6883';
-import { soloRefresh } from './solo.js?v=9d685e6883';
-import { pushFeed } from './feed.js?v=9d685e6883';
+import { $, ME, Rules, Sound, app, toast } from './core.js?v=95f17e75a6';
+import { soloRefresh } from './solo.js?v=95f17e75a6';
+import { pushFeed } from './feed.js?v=95f17e75a6';
 
 var w = window;
 
@@ -41,5 +41,7 @@ export function submitGuess(text) {
     soloRefresh();
     return;
   }
+  /* 接力：猜題者以外的人，這個框是「畫家聊天」（猜題者看不到） */
+  if ($('guessbar').getAttribute('data-mode') === 'chat') { w.Online.send('room:chat', { text: text }); return; }
   w.Online.send('room:guess', { text: text });
 }
