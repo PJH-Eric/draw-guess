@@ -16,7 +16,7 @@ for (const word of Words.LIST) {
 const dictionaries = {};
 const I18N = { register(lang, values) { Object.assign(dictionaries[lang] ||= {}, values); return I18N; } };
 vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../public/js/locales.js'), 'utf8'), { I18N });
-for (const file of ['../lib/rooms.js', '../public/js/rules.js']) {
+for (const file of ['../lib/rooms.js', '../public/js/rules.js', '../public/js/relay-rules.js', '../server.js']) {
   const source = fs.readFileSync(path.join(__dirname, file), 'utf8');
   for (const match of source.matchAll(/'(srv\.[\w.]+)'/g)) {
     if (match[1].endsWith('.')) continue;
