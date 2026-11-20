@@ -1,7 +1,7 @@
 /* ===== app/menus.js — 教學、戰績與單機設定畫面 ===== */
 
-import { $, D, ME, S, Sound, Store, Words, app, esc, show, toast } from './core.js?v=9ef1a0b8b9';
-import { soloRefresh, startSolo, withWordPack } from './solo.js?v=9ef1a0b8b9';
+import { $, D, ME, S, Sound, Store, Words, app, esc, show, toast } from './core.js?v=78fb884a40';
+import { soloRefresh, startSolo, withWordPack } from './solo.js?v=78fb884a40';
 
 var w = window;
 
@@ -44,7 +44,7 @@ export var TUTORIAL = [
   { get h() { return globalThis.I18N ? globalThis.I18N.t("text.233") : "單機自己練習"; }, get b() { return (globalThis.I18N ? globalThis.I18N.t("text.232") : "<p>單機練習就你自己一個人，沒有電腦對手、也不計分，單純練習下筆用的。</p>") +
     (globalThis.I18N ? globalThis.I18N.t("text.231") : "<p>挑一個題目開始畫，畫完（或不想畫了）按「換題」就換下一題，想練幾次、每次想畫多久都能自己調整。</p>") +
     (globalThis.I18N ? globalThis.I18N.t("text.230") : "<p>因為只有你自己，猜題、提示、分數這些跟別人比賽的東西在單機裡都用不到，重點是練習下筆。</p>"); } },
-  { get h() { return globalThis.I18N ? globalThis.I18N.t("text.229") : "線上一起玩"; }, get b() { return (globalThis.I18N ? globalThis.I18N.t("text.228") : "<p>在主選單按「線上對戰」可以開房間或用房號加入，2 到 8 個人都行（線上只有真人，沒有電腦對手）。</p>") +
+  { get h() { return globalThis.I18N ? globalThis.I18N.t("text.229") : "線上一起玩"; }, get b() { return (globalThis.I18N ? globalThis.I18N.t("text.228") : "<p>在主選單按「經典模式」可以開房間或用房號加入，2 到 8 個人都行（線上只有真人，沒有電腦對手）。</p>") +
     (globalThis.I18N ? globalThis.I18N.t("text.227") : "<p>房主可以在對局設定裡產生<b>邀請連結</b>，對方開啟後會先停在大廳確認暱稱，按下按鈕才會真的進房。</p>") +
     (globalThis.I18N ? globalThis.I18N.t("text.226") : "<p>位子滿了或對局已經開始時，新來的人會變成<b>觀戰者</b>：可以看畫、看紀錄，但不能畫也不能猜。</p>") +
     (globalThis.I18N ? globalThis.I18N.t("text.225") : "<p>右上角的摘要鈕打開操作摘要：目前階段、你能做什麼、比分，還有「猜題紀錄」——每一則猜題（含猜錯的）與對局事件都在那裡。房間裡沒有任何真人玩家時會立刻關閉。</p>") +
