@@ -1,11 +1,11 @@
 /* ===== app/lobby.js — 線上大廳 ===== */
 
-import { $, Cfg, D, S, Sound, Store, Words, app, esc, paintIcons, show, toast } from './core.js?v=78fb884a40';
-import { WORD_LANGS, categoryChoices, wordLangLabel } from './menus.js?v=78fb884a40';
-import { startLoop, stopLoop } from './solo.js?v=78fb884a40';
-import { ensurePaint } from './canvas.js?v=78fb884a40';
-import { render } from './render.js?v=78fb884a40';
-import { DIFF_CHOICES, morphChildren, openRoomCreate } from './overlay.js?v=78fb884a40';
+import { $, Cfg, D, S, Sound, Store, Words, app, esc, paintIcons, show, toast } from './core.js?v=363abaebc3';
+import { WORD_LANGS, categoryChoices, wordLangLabel } from './menus.js?v=363abaebc3';
+import { startLoop, stopLoop } from './solo.js?v=363abaebc3';
+import { ensurePaint } from './canvas.js?v=363abaebc3';
+import { render } from './render.js?v=363abaebc3';
+import { DIFF_CHOICES, morphChildren, openRoomCreate } from './overlay.js?v=363abaebc3';
 
 var w = window;
 
@@ -97,8 +97,16 @@ export function joinRoom(code, token, role, opts) {
 }
 
 /* 重新整理頁面後自動回到房間：房號只記在這個分頁（sessionStorage），按「離開房間」就忘掉 */
-export function rememberRoom(code) { try { w.sessionStorage.setItem('dg_room', code); } catch (e) { /* 存不了就算了 */ } }
-export function forgetRoom() { try { w.sessionStorage.removeItem('dg_room'); } catch (e) { /* 同上 */ } }
+export function rememberRoom(code) {
+  try { w.sessionStorage.setItem('dg_room', code); } catch (e) { /* 存不了就算了 */ }
+  w.GameBackend?.rememberRoom?.();
+}
+
+export function forgetRoom() {
+  try { w.sessionStorage.removeItem('dg_room'); } catch (e) { /* 同上 */ }
+  w.GameBackend?.forgetRoom?.();
+}
+
 export function savedRoom() { try { return w.sessionStorage.getItem('dg_room') || null; } catch (e) { return null; } }
 
 /* 邀請連結用過（或確定不能用）之後，把網址上的 ?room=&invite= 拿掉：
