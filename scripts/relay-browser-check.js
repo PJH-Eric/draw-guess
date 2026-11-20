@@ -1,5 +1,5 @@
 /*
- * scripts/relay-browser-check.js — 接力模式（Beta）的瀏覽器巡檢
+ * scripts/relay-browser-check.js — 接力模式的瀏覽器巡檢
  * 執行：node scripts/relay-browser-check.js            （會自己啟動 server.js 與無頭 Chrome）
  *       STOP_AFTER=setup node scripts/relay-browser-check.js   只跑到等待畫面
  *
@@ -240,7 +240,7 @@ async function main() {
 
   /* ---------------- 1. 首頁與大廳 ---------------- */
   console.log('\n【首頁與接力大廳】');
-  check('首頁有「接力模式（Beta）」入口', await host.eval('var b=document.getElementById("b-relay"); return !!b && /接力模式/.test(b.textContent);'));
+  check('首頁有「接力模式」入口', await host.eval('var b=document.getElementById("b-relay"); return !!b && /接力模式/.test(b.textContent);'));
   await sweep(host, '01-首頁', { one: !process.env.RELAY_HOME_ALL });
   await host.click('#b-relay');
   await host.waitFor('window.Online && window.Online.isConnected() && !document.getElementById("b-lobby-host").disabled', 15000, '接力大廳連線');

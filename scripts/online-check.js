@@ -655,7 +655,7 @@ async function run() {
   await runPickdraw();
 }
 
-/* ------------------------------------------------------------ 接力模式（Beta） */
+/* ------------------------------------------------------------ 接力模式 */
 
 async function runRelay() {
   const Words = require('../public/js/words.js');

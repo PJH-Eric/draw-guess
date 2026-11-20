@@ -126,7 +126,7 @@ maze.api.pageView('game');
 assert.equal(maze.calls.filter(call => call[1] === 'page_view').length, 2);
 assert.ok(!JSON.stringify(maze.calls).includes('private-'));
 
-/* 接力模式（Beta）：事件帶 mode=relay，接力大廳／接力房的 page_view 走 /relay 虛擬路徑 */
+/* 接力模式：事件帶 mode=relay，接力大廳／接力房的 page_view 走 /relay 虛擬路徑 */
 const relay = client();
 const relayEvents = () => relay.calls.filter(call => call[0] === 'event');
 relay.api.start({ mode: 'relay', players: 3 }, 'relay-round');

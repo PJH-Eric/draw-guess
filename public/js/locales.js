@@ -1242,10 +1242,10 @@ I18N.register("zh-Hant", {
   "difficulty.3": "Hard"
 });
 
-I18N.register("zh-Hant", { "meta.description": "免費免下載的你畫我猜，輪流當畫家用畫筆、形狀與油漆桶畫出題目，猜中搶積分。新推出接力模式（Beta）大家輪流接力作畫給一人猜，以及你出我畫他猜（Beta）三人輪流出題、作畫、猜題。支援觀戰，手機平板都能玩。", "tool.undoTitle": "復原（Ctrl+Z）", "tool.redoTitle": "重做（Ctrl+Y）" }).register("en", { "meta.description": "Draw clues and guess answers with friends online, or practice solo. Try Relay (Beta), where everyone draws in turns for one guesser, and Pick, Draw, Guess (Beta), where three players take turns picking, drawing and guessing. Free on phones, tablets and computers.", "tool.undoTitle": "Undo (Ctrl+Z)", "tool.redoTitle": "Redo (Ctrl+Y)" });
+I18N.register("zh-Hant", { "meta.description": "免費免下載的你畫我猜，輪流當畫家用畫筆、形狀與油漆桶畫出題目，猜中搶積分。新推出接力模式大家輪流接力作畫給一人猜，以及你出我畫他猜（Beta）三人輪流出題、作畫、猜題。支援觀戰，手機平板都能玩。", "tool.undoTitle": "復原（Ctrl+Z）", "tool.redoTitle": "重做（Ctrl+Y）" }).register("en", { "meta.description": "Draw clues and guess answers with friends online, or practice solo. Try Relay, where everyone draws in turns for one guesser, and Pick, Draw, Guess (Beta), where three players take turns picking, drawing and guessing. Free on phones, tablets and computers.", "tool.undoTitle": "Undo (Ctrl+Z)", "tool.redoTitle": "Redo (Ctrl+Y)" });
 
-I18N.register("zh-Hant", { "meta.title": "你畫我猜｜免費線上多人畫圖猜謎・接力模式（Beta）・你出我畫他猜（Beta）", "meta.desc": "免費免下載的你畫我猜，輪流當畫家用畫筆、形狀與油漆桶畫出題目，猜中搶積分。新推出接力模式（Beta）大家輪流接力作畫給一人猜，以及你出我畫他猜（Beta）三人輪流出題、作畫、猜題。支援觀戰，手機平板都能玩。" })
-  .register("en", { "meta.title": "Draw & Guess | Free Online Drawing Game + Relay & Pick, Draw, Guess (Beta)", "meta.desc": "Draw clues and guess answers with friends online, or practice solo. Try Relay (Beta), where everyone draws in turns for one guesser, and Pick, Draw, Guess (Beta), where three players take turns picking, drawing and guessing. Free on phones, tablets and computers." });
+I18N.register("zh-Hant", { "meta.title": "你畫我猜｜免費線上多人畫圖猜謎・接力模式・你出我畫他猜（Beta）", "meta.desc": "免費免下載的你畫我猜，輪流當畫家用畫筆、形狀與油漆桶畫出題目，猜中搶積分。新推出接力模式大家輪流接力作畫給一人猜，以及你出我畫他猜（Beta）三人輪流出題、作畫、猜題。支援觀戰，手機平板都能玩。" })
+  .register("en", { "meta.title": "Draw & Guess | Free Online Drawing Game + Relay & Pick, Draw, Guess (Beta)", "meta.desc": "Draw clues and guess answers with friends online, or practice solo. Try Relay, where everyone draws in turns for one guesser, and Pick, Draw, Guess (Beta), where three players take turns picking, drawing and guessing. Free on phones, tablets and computers." });
 
 // 由繁體中文介面字典轉換；動態參數（暱稱、分數等）維持原值。
 (function (root) {
@@ -1861,11 +1861,11 @@ I18N.register("zh-Hant", { "meta.title": "你畫我猜｜免費線上多人畫�
     "difficulty.1": "简单",
     "difficulty.2": "普通",
     "difficulty.3": "困难",
-    "meta.description": "免费免下载的你画我猜，轮流当画家用画笔、形状与油漆桶画出题目，猜中抢积分。新推出接力模式（Beta）大家轮流接力作画给一人猜，以及你出我画他猜（Beta）三人轮流出题、作画、猜题。支援观战，手机平板都能玩。",
+    "meta.description": "免费免下载的你画我猜，轮流当画家用画笔、形状与油漆桶画出题目，猜中抢积分。新推出接力模式大家轮流接力作画给一人猜，以及你出我画他猜（Beta）三人轮流出题、作画、猜题。支援观战，手机平板都能玩。",
     "tool.undoTitle": "复原（Ctrl+Z）",
     "tool.redoTitle": "重做（Ctrl+Y）",
-    "meta.title": "你画我猜｜免费线上多人画图猜谜・接力模式（Beta）・你出我画他猜（Beta）",
-    "meta.desc": "免费免下载的你画我猜，轮流当画家用画笔、形状与油漆桶画出题目，猜中抢积分。新推出接力模式（Beta）大家轮流接力作画给一人猜，以及你出我画他猜（Beta）三人轮流出题、作画、猜题。支援观战，手机平板都能玩。"
+    "meta.title": "你画我猜｜免费线上多人画图猜谜・接力模式・你出我画他猜（Beta）",
+    "meta.desc": "免费免下载的你画我猜，轮流当画家用画笔、形状与油漆桶画出题目，猜中抢积分。新推出接力模式大家轮流接力作画给一人猜，以及你出我画他猜（Beta）三人轮流出题、作画、猜题。支援观战，手机平板都能玩。"
   };
   hans['lobby.onlineCount'] = '当前在线：{n} 人';
   if (root.I18N) root.I18N.register('zh-Hans', hans);
@@ -2223,7 +2223,7 @@ I18N.register('zh-Hant', { 'words.loadFail': '題庫載入失敗，請檢查網�
   .register('zh-Hans', { 'words.loadFail': '题库加载失败，请检查网络后再试一次。' })
   .register('en', { 'words.loadFail': 'Could not load the word list. Check your connection and try again.' });
 
-/* 接力模式（Beta）：伺服器訊息（srv.*） */
+/* 接力模式：伺服器訊息（srv.*） */
 I18N.register('zh-Hant', {
   'srv.err.tooFast': '太快了，請稍等一下再試。',
   'srv.err.relayOnly': '這個動作只有接力模式能用。',
@@ -2472,7 +2472,7 @@ I18N.register('zh-Hant', {
   'pickdraw.away.guesser': '猜題者斷線了，最多等 15 秒・',
   'pickdraw.reveal.drawerleft': '畫家 {name} 斷線了，這題不計分',
   'pickdraw.reveal.guesserleft': '猜題者 {name} 斷線了，這題不計分',
-  'tut.relay.h': '接力模式（Beta）',
+  'tut.relay.h': '接力模式',
   'tut.relay.b1': '<p>只有線上，3–8 人。每題一人當<b>猜題者</b>，其餘玩家都是<b>畫家</b>：畫家先從 4 個候選題投票，再照順序每人畫一棒、最多三圈，大家接力完成同一張圖。</p>',
   'tut.relay.b2': '<p>每一棒一定畫滿秒數；輪到你時手機會震動、畫面出現「換你畫！」。沒在畫的畫家可以互相聊天、丟表情，猜題者都看不到。</p>',
   'tut.relay.b3': '<p>猜題者隨時可猜、次數不限，可以自己按提示或放棄。越早的棒次猜中分數越高，猜題者與當下作畫的畫家同分。</p>',
@@ -2563,7 +2563,7 @@ I18N.register('zh-Hant', {
   'pickdraw.away.guesser': '猜题者断线了，最多等 15 秒・',
   'pickdraw.reveal.drawerleft': '画家 {name} 断线了，这题不计分',
   'pickdraw.reveal.guesserleft': '猜题者 {name} 断线了，这题不计分',
-  'tut.relay.h': '接力模式（Beta）',
+  'tut.relay.h': '接力模式',
   'tut.relay.b1': '<p>只有线上，3–8 人。每题一人当<b>猜题者</b>，其余玩家都是<b>画家</b>：画家先从 4 个候选题投票，再照顺序每人画一棒、最多三圈，大家接力完成同一张图。</p>',
   'tut.relay.b2': '<p>每一棒一定画满秒数；轮到你时手机会震动、画面出现「换你画！」。没在画的画家可以互相聊天、丢表情，猜题者都看不到。</p>',
   'tut.relay.b3': '<p>猜题者随时可猜、次数不限，可以自己按提示或放弃。越早的棒次猜中分数越高，猜题者与当下作画的画家同分。</p>',
@@ -2654,7 +2654,7 @@ I18N.register('zh-Hant', {
   'pickdraw.away.guesser': 'Guesser disconnected, waiting up to 15s · ',
   'pickdraw.reveal.drawerleft': 'Artist {name} disconnected. No points this round',
   'pickdraw.reveal.guesserleft': 'Guesser {name} disconnected. No points this round',
-  'tut.relay.h': 'Relay (Beta)',
+  'tut.relay.h': 'Relay',
   'tut.relay.b1': '<p>Online only, 3–8 players. Each round one player is the <b>guesser</b> and everyone else is an <b>artist</b>. Artists vote on one of 4 words, then take turns drawing the same picture, up to three laps.</p>',
   'tut.relay.b2': '<p>Each turn always runs its full time. When it is your turn your phone vibrates and you see “Your turn to draw!”. Artists who are waiting can chat and send reactions; the guesser sees neither.</p>',
   'tut.relay.b3': '<p>The guesser can guess any time with no limit, use hints, or give up. Earlier turns score more, and the guesser and the current artist get the same points.</p>',
@@ -2688,10 +2688,10 @@ I18N.register('zh-Hant', {
   'pickdraw.award.pts': '{n} pts'
 });
 
-/* 接力模式（Beta）：介面文字 */
+/* 接力模式：介面文字 */
 I18N.register('zh-Hant', {
-  'relay.home': '接力模式（Beta）',
-  'relay.name': '接力模式（Beta）',
+  'relay.home': '接力模式',
+  'relay.name': '接力模式',
   'relay.badge': '接力',
   'relay.lobbyNote': '每題一人猜，其餘玩家投票選題後輪流接力作畫，猜題者隨時可猜。3–8 人。',
   'relay.hostDesc': '設定猜題次數與每棒秒數，再把房號或邀請連結傳給朋友。3–8 人。',
@@ -2795,8 +2795,8 @@ I18N.register('zh-Hant', {
   'relay.guess.wait': '等接力開始…',
   'relay.tip.locked': '還沒輪到你，換棒時會震動提醒。'
 }).register('zh-Hans', {
-  'relay.home': '接力模式（Beta）',
-  'relay.name': '接力模式（Beta）',
+  'relay.home': '接力模式',
+  'relay.name': '接力模式',
   'relay.badge': '接力',
   'relay.lobbyNote': '每题一人猜，其余玩家投票选题后轮流接力作画，猜题者随时可猜。3–8 人。',
   'relay.hostDesc': '设定猜题次数与每棒秒数，再把房号或邀请链接发给朋友。3–8 人。',
@@ -2900,8 +2900,8 @@ I18N.register('zh-Hant', {
   'relay.guess.wait': '等接力开始…',
   'relay.tip.locked': '还没轮到你，换棒时会震动提醒。'
 }).register('en', {
-  'relay.home': 'Relay (Beta)',
-  'relay.name': 'Relay (Beta)',
+  'relay.home': 'Relay',
+  'relay.name': 'Relay',
   'relay.badge': 'Relay',
   'relay.lobbyNote': 'One player guesses while everyone else votes on a prompt and draws in turns. The guesser can guess anytime. 3–8 players.',
   'relay.hostDesc': 'Pick guess rounds and seconds per turn, then send the room code or invite link. 3–8 players.',

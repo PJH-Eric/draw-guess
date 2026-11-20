@@ -1,5 +1,5 @@
 /*
- * tests/relay.js — 接力模式（Beta）規則核心的單元測試
+ * tests/relay.js — 接力模式規則核心的單元測試
  *
  *   node tests/relay.js
  *

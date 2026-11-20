@@ -1,11 +1,11 @@
 /* ===== app/render.js — 對局畫面渲染 ===== */
 
-import { $, D, S, app, esc, secsLeft } from './core.js?v=73830c6027';
-import { renderReference } from './modal.js?v=73830c6027';
-import { sizeCanvas } from './canvas.js?v=73830c6027';
-import { renderAside, renderControls, renderOverlay } from './overlay.js?v=73830c6027';
-import { isRelayGame, relayPhaseLabel, relayStripHtml, relayTick, renderRelayWordbar } from './relay.js?v=73830c6027';
-import { isPickdrawGame, pickdrawPhaseLabel, pickdrawStripHtml, pickdrawTick, renderPickdrawWordbar } from './pickdraw.js?v=73830c6027';
+import { $, D, S, app, esc, secsLeft } from './core.js?v=9ef1a0b8b9';
+import { renderReference } from './modal.js?v=9ef1a0b8b9';
+import { sizeCanvas } from './canvas.js?v=9ef1a0b8b9';
+import { renderAside, renderControls, renderOverlay } from './overlay.js?v=9ef1a0b8b9';
+import { isRelayGame, relayPhaseLabel, relayStripHtml, relayTick, renderRelayWordbar } from './relay.js?v=9ef1a0b8b9';
+import { isPickdrawGame, pickdrawPhaseLabel, pickdrawStripHtml, pickdrawTick, renderPickdrawWordbar } from './pickdraw.js?v=9ef1a0b8b9';
 
 var w = window;
 

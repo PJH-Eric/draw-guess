@@ -1,4 +1,4 @@
-/* ===== app/relay.js — 接力模式（Beta）的對局畫面 =====
+/* ===== app/relay.js — 接力模式的對局畫面 =====
  *
  * 一般模式的畫面程式不動：render／overlay／guess 只在 game.mode === 'relay' 時把工作轉到這裡。
  * 這一層一樣只呈現伺服器的投影（RelayRules.toPublic）並送出意圖，權限一律看 you.can 與 game.you。
@@ -6,9 +6,9 @@
  * 角色（game.you.role）：guesser 猜題者／drawer 正在畫／painter 等下一棒的畫家／pending 下一題才加入／spectator 觀戰
  */
 
-import { $, D, S, Sound, app, esc, netNow, secsLeft, toast } from './core.js?v=73830c6027';
-import { askConfirm } from './modal.js?v=73830c6027';
-import { reactionBarHtml } from './overlay.js?v=73830c6027';
+import { $, D, S, Sound, app, esc, netNow, secsLeft, toast } from './core.js?v=9ef1a0b8b9';
+import { askConfirm } from './modal.js?v=9ef1a0b8b9';
+import { reactionBarHtml } from './overlay.js?v=9ef1a0b8b9';
 
 var w = window;
 function t(key, params) { return w.I18N.t(key, params); }

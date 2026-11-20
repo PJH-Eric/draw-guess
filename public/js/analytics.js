@@ -54,7 +54,7 @@
       if ((typeof value === 'string' || typeof value === 'number') && /^[a-zA-Z0-9_-]{1,40}$/.test(String(value))) out[key] = String(value);
     });
     if (['solo', 'ai', 'online', 'relay', 'pickdraw', 'practice', 'solo_random'].indexOf(params.mode) !== -1) {
-      /* relay：接力模式（Beta）；pickdraw：你出我畫他猜（Beta）。都跟一般線上房間分開統計 */
+      /* relay：接力模式；pickdraw：你出我畫他猜（Beta）。都跟一般線上房間分開統計 */
       out.mode = ['online', 'relay', 'pickdraw'].indexOf(params.mode) !== -1 ? params.mode :
         (params.mode === 'ai' || params.players > 1 ? 'ai' : 'solo');
       if (params.mode === 'practice' || params.mode === 'solo_random') out.variant = params.mode;
