@@ -105,10 +105,22 @@ const lobbyChat = require('./lib/lobby-chat.js').attachSocketIo(io);
 
 /* ------------------------------------------------------------ 狀態 */
 
-const store = new RoomStore(
-  process.env.ROOM_IDLE_MS !== undefined && isFinite(Number(process.env.ROOM_IDLE_MS))
-    ? { idleMs: Math.max(0, Number(process.env.ROOM_IDLE_MS)) } : {}
-);
+const checkpoints = process.env.DRAW_ROOM_DB_PATH
+  ? require('./lib/room-checkpoints.js').openCheckpoints(process.env.DRAW_ROOM_DB_PATH)
+  : null;
+const roomOptions = { checkpoints };
+if (process.env.ROOM_IDLE_MS !== undefined && isFinite(Number(process.env.ROOM_IDLE_MS))) {
+  roomOptions.idleMs = Math.max(0, Number(process.env.ROOM_IDLE_MS));
+}
+const store = new RoomStore(roomOptions);
+
+function flushRooms() {
+  try { store.flushCheckpoints(now()); }
+  catch {
+    console.error('[draw-guess] 房間寫入失敗，停止服務並等待重新啟動');
+    process.exit(1);
+  }
+}
 
 /** roomCode -> Set<socket> */
 const roomSockets = new Map();
@@ -130,7 +142,7 @@ const lobbyModeOf = (m) => (LOBBY_MODES.indexOf(m) >= 0 ? m : 'classic');
  * 就能以房主身分「重新連線」、頂替他的座位。現在房間裡所有地方用的都是
  * HMAC(clientId) 算出來的公開 id：看得到公開 id 也推不回 clientId，沒辦法冒用。
  */
-const ID_SALT = crypto.randomBytes(16);
+const ID_SALT = checkpoints?.salt ?? crypto.randomBytes(16);
 function publicIdOf(secret) {
   return crypto.createHmac('sha256', ID_SALT).update(secret).digest('hex').slice(0, 20);
 }
@@ -192,12 +204,14 @@ function viewPayload(room, clientId, full) {
 }
 
 function syncRoom(room, full) {
+  flushRooms();
   for (const s of socketsOf(room.code)) {
     s.emit('room:sync', viewPayload(room, s.data.clientId, !!full));
   }
 }
 
 function syncOne(socket, room, full) {
+  flushRooms();
   socket.emit('room:sync', viewPayload(room, socket.data.clientId, !!full));
 }
 
@@ -215,16 +229,19 @@ function syncLobby() {
 
 /** 猜題紀錄的增量：某人猜了什麼、猜對了誰。沒有自由聊天。 */
 function broadcastFeed(room, entry) {
+  flushRooms();
   for (const s of socketsOf(room.code)) s.emit('room:feed', { entry });
 }
 
 /** 新的一筆：只送增量，並附上筆數讓用戶端偵測漏收 */
 function broadcastStroke(room, stroke) {
+  flushRooms();
   const count = room.state ? room.state.strokes.length : 0;
   for (const s of socketsOf(room.code)) s.emit('room:stroke', { stroke, count });
 }
 
 function broadcastBoard(room, action) {
+  flushRooms();
   const count = room.state ? room.state.strokes.length : 0;
   for (const s of socketsOf(room.code)) s.emit('room:board', { action, count });
 }
@@ -235,6 +252,7 @@ function fail(socket, message, code) {
 
 /** 房間被判定結束：通知在場所有人，包含只剩下的觀戰者 */
 function announceClosed(room) {
+  flushRooms();
   for (const s of socketsOf(room.code)) {
     s.emit('room:closed', { reason: room.closedReason || '房間已經結束。', code: room.code });
     s.data.roomCode = null;
@@ -289,7 +307,14 @@ io.on('connection', (socket) => {
   const rawOn = socket.on.bind(socket);
   socket.on = (event, handler) => rawOn(event, (...args) => {
     try {
-      return handler(...args);
+      const ackIndex = args.length - 1;
+      const ack = args[ackIndex];
+      if (typeof ack === 'function') {
+        args[ackIndex] = (...reply) => { flushRooms(); ack(...reply); };
+      }
+      const result = handler(...args);
+      flushRooms();
+      return result;
     } catch (e) {
       console.error('[socket ' + event + ']', e && e.stack ? e.stack : e);
       fail(socket, '伺服器處理這個動作時出了點問題，請再試一次。', 'server');
@@ -394,10 +419,11 @@ io.on('connection', (socket) => {
 
   /* --------------------------------------------------------- 房內操作 */
 
-  function withRoom(handler) {
+  function withRoom(handler, allowRecovery = false) {
     return (payload, ack) => {
       const room = store.get(socket.data.roomCode);
       if (!room) return fail(socket, '你已經不在任何房間裡了。', 'gone');
+      if (room.recovery && !allowRecovery) return fail(socket, '正在等待玩家回到原房間。', 'recovering');
       handler(room, (payload && typeof payload === 'object') ? payload : {}, ack);
     };
   }
@@ -503,7 +529,7 @@ io.on('connection', (socket) => {
   }));
 
   /* 整張畫布重新要一次（用戶端發現筆數對不上時） */
-  socket.on('room:resync', withRoom((room) => { syncOne(socket, room, true); }));
+  socket.on('room:resync', withRoom((room) => { syncOne(socket, room, true); }, true));
 
   /* 對局進行中唯一的文字輸入就是猜答案；聊天室（見下面 room:chat）只在等待畫面開放。 */
   socket.on('room:guess', withRoom((room, p) => {
@@ -679,6 +705,7 @@ setInterval(() => {
 function sweepTick() {
   const t = now();
   const res = store.sweep(t);
+  flushRooms();
 
   for (const item of res.ticked) {
     for (const st of item.strokes) broadcastStroke(item.room, st);
