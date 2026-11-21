@@ -1,15 +1,15 @@
 /* ===== app/online-events.js — 線上事件 ===== */
 
-import { $, Sound, Store, Words, app, toast } from './core.js?v=632c5ea426';
-import { modals } from './modal.js?v=632c5ea426';
-import { localizeGame } from './solo.js?v=632c5ea426';
-import { pushFeed, replaceFeed } from './feed.js?v=632c5ea426';
-import { render } from './render.js?v=632c5ea426';
-import { renderAside } from './overlay.js?v=632c5ea426';
-import { renderGameSettings } from './game-settings.js?v=632c5ea426';
-import { isRelayGame, relayRecord, relayTransition, showCheer } from './relay.js?v=632c5ea426';
-import { applyTelephoneCanvas, isTelephoneGame, telephoneRecord, telephoneTransition } from './telephone.js?v=632c5ea426';
-import { forgetRoom, joinRoom, leaveGame, lobbyModeKey, renderRoomList, saveNick, setLobbyEnabled, subscribeLobby } from './lobby.js?v=632c5ea426';
+import { $, Sound, Store, Words, app, toast } from './core.js?v=f66810618b';
+import { modals } from './modal.js?v=f66810618b';
+import { localizeGame } from './solo.js?v=f66810618b';
+import { pushFeed, replaceFeed } from './feed.js?v=f66810618b';
+import { render } from './render.js?v=f66810618b';
+import { renderAside } from './overlay.js?v=f66810618b';
+import { renderGameSettings } from './game-settings.js?v=f66810618b';
+import { isRelayGame, relayRecord, relayTransition, showCheer } from './relay.js?v=f66810618b';
+import { applyTelephoneCanvas, isTelephoneGame, telephoneRecord, telephoneTransition } from './telephone.js?v=f66810618b';
+import { forgetRoom, joinRoom, leaveGame, lobbyModeKey, renderRoomList, saveNick, setLobbyEnabled, subscribeLobby } from './lobby.js?v=f66810618b';
 
 var w = window;
 

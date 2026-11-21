@@ -2309,6 +2309,23 @@ body.lobby-telephone #lobby-title{color:var(--tp-t)}
 }
 .tp-flow-card p.tp-secs,.tp-flow-card p.tp-next{margin:4px 0 8px}
 .tp-wait-card .relay-hero-face{width:clamp(44px,12vmin,68px);height:auto;aspect-ratio:1}
+.tp-wait-heading{display:flex;justify-content:center;align-items:center;gap:8px;margin:0 0 8px}
+.tp-wait-heading .relay-hero-face{flex:0 0 auto;width:clamp(34px,8vmin,48px);margin:0}
+.tp-wait-heading h3{min-width:0;margin:0;text-align:start}
+.tp-wait-tips{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,185px),1fr));
+  gap:6px;max-width:480px;margin:0 auto 8px;text-align:start;
+}
+.tp-wait-tips > div{
+  min-width:0;padding:6px 10px;border:2px solid var(--tp-d);border-radius:12px;
+  background:var(--tp-tint);overflow-wrap:anywhere;
+}
+.tp-wait-tips dt{color:var(--tp-t);font-size:.8rem;font-weight:900}
+.tp-wait-tips dd{margin:2px 0 0;color:var(--ink);font-size:.84rem;line-height:1.45}
+.overlay-card .tp-turn-wait .tp-secs{
+  width:max-content;max-width:100%;margin:0 auto;padding:2px 10px;
+  border:1px solid var(--tp-d);border-radius:999px;background:var(--tp-tint);
+}
 .tp-choices .wordchoice b{overflow-wrap:anywhere;text-align:center}
 .tp-handoff .relay-count-n{color:var(--tp-t)}
 .tp-flow-card .tp-handoff .relay-count-who{
@@ -2323,6 +2340,9 @@ body.lobby-telephone #lobby-title{color:var(--tp-t)}
   .tp-hand-pic .tp-pic{width:min(250px,28dvh)}
   .tp-flow-card .tp-flow-note{margin-block:4px 6px;padding-block:5px}
   .tp-wait-card .relay-hero-face{width:36px}
+  .tp-turn-wait .tp-wait-heading{margin-bottom:5px}
+  .tp-wait-tips{margin-bottom:5px}
+  .tp-wait-tips > div{padding-block:4px}
   .tp-wait-card .tp-order{margin-top:6px}
 }
 
@@ -2348,6 +2368,8 @@ body.lobby-telephone #lobby-title{color:var(--tp-t)}
 .tp-order-face svg{width:100%;height:100%;display:block}
 .tp-order-name{font-size:.74rem;font-weight:800;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tp-order-tag{font-size:.64rem;font-weight:800;color:var(--ink-soft);overflow-wrap:anywhere;max-width:100%}
+.tp-turn-wait .tp-order{flex-wrap:nowrap}
+.tp-turn-wait .tp-order-item{flex:0 1 76px}
 
 /* ---------- 等最後一人猜：左右翻看所有的畫 ---------- */
 .tp-browse{display:flex;align-items:center;justify-content:center;gap:8px;margin:8px 0 4px}

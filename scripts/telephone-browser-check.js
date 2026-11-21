@@ -180,7 +180,7 @@ const LAYOUT = `
       out.clipped.push((el.id || el.getAttribute('data-act') || el.className || el.tagName) + '@' + Math.round(r.left) + ',' + Math.round(r.top) + ' ' + Math.round(r.width) + 'x' + Math.round(r.height));
     }
   }
-  var instructions = document.querySelectorAll('.mode-guide-step, .telephone-lobby-note, .tp-flow-note, .tp-hints-used, .tp-hand-label, .tp-next, .tp-browse-fig figcaption, .sum-line-action');
+  var instructions = document.querySelectorAll('.mode-guide-step, .telephone-lobby-note, .tp-flow-note, .tp-wait-tips > div, .tp-hints-used, .tp-hand-label, .tp-next, .tp-browse-fig figcaption, .sum-line-action');
   for (var note of instructions) {
     var bounds = note.getBoundingClientRect();
     if (!visible(note) || (note.closest('#game-aside') && bounds.right <= 0)) continue;
@@ -209,6 +209,19 @@ async function sweep(cdp, name, opts) {
     check(name + '／' + v.name + '：按鈕與輸入框沒被裁到畫面外', lay.clipped.length === 0, lay.clipped.slice(0, 4).join(' | '));
     if (o.instructions || lay.instructions) {
       check(name + '／' + v.name + '：說明文字完整', lay.instructions > 0 && lay.clippedText.length === 0, lay.clippedText.join(' | '));
+    }
+    if (o.waitCard) {
+      const wait = await cdp.eval(`
+        const card = document.querySelector('#overlay-card');
+        const tips = Array.from(card.querySelectorAll('.tp-wait-tips > div'));
+        const timer = card.querySelector('.tp-turn-wait .tp-secs');
+        const order = card.querySelector('.tp-turn-wait .tp-order');
+        return tips.length === 2 && tips.every(function (tip) {
+          return tip.querySelector('dt').textContent.trim() && tip.querySelector('dd').textContent.trim();
+        }) && !!timer.querySelector('.pick-secs') && order.children.length === 4 &&
+          order.getBoundingClientRect().bottom <= card.getBoundingClientRect().bottom + 1;
+      `);
+      check(name + '／' + v.name + '：兩段提示、倒數與接棒順序同時完整可見', wait);
     }
     if (o.reveal) {
       const reveal = await cdp.eval(`
@@ -496,7 +509,7 @@ async function telephoneGame(host, players, watch, tabs) {
       await shot(me, '08-操作摘要-phone-narrow');
       await me.click('#b-aside-close');
       await setViewport(me, BASE_VP);
-      await sweep(chain[2], '09-等待-作畫中', { list: FIRST_HALF });
+      await sweep(chain[2], '09-等待-作畫中', { waitCard: true });
       await sweep(watch, '09-觀戰-作畫中', { list: SECOND_HALF });
       await sweep(chain[1], '09-下一位-觀看', { list: FIRST_HALF });
     } else if (i === 1) {

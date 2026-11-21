@@ -10,9 +10,9 @@
  * 前面已經畫完的人可以在畫布上即時看後面的人作畫；其他人在傳話中看不到任何畫，畫布被等待卡蓋住；等最後一人猜時，等待卡改成可以左右翻看所有的畫。
  */
 
-import { $, D, S, Sound, app, esc, secsLeft } from './core.js?v=632c5ea426';
-import { strokesThumb } from './gallery.js?v=632c5ea426';
-import { chatBlockHtml } from './overlay.js?v=632c5ea426';
+import { $, D, S, Sound, app, esc, secsLeft } from './core.js?v=f66810618b';
+import { strokesThumb } from './gallery.js?v=f66810618b';
+import { chatBlockHtml } from './overlay.js?v=f66810618b';
 
 var w = window;
 var REACT = { heart: '❤️', laugh: '😂' };
@@ -130,13 +130,18 @@ function handoffHtml(v, g) {
 /** 作畫中等別人：只知道輪到誰、還剩幾秒，看不到任何畫 */
 function waitHtml(v, g) {
   var s = secsLeft(g.deadline);
-  var spectating = g.you.role === 'spectator';
+  var joinsNext = g.you.role === 'spectator' && v.you.role === 'player';
   var key = g.turnKind === 'write' ? 'telephone.wait.write' : 'telephone.wait.draw';
-  return roundHtml(g) + '<div class="relay-guesser-card tp-wait-card"><span class="relay-hero-face" aria-hidden="true">' +
+  var guidance = joinsNext ? flowNote(esc(t('telephone.wait.next'))) :
+    '<dl class="tp-wait-tips">' + ['before', 'after'].map(function (stage) {
+      var prefix = 'telephone.wait.' + stage;
+      return '<div><dt>' + esc(t(prefix + 'Title')) + '</dt><dd>' + esc(t(prefix + 'Note')) + '</dd></div>';
+    }).join('') + '</dl>';
+  return roundHtml(g) + '<div class="relay-guesser-card tp-wait-card tp-turn-wait">' +
+    '<div class="tp-wait-heading"><span class="relay-hero-face" aria-hidden="true">' +
     S.face(playerIdx(g, g.turnId), g.turnKind === 'write' ? 'think' : 'draw') + '</span>' +
-    '<h3>' + esc(t(key, { name: g.turnName, n: g.stepNo + 1 })) + '</h3>' +
-    flowNote(esc(t(spectating && v.you.role === 'player' ? 'telephone.wait.next' : 'telephone.wait.note'))) +
-    '<p class="tp-secs">' + withSecs('telephone.secs', s) + '</p></div>' + orderHtml(v, g);
+    '<h3>' + esc(t(key, { name: g.turnName, n: g.stepNo + 1 })) + '</h3></div>' +
+    guidance + '<p class="tp-secs">' + withSecs('telephone.secs', s) + '</p>' + orderHtml(v, g) + '</div>';
 }
 
 /** 等最後一人猜：其他人（含觀戰者）左右翻看這一輪所有的畫，看不到題目 */
