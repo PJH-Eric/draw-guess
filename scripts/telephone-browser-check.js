@@ -466,6 +466,46 @@ async function main() {
   check('等待畫面可以聊天', await p2.eval(visible('#chat-input')));
   await sweep(host, '05-等待畫面-房主', { roomSetup: true });
   await sweep(p2, '05-等待畫面-玩家', { one: true });
+  await setViewport(host, VIEWPORTS[1]);
+  await sleep(260);
+  const keyboardLayout = await host.eval(`
+    const vv = window.visualViewport;
+    const card = document.getElementById('overlay-card');
+    const pane = document.getElementById('tp-setup-body');
+    const screen = document.getElementById('s-game');
+    const chat = document.getElementById('chat-input');
+    const heading = card.querySelector('h3');
+    const footer = card.querySelector('.tp-setup-actions');
+    const originalHeight = card.getBoundingClientRect().height;
+    const result = {};
+    Object.defineProperty(vv, 'height', { configurable: true, value: 360 });
+    try {
+      chat.focus({preventScroll:true});
+      window.KeyboardFix.refresh();
+      window.KeyboardFix.keepVisible(chat);
+      const paneBounds = pane.getBoundingClientRect();
+      const chatBounds = chat.getBoundingClientRect();
+      result.open = document.body.classList.contains('kb-open') && pane.scrollTop > 0 &&
+        chatBounds.top >= paneBounds.top && chatBounds.bottom <= paneBounds.bottom &&
+        heading.getBoundingClientRect().top >= 0 && footer.getBoundingClientRect().bottom <= vv.height &&
+        screen.scrollTop === 0 && card.scrollTop === 0;
+    } finally {
+      delete vv.height;
+      chat.blur();
+      vv.dispatchEvent(new Event('resize'));
+    }
+    return new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => {
+      result.closed = !document.body.classList.contains('kb-open') &&
+        Math.abs(card.getBoundingClientRect().height - originalHeight) <= 1 &&
+        heading.getBoundingClientRect().top >= 0 && footer.getBoundingClientRect().bottom <= vv.height &&
+        screen.scrollTop === 0 && card.scrollTop === 0;
+      pane.scrollTop = 0;
+      resolve(result);
+    })));
+  `);
+  check('手機鍵盤開合：只捲動房間內容，標題和底部按鈕留在畫面內', keyboardLayout.open && keyboardLayout.closed, JSON.stringify(keyboardLayout));
+  await shot(host, '05-手機收起鍵盤後');
+  await setViewport(host, BASE_VP);
   if (STOP_AFTER === 'setup') return finish(tabs);
 
   await telephoneGame(host, [host, p2, p3, p4], watch, tabs);

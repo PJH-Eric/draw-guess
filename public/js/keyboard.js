@@ -105,6 +105,19 @@
   /* 輸入框若被鍵盤蓋住，就把它捲回可見範圍 */
   function keepVisible(el) {
     if (!el || !el.getBoundingClientRect) return;
+    var pane = el.closest('.tp-setup-body');
+    if (pane) {
+      /* 只捲動房間內容，避免把固定標題、底部按鈕與整個遊戲舞台捲出畫面。 */
+      var area = pane.getBoundingClientRect();
+      var input = el.getBoundingClientRect();
+      var viewportTop = vv && !zoomed() ? vv.offsetTop : 0;
+      var top = Math.max(area.top, viewportTop) + 8;
+      var bottom = Math.min(area.bottom, viewportTop + visibleHeight()) - 8;
+      if (bottom <= top) return;
+      if (input.bottom > bottom) pane.scrollTop += input.bottom - bottom;
+      else if (input.top < top) pane.scrollTop += input.top - top;
+      return;
+    }
     var limit = visibleHeight() - 10;
     var box = el.getBoundingClientRect();
     if (box.top >= 4 && box.bottom <= limit) return;
@@ -126,13 +139,14 @@
     nudge = w.setInterval(function () {
       tries++;
       /* 沒有 visualViewport 的舊瀏覽器量不到鍵盤，那就一律補捲當保險 */
-      if (apply() || !vv) keepVisible(el);
+      if (apply() || !vv || el.closest('.tp-setup-body')) keepVisible(el);
       if (tries >= NUDGE_MAX || d.activeElement !== el) w.clearInterval(nudge);
     }, NUDGE_MS);
   }
 
   function onFocusOut() {
     w.clearInterval(nudge);
+    schedule();
     /* 收鍵盤時 iOS 會晚一點才把 visualViewport 還原，補量兩次 */
     w.setTimeout(schedule, 60);
     w.setTimeout(schedule, 320);

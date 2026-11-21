@@ -2351,8 +2351,10 @@ body.lobby-telephone #lobby-title{color:var(--tp-t)}
 .rc-rule[data-k=tpmode]{background:var(--tp);border-color:var(--tp-d)}
 .telephone-badge{border-color:var(--tp-d);background:var(--tp)}
 .overlay-card.setup-card.tp-flow-card{
-  display:flex;flex-direction:column;min-width:0;overflow:hidden;padding:0;
+  display:flex;flex-direction:column;min-width:0;overflow:hidden;overflow:clip;padding:0;
 }
+.screen#s-game.active:has(.setup-card.tp-flow-card),
+.game:has(.setup-card.tp-flow-card){overflow:clip}
 .setup-card.tp-flow-card > h3{
   display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 8px;flex:0 0 auto;
   margin:0;padding:8px 12px;border-bottom:2px solid var(--line);background:var(--tp-tint);
@@ -2360,7 +2362,7 @@ body.lobby-telephone #lobby-title{color:var(--tp-t)}
 .setup-card.tp-flow-card .telephone-badge{margin:0;max-width:100%;white-space:normal}
 .tp-setup-body{
   flex:0 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;
-  padding:10px 16px 12px;
+  padding:10px 16px 12px;scroll-padding-block:8px;
 }
 .tp-setup-body:focus-visible{outline:2px solid var(--sky-d);outline-offset:-3px}
 .tp-setup-rules .rules-row + .rules-row{margin-top:8px}
