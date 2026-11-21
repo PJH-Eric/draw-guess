@@ -359,6 +359,7 @@ I18N.register("en", {
   "srv.err.telephoneOwnCell": "You cannot react to your own turn.",
   "srv.err.telephonePickFromThree": "Pick one of the 3 words.",
   "srv.err.telephoneRoundsRange": "Rounds must be between 1 and {max}.",
+  "srv.err.telephoneTimedOut": "Time is up.",
   "srv.err.telephoneUseAnswer": "In Draw Telephone the last player writes the answer.",
   "srv.err.telephoneWrongStep": "You cannot do that on this turn.",
   "srv.err.tooFast": "Too fast. Please wait a moment and try again.",

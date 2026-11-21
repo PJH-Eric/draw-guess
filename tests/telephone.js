@@ -77,9 +77,10 @@ section('格子與傳話順序');
   for (let i = 0; i < 3; i++) t = drawAndPass(st, t);
   TP.answer(st, 'd', '隨便', t);
   check('寫完答案就揭曉', st.phase === 'reveal');
-  TP.tick(st, st.deadline);
+  const nextRoundAt = st.deadline;
+  TP.tick(st, nextRoundAt);
   check('第 2 輪換下一位開頭', st.phase === 'picking' && st.starterId === 'b');
-  t = toStep(st, st.deadline);
+  t = toStep(st, nextRoundAt);
   check('第 2 輪順序從 B 起、A 最後猜', st.chain.cells.map((c) => c.authorId).join('') === 'bcda' && st.chain.cells[3].kind === 'write');
 }
 
@@ -116,6 +117,28 @@ section('逾時送出');
   t = toStep(st2, T0);
   TP.tick(st2, st2.deadline); TP.tick(st2, st2.deadline); TP.tick(st2, st2.deadline);
   check('答案沒寫就留空（揭曉顯示「（沒寫）」）、全部 0 分', st2.phase === 'reveal' && st2.chain.cells[2].text === '' && st2.players.every((p) => p.score === 0));
+}
+
+section('截止時間');
+{
+  const st = make(4);
+  check('選題截止時權限已收回', !TP.toPublic(st, 'a', st.deadline).you.canPick &&
+    TP.pick(st, 'a', st.choices[0], st.deadline).ok === false && st.phase === 'picking');
+  TP.tick(st, st.deadline);
+  let t = drawAndPass(st, st.stepStartsAt);
+  t = drawAndPass(st, t);
+  check('作畫截止時不再收新筆畫或交畫', !TP.toPublic(st, 'c', st.deadline).you.canDraw &&
+    !TP.addStroke(st, 'c', LINE, st.deadline).ok && !TP.submitDrawing(st, 'c', st.deadline).ok);
+  t = drawAndPass(st, t);
+  TP.answer(st, 'd', '草稿', t, { draft: true });
+  const view = TP.toPublic(st, 'd', st.deadline);
+  check('猜題截止時收回答案、提示與翻看權限', !view.you.canAnswer && !view.you.canHint && !view.you.canPeek &&
+    !TP.answer(st, 'd', '逾時答案', st.deadline).ok && !TP.giveHint(st, 'd', st.deadline).ok &&
+    !TP.peek(st, 'd', 0, st.deadline).ok);
+  check('中途猜題在該棒截止時也停止', !TP.toPublic(st, 'b', st.deadline).you.midGuess.can &&
+    !TP.midGuess(st, 'b', '逾時猜題', st.deadline).ok);
+  TP.tick(st, st.deadline);
+  check('猜題截止仍自動交出原草稿', st.chain.cells[3].text === '草稿' && st.phase === 'reveal');
 }
 
 section('計分');
@@ -164,8 +187,15 @@ section('提示與偷看');
 
 section('隱藏資訊（toPublic）');
 {
-  const st = make(4);
+  const st = make(4, { matchId: 'public-match-id' });
   const pickA = TP.toPublic(st, 'a', T0), pickB = TP.toPublic(st, 'b', T0);
+  check('玩家與觀戰者只收到公開對局識別碼', ['a', 'b', null].every((id) => {
+    const view = TP.toPublic(st, id, T0);
+    return view.seed === st.matchId && !JSON.stringify(view).includes(st.seed);
+  }));
+  const restored = JSON.parse(JSON.stringify(st));
+  delete restored.matchId;
+  check('舊存檔的公開識別碼不會回退到抽題種子', TP.toPublic(restored, 'b', T0).seed !== restored.seed);
   check('候選題只給開頭的人', pickA.choices.length === 3 && pickB.choices.length === 0);
   let t = toStep(st, T0);
   const a = TP.toPublic(st, 'a', t);

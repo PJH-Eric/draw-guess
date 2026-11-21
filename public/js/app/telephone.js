@@ -10,9 +10,9 @@
  * 前面已經畫完的人可以在畫布上即時看後面的人作畫；其他人在傳話中看不到任何畫，畫布被等待卡蓋住；等最後一人猜時，等待卡改成可以左右翻看所有的畫。
  */
 
-import { $, D, S, Sound, app, esc, secsLeft } from './core.js?v=6d05b1bb91';
-import { strokesThumb } from './gallery.js?v=6d05b1bb91';
-import { chatBlockHtml } from './overlay.js?v=6d05b1bb91';
+import { $, D, S, Sound, app, esc, secsLeft } from './core.js?v=420634abae';
+import { strokesThumb } from './gallery.js?v=420634abae';
+import { chatBlockHtml } from './overlay.js?v=420634abae';
 
 var w = window;
 var REACT = { heart: '❤️', laugh: '😂' };

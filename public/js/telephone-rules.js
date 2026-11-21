@@ -4,7 +4,7 @@
  * 提示遮罩與提示張數這類「純工具」，直接借 Rules 的實作。
  *
  * 這一層只有「狀態 + 行動 → 新狀態」，沒有畫面、網路與計時器；時間由呼叫端把 now 傳進來，
- * 候選題與逾時隨機挑題都用種子亂數，同一個種子加上同一串行動一定得到同一個結果。
+ * 正式對局由伺服器產生亂數，測試可以指定固定種子以重現結果。
  *
  * 3–5 人，每一輪傳一串：從這一輪開頭的人起照座位往下，每人輪一次。
  *   開頭的人從 3 個候選挑一題 → 看題目作畫 → 下一位只看上一張畫再畫一張 → … →
@@ -38,11 +38,12 @@
   var api = factory(
     node ? require('./rng.js') : root.RNG,
     node ? require('./words.js') : root.Words,
-    node ? require('./rules.js') : root.Rules
+    node ? require('./rules.js') : root.Rules,
+    node ? require('node:crypto').randomInt : null
   );
   if (node) module.exports = api;
   root.TelephoneRules = api;
-}(typeof globalThis !== 'undefined' ? globalThis : this, function (RNG, Words, Rules) {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function (RNG, Words, Rules, secureRandomInt) {
   'use strict';
 
   var CONST = {
@@ -103,7 +104,8 @@
 
   /**
    * @param {object} opts
-   *   seed      字串種子
+   *   seed      測試用固定種子
+   *   matchId   可公開的對局識別碼
    *   players   [{id, name}]，順序就是座位順序（只取前 5 位）
    *   drawSec   每張畫秒數（30／45／60）
    *   guessSec  最後猜答案秒數（20／25／30）
@@ -115,9 +117,12 @@
   function createState(opts) {
     var o = opts || {};
     var players = (o.players || []).slice(0, CONST.MAX_PLAYERS).map(newPlayer);
+    var seed = RNG.normalizeSeed(o.seed);
     return {
       mode: 'telephone',
-      seed: RNG.normalizeSeed(o.seed) || RNG.randomSeed(null, 6),
+      seed: seed || RNG.randomSeed(null, 6),
+      seeded: !!seed,
+      matchId: o.matchId || null,
       lang: Words.normLang(o.lang),
       diff: [1, 2, 3].indexOf(Number(o.diff)) >= 0 ? Number(o.diff) : 0,
       category: Words.CATEGORY_KEYS.indexOf(o.category) >= 0 ? o.category : '',
@@ -204,6 +209,13 @@
 
   /* ------------------------------------------------------------ 開局與換輪 */
 
+  function roundRandom(state, purpose) {
+    if (secureRandomInt && !state.seeded) {
+      return function () { return secureRandomInt(0x100000000) / 0x100000000; };
+    }
+    return RNG.createRng(state.seed + ':tp-' + purpose + ':' + state.roundNo);
+  }
+
   function start(state, now) {
     var active = state.players.length;
     if (active < CONST.MIN_PLAYERS) return err('srv.err.telephoneNeedPlayers', 'players', { n: CONST.MIN_PLAYERS });
@@ -240,7 +252,7 @@
     state.phase = 'picking';
     state.deadline = now + CONST.PICK_MS;
 
-    var crng = RNG.createRng(state.seed + ':tp-choices:' + state.roundNo);
+    var crng = roundRandom(state, 'choices');
     var pickOpts = { diff: state.diff || 0, cat: state.category, exclude: state.usedWords };
     state.choices = Words.pick(crng, CONST.CHOICES, pickOpts);
     if (state.choices.length < CONST.CHOICES) {
@@ -293,7 +305,7 @@
     state.usedWords.push(wordId);
     if (state.usedWords.length > 200) state.usedWords.splice(0, 100);
     var w = word(state);
-    var hrng = RNG.createRng(state.seed + ':tp-hint:' + state.roundNo);
+    var hrng = roundRandom(state, 'hint');
     var slots = w ? Words.revealable(w) : [];
     state.hintPlan = slots.length >= 2 ? [slots[Math.floor(hrng() * slots.length) % slots.length]] : [];
     state.chain = buildChain(state, wordId);
@@ -307,15 +319,16 @@
   function pick(state, playerId, wordId, now) {
     if (state.phase !== 'picking') return err('srv.err.telephoneNotPicking', 'phase');
     if (playerId !== state.starterId) return err('srv.err.telephoneNotStarter', 'forbidden');
+    if (now >= state.deadline) return err('srv.err.telephoneTimedOut', 'phase');
     var id = String(wordId || '');
     if (state.choices.indexOf(id) < 0) return err('srv.err.telephonePickFromThree', 'choice');
     var r = settlePick(state, id, now, false, null);
     return ok({ wordId: id, events: r.events });
   }
 
-  /** 時間到沒選：用種子亂數從候選隨機挑一個 */
+  /** 時間到沒選：從候選隨機挑一個 */
   function autoPick(state, now, isGone) {
-    var rng = RNG.createRng(state.seed + ':tp-pick:' + state.roundNo);
+    var rng = roundRandom(state, 'pick');
     var id = state.choices[Math.floor(rng() * state.choices.length) % state.choices.length];
     return settlePick(state, id, now, true, isGone);
   }
@@ -384,6 +397,7 @@
     if (cell.authorId !== playerId) return err('srv.err.telephoneNotYourTurn', 'forbidden');
     if (kind && cell.kind !== kind) return err('srv.err.telephoneWrongStep', 'phase');
     if (now !== undefined && now !== null && now < state.stepStartsAt) return err('srv.err.telephoneHandoff', 'phase');
+    if (now >= state.deadline) return err('srv.err.telephoneTimedOut', 'phase');
     return null;
   }
 
@@ -505,6 +519,7 @@
   function midGuess(state, playerId, text, now) {
     var cell = midCellOf(state, playerId);
     if (!cell) return err('srv.err.telephoneCantMidGuess', 'forbidden');
+    if (now >= state.deadline) return err('srv.err.telephoneTimedOut', 'phase');
     var cur = currentCell(state);
     if (cur && cur.authorId === playerId) return err('srv.err.telephoneCantMidGuess', 'forbidden');
     if (cell.midHit) return err('srv.err.telephoneMidDone', 'done');
@@ -879,9 +894,12 @@
     var cell = currentCell(state);
     var t = typeof now === 'number' ? now : 0;
     var started = !!cell && t >= state.stepStartsAt;
+    var beforeDeadline = t < state.deadline;
+    var turnOpen = started && beforeDeadline;
     var view = {
       mode: 'telephone',
-      seed: state.seed,
+      /* 舊版客戶端使用 seed 欄位當作快取與統計的對局識別碼。 */
+      seed: state.matchId || 'telephone-' + state.startedAt,
       lang: state.lang,
       diff: state.diff,
       phase: state.phase,
@@ -932,11 +950,11 @@
         isStarter: role === 'starter',
         isDrawer: role === 'drawer',
         isGuesser: role === 'guesser',
-        canPick: role === 'starter',
-        canDraw: role === 'drawer' && started,
-        canSubmit: role === 'drawer' && started,
-        canAnswer: role === 'guesser' && started,
-        canHint: role === 'guesser' && started && state.hints < Rules.hintTotal(state),
+        canPick: role === 'starter' && beforeDeadline,
+        canDraw: role === 'drawer' && turnOpen,
+        canSubmit: role === 'drawer' && turnOpen,
+        canAnswer: role === 'guesser' && turnOpen,
+        canHint: role === 'guesser' && turnOpen && state.hints < Rules.hintTotal(state),
         canPeek: false,
         canChat: !isActive(state.phase),
         watching: false,
@@ -972,7 +990,7 @@
           view.hint = hintView(state);
           view.peeks = chain.hints.peeks.map(function (i) { return drawingOf(state, i); });
           view.peekable = peekList(state);
-          view.you.canPeek = started && view.peekable.some(function (x) { return x.state === 'available'; });
+          view.you.canPeek = turnOpen && view.peekable.some(function (x) { return x.state === 'available'; });
           view.draft = cell.draft;
         }
       } else if (cell.kind === 'draw' && (role === 'spectator' || (role === 'waiting' && watchersOf(state).indexOf(viewerId) >= 0))) {
@@ -989,7 +1007,7 @@
     /* 中間的人交出畫之後可以猜原本的題目（猜中前一直可以猜） */
     if (role === 'waiting') {
       var mc = midCellOf(state, viewerId);
-      if (mc) view.you.midGuess = { can: !mc.midHit, hit: mc.midHit, wrong: mc.midWrong, points: mc.midHit ? mc.midPts : midNextPoints(mc) };
+      if (mc) view.you.midGuess = { can: beforeDeadline && !mc.midHit, hit: mc.midHit, wrong: mc.midWrong, points: mc.midHit ? mc.midPts : midNextPoints(mc) };
     }
 
     /* 觀戰者全部都看得到：題目、每一格作畫的過程（不能聊天，不會暴雷） */

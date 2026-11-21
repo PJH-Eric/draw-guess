@@ -359,6 +359,7 @@ I18N.register("zh-Hans", {
   "srv.err.telephoneOwnCell": "不能对自己那一格按表情。",
   "srv.err.telephonePickFromThree": "请从 3 个候选题里挑一个。",
   "srv.err.telephoneRoundsRange": "轮次要在 1 到 {max} 轮之间。",
+  "srv.err.telephoneTimedOut": "操作时间已到。",
   "srv.err.telephoneUseAnswer": "画图传话由最后一人写答案。",
   "srv.err.telephoneWrongStep": "这一格不能这样做。",
   "srv.err.tooFast": "太快了，请稍等一下再试。",

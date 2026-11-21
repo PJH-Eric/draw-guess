@@ -359,6 +359,7 @@ I18N.register("zh-Hant", {
   "srv.err.telephoneOwnCell": "不能對自己那一格按表情。",
   "srv.err.telephonePickFromThree": "請從 3 個候選題裡挑一個。",
   "srv.err.telephoneRoundsRange": "輪次要在 1 到 {max} 輪之間。",
+  "srv.err.telephoneTimedOut": "操作時間已到。",
   "srv.err.telephoneUseAnswer": "畫圖傳話由最後一人寫答案。",
   "srv.err.telephoneWrongStep": "這一格不能這樣做。",
   "srv.err.tooFast": "太快了，請稍等一下再試。",
