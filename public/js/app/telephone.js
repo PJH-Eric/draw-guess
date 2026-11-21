@@ -10,9 +10,9 @@
  * 前面已經畫完的人可以在畫布上即時看後面的人作畫；其他人在傳話中看不到任何畫，畫布被等待卡蓋住；等最後一人猜時，等待卡改成可以左右翻看所有的畫。
  */
 
-import { $, D, S, Sound, app, esc, secsLeft } from './core.js?v=e1f7d4231d';
-import { strokesThumb } from './gallery.js?v=e1f7d4231d';
-import { chatBlockHtml } from './overlay.js?v=e1f7d4231d';
+import { $, D, S, Sound, app, esc, secsLeft } from './core.js?v=e977256a55';
+import { strokesThumb } from './gallery.js?v=e977256a55';
+import { chatBlockHtml } from './overlay.js?v=e977256a55';
 
 var w = window;
 var REACT = { heart: '❤️', laugh: '😂' };
@@ -283,6 +283,11 @@ export function renderTelephoneWordbar(v, g) {
   } else if (role === 'drawer') {
     label = t('telephone.word.copy');
     mask = t('telephone.word.copyMask', { name: g.prev ? g.prev.authorName : '—' });
+  } else if (role === 'spectator' && g.answer) {
+    /* 觀戰者全部都看得到：題目直接顯示 */
+    label = t('text.156');
+    mask = g.answer;
+    meta.push(t(g.turnKind === 'write' ? 'telephone.word.spectateWrite' : 'telephone.word.watchMask', { name: g.turnName }));
   } else if (g.you.watching) {
     label = t('telephone.word.watch');
     mask = t('telephone.word.watchMask', { name: g.turnName });
@@ -398,6 +403,7 @@ export function renderTelephoneAssist(v, g) {
   row.hidden = !guesser;
   row.classList.toggle('relay-hints', guesser);
   row.classList.toggle('tp-guesser-row', guesser);
+  D.body.classList.toggle('tp-guessing', guesser);
   var steps = (g.hint && g.hint.steps) || [];
   for (var i = 0; i < 3; i++) {
     var b = $('b-hint-' + (i + 1));
@@ -417,31 +423,36 @@ function renderPeekDock(v, g, guesser) {
   var dock = $('tp-peekdock');
   if (!dock) return;
   var views = guesser ? guesserViews(g) : [];
-  var peekable = guesser ? (g.peekable || []).filter(function (p) { return p.state === 'available'; }) : [];
-  dock.hidden = !guesser || (views.length < 2 && !peekable.length);
+  var list = guesser ? (g.peekable || []).filter(function (p) { return p.state === 'available' || p.state === 'peeked'; }) : [];
+  dock.hidden = !guesser || !list.length;
   if (dock.hidden) { dock.removeAttribute('data-sig'); return; }
   var cur = currentView(g);
-  var html = '<span class="hintrow-label">' + esc(t('telephone.peek.label')) + '</span>' +
-    views.map(function (x) {
-      var on = cur && cur.idx === x.idx;
-      return '<button class="pillbtn tp-view" type="button" role="radio" aria-checked="' + on + '" data-tp-view="' + x.idx + '">' +
-        esc(t(x.prev ? 'telephone.peek.prev' : 'telephone.peek.seen', { name: x.name })) + '</button>';
-    }).join('') +
-    peekable.map(function (p) {
-      return '<button class="btn3d small tp-peek" data-color="lemon" type="button" data-tp-peek="' + p.idx + '"' + (v.you.can.peek ? '' : ' disabled') + '>' +
+  /* 一張畫一顆鈕：沒偷看過的是「偷看（倍數）」，偷看過的變成切換鈕；第一顆是上一張 */
+  var chip = function (x, label) {
+    var on = !!cur && cur.idx === x.idx;
+    return '<button class="pillbtn tp-view" type="button" role="radio" aria-checked="' + on + '" data-tp-view="' + x.idx + '">' + esc(label) + '</button>';
+  };
+  var html = '<span class="hintrow-label">' + esc(t('telephone.peek.label')) + '</span>';
+  if (views[0] && views[0].prev) html += chip(views[0], t('telephone.peek.prev', { name: views[0].name }));
+  list.forEach(function (p) {
+    if (p.state === 'peeked') html += chip({ idx: p.idx }, t('telephone.peek.seen', { name: p.authorName }));
+    else {
+      html += '<button class="pillbtn tp-peek" type="button" data-tp-peek="' + p.idx + '"' + (v.you.can.peek ? '' : ' disabled') +
+        ' aria-label="' + esc(t('telephone.peek.aria', { name: p.authorName, f: p.factor })) + '">' +
         esc(t('telephone.peek.btn', { name: p.authorName, f: p.factor })) + '</button>';
-    }).join('');
+    }
+  });
   var sig = html + ':' + w.I18N.lang;
   if (dock.getAttribute('data-sig') === sig) return;
   dock.setAttribute('data-sig', sig);
   dock.innerHTML = html;
-  S.decorateAll(dock);
 }
 
 /** 離開畫圖傳話（回到其他模式畫面）時收起這個模式專用的元件 */
 export function hideTelephoneUi() {
   var row = $('hintrow');
   if (row) row.classList.remove('tp-guesser-row');
+  D.body.classList.remove('tp-guessing');
   var dock = $('tp-peekdock');
   if (dock) { dock.hidden = true; dock.removeAttribute('data-sig'); }
   app.telephoneKey = '';

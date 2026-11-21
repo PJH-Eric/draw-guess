@@ -1,11 +1,11 @@
 /* ===== app/render.js — 對局畫面渲染 ===== */
 
-import { $, D, S, app, esc, secsLeft } from './core.js?v=e1f7d4231d';
-import { renderReference } from './modal.js?v=e1f7d4231d';
-import { sizeCanvas } from './canvas.js?v=e1f7d4231d';
-import { renderAside, renderControls, renderOverlay } from './overlay.js?v=e1f7d4231d';
-import { isRelayGame, relayPhaseLabel, relayStripHtml, relayTick, renderRelayWordbar } from './relay.js?v=e1f7d4231d';
-import { isTelephoneGame, renderTelephoneWordbar, telephonePhaseColor, telephonePhaseLabel, telephoneStripHtml, telephoneTick } from './telephone.js?v=e1f7d4231d';
+import { $, D, S, app, esc, secsLeft } from './core.js?v=e977256a55';
+import { renderReference } from './modal.js?v=e977256a55';
+import { sizeCanvas } from './canvas.js?v=e977256a55';
+import { renderAside, renderControls, renderOverlay } from './overlay.js?v=e977256a55';
+import { isRelayGame, relayPhaseLabel, relayStripHtml, relayTick, renderRelayWordbar } from './relay.js?v=e977256a55';
+import { isTelephoneGame, renderTelephoneWordbar, telephonePhaseColor, telephonePhaseLabel, telephoneStripHtml, telephoneTick } from './telephone.js?v=e977256a55';
 
 var w = window;
 

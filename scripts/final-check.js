@@ -1,11 +1,11 @@
 /*
- * scripts/final-check.js — 接力模式與你出我畫他猜（Beta）最後確認的有界迭代執行器
+ * scripts/final-check.js — 接力模式與畫圖傳話（Beta）最後確認的有界迭代執行器
  *
  *   node scripts/final-check.js [--max=10]
  *
  * 防護（對應 loop-engineering 的原則 4 與 3）：
  *   - 預算出口：每個套件有逾時，整體最多跑 --max 輪（預設 10）。
- *   - 防作弊不變量：npm test、scripts/online-check.js 與你出我畫他猜瀏覽器巡檢的通過項數不得少於
+ *   - 防作弊不變量：npm test、scripts/online-check.js 與畫圖傳話瀏覽器巡檢的通過項數不得少於
  *     scripts/final-check.baseline.json 記錄的數字；測試被刪或弱化就失敗。
  *   - 無進展偵測：同一組失敗項目連續兩輪出現，就停下來交給人。
  */

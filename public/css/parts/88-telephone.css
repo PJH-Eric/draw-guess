@@ -87,12 +87,27 @@ body.lobby-telephone #lobby-title{color:var(--tp-t)}
 /* ---------- 結算：最好笑 ---------- */
 .tp-award{border-color:var(--tp-d);background:var(--tp-tint)}
 
-/* ---------- 輪到猜的人：切換正在看的畫、偷看前面的畫 ---------- */
-.tp-peekdock{flex-wrap:wrap;row-gap:4px}
-.tp-view{min-height:36px;font-size:.78rem}
-.tp-view[aria-checked=true]{border-color:var(--tp-d);background:var(--tp-tint)}
-.tp-peek{font-size:.78rem}
+/* ---------- 輪到猜的人：切換正在看的畫、偷看前面的畫 ----------
+ * 一張畫一顆小圓鈕（最多 4 顆），放不下就換行；不用立體大鈕，矮的橫向手機才不會把答案框擠出畫面。 */
+.tp-peekdock{flex-wrap:wrap;row-gap:4px;column-gap:4px}
+.playbar > .canvastop .hintdock.tp-peekdock{flex-wrap:wrap}
+.tp-view,.tp-peek{min-height:34px;padding:4px 10px;font-size:.76rem;white-space:nowrap}
+.tp-view[aria-checked=true]{border-color:var(--tp-d);background:var(--tp-tint);box-shadow:0 2px 0 var(--tp-d)}
+.tp-peek{border-color:var(--lemon-d);background:var(--lemon-tint)}
+.tp-peek:disabled{opacity:.6}
 .hintdock.tp-guesser-row .hintrow-note{max-width:none}
 @media (orientation:portrait) and (max-width:620px){
   .hintdock.tp-guesser-row .hintrow-note{display:none}
+}
+/* 矮的手機直向：玩家列與提示列擠在同一行（見 60-responsive），偷看列自己換到下一整行 */
+@media (orientation:portrait) and (max-width:620px) and (max-height:700px){
+  body.tp-guessing .game-head > .canvastop{flex-wrap:wrap}
+  body.tp-guessing .game-head > .canvastop .hintdock.tp-guesser-row{flex:1 1 auto;min-width:0}
+  body.tp-guessing .game-head > .canvastop .tp-peekdock{flex:1 1 100%;justify-content:flex-start}
+  body.tp-guessing .game-head > .canvastop .tp-peekdock .hintrow-label{display:inline}
+}
+/* 矮的橫向手機：右欄高度很緊，提示列與偷看列的說明字收掉 */
+@media (orientation:landscape) and (max-height:430px){
+  .tp-peekdock .hintrow-label,.hintdock.tp-guesser-row .hintrow-label{display:none}
+  .tp-view,.tp-peek{min-height:32px;padding:3px 8px}
 }

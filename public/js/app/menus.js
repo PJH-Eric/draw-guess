@@ -1,7 +1,7 @@
 /* ===== app/menus.js — 教學、戰績與單機設定畫面 ===== */
 
-import { $, D, ME, S, Sound, Store, Words, app, esc, show, toast } from './core.js?v=e1f7d4231d';
-import { soloRefresh, startSolo, withWordPack } from './solo.js?v=e1f7d4231d';
+import { $, D, ME, S, Sound, Store, Words, app, esc, show, toast } from './core.js?v=e977256a55';
+import { soloRefresh, startSolo, withWordPack } from './solo.js?v=e977256a55';
 
 var w = window;
 
@@ -78,8 +78,8 @@ export function tutorialArt(index) {
     tutTile(tutIco('home')) + arrow + tutTile(S.face(0, 'happy'), 'face') + tutTile(S.face(1, 'happy'), 'face') + tutTile(S.face(2, 'happy'), 'face') + tutTile(tutIco('eye')),
     /* 接力：好幾個畫家輪流畫一張圖給一個人猜 */
     tutTile(S.face(0, 'draw'), 'face') + arrow + tutTile(S.face(1, 'draw'), 'face') + arrow + tutTile(S.face(2, 'draw'), 'face') + arrow + tutTile(S.face(3, 'think'), 'face'),
-    /* 你出我畫他猜：出題 → 畫 → 猜 */
-    tutTile(S.face(0, 'happy'), 'face') + arrow + tutTile(S.face(1, 'draw'), 'face') + arrow + tutTile(S.face(2, 'think'), 'face')
+    /* 畫圖傳話：畫 → 照畫 → 照畫 → 猜 */
+    tutTile(S.face(0, 'draw'), 'face') + arrow + tutTile(S.face(1, 'draw'), 'face') + arrow + tutTile(S.face(2, 'draw'), 'face') + arrow + tutTile(S.face(3, 'think'), 'face')
   ];
   return '<div class="tut-art" aria-hidden="true">' + (art[index] || '') + '</div>';
 }

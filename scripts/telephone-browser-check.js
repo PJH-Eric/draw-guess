@@ -364,16 +364,17 @@ async function telephoneGame(host, players, watch, tabs) {
         !(await me.eval('return document.body.innerText.indexOf(' + JSON.stringify(answer) + ') >= 0;')));
     }
     await drag(me, 0.25 + i * 0.05, 0.3, 0.75, 0.7);
-    /* 前面畫完的人與下一位可以即時看；再後面的人與觀戰者看不到 */
+    /* 前面畫完的人與下一位可以即時看；再後面的人看不到；觀戰者全部看得到 */
     const viewers = chain.slice(0, i).concat(chain[i + 1] ? [chain[i + 1]] : []);
-    const hiddenTo = chain.slice(i + 2).concat([watch]);
+    const hiddenTo = chain.slice(i + 2);
+    check('第 ' + (i + 1) + ' 格：觀戰者看得到作畫與題目', await watch.waitFor('window.DrawGuessApp.paint.count() >= 1 && document.getElementById("stage-overlay").hidden && document.getElementById("wordbar-mask").textContent === ' + JSON.stringify(answer), 4000, '觀戰').catch(() => false));
     check('第 ' + (i + 1) + ' 格：前面畫完的人與下一位看得到作畫', await (async () => {
       for (const o of viewers) {
         if (!(await o.waitFor('window.DrawGuessApp.paint.count() >= 1 && document.getElementById("stage-overlay").hidden', 4000, '看得到作畫').catch(() => false))) return false;
       }
       return true;
     })());
-    check('第 ' + (i + 1) + ' 格：再後面的人與觀戰者看不到筆畫與題目', await (async () => {
+    check('第 ' + (i + 1) + ' 格：再後面的人看不到筆畫與題目', await (async () => {
       for (const o of hiddenTo) {
         if (await o.eval('return window.DrawGuessApp.paint.count() > 0 || document.body.innerText.indexOf(' + JSON.stringify(answer) + ') >= 0;')) return false;
       }
@@ -386,7 +387,7 @@ async function telephoneGame(host, players, watch, tabs) {
     if (i === 0) {
       await sweep(me, '08-作畫-開頭');
       await sweep(chain[2], '09-等待-作畫中', { list: FIRST_HALF });
-      await sweep(watch, '09-等待-觀戰', { list: SECOND_HALF });
+      await sweep(watch, '09-觀戰-作畫中', { list: SECOND_HALF });
       await sweep(chain[1], '09-下一位-觀看', { list: FIRST_HALF });
     } else if (i === 1) {
       await sweep(me, '08-照畫');
@@ -409,7 +410,7 @@ async function telephoneGame(host, players, watch, tabs) {
   check('其他人與觀戰者可以翻看所有的畫', await watch.waitFor('document.querySelectorAll("#overlay-card .tp-browse").length === 1', 4000, '翻看').catch(() => false));
   await watch.click('#overlay-card [data-act=telephone-browse][data-d="1"]');
   check('翻看可以換下一張', await watch.eval('return /2 \\/ 3/.test(document.querySelector("#overlay-card .tp-browse-fig figcaption").textContent);'));
-  check('翻看時沒有題目', !(await watch.eval('return document.body.innerText.indexOf(' + JSON.stringify(answer) + ') >= 0;')));
+  check('玩家翻看時沒有題目', !(await chain[1].eval('return document.body.innerText.indexOf(' + JSON.stringify(answer) + ') >= 0;')));
   await sweep(guesser, '10-猜答案');
   await sweep(watch, '11-翻看全部的畫');
   await guesser.eval('var i=document.getElementById("guess-input"); i.value=' + JSON.stringify(answer) + '; i.dispatchEvent(new Event("input",{bubbles:true})); document.getElementById("guessbar").requestSubmit(); return 1;');

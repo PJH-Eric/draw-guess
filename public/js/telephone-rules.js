@@ -24,6 +24,7 @@
  * 隱藏資訊：一律走 toPublic(state, viewerId)。輪到的人只拿到上一格（開頭的人拿題目）；
  *   照畫的人只在換手 5 秒內拿得到上一張畫，開始作畫後就不給（憑記憶畫）；
  *   前面已經畫完的人與下一位可以即時看目前這一格作畫（watchersOf），再後面的人看不到；
+ *   觀戰者（含中途進來、下一輪才加入的人）全部都看得到：題目與每一格作畫的過程；
  *   作畫中其他人只拿到「輪到誰、剩幾秒」；最後一人猜時其他人可以翻看所有的畫（沒有題目）；
  *   偷看的畫只給猜的人；揭曉後才給整串。
  */
@@ -919,15 +920,21 @@
           view.you.canPeek = started && view.peekable.some(function (x) { return x.state === 'available'; });
           view.draft = cell.draft;
         }
-      } else if (role === 'waiting' && watchersOf(state).indexOf(viewerId) >= 0) {
-        /* 前面畫完的人與下一位：即時看目前這一格作畫（只有正在畫的這一張） */
+      } else if (cell.kind === 'draw' && (role === 'spectator' || (role === 'waiting' && watchersOf(state).indexOf(viewerId) >= 0))) {
+        /* 前面畫完的人與下一位：即時看目前這一格作畫（只有正在畫的這一張）；觀戰者每一格都看得到 */
         view.you.watching = true;
         view.strokes = cell.strokes;
       } else if (cell.kind === 'write') {
-        /* 等最後一人猜：其他人（含觀戰者）可以翻看這一輪所有的畫，看不到題目與正在打的字 */
+        /* 等最後一人猜：其他人與觀戰者可以翻看這一輪所有的畫，看不到正在打的字 */
         view.drawings = chain.cells.filter(function (c, i) { return c.kind === 'draw' && !c.skipped && c.done && i < state.stepNo; })
           .map(function (c) { return drawingOf(state, chain.cells.indexOf(c)); });
       }
+    }
+
+    /* 觀戰者全部都看得到：題目、每一格作畫的過程（不能聊天，不會暴雷） */
+    if (role === 'spectator' && state.phase === 'step' && state.wordId) {
+      var sw = word(state);
+      view.answer = sw ? sw.text : null;
     }
 
     if ((state.phase === 'reveal' || state.phase === 'over') && state.chain) {

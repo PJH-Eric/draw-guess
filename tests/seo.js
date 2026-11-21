@@ -43,9 +43,10 @@ try {
   assert.ok(built.includes('<title>' + cfg.title + '</title>') && cfg.title.includes('接力模式'), '主頁標題要有接力模式');
   assert.ok(ld.description.includes('接力模式'), '結構化資料描述要有接力模式');
   const gameplay = JSON.parse(fs.readFileSync(path.join(root, 'seo.gameplay.json'), 'utf8'));
-  assert.ok(cfg.title.includes('你出我畫他猜（Beta）') && ld.description.includes('你出我畫他猜（Beta）'), '主頁標題與結構化資料要有你出我畫他猜（Beta）');
-  assert.ok(gameplay['zh-Hant'].modes.includes('你出我畫他猜（Beta）') && gameplay['zh-Hans'].modes.includes('你出我画他猜（Beta）') &&
-    gameplay.en.modes.includes('Pick, Draw, Guess (Beta)'), '模式列表三語系都要有你出我畫他猜');
+  assert.ok(cfg.title.includes('畫圖傳話（Beta）') && ld.description.includes('畫圖傳話（Beta）'), '主頁標題與結構化資料要有畫圖傳話（Beta）');
+  assert.ok(!/你出我畫他猜/.test(built) && !/你出我畫他猜/.test(JSON.stringify(gameplay)), '已取消的你出我畫他猜不能再出現');
+  assert.ok(gameplay['zh-Hant'].modes.includes('畫圖傳話（Beta）') && gameplay['zh-Hans'].modes.includes('画图传话（Beta）') &&
+    gameplay.en.modes.includes('Draw Telephone (Beta)'), '模式列表三語系都要有畫圖傳話');
   assert.ok(gameplay['zh-Hant'].modes.includes('接力模式') && gameplay['zh-Hans'].modes.includes('接力模式') &&
     gameplay.en.modes.includes('Relay'), '模式列表三語系都要有接力模式');
   if (cfg.ogImage) {

@@ -238,16 +238,19 @@ function broadcastFeed(room, entry) {
 /** 新的一筆：只送增量，並附上筆數讓用戶端偵測漏收 */
 /**
  * 筆畫要送給誰：一般與接力模式全房都看得到；畫圖傳話的畫在揭曉前只送給畫的人自己
- * 與前面已經畫完的人（其他人連筆數都不送，免得猜到畫了多少）。
+ * 、前面已經畫完的人、下一位與觀戰者（其他人連筆數都不送，免得猜到畫了多少）。
  */
 function strokeTargets(room) {
   const all = socketsOf(room.code);
   if (!room.telephone) return { list: [...all], count: room.state ? room.state.strokes.length : 0 };
   const cell = room.state ? room.engine.currentCell(room.state) : null;
   if (!cell || cell.kind !== 'draw') return { list: [], count: 0 };
-  /* 前面已經畫完的人可以看後面的人作畫 */
+  /* 前面已經畫完的人與下一位可以看；觀戰者（含下一輪才加入的人）全部都看得到 */
   const ok = [cell.authorId].concat(room.engine.watchersOf(room.state));
-  return { list: [...all].filter((s) => ok.indexOf(s.data.clientId) >= 0), count: cell.strokes.length };
+  return {
+    list: [...all].filter((s) => ok.indexOf(s.data.clientId) >= 0 || room.engine.roleOf(room.state, s.data.clientId) === 'spectator'),
+    count: cell.strokes.length
+  };
 }
 
 function broadcastStroke(room, stroke) {

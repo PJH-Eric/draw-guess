@@ -1242,10 +1242,10 @@ I18N.register("zh-Hant", {
   "difficulty.3": "Hard"
 });
 
-I18N.register("zh-Hant", { "meta.description": "免費免下載的你畫我猜，輪流當畫家用畫筆、形狀與油漆桶畫出題目，猜中搶積分。新推出接力模式大家輪流接力作畫給一人猜，以及你出我畫他猜（Beta）三人輪流出題、作畫、猜題。支援觀戰，手機平板都能玩。", "tool.undoTitle": "復原（Ctrl+Z）", "tool.redoTitle": "重做（Ctrl+Y）" }).register("en", { "meta.description": "Draw clues and guess answers with friends online, or practice solo. Try Relay, where everyone draws in turns for one guesser, and Pick, Draw, Guess (Beta), where three players take turns picking, drawing and guessing. Free on phones, tablets and computers.", "tool.undoTitle": "Undo (Ctrl+Z)", "tool.redoTitle": "Redo (Ctrl+Y)" });
+I18N.register("zh-Hant", { "meta.description": "免費免下載的你畫我猜，輪流當畫家用畫筆、形狀與油漆桶畫出題目，猜中搶積分。新推出接力模式大家輪流接力作畫給一人猜，以及畫圖傳話（Beta）一張畫接一張傳下去、最後一人猜答案再揭曉整串。支援觀戰，手機平板都能玩。", "tool.undoTitle": "復原（Ctrl+Z）", "tool.redoTitle": "重做（Ctrl+Y）" }).register("en", { "meta.description": "Draw clues and guess answers with friends online, or practice solo. Try Relay, where everyone draws in turns for one guesser, and Draw Telephone (Beta), where each player redraws the previous drawing and the last one guesses before the whole chain is revealed. Free on phones, tablets and computers.", "tool.undoTitle": "Undo (Ctrl+Z)", "tool.redoTitle": "Redo (Ctrl+Y)" });
 
-I18N.register("zh-Hant", { "meta.title": "你畫我猜｜免費線上多人畫圖猜謎・接力模式・你出我畫他猜（Beta）", "meta.desc": "免費免下載的你畫我猜，輪流當畫家用畫筆、形狀與油漆桶畫出題目，猜中搶積分。新推出接力模式大家輪流接力作畫給一人猜，以及你出我畫他猜（Beta）三人輪流出題、作畫、猜題。支援觀戰，手機平板都能玩。" })
-  .register("en", { "meta.title": "Draw & Guess | Free Online Drawing Game + Relay & Pick, Draw, Guess (Beta)", "meta.desc": "Draw clues and guess answers with friends online, or practice solo. Try Relay, where everyone draws in turns for one guesser, and Pick, Draw, Guess (Beta), where three players take turns picking, drawing and guessing. Free on phones, tablets and computers." });
+I18N.register("zh-Hant", { "meta.title": "你畫我猜｜免費線上多人畫圖猜謎・接力模式・畫圖傳話（Beta）", "meta.desc": "免費免下載的你畫我猜，輪流當畫家用畫筆、形狀與油漆桶畫出題目，猜中搶積分。新推出接力模式大家輪流接力作畫給一人猜，以及畫圖傳話（Beta）一張畫接一張傳下去、最後一人猜答案再揭曉整串。支援觀戰，手機平板都能玩。" })
+  .register("en", { "meta.title": "Draw & Guess | Free Online Drawing Game + Relay & Draw Telephone (Beta)", "meta.desc": "Draw clues and guess answers with friends online, or practice solo. Try Relay, where everyone draws in turns for one guesser, and Draw Telephone (Beta), where each player redraws the previous drawing and the last one guesses before the whole chain is revealed. Free on phones, tablets and computers." });
 
 // 由繁體中文介面字典轉換；動態參數（暱稱、分數等）維持原值。
 (function (root) {
@@ -1861,11 +1861,11 @@ I18N.register("zh-Hant", { "meta.title": "你畫我猜｜免費線上多人畫�
     "difficulty.1": "简单",
     "difficulty.2": "普通",
     "difficulty.3": "困难",
-    "meta.description": "免费免下载的你画我猜，轮流当画家用画笔、形状与油漆桶画出题目，猜中抢积分。新推出接力模式大家轮流接力作画给一人猜，以及你出我画他猜（Beta）三人轮流出题、作画、猜题。支援观战，手机平板都能玩。",
+    "meta.description": "免费免下载的你画我猜，轮流当画家用画笔、形状与油漆桶画出题目，猜中抢积分。新推出接力模式大家轮流接力作画给一人猜，以及画图传话（Beta）一张画接一张传下去、最后一人猜答案再揭晓整串。支援观战，手机平板都能玩。",
     "tool.undoTitle": "复原（Ctrl+Z）",
     "tool.redoTitle": "重做（Ctrl+Y）",
-    "meta.title": "你画我猜｜免费线上多人画图猜谜・接力模式・你出我画他猜（Beta）",
-    "meta.desc": "免费免下载的你画我猜，轮流当画家用画笔、形状与油漆桶画出题目，猜中抢积分。新推出接力模式大家轮流接力作画给一人猜，以及你出我画他猜（Beta）三人轮流出题、作画、猜题。支援观战，手机平板都能玩。"
+    "meta.title": "你画我猜｜免费线上多人画图猜谜・接力模式・画图传话（Beta）",
+    "meta.desc": "免费免下载的你画我猜，轮流当画家用画笔、形状与油漆桶画出题目，猜中抢积分。新推出接力模式大家轮流接力作画给一人猜，以及画图传话（Beta）一张画接一张传下去、最后一人猜答案再揭晓整串。支援观战，手机平板都能玩。"
   };
   hans['lobby.onlineCount'] = '当前在线：{n} 人';
   if (root.I18N) root.I18N.register('zh-Hans', hans);
@@ -2497,7 +2497,7 @@ I18N.register('zh-Hant', {
   'telephone.browse.prev': '上一張',
   'telephone.browse.next': '下一張',
   'telephone.browse.pos': '第 {i} / {n} 張・{name}',
-  'telephone.browse.note': '題目還沒公布，先看看大家畫成什麼樣子。',
+  'telephone.browse.note': '看看大家一路畫成什麼樣子。',
   'telephone.hintName.1': '字數',
   'telephone.hintName.2': '種類',
   'telephone.hintName.3': '揭一個字',
@@ -2535,10 +2535,11 @@ I18N.register('zh-Hant', {
   'telephone.peek.prev': '上一張（{name}）',
   'telephone.peek.seen': '{name} 的畫',
   'telephone.peek.btn': '偷看 {name} ×{f}',
+  'telephone.peek.aria': '偷看 {name} 的畫，這一輪得分 ×{f}',
   'telephone.tip.guesser': '這是上一張畫，猜猜看是什麼，把答案寫在下面。',
   'telephone.tip.handoff': '換手倒數中，等「開始！」再畫。',
   'telephone.tip.wait': '還沒輪到你。',
-  'telephone.can.spectator': '觀戰中：傳話中看不到畫，等最後一人猜時可以翻看全部的畫。',
+  'telephone.can.spectator': '觀戰中：題目和每個人作畫的過程都看得到。',
   'telephone.can.starter': '從三個題目裡挑一個，挑好就開始畫。',
   'telephone.can.wait': '等輪到你：輪到時只看得到上一張畫。',
   'telephone.can.reveal': '看看整串怎麼走樣，對喜歡的格子按愛心或大笑。',
@@ -2551,6 +2552,7 @@ I18N.register('zh-Hant', {
   'telephone.answer.wait': '換手倒數中…',
   'telephone.hand.memorize': '開始後這張畫就會收起來，畫完揭曉時才看得到。',
   'telephone.word.watch': '觀看',
+  'telephone.word.spectateWrite': '{name} 正在猜',
   'telephone.word.watchMask': '{name} 正在畫',
   'telephone.tip.watching': '現在只能看，輪到你時才能畫。',
   'telephone.can.watch': '可以即時看正在畫的人；下一位先看著，輪到時憑記憶照畫。',
@@ -2621,7 +2623,7 @@ I18N.register('zh-Hant', {
   'telephone.browse.prev': '上一张',
   'telephone.browse.next': '下一张',
   'telephone.browse.pos': '第 {i} / {n} 张・{name}',
-  'telephone.browse.note': '题目还没公布，先看看大家画成什么样子。',
+  'telephone.browse.note': '看看大家一路画成什么样子。',
   'telephone.hintName.1': '字数',
   'telephone.hintName.2': '种类',
   'telephone.hintName.3': '揭一个字',
@@ -2659,10 +2661,11 @@ I18N.register('zh-Hant', {
   'telephone.peek.prev': '上一张（{name}）',
   'telephone.peek.seen': '{name} 的画',
   'telephone.peek.btn': '偷看 {name} ×{f}',
+  'telephone.peek.aria': '偷看 {name} 的画，这一轮得分 ×{f}',
   'telephone.tip.guesser': '这是上一张画，猜猜看是什么，把答案写在下面。',
   'telephone.tip.handoff': '换手倒数中，等「开始！」再画。',
   'telephone.tip.wait': '还没轮到你。',
-  'telephone.can.spectator': '观战中：传话中看不到画，等最后一人猜时可以翻看全部的画。',
+  'telephone.can.spectator': '观战中：题目和每个人作画的过程都看得到。',
   'telephone.can.starter': '从三个题目里挑一个，挑好就开始画。',
   'telephone.can.wait': '等轮到你：轮到时只看得到上一张画。',
   'telephone.can.reveal': '看看整串怎么走样，对喜欢的格子按爱心或大笑。',
@@ -2675,6 +2678,7 @@ I18N.register('zh-Hant', {
   'telephone.answer.wait': '换手倒数中…',
   'telephone.hand.memorize': '开始后这张画就会收起来，画完揭晓时才看得到。',
   'telephone.word.watch': '观看',
+  'telephone.word.spectateWrite': '{name} 正在猜',
   'telephone.word.watchMask': '{name} 正在画',
   'telephone.tip.watching': '现在只能看，轮到你时才能画。',
   'telephone.can.watch': '可以实时看正在画的人；下一位先看着，轮到时凭记忆照画。',
@@ -2745,7 +2749,7 @@ I18N.register('zh-Hant', {
   'telephone.browse.prev': 'Previous drawing',
   'telephone.browse.next': 'Next drawing',
   'telephone.browse.pos': '{i} / {n} · {name}',
-  'telephone.browse.note': 'The word is still secret. See how the drawings changed.',
+  'telephone.browse.note': 'See how the drawings changed along the way.',
   'telephone.hintName.1': 'letters',
   'telephone.hintName.2': 'category',
   'telephone.hintName.3': 'one letter',
@@ -2783,10 +2787,11 @@ I18N.register('zh-Hant', {
   'telephone.peek.prev': 'Previous ({name})',
   'telephone.peek.seen': '{name}',
   'telephone.peek.btn': 'Peek {name} ×{f}',
+  'telephone.peek.aria': 'Peek at {name}\'s drawing. This round scores ×{f}',
   'telephone.tip.guesser': 'This is the previous drawing. Write your guess below.',
   'telephone.tip.handoff': 'Wait for the countdown to say Go!',
   'telephone.tip.wait': 'It is not your turn yet.',
-  'telephone.can.spectator': 'Watching: drawings stay hidden until the last player guesses, then you can browse them.',
+  'telephone.can.spectator': 'Spectating: you can see the word and every drawing as it is made.',
   'telephone.can.starter': 'Pick one of the three words, then start drawing.',
   'telephone.can.wait': 'Wait for your turn. You will only see the previous drawing.',
   'telephone.can.reveal': 'See how the word changed, and react to your favorite turns.',
@@ -2799,6 +2804,7 @@ I18N.register('zh-Hant', {
   'telephone.answer.wait': 'Get ready…',
   'telephone.hand.memorize': 'This drawing is hidden once you start. You will see it again at the reveal.',
   'telephone.word.watch': 'Watching',
+  'telephone.word.spectateWrite': '{name} is guessing',
   'telephone.word.watchMask': '{name} is drawing',
   'telephone.tip.watching': 'You can only watch for now. You draw on your turn.',
   'telephone.can.watch': 'Watch the current drawing live. If you are next, memorize it for your turn.',

@@ -854,10 +854,10 @@ async function runTelephone() {
   for (let i = 0; i < 3; i++) {
     const me = order[i];
     check('第 ' + (i + 1) + ' 格換手後可以畫', await me.until((x) => x.view.game.stepNo === i && x.view.you.can.draw, 6000));
-    for (const x of [a, b, c, d]) x.strokes = [];
+    for (const x of [a, b, c, d, w]) x.strokes = [];
     me.emit('room:stroke', { stroke: { t: 'pen', c: 0, w: 1, p: [100, 100, 300 + i * 10, 300] } });
-    check('第 ' + (i + 1) + ' 格筆畫只送給畫的人、前面畫完的人與下一位', await me.until((x) => x.strokes.length > 0, 3000) && (await sleep(300),
-      order.slice(0, i + 2).every((x) => x.strokes.length > 0) && order.slice(i + 2).every((x) => x.strokes.length === 0) && w.strokes.length === 0));
+    check('第 ' + (i + 1) + ' 格筆畫只送給畫的人、前面畫完的人、下一位與觀戰者', await me.until((x) => x.strokes.length > 0, 3000) && (await sleep(300),
+      order.slice(0, i + 2).every((x) => x.strokes.length > 0) && order.slice(i + 2).every((x) => x.strokes.length === 0) && w.strokes.length > 0));
     if (i > 0) check('第 ' + (i + 1) + ' 格開始作畫後看不到上一張畫', me.view.game.prev && me.view.game.prev.strokes === null);
     const other = order[(i + 1) % 4];
     other.emit('room:stroke', { stroke: { t: 'pen', c: 0, w: 1, p: [1, 1, 2, 2] } });
@@ -882,11 +882,12 @@ async function runTelephone() {
   /* 字數 ×0.6、偷看第一張（4 人可偷看 2 張）×0.3 → 0.18 */
   const pts = a.view.game.chain.cells.map((x) => x.points).join();
   check('依順序遞減並乘提示倍數', pts === '54,42,30,18', pts);
-  const leaked = [a, b, c, d, w].some((x) => x.seen.some((s) => {
+  const leaked = [a, b, c, d].some((x) => x.seen.some((s) => {
     const v = JSON.parse(s);
     return v.game && (v.game.phase === 'picking' || v.game.phase === 'step') && v.you && v.you.id !== starter.id && s.includes(ans);
   }));
-  check('揭曉前除了開頭的人沒人收到題目', !leaked);
+  check('揭曉前玩家裡只有開頭的人收到題目', !leaked);
+  check('觀戰者傳話中就看得到題目', w.seen.some((s) => { const v = JSON.parse(s); return v.game && v.game.phase === 'step' && v.game.answer === ans; }));
   check('沒人收到草稿', ![a, b, c, w].some((x) => x.seen.some((s) => s.includes('草稿'))));
   b.emit('room:chat', { text: '笑死' });
   check('揭曉時可以聊天', await a.until((x) => (x.view.room.chat || []).some((m) => m.text === '笑死'), 3000));
