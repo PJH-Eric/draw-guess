@@ -210,6 +210,38 @@ async function sweep(cdp, name, opts) {
     if (o.instructions || lay.instructions) {
       check(name + '／' + v.name + '：說明文字完整', lay.instructions > 0 && lay.clippedText.length === 0, lay.clippedText.join(' | '));
     }
+    if (o.reveal) {
+      const reveal = await cdp.eval(`
+        const chain = document.querySelector('#overlay-card .tp-chain');
+        const answer = chain.querySelector('.tp-cell-write');
+        const bounds = chain.getBoundingClientRect();
+        const result = answer.getBoundingClientRect();
+        const drawings = Array.from(chain.querySelectorAll('.tp-cell-draw'));
+        const cards = drawings.map(function (cell) {
+          return {card: cell.getBoundingClientRect(), picture: cell.querySelector('.tp-cell-pic .tp-pic').getBoundingClientRect()};
+        });
+        const sameRow = function (a, b) { return Math.abs(a.card.top - b.card.top) <= 1; };
+        return {
+          fullAnswer: Math.abs(result.left - bounds.left) <= 1 && Math.abs(result.right - bounds.right) <= 1 &&
+            cards.every(function (item) { return item.card.bottom <= result.top; }),
+          drawings: cards.length,
+          rows: cards.filter(function (item, idx) { return !cards.slice(0, idx).some(function (prev) { return sameRow(prev, item); }); }).length,
+          aligned: cards.every(function (a) {
+            return a.picture.width <= 197 && cards.every(function (b) {
+              return !sameRow(a, b) ||
+                (Math.abs(a.picture.top - b.picture.top) <= 1 && Math.abs(a.picture.width - b.picture.width) <= 1);
+            });
+          }),
+          reactionsFit: Array.from(chain.querySelectorAll('.tp-reacts')).every(function (reactions) {
+            return reactions.scrollWidth <= reactions.clientWidth + 1 &&
+              Array.from(reactions.querySelectorAll('button')).every(function (button) { return button.offsetHeight >= 44; });
+          })
+        };
+      `);
+      check(name + '／' + v.name + '：畫作對齊、答案獨立成列、表情按鈕完整',
+        reveal.fullAnswer && reveal.drawings === 3 && (v.width < 768 || reveal.rows === 1) &&
+        reveal.aligned && reveal.reactionsFit, JSON.stringify(reveal));
+    }
     if (o.roomCreate) {
       const modal = await cdp.eval(`
         const panel = document.getElementById('room-create-panel');
@@ -512,7 +544,7 @@ async function telephoneGame(host, players, watch, tabs) {
   await players[1].click('#overlay-card .tp-cell-draw [data-act=telephone-react][data-kind=laugh]');
   check('可以對別人的格子按大笑', await host.waitFor(GAME + 'return g.chain && g.chain.cells[0].counts.laugh === 1;', 4000, '表情').catch(() => false));
   check('自己那格的表情按鈕停用', await host.eval('return document.querySelector("#overlay-card .tp-cell-draw [data-act=telephone-react]").disabled;'));
-  await sweep(host, '12-揭曉', { instructions: true });
+  await sweep(host, '12-揭曉', { instructions: true, reveal: true });
 
   await host.waitFor('window.DrawGuessApp.view.room.phase === "finished"', 40000, '結算');
   await host.waitFor('document.querySelectorAll("#overlay-card .gal-item").length >= 1', 8000, '畫廊').catch(() => {});

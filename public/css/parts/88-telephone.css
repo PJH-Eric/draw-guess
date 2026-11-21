@@ -205,32 +205,43 @@ body.lobby-telephone #lobby-title{color:var(--tp-t)}
 .tp-browse-btn{flex:0 0 auto;min-width:44px;min-height:44px;font-size:1.4rem;line-height:1}
 
 /* ---------- 揭曉整串 ---------- */
-/* 格子排成網格：寬的卡片一排放三、四格，手機兩格；題目那一格橫跨整排 */
-.tp-chain{list-style:none;margin:6px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
-.tp-chain .tp-cell-word{grid-column:1 / -1}
-.tp-cell{display:flex;flex-direction:column;min-width:0}
-.tp-cell-write{justify-content:center}
-.tp-cell{border:2px solid var(--line);border-radius:14px;background:var(--surface);padding:8px}
+.overlay-card.tp-reveal-card{width:min(100%,780px);container-type:inline-size}
+.tp-chain{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.tp-cell{
+  display:flex;flex:1 1 9rem;flex-direction:column;min-width:0;
+  border:2px solid var(--line);border-radius:14px;background:var(--surface);padding:8px;
+}
+.tp-cell-word,.tp-cell-write{flex-basis:100%}
 .tp-cell-word{text-align:center;background:var(--tp-tint);border-color:var(--tp-d)}
 .tp-cell-word .revealword{color:var(--tp-t);margin:2px 0;overflow-wrap:anywhere}
-.tp-cell-head{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.tp-cell-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px}
 .tp-cell-step{
   flex:0 0 auto;min-width:24px;height:24px;padding:0 6px;border-radius:12px;background:var(--tp);border:2px solid var(--tp-d);
   display:inline-flex;align-items:center;justify-content:center;font-size:.74rem;font-weight:900
 }
 .tp-cell-word .tp-cell-step{display:inline-flex;margin:0 auto}
 .tp-cell-name{font-weight:900;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tp-cell-stand{font-size:.7rem;font-weight:800;color:var(--ink-soft)}
-.tp-cell-pts{margin-left:auto;font-weight:900;font-size:.85rem;color:var(--ink-soft)}
+.tp-cell-stand{display:block;margin-top:4px;font-size:.7rem;font-weight:800;color:var(--ink-soft);overflow-wrap:anywhere}
+.tp-cell-pts{font-weight:900;font-size:.85rem;color:var(--ink-soft);white-space:nowrap}
 .tp-cell-pts[data-on=true]{color:var(--ok)}
-.tp-cell-pic{display:flex;justify-content:center}
-.tp-cell-pic .tp-pic{width:100%}
-.tp-cell-mid{margin:0 0 6px;text-align:center;font-size:.74rem;font-weight:800;color:var(--ok)}
-.tp-cell-skip{margin:0;text-align:center;color:var(--ink-soft);font-weight:700}
-.tp-cell-answer{text-align:center;font-size:1.3rem;font-weight:900;overflow-wrap:anywhere}
+.tp-cell-pic{display:flex;justify-content:center;margin-top:6px}
+.tp-cell-pic .tp-pic{width:min(100%,196px)}
+.tp-reveal-card .tp-cell-mid{margin:5px 0 0;text-align:center;font-size:.74rem;font-weight:800;color:var(--ok);overflow-wrap:anywhere}
+.tp-reveal-card .tp-cell-skip{margin:4px 0 0;text-align:center;color:var(--ink-soft);font-weight:700}
+.tp-cell-outcome{min-width:0;text-align:center;overflow-wrap:anywhere}
+.tp-cell-answer{font-size:1.2rem;font-weight:900}
+.tp-cell-write{gap:4px;background:var(--tp-tint)}
 .tp-cell-write[data-hit=true]{border-color:var(--ok)}
+.tp-reveal-card .tp-cell-write .relay-result{margin:0}
 .tp-reacts{display:flex;justify-content:center;gap:6px;margin-top:auto;padding-top:6px}
 .tp-react{min-width:0;flex:1 1 0;max-width:72px;min-height:44px;padding:4px 6px}
+@container (min-width:500px){
+  .tp-cell-write:not([data-skipped]){
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) auto;align-items:center;gap:12px;
+  }
+  .tp-cell-write .tp-reacts{margin:0;padding:0}
+  .tp-cell-write .tp-react{flex:0 0 auto}
+}
 
 /* ---------- 結算：最好笑 ---------- */
 .tp-award{border-color:var(--tp-d);background:var(--tp-tint)}

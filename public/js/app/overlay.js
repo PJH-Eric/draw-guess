@@ -1,17 +1,17 @@
 /* ===== app/overlay.js — 疊層卡片：房間設定、選題、公布答案、結算 ===== */
 
-import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=d1ec2bae26';
-import { askLeaveRoom, makeModal, modals } from './modal.js?v=d1ec2bae26';
-import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=d1ec2bae26';
-import { soloRefresh, soloStep, startSolo } from './solo.js?v=d1ec2bae26';
-import { renderRecent } from './feed.js?v=d1ec2bae26';
-import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=d1ec2bae26';
-import { PHASE_LABEL, moodOf } from './render.js?v=d1ec2bae26';
-import { copyText, newInvite, revokeInvite } from './game-settings.js?v=d1ec2bae26';
-import { enterOnlineRoom, leaveGame, lobbyModeKey, roomRuleChips, saveNick } from './lobby.js?v=d1ec2bae26';
-import { hideRelayUi, isRelayGame, relayAwardsHtml, relayCanDo, relayBarMode, relayOverlayHtml, relayPhaseLabel, relayToolsShown, relayVote, renderRelayAssist, renderRelayBanner } from './relay.js?v=d1ec2bae26';
-import { hideTelephoneUi, isTelephoneGame, renderTelephoneAssist, telephoneAwardsHtml, telephoneCanDo, telephoneOverlayAct, telephoneOverlayHtml, telephonePhaseLabel, telephoneRoleLabel, telephoneToolsShown } from './telephone.js?v=d1ec2bae26';
-import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=d1ec2bae26';
+import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=632c5ea426';
+import { askLeaveRoom, makeModal, modals } from './modal.js?v=632c5ea426';
+import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=632c5ea426';
+import { soloRefresh, soloStep, startSolo } from './solo.js?v=632c5ea426';
+import { renderRecent } from './feed.js?v=632c5ea426';
+import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=632c5ea426';
+import { PHASE_LABEL, moodOf } from './render.js?v=632c5ea426';
+import { copyText, newInvite, revokeInvite } from './game-settings.js?v=632c5ea426';
+import { enterOnlineRoom, leaveGame, lobbyModeKey, roomRuleChips, saveNick } from './lobby.js?v=632c5ea426';
+import { hideRelayUi, isRelayGame, relayAwardsHtml, relayCanDo, relayBarMode, relayOverlayHtml, relayPhaseLabel, relayToolsShown, relayVote, renderRelayAssist, renderRelayBanner } from './relay.js?v=632c5ea426';
+import { hideTelephoneUi, isTelephoneGame, renderTelephoneAssist, telephoneAwardsHtml, telephoneCanDo, telephoneOverlayAct, telephoneOverlayHtml, telephonePhaseLabel, telephoneRoleLabel, telephoneToolsShown } from './telephone.js?v=632c5ea426';
+import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=632c5ea426';
 
 var w = window;
 
@@ -53,6 +53,7 @@ export function renderOverlay() {
   var isSetup = !!html && !!v.room && !v.room.closed && v.room.phase === 'waiting';
   card.classList.toggle('setup-card', isSetup);
   card.classList.toggle('tp-flow-card', !!v.room && v.room.mode === 'telephone');
+  card.classList.toggle('tp-reveal-card', !!html && !isSetup && !(v.room && v.room.closed) && isTelephoneGame(g) && g.phase === 'reveal');
   card.classList.toggle('relay-flow-card', !!v.room && v.room.mode === 'relay');
   D.body.classList.toggle('setup-open', isSetup);
 

@@ -10,9 +10,9 @@
  * 前面已經畫完的人可以在畫布上即時看後面的人作畫；其他人在傳話中看不到任何畫，畫布被等待卡蓋住；等最後一人猜時，等待卡改成可以左右翻看所有的畫。
  */
 
-import { $, D, S, Sound, app, esc, secsLeft } from './core.js?v=d1ec2bae26';
-import { strokesThumb } from './gallery.js?v=d1ec2bae26';
-import { chatBlockHtml } from './overlay.js?v=d1ec2bae26';
+import { $, D, S, Sound, app, esc, secsLeft } from './core.js?v=632c5ea426';
+import { strokesThumb } from './gallery.js?v=632c5ea426';
+import { chatBlockHtml } from './overlay.js?v=632c5ea426';
 
 var w = window;
 var REACT = { heart: '❤️', laugh: '😂' };
@@ -189,23 +189,25 @@ export function chainHtml(g, chain) {
   var rows = '<li class="tp-cell tp-cell-word"><span class="tp-cell-step">' + esc(t('telephone.reveal.word')) + '</span>' +
     '<div class="revealword">' + esc(chain.word || '—') + '</div></li>';
   chain.cells.forEach(function (c, i) {
+    var stand = c.stand ? '<small class="tp-cell-stand">' + esc(t('telephone.reveal.stand', { name: c.stand })) + '</small>' : '';
     var head = '<div class="tp-cell-head"><span class="tp-cell-step">' + (i + 1) + '</span>' +
       '<b class="tp-cell-name">' + esc(c.authorName) + '</b>' +
-      (c.stand ? '<small class="tp-cell-stand">' + esc(t('telephone.reveal.stand', { name: c.stand })) + '</small>' : '') +
       ptsHtml(c, chain.hit) + '</div>';
     if (c.skipped) {
-      rows += '<li class="tp-cell" data-skipped="true">' + head + '<p class="tp-cell-skip">' + esc(t('telephone.reveal.skipped')) + '</p></li>';
+      rows += '<li class="tp-cell' + (c.kind === 'write' ? ' tp-cell-write' : '') + '" data-skipped="true">' + head +
+        '<p class="tp-cell-skip">' + esc(t('telephone.reveal.skipped')) + '</p>' + stand + '</li>';
       return;
     }
     if (c.kind === 'draw') {
       var midTag = c.midHit ? '<p class="tp-cell-mid">' + esc(t('telephone.reveal.midHit', { n: c.midPts, wrong: c.midWrong })) + '</p>' : '';
-      rows += '<li class="tp-cell tp-cell-draw">' + head + midTag +
+      rows += '<li class="tp-cell tp-cell-draw">' + head +
         '<div class="tp-cell-pic">' + pictureHtml(g, 'r' + chain.roundNo + ':' + i, c.strokes, 240, t('telephone.alt.drawing', { name: c.authorName })) + '</div>' +
-        reactBtns(c) + '</li>';
+        stand + midTag + reactBtns(c) + '</li>';
     } else {
-      rows += '<li class="tp-cell tp-cell-write" data-hit="' + chain.hit + '">' + head +
-        '<div class="tp-cell-answer">' + (c.text ? '「' + esc(c.text) + '」' : esc(t('telephone.reveal.blankAnswer'))) + '</div>' +
-        '<p class="relay-result" data-hit="' + chain.hit + '">' + esc(t(chain.hit ? 'telephone.reveal.hit' : 'telephone.reveal.miss')) + '</p>' +
+      rows += '<li class="tp-cell tp-cell-write" data-hit="' + chain.hit + '"><div>' + head + stand + '</div>' +
+        '<div class="tp-cell-outcome"><div class="tp-cell-answer">' +
+        (c.text ? '「' + esc(c.text) + '」' : esc(t('telephone.reveal.blankAnswer'))) + '</div>' +
+        '<p class="relay-result" data-hit="' + chain.hit + '">' + esc(t(chain.hit ? 'telephone.reveal.hit' : 'telephone.reveal.miss')) + '</p></div>' +
         reactBtns(c) + '</li>';
     }
   });
