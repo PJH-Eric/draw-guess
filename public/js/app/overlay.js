@@ -1,17 +1,17 @@
 /* ===== app/overlay.js — 疊層卡片：房間設定、選題、公布答案、結算 ===== */
 
-import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=df4cf5d8fd';
-import { askLeaveRoom, makeModal, modals } from './modal.js?v=df4cf5d8fd';
-import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=df4cf5d8fd';
-import { soloRefresh, soloStep, startSolo } from './solo.js?v=df4cf5d8fd';
-import { renderRecent } from './feed.js?v=df4cf5d8fd';
-import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=df4cf5d8fd';
-import { PHASE_LABEL, moodOf } from './render.js?v=df4cf5d8fd';
-import { copyText, newInvite, revokeInvite } from './game-settings.js?v=df4cf5d8fd';
-import { enterOnlineRoom, leaveGame, lobbyModeKey, roomRuleChips, saveNick } from './lobby.js?v=df4cf5d8fd';
-import { hideRelayUi, isRelayGame, relayAwardsHtml, relayCanDo, relayBarMode, relayOverlayHtml, relayPhaseLabel, relayToolsShown, relayVote, renderRelayAssist, renderRelayBanner } from './relay.js?v=df4cf5d8fd';
-import { hideTelephoneUi, isTelephoneGame, renderTelephoneAssist, telephoneAwardsHtml, telephoneCanDo, telephoneOverlayAct, telephoneOverlayHtml, telephonePhaseLabel, telephoneRoleLabel, telephoneToolsShown } from './telephone.js?v=df4cf5d8fd';
-import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=df4cf5d8fd';
+import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=339dfe2aa4';
+import { askLeaveRoom, makeModal, modals } from './modal.js?v=339dfe2aa4';
+import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=339dfe2aa4';
+import { soloRefresh, soloStep, startSolo } from './solo.js?v=339dfe2aa4';
+import { renderRecent } from './feed.js?v=339dfe2aa4';
+import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=339dfe2aa4';
+import { PHASE_LABEL, moodOf } from './render.js?v=339dfe2aa4';
+import { copyText, newInvite, revokeInvite } from './game-settings.js?v=339dfe2aa4';
+import { enterOnlineRoom, leaveGame, lobbyModeKey, roomRuleChips, saveNick } from './lobby.js?v=339dfe2aa4';
+import { hideRelayUi, isRelayGame, relayAwardsHtml, relayCanDo, relayBarMode, relayOverlayHtml, relayPhaseLabel, relayToolsShown, relayVote, renderRelayAssist, renderRelayBanner } from './relay.js?v=339dfe2aa4';
+import { hideTelephoneUi, isTelephoneGame, renderTelephoneAssist, telephoneAwardsHtml, telephoneCanDo, telephoneOverlayAct, telephoneOverlayHtml, telephonePhaseLabel, telephoneRoleLabel, telephoneToolsShown } from './telephone.js?v=339dfe2aa4';
+import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=339dfe2aa4';
 
 var w = window;
 
@@ -258,6 +258,7 @@ export function renderRoomCreateOptions() {
   fillSelect('room-create-diff', DIFF_CHOICES, c.diff);
   /* 一般房、接力房與畫圖傳話房共用同一個彈窗：只顯示這個模式用得到的欄位 */
   var mode = c.mode === 'relay' || c.mode === 'telephone' ? c.mode : 'classic';
+  $('room-create-panel').dataset.mode = mode;
   var only = D.querySelectorAll('#room-create-modal .classic-only, #room-create-modal .relay-only, #room-create-modal .telephone-only');
   for (var i = 0; i < only.length; i++) {
     only[i].hidden = !only[i].classList.contains(mode + '-only');

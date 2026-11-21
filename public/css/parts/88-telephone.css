@@ -6,6 +6,128 @@
   --tp:#FFB8CF; --tp-d:#E88CAA; --tp-t:#A8456A; --tp-tint:#FFEFF4;
 }
 
+/* 開房：寬版把房間資料與規則並排，窄版保留兩欄規則和固定操作列。 */
+#room-create-panel[data-mode=telephone]{
+  width:min(100%,760px);
+  max-height:min(820px,calc(100dvh - 32px));
+}
+.room-create-panel[data-mode=telephone] > .settings-head{
+  background:linear-gradient(180deg,var(--tp-tint),var(--paper));
+}
+.room-create-panel[data-mode=telephone] > .settings-head h2{
+  min-width:0;
+  color:var(--tp-t);
+  letter-spacing:0;
+  overflow-wrap:anywhere;
+}
+.room-create-panel[data-mode=telephone] > .settings-head .settings-badge{
+  background:var(--tp);
+  box-shadow:0 3px 0 var(--tp-d);
+}
+.room-create-panel[data-mode=telephone] > .settings-body{
+  display:grid;
+  gap:10px;
+  align-content:start;
+  align-items:start;
+}
+.room-create-panel[data-mode=telephone] > .settings-body .settings-group{
+  min-width:0;
+  margin:0;
+}
+.room-create-panel[data-mode=telephone] > .settings-body .settings-group h3{
+  margin-bottom:0;
+  color:var(--tp-t);
+}
+.room-create-panel[data-mode=telephone] > .settings-body .settings-group .gico{
+  background:var(--tp-tint);
+}
+.room-create-panel[data-mode=telephone] > .settings-body .setting-text{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:4px;
+  align-content:start;
+}
+.room-create-panel[data-mode=telephone] > .settings-body .setting-text input{
+  width:100%;
+}
+.room-create-panel[data-mode=telephone] > .settings-body .create-room-rules{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+.room-create-panel[data-mode=telephone] .create-room-rules .setting-text{
+  gap:3px;
+  padding:0;
+}
+.room-create-panel[data-mode=telephone] .create-room-rules .setting-text b,
+.room-create-panel[data-mode=telephone] .create-rules .rule-field > span{
+  color:var(--ink-soft);
+  font-size:.78rem;
+}
+.room-create-panel[data-mode=telephone] .create-room-rules h3,
+.room-create-panel[data-mode=telephone] .create-rules{
+  grid-column:1 / -1;
+}
+.room-create-panel[data-mode=telephone] .create-rules{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  padding:0 0 6px;
+}
+#room-create-panel[data-mode=telephone] .dropdown-button{
+  gap:6px;
+  padding-inline:10px;
+  font-size:.875rem;
+}
+#room-create-panel[data-mode=telephone] .dropdown-button span{
+  white-space:normal;
+  overflow-wrap:normal;
+}
+.room-create-panel[data-mode=telephone] .room-create-invite-note{
+  grid-column:1 / -1;
+  margin:0;
+  border-color:var(--tp-d);
+  background:var(--tp-tint);
+  color:var(--tp-t);
+}
+.room-create-panel[data-mode=telephone] > .settings-foot .btn3d{
+  min-width:0;
+  white-space:normal;
+}
+@media (min-width:620px){
+  .room-create-panel[data-mode=telephone] > .settings-body{
+    grid-template-columns:minmax(0,1fr) minmax(0,1.48fr);
+    grid-template-areas:"details rules" "invite rules";
+    grid-template-rows:auto 1fr;
+  }
+  .room-create-panel[data-mode=telephone] .create-room-details{grid-area:details}
+  .room-create-panel[data-mode=telephone] .create-room-rules{grid-area:rules}
+  .room-create-panel[data-mode=telephone] .room-create-invite-note{grid-area:invite}
+}
+@media (max-width:480px), (max-height:480px) and (orientation:landscape){
+  #room-create-modal:has([data-mode=telephone]){
+    padding:8px;
+  }
+  #room-create-panel[data-mode=telephone]{
+    max-height:calc(100dvh - 16px);
+  }
+  .room-create-panel[data-mode=telephone] > .settings-body{
+    padding:8px;
+  }
+  .room-create-panel[data-mode=telephone] > .settings-head h2{
+    font-size:1.1rem;
+  }
+  .room-create-panel[data-mode=telephone] > .settings-foot{
+    padding:6px 10px calc(6px + var(--safe-b));
+  }
+}
+@media (max-width:480px){
+  .room-create-panel[data-mode=telephone] > .settings-foot{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);
+  }
+}
+
 /* 大廳：說明條與標題色 */
 .telephone-lobby-note{border-color:var(--tp-d);background:var(--tp-tint)}
 body.lobby-telephone #lobby-title{color:var(--tp-t)}

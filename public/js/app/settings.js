@@ -1,9 +1,9 @@
 /* ===== app/settings.js — 系統設定 ===== */
 
-import { $, Cfg, D, Sound, Store, toast } from './core.js?v=df4cf5d8fd';
-import { makeModal, modals } from './modal.js?v=df4cf5d8fd';
-import { layoutStage } from './canvas.js?v=df4cf5d8fd';
-import { saveNick } from './lobby.js?v=df4cf5d8fd';
+import { $, Cfg, D, Sound, Store, toast } from './core.js?v=339dfe2aa4';
+import { makeModal, modals } from './modal.js?v=339dfe2aa4';
+import { layoutStage } from './canvas.js?v=339dfe2aa4';
+import { saveNick } from './lobby.js?v=339dfe2aa4';
 
 var w = window;
 

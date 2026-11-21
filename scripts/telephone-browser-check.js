@@ -170,7 +170,7 @@ const LAYOUT = `
     }
     return false;
   }
-  var screen = document.querySelector('.screen.active');
+  var screen = document.querySelector('#room-create-modal.open') || document.querySelector('.screen.active');
   var els = (screen ? screen.querySelectorAll('button, input, select, textarea') : []);
   for (var i = 0; i < els.length; i++) {
     var el = els[i];
@@ -198,6 +198,36 @@ async function sweep(cdp, name, opts) {
     const lay = await cdp.eval(LAYOUT);
     check(name + '／' + v.name + '：沒有水平溢出', lay.overflowX <= 1, 'overflow ' + lay.overflowX + 'px');
     check(name + '／' + v.name + '：按鈕與輸入框沒被裁到畫面外', lay.clipped.length === 0, lay.clipped.slice(0, 4).join(' | '));
+    if (o.roomCreate) {
+      const modal = await cdp.eval(`
+        const panel = document.getElementById('room-create-panel');
+        const body = document.getElementById('room-create-body');
+        const rules = panel.querySelector('.create-room-rules').getBoundingClientRect();
+        const details = panel.querySelector('.create-room-details').getBoundingClientRect();
+        const actions = Array.from(panel.querySelectorAll('.settings-foot button, .settings-close'));
+        const inside = actions.every(function (button) {
+          const r = button.getBoundingClientRect();
+          const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+          return r.width >= 44 && r.height >= 44 && button.contains(hit);
+        });
+        const fields = Array.from(body.querySelectorAll('.dropdown-button')).filter(function (button) {
+          return !button.closest('[hidden]');
+        });
+        return {
+          columns: rules.left > details.left ? 2 : 1,
+          horizontalOverflow: body.scrollWidth - body.clientWidth,
+          inside: inside,
+          fields: fields.length,
+          wrapped: fields.every(function (button) {
+            const label = button.querySelector('span');
+            return button.offsetHeight >= 44 && label.scrollWidth <= label.clientWidth + 1;
+          })
+        };
+      `);
+      check(name + '／' + v.name + '：開房欄位完整、操作鈕可點擊',
+        modal.columns === (v.width >= 620 ? 2 : 1) && modal.horizontalOverflow <= 1 &&
+        modal.inside && modal.fields === 6 && modal.wrapped, JSON.stringify(modal));
+    }
     await shot(cdp, name + '-' + v.key);
   }
   await setViewport(cdp, BASE_VP);
@@ -266,8 +296,29 @@ async function main() {
   check('開房彈窗：不顯示一般模式與接力的欄位', !fields.rd && !fields.ds && !fields.gr, JSON.stringify(fields));
   check('選項 30／45／60、20／25／30、1–3，預設 45、25', fields.dopt === '30,45,60' && fields.gopt === '20,25,30' && fields.ropt === '1,2,3' && fields.dval === '45' && fields.gval === '25', JSON.stringify(fields));
   check('開房彈窗標題', /畫圖傳話/.test(fields.title), fields.title);
-  await host.eval('var s=document.getElementById("room-create-tpdraw"); s.value="60"; s.dispatchEvent(new Event("change",{bubbles:true})); var g=document.getElementById("room-create-tpguess"); g.value="30"; g.dispatchEvent(new Event("change",{bubbles:true})); return 1;');
-  await sweep(host, '03-開房彈窗');
+  for (const [viewport, field, value] of [[VIEWPORTS[0], 'tpdraw', '60'], [VIEWPORTS[4], 'tpguess', '30']]) {
+    await setViewport(host, viewport);
+    const id = 'room-create-' + field;
+    await host.click('#' + id + '-button');
+    await host.waitFor('!document.getElementById("' + id + '-list").hidden', 3000, '開啟自訂下拉選單');
+    const menu = await host.eval(`
+      const r = document.getElementById(${JSON.stringify(id + '-list')}).getBoundingClientRect();
+      return r.left >= 0 && r.right <= innerWidth + 1 && r.top >= 0 && r.bottom <= innerHeight + 1;
+    `);
+    check(viewport.name + '：自訂下拉選單完整留在畫面內', menu);
+    await host.click('#' + id + '-list [data-value="' + value + '"]');
+    check(viewport.name + '：可選擇傳話秒數',
+      await host.eval('return document.getElementById("' + id + '").value === "' + value + '";'));
+  }
+  await host.eval('document.getElementById("room-create-body").scrollTop = 0;');
+  await sweep(host, '03-開房彈窗', { roomCreate: true });
+  for (const lang of ['en', 'zh-Hans']) {
+    await host.eval('window.I18N.setLang(' + JSON.stringify(lang) + ');');
+    await host.waitFor('window.I18N.lang === ' + JSON.stringify(lang), 4000, '開房語系切換');
+    await sweep(host, '03-開房彈窗-' + lang, { roomCreate: true, list: [VIEWPORTS[0], VIEWPORTS[4], BASE_VP, VIEWPORTS[7]] });
+  }
+  await host.eval('window.I18N.setLang("zh-Hant");');
+  await host.waitFor('window.I18N.lang === "zh-Hant"', 4000, '還原繁體中文');
   await host.click('#room-create-submit');
   await host.waitFor('window.DrawGuessApp.view && window.DrawGuessApp.view.room && window.DrawGuessApp.view.room.mode === "telephone"', 6000, '進入房間');
   const code = await host.eval('return window.DrawGuessApp.roomCode;');
