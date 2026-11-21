@@ -9,9 +9,9 @@
  */
 /* 原本是單一檔案 app.js，依功能拆成 js/app/ 底下的 ES module；入口是 main.js。 */
 
-import { modals } from './modal.js?v=363abaebc3';
-import { renderRecentWorks } from './menus.js?v=363abaebc3';
-import { layoutStage } from './canvas.js?v=363abaebc3';
+import { modals } from './modal.js?v=e1f7d4231d';
+import { renderRecentWorks } from './menus.js?v=e1f7d4231d';
+import { layoutStage } from './canvas.js?v=e1f7d4231d';
 
 var w = window;
 
@@ -49,7 +49,7 @@ export var app = {
   ruleMenuOpen: null,              // 遊戲規則自訂下拉選單：哪個欄位（set-rounds／set-drawsec／set-diff）展開中
   ruleFocus: null,                 // 卡片更新完要把焦點放到哪：{ field, target: 'btn' | 'opt' }
   roomCreate: { roomName: '', rounds: 2, drawSec: 90, diff: 0, guessRounds: 1, batonSec: 12, laps: 2, pdDrawSec: 60 },
-  lobbyMode: 'classic',            // 'classic'（一般大廳）| 'relay'（接力大廳）| 'pickdraw'（你出我畫他猜大廳）：決定大廳列哪種房、開哪種房
+  lobbyMode: 'classic',            // 'classic'（一般大廳）| 'relay'（接力大廳）| 'telephone'（畫圖傳話大廳）：決定大廳列哪種房、開哪種房
   lastOverlayHtml: null,
   conn: { status: 'idle', message: '' },
   wideLayout: null,

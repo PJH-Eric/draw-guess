@@ -130,9 +130,9 @@ const lobbySockets = new Set();
 const now = () => Date.now();
 /** 接力房的開房公告：房名前加這個標記（emoji＋英文，三種語系都看得懂） */
 const RELAY_ROOM_TAG = '🔁Relay β｜';
-/** 你出我畫他猜房的開房公告標記 */
-const PICKDRAW_ROOM_TAG = '🎯Pick·Draw·Guess β｜';
-const LOBBY_MODES = ['classic', 'relay', 'pickdraw'];
+/** 畫圖傳話房的開房公告標記 */
+const TELEPHONE_ROOM_TAG = '📞Telephone β｜';
+const LOBBY_MODES = ['classic', 'relay', 'telephone'];
 const lobbyModeOf = (m) => (LOBBY_MODES.indexOf(m) >= 0 ? m : 'classic');
 
 /*
@@ -198,7 +198,9 @@ function viewPayload(room, clientId, full) {
   const v = room.viewFor(clientId, now());
   if (v.game) {
     v.game.strokeCount = v.game.strokes.length;
-    if (!full) delete v.game.strokes;
+    /* 畫圖傳話每次同步都帶整份（上一張畫、可翻看的畫、揭曉整串）：同步次數很少，
+       而且每個人拿到的內容本來就不一樣，不能靠增量補 */
+    if (!full && !room.telephone) delete v.game.strokes;
   }
   return v;
 }
@@ -234,16 +236,30 @@ function broadcastFeed(room, entry) {
 }
 
 /** 新的一筆：只送增量，並附上筆數讓用戶端偵測漏收 */
+/**
+ * 筆畫要送給誰：一般與接力模式全房都看得到；畫圖傳話的畫在揭曉前只送給畫的人自己
+ * 與前面已經畫完的人（其他人連筆數都不送，免得猜到畫了多少）。
+ */
+function strokeTargets(room) {
+  const all = socketsOf(room.code);
+  if (!room.telephone) return { list: [...all], count: room.state ? room.state.strokes.length : 0 };
+  const cell = room.state ? room.engine.currentCell(room.state) : null;
+  if (!cell || cell.kind !== 'draw') return { list: [], count: 0 };
+  /* 前面已經畫完的人可以看後面的人作畫 */
+  const ok = [cell.authorId].concat(room.engine.watchersOf(room.state));
+  return { list: [...all].filter((s) => ok.indexOf(s.data.clientId) >= 0), count: cell.strokes.length };
+}
+
 function broadcastStroke(room, stroke) {
   flushRooms();
-  const count = room.state ? room.state.strokes.length : 0;
-  for (const s of socketsOf(room.code)) s.emit('room:stroke', { stroke, count });
+  const t = strokeTargets(room);
+  for (const s of t.list) s.emit('room:stroke', { stroke, count: t.count });
 }
 
 function broadcastBoard(room, action) {
   flushRooms();
-  const count = room.state ? room.state.strokes.length : 0;
-  for (const s of socketsOf(room.code)) s.emit('room:board', { action, count });
+  const t = strokeTargets(room);
+  for (const s of t.list) s.emit('room:board', { action, count: t.count });
 }
 
 function fail(socket, message, code) {
@@ -336,7 +352,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('lobby:subscribe', (payload) => {
-    /* 帶 mode: 'relay'／'pickdraw' 就是該模式的大廳；舊版用戶端沒帶就是一般大廳 */
+    /* 帶 mode: 'relay'／'telephone' 就是該模式的大廳；舊版用戶端沒帶就是一般大廳 */
     socket.data.lobbyMode = lobbyModeOf(payload && payload.mode);
     leaveCurrentRoom(socket);
     lobbySockets.add(socket);
@@ -369,7 +385,7 @@ io.on('connection', (socket) => {
     /* 大廳聊天室是共用元件：不改它，只在房名前面加上接力標記，公告就看得出是接力房 */
     lobbyChat.roomOpened({
       code: room.code,
-      roomName: (room.relay ? RELAY_ROOM_TAG : (room.pickdraw ? PICKDRAW_ROOM_TAG : '')) + room.name,
+      roomName: (room.relay ? RELAY_ROOM_TAG : (room.telephone ? TELEPHONE_ROOM_TAG : '')) + room.name,
       host: socket.data.name,
       isPrivate: room.private
     });
@@ -454,7 +470,9 @@ io.on('connection', (socket) => {
   socket.on('room:settings', withRoom((room, p) => {
     const res = room.setSettings(socket.data.clientId, p);
     if (!res.ok) return fail(socket, res.error, res.code);
-    room.system('房主調整了規則：每人畫 ' + res.settings.rounds + ' 次、每題 ' + res.settings.drawSec + ' 秒。', now());
+    if (room.telephone) {
+      room.system('srv.feed.telephoneRules', { rounds: res.settings.rounds, draw: res.settings.drawSec, guess: res.settings.guessSec }, now());
+    } else room.system('房主調整了規則：每人畫 ' + res.settings.rounds + ' 次、每題 ' + res.settings.drawSec + ' 秒。', now());
     syncRoom(room); syncLobby();
   }));
 
@@ -477,13 +495,13 @@ io.on('connection', (socket) => {
   }));
 
   socket.on('room:undo', withRoom((room) => {
-    const res = room.undo(socket.data.clientId);
+    const res = room.undo(socket.data.clientId, now());
     if (!res.ok) return fail(socket, res.error, res.code);
     broadcastBoard(room, 'undo');
   }));
 
   socket.on('room:clear', withRoom((room) => {
-    const res = room.clearBoard(socket.data.clientId);
+    const res = room.clearBoard(socket.data.clientId, now());
     if (!res.ok) return fail(socket, res.error, res.code);
     broadcastBoard(room, 'clear');
   }));
@@ -500,7 +518,7 @@ io.on('connection', (socket) => {
     const t = now();
     if (t - (socket.data.reactAt || 0) < 150) return;
     socket.data.reactAt = t;
-    const res = room.react(socket.data.clientId, str(p.kind));
+    const res = room.react(socket.data.clientId, str(p.kind), p.cell);
     if (!res.ok) return fail(socket, res.error, res.code);
     syncRoom(room);
   }));
@@ -547,12 +565,6 @@ io.on('connection', (socket) => {
       socket.emit('room:private', { kind: 'close', message: '「' + res.text + '」很接近了，再想一下！' });
       return;
     }
-    if (res.kind === 'hit' && res.pickdraw) {
-      socket.emit('room:private', { kind: 'hit', message: 'srv.private.pickdrawHit', params: { points: res.points }, points: res.points });
-      syncRoom(room, true);
-      syncLobby();
-      return;
-    }
     if (res.kind === 'hit' && res.relay) {
       socket.emit('room:private', { kind: 'hit', message: 'srv.private.relayHit', params: { points: res.points }, points: res.points });
       syncRoom(room, true);
@@ -564,6 +576,33 @@ io.on('connection', (socket) => {
       syncRoom(room);
       if (res.allDone) syncRoom(room, true);
     }
+  }));
+
+  /* ---------------- 畫圖傳話專用 ---------------- */
+
+  /* 輪到的人提早交出這張畫 */
+  socket.on('room:submit', withRoom((room) => {
+    const res = room.telephoneSubmit(socket.data.clientId, now());
+    if (!res.ok) return fail(socket, res.error, res.code);
+    syncRoom(room, true); syncLobby();
+  }));
+
+  /* 最後一人寫答案：draft 只存草稿不廣播；正式送出就揭曉 */
+  socket.on('room:answer', withRoom((room, p) => {
+    const res = room.telephoneAnswer(socket.data.clientId, typeof p.text === 'string' ? p.text : '', !!p.draft, now());
+    if (!res.ok) {
+      if (!p.draft) socket.emit('room:private', { kind: 'rejected', message: res.error, code: res.code });
+      return;
+    }
+    if (res.draft) return;
+    syncRoom(room, true); syncLobby();
+  }));
+
+  /* 猜的人偷看前面的畫：只有他拿得到那張畫（toPublic 控制），其他人只看到紀錄 */
+  socket.on('room:peek', withRoom((room, p) => {
+    const res = room.telephonePeek(socket.data.clientId, p.idx, now());
+    if (!res.ok) return fail(socket, res.error, res.code);
+    syncRoom(room, true);
   }));
 
   /* ---------------- 接力模式專用 ---------------- */
@@ -680,15 +719,12 @@ io.on('connection', (socket) => {
     /* 先標記斷線並保留座位，讓重新整理的人可以憑 clientId 回到原位；
        超過保留時間還沒回來，定時工作才會把他踢掉並檢查房間要不要關。 */
     room.disconnect(socket.data.clientId, now());
-    const isDrawer = !room.relay && !room.pickdraw && !!(room.state && room.phase === 'playing' && room.state.drawerId === member.id &&
+    const isDrawer = !room.relay && !room.telephone && !!(room.state && room.phase === 'playing' && room.state.drawerId === member.id &&
       (room.state.phase === 'picking' || room.state.phase === 'drawing'));
-    /* 你出我畫他猜：畫家或猜題者斷線，等 15 秒沒回來這題就直接公布 */
-    const pdAway = room.pickdraw ? room.pickdrawAway().role : null;
-    room.system(pdAway === 'drawer'
-      ? '畫家 ' + member.name + ' 斷線了，等他 15 秒，沒回來這一題就直接公布答案。'
-      : pdAway === 'guesser'
-        ? '猜題者 ' + member.name + ' 斷線了，等他 15 秒，沒回來這一題就直接公布答案。'
-        : isDrawer
+    /* 畫圖傳話：輪到的人斷線，等 5 秒沒回來就跳過 */
+    const tpAway = room.telephone ? room.telephoneAway().role : null;
+    if (tpAway) room.system('srv.feed.telephoneAway', { name: member.name }, now());
+    else room.system(isDrawer
       ? '畫家 ' + member.name + ' 斷線了，等他 15 秒，沒回來就先跳過這一題。'
       : member.name + ' 斷線了，座位會先保留一分鐘。', now());
     syncRoom(room);
@@ -712,7 +748,8 @@ function sweepTick() {
     for (const entry of item.feed) broadcastFeed(item.room, entry);
     const bigChange = item.events.some((e) =>
       e.type === 'turnstart' || e.type === 'turnend' || e.type === 'autopick' || e.type === 'aipick' || e.type === 'gameover' ||
-      e.type === 'questionstart' || e.type === 'questionend' || e.type === 'picked' || e.type === 'drawstart');
+      e.type === 'questionstart' || e.type === 'questionend' || e.type === 'picked' || e.type === 'drawstart' ||
+      e.type === 'step' || e.type === 'reveal' || e.type === 'roundstart' || e.type === 'go' || e.type === 'skip' || e.type === 'starter');
     if (item.events.length) syncRoom(item.room, bigChange);
   }
   for (const item of res.kicked) ejectKicked(item.room, item.id);

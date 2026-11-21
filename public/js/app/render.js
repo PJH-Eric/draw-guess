@@ -1,11 +1,11 @@
 /* ===== app/render.js — 對局畫面渲染 ===== */
 
-import { $, D, S, app, esc, secsLeft } from './core.js?v=363abaebc3';
-import { renderReference } from './modal.js?v=363abaebc3';
-import { sizeCanvas } from './canvas.js?v=363abaebc3';
-import { renderAside, renderControls, renderOverlay } from './overlay.js?v=363abaebc3';
-import { isRelayGame, relayPhaseLabel, relayStripHtml, relayTick, renderRelayWordbar } from './relay.js?v=363abaebc3';
-import { isPickdrawGame, pickdrawPhaseLabel, pickdrawStripHtml, pickdrawTick, renderPickdrawWordbar } from './pickdraw.js?v=363abaebc3';
+import { $, D, S, app, esc, secsLeft } from './core.js?v=e1f7d4231d';
+import { renderReference } from './modal.js?v=e1f7d4231d';
+import { sizeCanvas } from './canvas.js?v=e1f7d4231d';
+import { renderAside, renderControls, renderOverlay } from './overlay.js?v=e1f7d4231d';
+import { isRelayGame, relayPhaseLabel, relayStripHtml, relayTick, renderRelayWordbar } from './relay.js?v=e1f7d4231d';
+import { isTelephoneGame, renderTelephoneWordbar, telephonePhaseColor, telephonePhaseLabel, telephoneStripHtml, telephoneTick } from './telephone.js?v=e1f7d4231d';
 
 var w = window;
 
@@ -39,13 +39,13 @@ export function render() {
     phaseChip.setAttribute('data-p', 'picking');
   } else if (g) {
     var relay = isRelayGame(g);
-    var pickdraw = isPickdrawGame(g);
-    phaseChip.textContent = relay ? relayPhaseLabel(g.phase) : (pickdraw ? pickdrawPhaseLabel(g.phase) : (PHASE_LABEL[g.phase] || g.phase));
+    var telephone = isTelephoneGame(g);
+    phaseChip.textContent = relay ? relayPhaseLabel(g.phase) : (telephone ? telephonePhaseLabel(g) : (PHASE_LABEL[g.phase] || g.phase));
     /* 接力的階段沿用一般模式的配色：投票／倒數同選題、換棒同作畫 */
     phaseChip.setAttribute('data-p', relay ? ({ voting: 'picking', countdown: 'picking', handoff: 'drawing' }[g.phase] || g.phase)
-      : (pickdraw ? ({ countdown: 'picking' }[g.phase] || g.phase) : g.phase));
+      : (telephone ? telephonePhaseColor(g) : g.phase));
   }
-  $('round-chip').textContent = g ? turnLabel(g) : (globalThis.I18N ? globalThis.I18N.t("text.160") : "尚未開始");
+  $('round-chip').textContent = g ? (isTelephoneGame(g) ? w.I18N.t('telephone.roundChip', { n: g.roundNo || 1 }) : turnLabel(g)) : (globalThis.I18N ? globalThis.I18N.t("text.160") : "尚未開始");
 
   updateTimers();
 
@@ -56,8 +56,8 @@ export function render() {
     wb.hidden = true;
   } else if (isRelayGame(g)) {
     renderRelayWordbar(v, g);
-  } else if (isPickdrawGame(g)) {
-    renderPickdrawWordbar(v, g);
+  } else if (isTelephoneGame(g)) {
+    renderTelephoneWordbar(v, g);
   } else if (g.hint) {
     var mine = g.you.isDrawer;
     var h = g.hint;
@@ -84,8 +84,8 @@ export function render() {
   }
   /* 畫家斷線中：告訴大家不是當機，15 秒沒回來就會跳過這一題（伺服器算的） */
   if (v.room && v.room.drawerAwayUntil && !wb.hidden) {
-    /* 你出我畫他猜：斷線的也可能是猜題者 */
-    var awayText = v.room.awayRole === 'guesser' ? w.I18N.t('pickdraw.away.guesser')
+    /* 畫圖傳話：輪到的人斷線，等 5 秒就跳過 */
+    var awayText = isTelephoneGame(g) ? w.I18N.t('telephone.away')
       : (globalThis.I18N ? globalThis.I18N.t("text.154") : "畫家斷線了，最多等 15 秒・");
     $('wordbar-meta').textContent = awayText + $('wordbar-meta').textContent;
   }
@@ -156,9 +156,9 @@ export function updateTimers() {
   var ps = D.querySelector('#overlay-card .pick-secs');
   if (ps && ps.textContent !== String(s)) ps.textContent = s;
   /* 接力每棒只有 7–17 秒：最後 3 秒才標紅，不然整棒都在閃 */
-  chip.setAttribute('data-urgent', String(g.phase === 'drawing' && s <= (isRelayGame(g) ? 3 : 10)));
+  chip.setAttribute('data-urgent', String((g.phase === 'drawing' || (isTelephoneGame(g) && g.phase === 'step')) && s <= (isRelayGame(g) ? 3 : 10)));
   if (isRelayGame(g)) relayTick(v, g);
-  if (isPickdrawGame(g)) pickdrawTick(v, g);
+  if (isTelephoneGame(g)) telephoneTick(v, g);
   var sum = $('sum-timer');
   if (sum) sum.textContent = s + (globalThis.I18N ? globalThis.I18N.t("text.152") : " 秒");
 }
@@ -182,9 +182,9 @@ export function renderPlayers() {
   var host = $('playerstrip');
   if (!g) { host.innerHTML = ''; app.lastScores = null; return; }
   /* 接力：玩家列同時就是接力順序（猜題者第一，標出正在畫與下一棒） */
-  /* 你出我畫他猜：玩家列照「出題 → 畫 → 猜」排，每張卡標出這題的角色 */
-  if (isRelayGame(g) || isPickdrawGame(g)) {
-    var rhtml = isRelayGame(g) ? relayStripHtml(v, g) : pickdrawStripHtml(v, g);
+  /* 畫圖傳話：玩家列照傳話順序排，標出輪到誰 */
+  if (isRelayGame(g) || isTelephoneGame(g)) {
+    var rhtml = isRelayGame(g) ? relayStripHtml(v, g) : telephoneStripHtml(v, g);
     var rprev = app.lastScores || {}, rcur = {}, rgain = [];
     if (host.getAttribute('data-sig') !== rhtml) { host.setAttribute('data-sig', rhtml); host.innerHTML = rhtml; }
     var cardsEl = host.querySelectorAll('.pcard');

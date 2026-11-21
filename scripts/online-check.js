@@ -652,7 +652,7 @@ async function run() {
   [host, mate2, watcher, extra, lobbyWatcher].forEach((c) => c.close());
 
   await runRelay();
-  await runPickdraw();
+  await runTelephone();
 }
 
 /* ------------------------------------------------------------ 接力模式 */
@@ -800,130 +800,112 @@ async function runRelay() {
   [a, b, c, w, classicLobby, relayLobby].forEach((x) => x.close());
 }
 
-/* ------------------------------------------------------------ 你出我畫他猜（Beta） */
+/* ------------------------------------------------------------ 畫圖傳話（Beta） */
 
-async function runPickdraw() {
-  const PD = require('../public/js/pickdraw-rules.js');
-  section('你出我畫他猜：開房與大廳分流');
-  const a = new Client('pd-a', 'client-pd-aaaa', '出畫甲');
-  const b = new Client('pd-b', 'client-pd-bbbb', '出畫乙');
-  const c = new Client('pd-c', 'client-pd-cccc', '出畫丙');
-  const d = new Client('pd-d', 'client-pd-dddd', '出畫丁');
-  const classicLobby = new Client('lobby-pc', 'client-lobby-pc', '一般大廳2');
-  const relayLobby = new Client('lobby-pr', 'client-lobby-pr', '接力大廳2');
-  const pdLobby = new Client('lobby-pp', 'client-lobby-pp', '出畫大廳');
-  for (const x of [a, b, c, d, classicLobby, relayLobby, pdLobby]) await x.connect();
+async function runTelephone() {
+  section('畫圖傳話：開房與大廳分流');
+  const a = new Client('tp-a', 'client-tp-aaaa', '傳話甲');
+  const b = new Client('tp-b', 'client-tp-bbbb', '傳話乙');
+  const c = new Client('tp-c', 'client-tp-cccc', '傳話丙');
+  const d = new Client('tp-d', 'client-tp-dddd', '傳話丁');
+  const w = new Client('tp-w', 'client-tp-wwww', '傳話觀戰');
+  const classicLobby = new Client('lobby-tc', 'client-lobby-tc', '一般大廳2');
+  const relayLobby = new Client('lobby-tr', 'client-lobby-tr', '接力大廳2');
+  const tpLobby = new Client('lobby-tt', 'client-lobby-tt', '傳話大廳');
+  for (const x of [a, b, c, d, w, classicLobby, relayLobby, tpLobby]) await x.connect();
   classicLobby.emit('lobby:subscribe', {});
   relayLobby.emit('lobby:subscribe', { mode: 'relay' });
-  pdLobby.emit('lobby:subscribe', { mode: 'pickdraw' });
+  tpLobby.emit('lobby:subscribe', { mode: 'telephone' });
 
-  const created = await a.ask('room:create', { name: '出畫甲', roomName: '出畫測試房', mode: 'pickdraw', settings: { laps: 1, drawSec: 30 } });
-  check('可以開你出我畫他猜房', created.ok === true && created.mode === 'pickdraw', JSON.stringify(created));
+  const created = await a.ask('room:create', { name: '傳話甲', roomName: '傳話測試房', mode: 'telephone', settings: { drawSec: 30, guessSec: 20, rounds: 1 } });
+  check('可以開畫圖傳話房', created.ok === true && created.mode === 'telephone', JSON.stringify(created));
   const code = created.code;
-  check('這個模式的大廳看得到房間', await pdLobby.until((x) => (x.rooms || []).some((r) => r.code === code && r.mode === 'pickdraw' && r.maxPlayers === 3), 4000));
+  check('這個模式的大廳看得到房間', await tpLobby.until((x) => (x.rooms || []).some((r) => r.code === code && r.mode === 'telephone' && r.maxPlayers === 5), 4000));
   await sleep(200);
   check('一般與接力大廳看不到這種房', !(classicLobby.rooms || []).some((r) => r.code === code) && !(relayLobby.rooms || []).some((r) => r.code === code));
 
-  for (const x of [b, c]) {
+  for (const x of [b, c, d]) {
     const j = await x.ask('room:join', { code, name: x.name, role: 'player' });
     check(x.name + ' 加入', j.ok === true && j.role === 'player', JSON.stringify(j));
   }
-  const jd = await d.ask('room:join', { code, name: d.name, role: 'player' });
-  check('第 4 個客戶端只能觀戰', jd.ok === true && jd.role === 'spectator', JSON.stringify(jd));
-  b.emit('room:ready', { ready: true });
-  c.emit('room:ready', { ready: true });
+  const jw = await w.ask('room:join', { code, name: w.name, role: 'spectator' });
+  check('觀戰者加入', jw.ok === true && jw.role === 'spectator');
+  for (const x of [b, c, d]) x.emit('room:ready', { ready: true });
   await a.until((x) => x.view && x.view.you.can.start, 3000);
-  for (const x of [a, b, c, d]) x.keepSeen = true;
+  for (const x of [a, b, c, d, w]) x.keepSeen = true;
   a.emit('room:start', {});
-  check('三人開始', await a.until((x) => x.view && x.view.game && x.view.game.mode === 'pickdraw' && x.view.game.phase === 'picking', 4000));
-  check('總題數 3（一圈）', a.view.game.totalQuestions === 3);
+  check('四人開始、進入挑題', await a.until((x) => x.view && x.view.game && x.view.game.mode === 'telephone' && x.view.game.phase === 'picking', 4000));
 
-  section('你出我畫他猜：挑題、作畫、猜題');
+  section('畫圖傳話：挑題、照畫、猜答案');
   const byId = {};
-  for (const x of [a, b, c]) byId[x.id] = x;
-  const answers = [];
-  const roles = [];
-  for (let q = 0; q < 3; q++) {
-    await a.until((x) => x.view.game.phase === 'picking' && x.view.game.questionNo === q + 1, 12000);
-    const picker = byId[a.view.game.pickerId];
-    const drawer = byId[a.view.game.drawerId];
-    const guesser = byId[a.view.game.guesserId];
-    roles.push([picker.id, drawer.id, guesser.id]);
-    await picker.until((x) => x.view.game.questionNo === q + 1 && x.view.game.choices.length === 3, 3000);
-    await guesser.until((x) => x.view.game.questionNo === q + 1, 3000);
-    check('第 ' + (q + 1) + ' 題：只有出題者拿到 3 個候選', picker.view.game.choices.length === 3 && picker.view.you.can.pick &&
-      drawer.view.game.choices.length === 0 && guesser.view.game.choices.length === 0);
-    const choice = picker.view.game.choices[q % 3].id;
-    picker.emit('room:pick', { wordId: choice });
-    check('挑完進倒數', await a.until((x) => ['countdown', 'drawing'].indexOf(x.view.game.phase) >= 0, 3000));
-    await a.until((x) => x.view.game.phase === 'drawing', 5000);
-    await d.until((x) => x.view.game.phase === 'drawing', 3000);
-    const ans = d.view.game.answer;
-    answers.push(ans);
-    check('觀戰者看得到答案', !!ans);
-    await guesser.until((x) => x.view.game.phase === 'drawing', 3000);
-    check('猜題者的投影沒有答案', guesser.view.game.answer === null);
-    drawer.emit('room:stroke', { stroke: { t: 'pen', c: 0, w: 1, p: [100, 100, 300, 300] } });
-    check('畫家的筆畫廣播給大家', await guesser.until((x) => x.strokes.length > 0, 3000));
-    guesser.strokes = [];
-    picker.emit('room:stroke', { stroke: { t: 'pen', c: 0, w: 1, p: [1, 1, 2, 2] } });
-    check('出題者畫不了', await picker.until((x) => x.errors.length > 0, 3000));
-    picker.clearErrors();
-    if (q === 0) {
-      picker.emit('room:chat', { text: '偷偷講答案' });
-      check('出題者聊天被擋', await picker.until((x) => x.errors.some((e) => /pickerCantChat/.test(JSON.stringify(e))), 3000), JSON.stringify(picker.errors));
-      picker.clearErrors();
-      picker.emit('room:cheer', { kind: 'lol' });
-      check('出題者的表情大家都收得到', await drawer.until((x) => x.cheers.some((ch) => ch.kind === 'lol'), 3000) &&
-        await guesser.until((x) => x.cheers.some((ch) => ch.kind === 'lol'), 3000));
-      guesser.emit('room:guess', { text: '這個一定猜錯QQ' });
-      check('猜錯內容大家都看得到', await d.until((x) => x.feed.some((e) => e && e.text === '這個一定猜錯QQ'), 3000));
-      await sleep(450);
-      guesser.emit('room:guess', { text: ans });
-      check('猜中 → 公布答案', await a.until((x) => x.view.game.phase === 'reveal', 4000));
-      check('猜題者收到加分', await guesser.until((x) => x.privates.some((p) => p.kind === 'hit' && p.points > 250), 3000), JSON.stringify(guesser.privates));
-      const last = a.view.game.log.slice(-1)[0];
-      check('三人照角色加分（A 低、B=C 高）', last.points.picker < 150 && last.points.drawer === last.points.guesser && last.points.drawer > 250, JSON.stringify(last.points));
-    } else if (q === 1) {
-      drawer.emit('room:hint', {});
-      check('畫家給提示，猜題者看到字數', await guesser.until((x) => x.view.game.hint && x.view.game.hint.step === 1 && x.view.game.hint.len > 0, 3000));
-      guesser.emit('room:hint', {});
-      check('猜題者不能給提示', await guesser.until((x) => x.errors.length > 0, 3000));
-      guesser.clearErrors();
-      guesser.emit('room:giveUp', {});
-      check('放棄 → 公布、出題者 +300', await a.until((x) => x.view.game.phase === 'reveal' && x.view.game.log.slice(-1)[0].reason === 'giveup' &&
-        x.view.game.log.slice(-1)[0].points.picker === 300, 4000));
-    } else {
-      guesser.emit('room:giveUp', {});
-      check('第 3 題放棄', await a.until((x) => x.view.game.phase === 'reveal', 4000));
-    }
-    check('公布後猜題者也看得到答案', await guesser.until((x) => x.view.game.answer === ans, 3000));
+  for (const x of [a, b, c, d]) byId[x.id] = x;
+  const starter = byId[a.view.game.starterId];
+  await starter.until((x) => x.view.game.choices.length === 3, 3000);
+  check('只有開頭的人拿到候選', [a, b, c, d].every((x) => x === starter ? x.view.game.choices.length === 3 : x.view.game.choices.length === 0));
+  b.emit('room:chat', { text: '偷偷講' });
+  check('傳話中聊天被擋', await b.until((x) => x.errors.some((e) => /telephoneNoChat/.test(JSON.stringify(e))), 3000));
+  b.clearErrors();
+  const wordId = starter.view.game.choices[0].id;
+  const ans = starter.view.game.choices[0].text;
+  starter.emit('room:pick', { wordId });
+  check('挑完進第一格', await a.until((x) => x.view.game.phase === 'step' && x.view.game.stepNo === 0, 3000));
+  const order = a.view.game.order.map((o) => byId[o.id]);
+  check('順序 4 格、最後一格猜', order.length === 4 && a.view.game.order[3].kind === 'write');
+  for (let i = 0; i < 3; i++) {
+    const me = order[i];
+    check('第 ' + (i + 1) + ' 格換手後可以畫', await me.until((x) => x.view.game.stepNo === i && x.view.you.can.draw, 6000));
+    for (const x of [a, b, c, d]) x.strokes = [];
+    me.emit('room:stroke', { stroke: { t: 'pen', c: 0, w: 1, p: [100, 100, 300 + i * 10, 300] } });
+    check('第 ' + (i + 1) + ' 格筆畫只送給畫的人、前面畫完的人與下一位', await me.until((x) => x.strokes.length > 0, 3000) && (await sleep(300),
+      order.slice(0, i + 2).every((x) => x.strokes.length > 0) && order.slice(i + 2).every((x) => x.strokes.length === 0) && w.strokes.length === 0));
+    if (i > 0) check('第 ' + (i + 1) + ' 格開始作畫後看不到上一張畫', me.view.game.prev && me.view.game.prev.strokes === null);
+    const other = order[(i + 1) % 4];
+    other.emit('room:stroke', { stroke: { t: 'pen', c: 0, w: 1, p: [1, 1, 2, 2] } });
+    check('沒輪到的人畫不了', await other.until((x) => x.errors.length > 0, 3000));
+    other.clearErrors();
+    me.emit('room:submit', {});
+    await a.until((x) => x.view.game.stepNo === i + 1, 3000);
   }
-  const rot = roles.map((r) => r.join('>'));
-  check('角色照座位輪替（上一題畫家變出題者）', roles[1][0] === roles[0][1] && roles[2][0] === roles[1][1], JSON.stringify(rot));
+  const guesser = order[3];
+  check('猜的人可以寫答案與偷看', await guesser.until((x) => x.view.you.can.answer && x.view.you.can.peek && x.view.game.prev && x.view.game.prev.kind === 'drawing', 6000));
+  check('其他人與觀戰者可翻看所有畫', await w.until((x) => x.view.game.drawings && x.view.game.drawings.length === 3, 3000) && order[0].view.game.drawings.length === 3);
+  guesser.emit('room:hint', {});
+  check('猜的人用提示看到字數', await guesser.until((x) => x.view.game.hint && x.view.game.hint.step === 1, 3000));
+  order[0].emit('room:hint', {});
+  check('畫的人不能用提示', await order[0].until((x) => x.errors.length > 0, 3000));
+  guesser.emit('room:peek', { idx: 0 });
+  check('偷看第一張畫只給猜的人', await guesser.until((x) => x.view.game.peeks && x.view.game.peeks.length === 1, 3000) && order[1].view.game.peeks === null);
+  guesser.emit('room:answer', { text: '草稿', draft: true });
+  await sleep(200);
+  guesser.emit('room:answer', { text: ans });
+  check('寫答案就揭曉', await a.until((x) => x.view.game.phase === 'reveal' && x.view.game.chain && x.view.game.chain.hit, 4000));
+  /* 字數 ×0.6、偷看第一張（4 人可偷看 2 張）×0.3 → 0.18 */
+  const pts = a.view.game.chain.cells.map((x) => x.points).join();
+  check('依順序遞減並乘提示倍數', pts === '54,42,30,18', pts);
+  const leaked = [a, b, c, d, w].some((x) => x.seen.some((s) => {
+    const v = JSON.parse(s);
+    return v.game && (v.game.phase === 'picking' || v.game.phase === 'step') && v.you && v.you.id !== starter.id && s.includes(ans);
+  }));
+  check('揭曉前除了開頭的人沒人收到題目', !leaked);
+  check('沒人收到草稿', ![a, b, c, w].some((x) => x.seen.some((s) => s.includes('草稿'))));
+  b.emit('room:chat', { text: '笑死' });
+  check('揭曉時可以聊天', await a.until((x) => (x.view.room.chat || []).some((m) => m.text === '笑死'), 3000));
+  const cellOfOther = a.view.game.chain.cells.findIndex((x) => x.authorId !== a.id);
+  a.emit('room:react', { kind: 'laugh', cell: cellOfOther });
+  check('對別人的格子按表情', await b.until((x) => x.view.game.chain && x.view.game.chain.cells[cellOfOther].counts.laugh === 1, 3000));
 
-  section('你出我畫他猜：結算');
-  check('三題後結算', await a.until((x) => x.view.room.phase === 'finished', 12000));
-  const g = a.view.game;
-  check('結算有三個獎項', !!g.awards && Array.isArray(g.awards.pick) && Array.isArray(g.awards.draw) && Array.isArray(g.awards.guess));
+  section('畫圖傳話：結算');
+  check('揭曉後結算', await a.until((x) => x.view.room.phase === 'finished', 40000));
+  check('最好笑頒給被按的人', a.view.game.awards && a.view.game.awards.funniest.length === 1 && a.view.game.awards.funniest[0].id === a.view.game.chain.cells[cellOfOther].authorId);
   const gal = await a.ask('room:gallery', {});
-  check('畫廊放每題完成圖', gal.ok && gal.mode === 'pickdraw' && gal.items.length === 3 && !!gal.items[0].pickerName, JSON.stringify(gal && gal.items && gal.items.length));
-
-  for (let q = 0; q < 3; q++) {
-    const ans = answers[q];
-    const owner = byId[roles[q][2]];
-    const leaked = owner.seen.some((s) => {
-      const v = JSON.parse(s);
-      return v.game && v.game.questionNo === q + 1 && PD.ACTIVE.indexOf(v.game.phase) >= 0 && s.includes(ans);
-    });
-    check('第 ' + (q + 1) + ' 題猜題者在公布前從沒收到答案', !!ans && !leaked);
-  }
+  check('畫廊收錄每一張畫', gal.ok && gal.mode === 'telephone' && gal.items.length === 3, JSON.stringify(gal && gal.items && gal.items.length));
 
   a.emit('room:rematch', {});
-  check('房主可以直接再來一局', await a.until((x) => x.view.room.phase === 'playing' && x.view.game.questionNo === 1, 4000));
+  check('房主可以直接再來一局', await a.until((x) => x.view.room.phase === 'playing' && x.view.game.roundNo === 1, 4000));
   c.emit('room:leave', {});
+  d.emit('room:leave', {});
   check('剩兩人時立即結算', await a.until((x) => x.view.room.phase === 'finished', 5000));
-  [a, b, c, d, classicLobby, relayLobby, pdLobby].forEach((x) => x.close());
+  [a, b, c, d, w, classicLobby, relayLobby, tpLobby].forEach((x) => x.close());
 }
 
 run()

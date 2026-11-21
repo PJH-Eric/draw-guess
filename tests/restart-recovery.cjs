@@ -138,7 +138,7 @@ if (require.main === module) test('強制重啟後保留玩家身分、房主、
   }
 });
 
-if (require.main === module) for (const mode of ['relay', 'pickdraw']) {
+if (require.main === module) for (const mode of ['relay', 'telephone']) {
   test(`${mode} 房間在還原後保留輪次與玩家`, () => {
     const directory = mkdtempSync(path.join(tmpdir(), `draw-guess-${mode}-`));
     let checkpoints;
@@ -157,7 +157,7 @@ if (require.main === module) for (const mode of ['relay', 'pickdraw']) {
       const restored = new RoomStore({ checkpoints }).get(room.code);
       assert.ok(restored.recovery);
       assert.equal(restored.hostId, 'host');
-      assert.equal(restored.state.questionNo, room.state.questionNo);
+      assert.equal(restored.state.questionNo ?? restored.state.roundNo, room.state.questionNo ?? room.state.roundNo);
       assert.deepEqual(restored.state.players, room.state.players);
       for (const id of ['host', 'mate', 'other']) assert.equal(restored.join(id, { now }).reconnected, true);
       assert.equal(restored.recovery, null);

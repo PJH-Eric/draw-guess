@@ -1,11 +1,11 @@
 /* ===== app/lobby.js — 線上大廳 ===== */
 
-import { $, Cfg, D, S, Sound, Store, Words, app, esc, paintIcons, show, toast } from './core.js?v=363abaebc3';
-import { WORD_LANGS, categoryChoices, wordLangLabel } from './menus.js?v=363abaebc3';
-import { startLoop, stopLoop } from './solo.js?v=363abaebc3';
-import { ensurePaint } from './canvas.js?v=363abaebc3';
-import { render } from './render.js?v=363abaebc3';
-import { DIFF_CHOICES, morphChildren, openRoomCreate } from './overlay.js?v=363abaebc3';
+import { $, Cfg, D, S, Sound, Store, Words, app, esc, paintIcons, show, toast } from './core.js?v=e1f7d4231d';
+import { WORD_LANGS, categoryChoices, wordLangLabel } from './menus.js?v=e1f7d4231d';
+import { startLoop, stopLoop } from './solo.js?v=e1f7d4231d';
+import { ensurePaint } from './canvas.js?v=e1f7d4231d';
+import { render } from './render.js?v=e1f7d4231d';
+import { DIFF_CHOICES, morphChildren, openRoomCreate } from './overlay.js?v=e1f7d4231d';
 
 var w = window;
 
@@ -162,9 +162,9 @@ export function leaveGame(target) {
   if (target === 's-lobby') connectOnline();
 }
 
-/** 目前大廳是哪一種：'classic'／'relay'／'pickdraw'（其他值一律當一般大廳） */
+/** 目前大廳是哪一種：'classic'／'relay'／'telephone'（其他值一律當一般大廳） */
 export function lobbyModeKey() {
-  return app.lobbyMode === 'relay' || app.lobbyMode === 'pickdraw' ? app.lobbyMode : 'classic';
+  return app.lobbyMode === 'relay' || app.lobbyMode === 'telephone' ? app.lobbyMode : 'classic';
 }
 
 /** 訂閱大廳：帶上目前是哪一種大廳，伺服器只推那一種房間 */
@@ -182,16 +182,16 @@ function setI18nKey(el, key) {
 
 export function applyLobbyMode() {
   var mode = lobbyModeKey();
-  var relay = mode === 'relay', pickdraw = mode === 'pickdraw';
+  var relay = mode === 'relay', telephone = mode === 'telephone';
   D.body.classList.toggle('lobby-relay', relay);
-  D.body.classList.toggle('lobby-pickdraw', pickdraw);
-  setI18nKey($('lobby-title').querySelector('[data-i18n]'), relay ? 'relay.name' : (pickdraw ? 'pickdraw.name' : 'text.211'));
-  setI18nKey(D.querySelector('#s-lobby [data-i18n="lobby.host.desc"], #s-lobby [data-i18n="relay.hostDesc"], #s-lobby [data-i18n="pickdraw.hostDesc"]'),
-    relay ? 'relay.hostDesc' : (pickdraw ? 'pickdraw.hostDesc' : 'lobby.host.desc'));
+  D.body.classList.toggle('lobby-telephone', telephone);
+  setI18nKey($('lobby-title').querySelector('[data-i18n]'), relay ? 'relay.name' : (telephone ? 'telephone.name' : 'text.211'));
+  setI18nKey(D.querySelector('#s-lobby [data-i18n="lobby.host.desc"], #s-lobby [data-i18n="relay.hostDesc"], #s-lobby [data-i18n="telephone.hostDesc"]'),
+    relay ? 'relay.hostDesc' : (telephone ? 'telephone.hostDesc' : 'lobby.host.desc'));
   $('relay-lobby-note').hidden = !relay;
-  $('pickdraw-lobby-note').hidden = !pickdraw;
-  /* GA4：你出我畫他猜大廳送虛擬路徑 /pickdraw 的 page_view */
-  if (pickdraw && w.GameAnalytics) w.GameAnalytics.pageView('pickdraw_lobby');
+  $('telephone-lobby-note').hidden = !telephone;
+  /* GA4：畫圖傳話大廳送虛擬路徑 /telephone 的 page_view */
+  if (telephone && w.GameAnalytics) w.GameAnalytics.pageView('telephone_lobby');
   /* GA4：接力大廳送虛擬路徑 /relay 的 page_view（一般大廳維持原本的統計方式） */
   if (relay && w.GameAnalytics) w.GameAnalytics.pageView('relay_lobby');
 }
@@ -287,13 +287,16 @@ export function roomRuleChips(r) {
     if (r.guessRounds) list.push({ k: 'rounds', ico: 'pen', label: w.I18N.t('relay.rule.guessRounds', { n: r.guessRounds }) });
     if (r.batonSec) list.push({ k: 'sec', ico: 'clock', label: w.I18N.t('relay.rule.baton', { n: r.batonSec }) });
   }
-  /* 你出我畫他猜：模式標記、圈數；每題秒數沿用一般模式那顆 chip */
-  if (r.mode === 'pickdraw') {
-    list.push({ k: 'pdmode', ico: 'pickdraw', label: w.I18N.t('pickdraw.badge') });
-    if (r.laps) list.push({ k: 'rounds', ico: 'pen', label: w.I18N.t('pickdraw.rule.laps', { n: r.laps }) });
+  /* 畫圖傳話：模式標記、輪次、每張畫秒數、猜答案秒數（取代一般模式的「畫幾次／每題秒數」） */
+  var tp = r.mode === 'telephone';
+  if (tp) {
+    list.push({ k: 'tpmode', ico: 'telephone', label: w.I18N.t('telephone.badge') });
+    if (r.rounds) list.push({ k: 'rounds', ico: 'pen', label: w.I18N.t('telephone.rule.rounds', { n: r.rounds }) });
+    if (r.drawSec) list.push({ k: 'sec', ico: 'clock', label: w.I18N.t('telephone.rule.draw', { n: r.drawSec }) });
+    if (r.guessSec) list.push({ k: 'sec', ico: 'clock', label: w.I18N.t('telephone.rule.guess', { n: r.guessSec }) });
   }
-  if (r.rounds) list.push({ k: 'rounds', ico: 'pen', label: (r.rounds === 1 ? w.I18N.t('lobby.rule.roundsOne') : w.I18N.t('lobby.rule.rounds', { n: r.rounds })) });
-  if (r.drawSec) list.push({ k: 'sec', ico: 'clock', label: w.I18N.t('lobby.rule.sec', { n: r.drawSec }) });
+  if (r.rounds && !tp) list.push({ k: 'rounds', ico: 'pen', label: (r.rounds === 1 ? w.I18N.t('lobby.rule.roundsOne') : w.I18N.t('lobby.rule.rounds', { n: r.rounds })) });
+  if (r.drawSec && !tp) list.push({ k: 'sec', ico: 'clock', label: w.I18N.t('lobby.rule.sec', { n: r.drawSec }) });
   if (r.diff !== undefined) {
     var dl = DIFF_CHOICES.filter(function (d) { return d.v === r.diff; })[0];
     if (dl) list.push({ k: 'diff', label: dl.label });
@@ -427,7 +430,7 @@ export function renderRoomList(rooms) {
   if (!total) {
     /* 沒有公開房間：給一張有下一步的空狀態卡，不要只丟一行字 */
     html = '<div class="lobby-empty"><span class="lobby-empty-face" aria-hidden="true">' + S.face(4, 'idle') + '</span>' +
-      '<h3>' + esc(w.I18N.t('lobby.empty.title')) + '</h3><p>' + esc(w.I18N.t({ relay: 'relay.emptyText', pickdraw: 'pickdraw.emptyText' }[lobbyModeKey()] || 'text.009')) + '</p>' +
+      '<h3>' + esc(w.I18N.t('lobby.empty.title')) + '</h3><p>' + esc(w.I18N.t({ relay: 'relay.emptyText', telephone: 'telephone.emptyText' }[lobbyModeKey()] || 'text.009')) + '</p>' +
       '<button class="btn3d" data-color="mint" data-act="host">' + esc(w.I18N.t('text.362')) + '</button></div>';
   } else {
     var list = visibleRooms(rooms);

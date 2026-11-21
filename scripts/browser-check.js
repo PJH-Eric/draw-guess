@@ -551,7 +551,7 @@ async function main() {
     }
     await shot(v.name + '-線上大廳');
     const roomModes = v.mobile ? [['classic', null]] :
-      [['classic', null], ['relay', '#b-relay'], ['pickdraw', '#b-pickdraw']];
+      [['classic', null], ['relay', '#b-relay'], ['telephone', '#b-telephone']];
     for (const [mode, entry] of roomModes) {
       if (entry) await cdp.eval('window.__probe.click(' + JSON.stringify(entry) + ');');
       await cdp.waitFor('document.querySelector("#s-lobby.active") && !document.getElementById("b-lobby-host").disabled', 5000, '大廳可開房');

@@ -308,16 +308,16 @@
         '<path d="M12 84 q4 -24 24 -24 q20 0 24 24 Z" fill="#FFE3A0" ' + S + '/>' +
         '<path d="M60 84 q4 -18 16 -18 q12 0 14 18 Z" fill="#AED9F5" ' + S + '/>', (globalThis.I18N ? globalThis.I18N.t("text.034") : "玩家"));
     },
-    /* 你出我畫他猜：三個圓點（三個人）用箭頭繞成一圈，中間一枝鉛筆（純裝飾） */
-    pickdraw: function () {
-      return ico('<circle cx="50" cy="16" r="10" fill="#FFB8CF" ' + S + '/>' +
-        '<circle cx="18" cy="74" r="10" fill="#AED9F5" ' + S + '/>' +
-        '<circle cx="82" cy="74" r="10" fill="#A9E7D2" ' + S + '/>' +
-        '<path d="M64 24 Q80 36 82 56" fill="none" ' + S + '/>' +
-        '<path d="M66 84 Q50 92 34 84" fill="none" ' + S + '/>' +
-        '<path d="M18 56 Q20 36 36 24" fill="none" ' + S + '/>' +
-        '<g transform="rotate(35 50 52)"><rect x="44" y="34" width="12" height="26" rx="2" fill="#FFE3A0" ' + S + '/>' +
-        '<path d="M44 60 L50 70 L56 60 Z" fill="#FFF0DE" ' + S + '/></g>', '');
+    /* 畫圖傳話：兩張小畫用箭頭往下傳，最後變成一個對話框（純裝飾） */
+    telephone: function () {
+      return ico('<rect x="8" y="12" width="30" height="30" rx="5" fill="#FFB8CF" ' + S + '/>' +
+        '<path d="M14 34 L21 24 L27 31 L31 27 L33 34" fill="none" ' + S + '/>' +
+        '<rect x="56" y="12" width="30" height="30" rx="5" fill="#AED9F5" ' + S + '/>' +
+        '<circle cx="71" cy="27" r="7" fill="#FFE3A0" ' + S + '/>' +
+        '<path d="M40 27 H52 M47 21 L53 27 L47 33" fill="none" ' + S + '/>' +
+        '<path d="M71 46 V54 M65 50 L71 56 L77 50" fill="none" ' + S + '/>' +
+        '<path d="M24 60 H84 Q90 60 90 66 V80 Q90 86 84 86 H40 L28 94 L30 86 H24 Q18 86 18 80 V66 Q18 60 24 60 Z" fill="#A9E7D2" ' + S + '/>' +
+        '<circle cx="40" cy="73" r="3.5" fill="#28354b"/><circle cx="54" cy="73" r="3.5" fill="#28354b"/><circle cx="68" cy="73" r="3.5" fill="#28354b"/>', '');
     },
     /* 接力：一枝當接力棒的鉛筆，前後兩道箭頭表示「交給下一個人」（純裝飾） */
     relay: function () {

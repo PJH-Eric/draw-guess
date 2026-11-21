@@ -1,8 +1,8 @@
 /* ===== app/guess.js — 猜題列 ===== */
 
-import { $, ME, Rules, Sound, app, toast } from './core.js?v=363abaebc3';
-import { soloRefresh } from './solo.js?v=363abaebc3';
-import { pushFeed } from './feed.js?v=363abaebc3';
+import { $, ME, Rules, Sound, app, toast } from './core.js?v=e1f7d4231d';
+import { soloRefresh } from './solo.js?v=e1f7d4231d';
+import { pushFeed } from './feed.js?v=e1f7d4231d';
 
 var w = window;
 
@@ -43,5 +43,7 @@ export function submitGuess(text) {
   }
   /* 接力：猜題者以外的人，這個框是「畫家聊天」（猜題者看不到） */
   if ($('guessbar').getAttribute('data-mode') === 'chat') { w.Online.send('room:chat', { text: text }); return; }
+  /* 畫圖傳話：最後一人寫答案，送出就揭曉 */
+  if ($('guessbar').getAttribute('data-mode') === 'answer') { w.Online.send('room:answer', { text: text }); return; }
   w.Online.send('room:guess', { text: text });
 }

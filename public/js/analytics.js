@@ -53,9 +53,9 @@
       var value = params[key];
       if ((typeof value === 'string' || typeof value === 'number') && /^[a-zA-Z0-9_-]{1,40}$/.test(String(value))) out[key] = String(value);
     });
-    if (['solo', 'ai', 'online', 'relay', 'pickdraw', 'practice', 'solo_random'].indexOf(params.mode) !== -1) {
-      /* relay：接力模式；pickdraw：你出我畫他猜（Beta）。都跟一般線上房間分開統計 */
-      out.mode = ['online', 'relay', 'pickdraw'].indexOf(params.mode) !== -1 ? params.mode :
+    if (['solo', 'ai', 'online', 'relay', 'telephone', 'practice', 'solo_random'].indexOf(params.mode) !== -1) {
+      /* relay：接力模式；telephone：畫圖傳話（Beta）。都跟一般線上房間分開統計 */
+      out.mode = ['online', 'relay', 'telephone'].indexOf(params.mode) !== -1 ? params.mode :
         (params.mode === 'ai' || params.players > 1 ? 'ai' : 'solo');
       if (params.mode === 'practice' || params.mode === 'solo_random') out.variant = params.mode;
     }
@@ -119,7 +119,7 @@
     if (action !== 'create' && action !== 'join') return;
     if (key != null && key === joinedRoom) return;
     joinedRoom = key == null ? null : key;
-    track('room_' + action, { mode: mode === 'relay' || mode === 'pickdraw' ? mode : 'online', via: via || 'lobby' });
+    track('room_' + action, { mode: mode === 'relay' || mode === 'telephone' ? mode : 'online', via: via || 'lobby' });
   }
 
   function roomLeft() { pendingRoom = null; joinedRoom = null; active = null; }
@@ -138,8 +138,8 @@
     try {
       if (typeof global.gtag === 'function') global.gtag('event', 'page_view', {
         game_id: config.game_id,
-        /* 接力大廳與接力房（relay_＊）用虛擬路徑 /relay、你出我畫他猜（pickdraw_＊）用 /pickdraw，報表裡跟一般模式分得開 */
-        page_location: config.page_location + (screen.indexOf('relay') === 0 ? 'relay#/' : (screen.indexOf('pickdraw') === 0 ? 'pickdraw#/' : '#/')) + screen,
+        /* 接力大廳與接力房（relay_＊）用虛擬路徑 /relay、畫圖傳話（telephone_＊）用 /telephone，報表裡跟一般模式分得開 */
+        page_location: config.page_location + (screen.indexOf('relay') === 0 ? 'relay#/' : (screen.indexOf('telephone') === 0 ? 'telephone#/' : '#/')) + screen,
         page_referrer: cleanUrl(global.document.referrer),
         page_title: global.document.title + ' - ' + screen,
         screen_name: screen

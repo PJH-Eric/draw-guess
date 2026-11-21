@@ -1,15 +1,15 @@
 /* ===== app/online-events.js — 線上事件 ===== */
 
-import { $, Sound, Store, Words, app, toast } from './core.js?v=363abaebc3';
-import { modals } from './modal.js?v=363abaebc3';
-import { localizeGame } from './solo.js?v=363abaebc3';
-import { pushFeed, replaceFeed } from './feed.js?v=363abaebc3';
-import { render } from './render.js?v=363abaebc3';
-import { renderAside } from './overlay.js?v=363abaebc3';
-import { renderGameSettings } from './game-settings.js?v=363abaebc3';
-import { isRelayGame, relayRecord, relayTransition, showCheer } from './relay.js?v=363abaebc3';
-import { isPickdrawGame, pickdrawRecord, pickdrawTransition } from './pickdraw.js?v=363abaebc3';
-import { forgetRoom, joinRoom, leaveGame, lobbyModeKey, renderRoomList, saveNick, setLobbyEnabled, subscribeLobby } from './lobby.js?v=363abaebc3';
+import { $, Sound, Store, Words, app, toast } from './core.js?v=e1f7d4231d';
+import { modals } from './modal.js?v=e1f7d4231d';
+import { localizeGame } from './solo.js?v=e1f7d4231d';
+import { pushFeed, replaceFeed } from './feed.js?v=e1f7d4231d';
+import { render } from './render.js?v=e1f7d4231d';
+import { renderAside } from './overlay.js?v=e1f7d4231d';
+import { renderGameSettings } from './game-settings.js?v=e1f7d4231d';
+import { isRelayGame, relayRecord, relayTransition, showCheer } from './relay.js?v=e1f7d4231d';
+import { applyTelephoneCanvas, isTelephoneGame, telephoneRecord, telephoneTransition } from './telephone.js?v=e1f7d4231d';
+import { forgetRoom, joinRoom, leaveGame, lobbyModeKey, renderRoomList, saveNick, setLobbyEnabled, subscribeLobby } from './lobby.js?v=e1f7d4231d';
 
 var w = window;
 
@@ -75,13 +75,13 @@ export function setupOnlineEvents() {
     var prev = app.view;
     app.view = v;
     if (v.room.mode === 'relay' && w.GameAnalytics) GameAnalytics.pageView('relay_room');
-    if (v.room.mode === 'pickdraw' && w.GameAnalytics) GameAnalytics.pageView('pickdraw_room');
+    if (v.room.mode === 'telephone' && w.GameAnalytics) GameAnalytics.pageView('telephone_room');
     if (v.game) GameAnalytics.sync(v.room.phase, v.room.code + '|' + v.game.seed, {
-      mode: v.room.mode === 'relay' || v.room.mode === 'pickdraw' ? v.room.mode : 'online', difficulty: v.game.diff, players: v.game.players.length, spectator: v.you.role !== 'player'
+      mode: v.room.mode === 'relay' || v.room.mode === 'telephone' ? v.room.mode : 'online', difficulty: v.game.diff, players: v.game.players.length, spectator: v.you.role !== 'player'
     }, { result: v.game.winners && v.game.winners.indexOf(v.you.id) >= 0 ? 'win' : 'lose' });
     app.roomCode = v.room.code;
     /* 回大廳時回到跟這間房同一種的大廳（邀請連結進來的人一開始不知道是哪一種） */
-    app.lobbyMode = v.room.mode === 'relay' || v.room.mode === 'pickdraw' ? v.room.mode : 'classic';
+    app.lobbyMode = v.room.mode === 'relay' || v.room.mode === 'telephone' ? v.room.mode : 'classic';
     /* 房間用的題目語系本機還沒載入（別人開的英文／簡中房）：補載，好了再重畫一次 */
     if (v.game && v.game.lang && w.LazyPacks && !Words.hasLang(v.game.lang)) {
       w.LazyPacks.words(v.game.lang, function (ok) { if (ok && app.mode === 'online' && app.view) render(); });
@@ -96,7 +96,7 @@ export function setupOnlineEvents() {
     if (key !== app.lastTurnKey) {
       app.lastTurnKey = key;
       /* 接力每一棒都會進 drawing：音效與震動交給 relayTransition，只提醒該提醒的人 */
-      if (v.game && v.game.phase === 'drawing' && !isRelayGame(v.game) && !isPickdrawGame(v.game)) Sound.play('turn');
+      if (v.game && v.game.phase === 'drawing' && !isRelayGame(v.game) && !isTelephoneGame(v.game)) Sound.play('turn');
       if (v.game && v.game.phase === 'over') {
         Sound.play(v.game.winners.indexOf(v.you.id) >= 0 ? 'win' : 'lose');
         recordResult(v);
@@ -104,13 +104,15 @@ export function setupOnlineEvents() {
     }
 
     /* 筆畫：有整張就換掉，沒有就比對筆數，對不上主動要求重新同步 */
-    if (v.game && v.game.strokes) app.paint.setStrokes(v.game.strokes);
+    /* 畫圖傳話：每個人畫布上該有什麼由 applyTelephoneCanvas 決定（輪到畫的人是自己這格、猜的人是正在看的畫） */
+    if (isTelephoneGame(v.game)) { /* 見下面 applyTelephoneCanvas */ }
+    else if (v.game && v.game.strokes) app.paint.setStrokes(v.game.strokes);
     else if (v.game && typeof v.game.strokeCount === 'number' && v.game.strokeCount !== app.paint.count()) {
       O.send('room:resync', {});
     }
 
     if (isRelayGame(v.game)) relayTransition(prev, v);
-    if (isPickdrawGame(v.game)) pickdrawTransition(prev, v);
+    if (isTelephoneGame(v.game)) { telephoneTransition(prev, v); applyTelephoneCanvas(v); }
     if (v.room.feed) replaceFeed(v.room.feed);
     render();
     if (modals.game && modals.game.isOpen()) renderGameSettings();
@@ -208,9 +210,9 @@ export function recordResult(v) {
   for (var i = 0; i < v.game.players.length; i++) if (v.game.players[i].id === v.you.id) me = v.game.players[i];
   if (!me) return;
   var correct = 0;
-  if (isRelayGame(v.game) || isPickdrawGame(v.game)) {
-    var rr = isRelayGame(v.game) ? relayRecord(v) : pickdrawRecord(v);
-    Store.recordGame(isRelayGame(v.game) ? 'relay' : 'pickdraw', { win: v.game.winners.indexOf(v.you.id) >= 0, correct: rr.correct, drawn: rr.drawn, score: me.score });
+  if (isRelayGame(v.game) || isTelephoneGame(v.game)) {
+    var rr = isRelayGame(v.game) ? relayRecord(v) : telephoneRecord(v);
+    Store.recordGame(isRelayGame(v.game) ? 'relay' : 'telephone', { win: v.game.winners.indexOf(v.you.id) >= 0, correct: rr.correct, drawn: rr.drawn, score: me.score });
     return;
   }
   for (var j = 0; j < v.game.log.length; j++) {

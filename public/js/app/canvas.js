@@ -1,10 +1,10 @@
 /* ===== app/canvas.js — 畫布與工具列 ===== */
 
-import { $, D, ME, Paint, Rules, S, Sound, Store, app, toast } from './core.js?v=363abaebc3';
-import { pickdrawBlockedTip } from './pickdraw.js?v=363abaebc3';
-import { askConfirm } from './modal.js?v=363abaebc3';
-import { handleGameEvents, soloRefresh, startSolo, withWordPack } from './solo.js?v=363abaebc3';
-import { pushFeed } from './feed.js?v=363abaebc3';
+import { $, D, ME, Paint, Rules, S, Sound, Store, app, toast } from './core.js?v=e1f7d4231d';
+import { telephoneBlockedTip } from './telephone.js?v=e1f7d4231d';
+import { askConfirm } from './modal.js?v=e1f7d4231d';
+import { handleGameEvents, soloRefresh, startSolo, withWordPack } from './solo.js?v=e1f7d4231d';
+import { pushFeed } from './feed.js?v=e1f7d4231d';
 
 var w = window;
 
@@ -23,7 +23,7 @@ export function ensurePaint() {
     onBlocked: function () {
       var v = app.view;
       if (!v || !v.game) return;
-      var pdTip = v.game.mode === 'pickdraw' ? pickdrawBlockedTip(v) : null;
+      var pdTip = v.game.mode === 'telephone' ? telephoneBlockedTip(v) : null;
       if (pdTip) { toolHint(pdTip, 'error'); Sound.play('blocked'); return; }
       if (v.game.mode === 'relay' && v.you && v.you.role !== 'spectator' && !v.game.you.isGuesser) {
         toolHint(w.I18N.t('relay.tip.locked'), 'error');
@@ -285,12 +285,22 @@ export function syncDoneButtons() {
     return;
   }
   /* 接力模式每棒都要畫滿秒數：沒有「畫完了」也沒有「跳過」。
-     你出我畫他猜：有「畫完了」（跟一般模式一樣只是通知），但沒有「跳過」——放棄由猜題者決定。 */
+     畫圖傳話：「畫完了」改成「交出去」（真的把這張畫交給下一位），沒有「跳過」。 */
   var relay = !!(g && g.mode === 'relay');
-  var pickdraw = !!(g && g.mode === 'pickdraw');
+  var telephone = !!(g && g.mode === 'telephone');
   done.hidden = relay;
-  skip.hidden = relay || pickdraw;
+  skip.hidden = relay || telephone;
   if (relay) return;
+  if (telephone) {
+    done.hidden = false;
+    done.disabled = !(app.view && app.view.you.can.submit);
+    var tl = done.querySelector('.b3-lbl') || done;
+    var tt = w.I18N.t('telephone.submit');
+    if (tl.textContent !== tt) tl.textContent = tt;
+    done.title = w.I18N.t('telephone.submitTitle');
+    return;
+  }
+  done.title = w.I18N.t('text.469');
   /* 線上房間：這顆鈕只要輪到你畫就一直能按，按過也不鎖、不改字 ——
      補了幾筆想再叫大家看一次是很自然的事，伺服器那邊同樣不擋重複。 */
   done.hidden = false;
@@ -390,6 +400,9 @@ export function doDone() {
   /* 單機自己練習沒有其他人可以通知，這顆鈕在單機一律藏起來（見 syncDoneButtons），
      按鈕不存在自然點不到，這裡留一個保險：真的被呼叫到也什麼都不做。 */
   if (app.mode === 'solo') return;
+  /* 畫圖傳話：把這張畫交給下一位（交了就不能改） */
+  var g = app.view && app.view.game;
+  if (g && g.mode === 'telephone') { w.Online.send('room:submit', {}); return; }
   /* 想按幾次就按幾次：不鎖按鈕、不記「按過了」，每一次都送出去再廣播一次 */
   w.Online.send('room:done', {});
 }

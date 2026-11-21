@@ -25,7 +25,7 @@ const SUITES = [
   { name: 'test:online', cmd: 'npm', args: ['run', '-s', 'test:online'], pass: /失敗 0 項/ },
   { name: 'browser-check', cmd: process.execPath, args: [path.join(ROOT, 'scripts/browser-check.js')], pass: /瀏覽器檢查全部通過/ },
   { name: 'relay-browser-check', cmd: process.execPath, args: [path.join(ROOT, 'scripts/relay-browser-check.js')], pass: /接力瀏覽器巡檢通過/ },
-  { name: 'pickdraw-browser-check', cmd: process.execPath, args: [path.join(ROOT, 'scripts/pickdraw-browser-check.js')], pass: /你出我畫他猜瀏覽器巡檢通過/ }
+  { name: 'telephone-browser-check', cmd: process.execPath, args: [path.join(ROOT, 'scripts/telephone-browser-check.js')], pass: /畫圖傳話瀏覽器巡檢通過/ }
 ];
 
 /** 防作弊：統計測試檔裡通過的檢查項數（✓ 行），不能少於基準 */
@@ -72,7 +72,7 @@ function main() {
     const counts = {
       'tests/relay.js': countPasses(results[0].out),
       'online-check': countPasses(results[1].out),
-      'pickdraw-browser': countPasses(results[4].out)
+      'telephone-browser': countPasses(results[4].out)
     };
     let invariantOk = true;
     if (baseline) {

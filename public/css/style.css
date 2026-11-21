@@ -2112,77 +2112,104 @@ body.reduced-motion .relay-cheer,body.reduced-motion .relay-typing{animation:non
   .cheer-btn [data-i18n]{display:none}
 }
 
-/* >>> parts/88-pickdraw.css */
-/* ---------- 你出我畫他猜（Beta） ----------
- * 主色是 rose（玫瑰）：首頁入口、大廳說明、房間徽章、角色列都用同一個色系，
+/* >>> parts/88-telephone.css */
+/* ---------- 畫圖傳話（Beta） ----------
+ * 主色是 rose（玫瑰）：首頁入口、大廳說明、房間徽章、傳話順序都用同一個色系，
  * 跟一般模式（grape）、接力模式（peach）一眼分得開。
  * 版面元件大多沿用接力的樣式（relay-*），這裡只換顏色並補上這個模式自己的元件。 */
 :root{
-  --pd:#FFB8CF; --pd-d:#E88CAA; --pd-t:#A8456A; --pd-tint:#FFEFF4;
+  --tp:#FFB8CF; --tp-d:#E88CAA; --tp-t:#A8456A; --tp-tint:#FFEFF4;
 }
 
 /* 大廳：說明條與標題色 */
-.pickdraw-lobby-note{border-color:var(--pd-d);background:var(--pd-tint)}
-body.lobby-pickdraw #lobby-title{color:var(--pd-t)}
-/* 模式名稱比較長：窄手機縮一點字、收緊字距，標題才放得進一行 */
-@media (max-width:480px){body.lobby-pickdraw #lobby-title{font-size:1.05rem;letter-spacing:0}}
+.telephone-lobby-note{border-color:var(--tp-d);background:var(--tp-tint)}
+body.lobby-telephone #lobby-title{color:var(--tp-t)}
+@media (max-width:480px){body.lobby-telephone #lobby-title{font-size:1.05rem;letter-spacing:0}}
 
 /* 房間卡片與房間設定卡的模式標記 */
-.rc-rule[data-k=pdmode]{background:var(--pd);border-color:var(--pd-d)}
-.pickdraw-badge{border-color:var(--pd-d);background:var(--pd)}
+.rc-rule[data-k=tpmode]{background:var(--tp);border-color:var(--tp-d)}
+.telephone-badge{border-color:var(--tp-d);background:var(--tp)}
 
-/* ---------- 對局：挑題卡、倒數卡共用的「出題 → 畫 → 猜」三人列 ---------- */
-.pd-qno{color:var(--pd-t)}
-.pd-trio{
-  list-style:none;margin:12px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;
-  counter-reset:pd
-}
-.pd-trio-item{
-  position:relative;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 6px;
+/* ---------- 對局：輪次、等待卡 ---------- */
+.tp-qno{color:var(--tp-t)}
+.tp-choices .wordchoice b{overflow-wrap:anywhere;text-align:center}
+.tp-secs{margin:4px 0 0;font-weight:800;color:var(--tp-t)}
+.tp-handoff .relay-count-n{color:var(--tp-t)}
+.tp-hand-label{margin:6px 0 4px;font-weight:800;color:var(--ink-soft)}
+.tp-hand-word{color:var(--tp-t);overflow-wrap:anywhere}
+.tp-hand-pic{display:flex;justify-content:center}
+.tp-hand-pic .tp-pic{width:min(320px,70vw,42vh)}
+.tp-hand-warn{margin:6px 0 0;font-weight:800;color:var(--tp-t)}
+
+/* 一張畫：白紙底、圓角；空白的畫顯示一張寫著「空白」的紙 */
+.tp-pic{display:block;width:100%;height:auto;aspect-ratio:1;border:2px solid var(--line);border-radius:12px;background:#fff}
+.tp-pic-blank{display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-weight:800;font-size:.85rem}
+
+/* 傳話順序：誰畫過（✓）、輪到誰（亮起）、還有誰、誰被跳過 */
+.tp-order{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+.tp-order-item{
+  position:relative;min-width:0;width:76px;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 4px;
   border:2px solid var(--line);border-radius:14px;background:var(--surface);text-align:center
 }
-/* 角色之間的小箭頭：出題 → 畫 → 猜 */
-.pd-trio-item + .pd-trio-item::before{
-  content:"→";position:absolute;left:-9px;top:50%;transform:translate(-50%,-50%);
-  font-weight:900;font-size:.9rem;color:var(--pd-t)
+.tp-order-item + .tp-order-item::before{
+  content:"→";position:absolute;left:-6px;top:28px;transform:translate(-50%,-50%);
+  font-weight:900;font-size:.8rem;color:var(--tp-t)
 }
-.pd-trio-item[data-role=picker]{border-color:var(--pd-d);background:var(--pd-tint)}
-.pd-trio-item[data-role=drawer]{border-color:var(--grape-d);background:var(--grape-tint)}
-.pd-trio-item[data-role=guesser]{border-color:var(--sky-d);background:var(--sky-tint)}
-.pd-trio-item[data-me=true]{box-shadow:0 0 0 3px var(--ink) inset}
-.pd-trio-face{width:40px;height:40px;display:block}
-.pd-trio-face svg{width:100%;height:100%;display:block}
-.pd-trio-role{font-size:.78rem;font-weight:900}
-.pd-trio-name{font-size:.78rem;font-weight:700;color:var(--ink-soft);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pd-choices .wordchoice b{overflow-wrap:anywhere;text-align:center}
-.pd-secs{margin:4px 0 0;font-weight:800;color:var(--pd-t)}
-.pd-countdown .relay-count-n{color:var(--pd-t)}
+.tp-order-item[data-state=done]{background:var(--mint-tint)}
+.tp-order-item[data-state=current]{border-color:var(--tp-d);background:var(--tp-tint);box-shadow:0 3px 0 var(--tp-d)}
+.tp-order-item[data-state=skipped]{opacity:.55}
+.tp-order-item[data-me=true]{box-shadow:0 0 0 3px var(--ink) inset}
+.tp-order-face{width:34px;height:34px;display:block}
+.tp-order-face svg{width:100%;height:100%;display:block}
+.tp-order-name{font-size:.74rem;font-weight:800;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tp-order-tag{font-size:.64rem;font-weight:800;color:var(--ink-soft)}
 
-/* ---------- 對局：公布答案的三人得分 ---------- */
-.pd-scores{margin:6px 0}
-.pd-score-row .rname{display:flex;flex-direction:column;line-height:1.2;min-width:0}
-.pd-score-role{font-size:.68rem;font-weight:900;color:var(--ink-soft)}
-.pd-score-row[data-role=picker] .pd-score-role{color:var(--pd-t)}
+/* ---------- 等最後一人猜：左右翻看所有的畫 ---------- */
+.tp-browse{display:flex;align-items:center;justify-content:center;gap:8px;margin:8px 0 4px}
+.tp-browse-fig{margin:0;flex:0 1 auto;width:min(360px,64vw,46vh);text-align:center}
+.tp-browse-fig figcaption{margin-top:4px;font-size:.8rem;font-weight:800;color:var(--ink-soft)}
+.tp-browse-btn{flex:0 0 auto;min-width:44px;min-height:44px;font-size:1.4rem;line-height:1}
 
-/* ---------- 對局：玩家列標出這題的角色 ---------- */
-.pcard.pd-picker{border-color:var(--pd-d);background:var(--pd-tint);box-shadow:0 3px 0 var(--pd-d)}
-.pcard.pd-picker .pstate{color:var(--pd-t)}
-.pcard.pd-guesser .pstate{color:#2F6F9E}
+/* ---------- 揭曉整串 ---------- */
+/* 格子排成網格：寬的卡片一排放三、四格，手機兩格；題目那一格橫跨整排 */
+.tp-chain{list-style:none;margin:6px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.tp-chain .tp-cell-word{grid-column:1 / -1}
+.tp-cell{display:flex;flex-direction:column;min-width:0}
+.tp-cell-write{justify-content:center}
+.tp-cell{border:2px solid var(--line);border-radius:14px;background:var(--surface);padding:8px}
+.tp-cell-word{text-align:center;background:var(--tp-tint);border-color:var(--tp-d)}
+.tp-cell-word .revealword{color:var(--tp-t);margin:2px 0;overflow-wrap:anywhere}
+.tp-cell-head{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.tp-cell-step{
+  flex:0 0 auto;min-width:24px;height:24px;padding:0 6px;border-radius:12px;background:var(--tp);border:2px solid var(--tp-d);
+  display:inline-flex;align-items:center;justify-content:center;font-size:.74rem;font-weight:900
+}
+.tp-cell-word .tp-cell-step{display:inline-flex;margin:0 auto}
+.tp-cell-name{font-weight:900;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tp-cell-stand{font-size:.7rem;font-weight:800;color:var(--ink-soft)}
+.tp-cell-pts{margin-left:auto;font-weight:900;font-size:.85rem;color:var(--ink-soft)}
+.tp-cell-pts[data-on=true]{color:var(--ok)}
+.tp-cell-pic{display:flex;justify-content:center}
+.tp-cell-pic .tp-pic{width:100%}
+.tp-cell-skip{margin:0;text-align:center;color:var(--ink-soft);font-weight:700}
+.tp-cell-answer{text-align:center;font-size:1.3rem;font-weight:900;overflow-wrap:anywhere}
+.tp-cell-write[data-hit=true]{border-color:var(--ok)}
+.tp-reacts{display:flex;justify-content:center;gap:6px;margin-top:auto;padding-top:6px}
+.tp-react{min-width:0;flex:1 1 0;max-width:72px;min-height:44px;padding:4px 6px}
+.tp-hints-used{margin:8px 0 0;text-align:center;font-size:.82rem;font-weight:700;color:var(--ink-soft)}
+.tp-next{margin:8px 0 0;text-align:center;font-weight:800}
 
-/* ---------- 對局：猜題者那一列只有放棄鈕（提示由畫家給） ---------- */
-.hintdock.pd-guesser-row .hintrow-label{display:none}
-.hintdock.pd-guesser-row .hintrow-note{max-width:none}
+/* ---------- 結算：最好笑 ---------- */
+.tp-award{border-color:var(--tp-d);background:var(--tp-tint)}
 
-
-/* ---------- 結算：獎項卡換成這個模式的顏色 ---------- */
-.pd-awards h4{color:var(--pd-t)}
-.pd-award{border-color:var(--pd-d);background:var(--pd-tint)}
-
-/* 矮的手機直向：玩家列與提示列擠在同一行（見 87-relay）。猜題者那一列只有一顆「放棄」，
-   不要撐滿剩下的寬度，把位子讓給三人的角色列 */
-@media (orientation:portrait) and (max-width:620px) and (max-height:700px){
-  .game-head > .canvastop .hintdock.relay-hints.pd-guesser-row{flex:0 0 auto}
-  .hintdock.pd-guesser-row .relay-giveup{padding-left:8px;padding-right:8px}
+/* ---------- 輪到猜的人：切換正在看的畫、偷看前面的畫 ---------- */
+.tp-peekdock{flex-wrap:wrap;row-gap:4px}
+.tp-view{min-height:36px;font-size:.78rem}
+.tp-view[aria-checked=true]{border-color:var(--tp-d);background:var(--tp-tint)}
+.tp-peek{font-size:.78rem}
+.hintdock.tp-guesser-row .hintrow-note{max-width:none}
+@media (orientation:portrait) and (max-width:620px){
+  .hintdock.tp-guesser-row .hintrow-note{display:none}
 }
 
 /* >>> parts/90-motion.css */

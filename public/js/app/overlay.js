@@ -1,17 +1,17 @@
 /* ===== app/overlay.js — 疊層卡片：房間設定、選題、公布答案、結算 ===== */
 
-import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=363abaebc3';
-import { askLeaveRoom, makeModal, modals } from './modal.js?v=363abaebc3';
-import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=363abaebc3';
-import { soloRefresh, soloStep, startSolo } from './solo.js?v=363abaebc3';
-import { renderRecent } from './feed.js?v=363abaebc3';
-import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=363abaebc3';
-import { PHASE_LABEL, moodOf } from './render.js?v=363abaebc3';
-import { copyText, newInvite, revokeInvite } from './game-settings.js?v=363abaebc3';
-import { enterOnlineRoom, leaveGame, lobbyModeKey, roomRuleChips, saveNick } from './lobby.js?v=363abaebc3';
-import { hideRelayUi, isRelayGame, relayAwardsHtml, relayCanDo, relayBarMode, relayOverlayHtml, relayPhaseLabel, relayToolsShown, relayVote, renderRelayAssist, renderRelayBanner } from './relay.js?v=363abaebc3';
-import { hidePickdrawUi, isPickdrawGame, pickdrawAwardsHtml, pickdrawCanDo, pickdrawOverlayHtml, pickdrawPhaseLabel, pickdrawRoleLabel, pickdrawToolsShown, renderPickdrawAssist } from './pickdraw.js?v=363abaebc3';
-import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=363abaebc3';
+import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=e1f7d4231d';
+import { askLeaveRoom, makeModal, modals } from './modal.js?v=e1f7d4231d';
+import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=e1f7d4231d';
+import { soloRefresh, soloStep, startSolo } from './solo.js?v=e1f7d4231d';
+import { renderRecent } from './feed.js?v=e1f7d4231d';
+import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=e1f7d4231d';
+import { PHASE_LABEL, moodOf } from './render.js?v=e1f7d4231d';
+import { copyText, newInvite, revokeInvite } from './game-settings.js?v=e1f7d4231d';
+import { enterOnlineRoom, leaveGame, lobbyModeKey, roomRuleChips, saveNick } from './lobby.js?v=e1f7d4231d';
+import { hideRelayUi, isRelayGame, relayAwardsHtml, relayCanDo, relayBarMode, relayOverlayHtml, relayPhaseLabel, relayToolsShown, relayVote, renderRelayAssist, renderRelayBanner } from './relay.js?v=e1f7d4231d';
+import { hideTelephoneUi, isTelephoneGame, renderTelephoneAssist, telephoneAwardsHtml, telephoneCanDo, telephoneOverlayAct, telephoneOverlayHtml, telephonePhaseLabel, telephoneRoleLabel, telephoneToolsShown } from './telephone.js?v=e1f7d4231d';
+import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=e1f7d4231d';
 
 var w = window;
 
@@ -35,9 +35,9 @@ export function renderOverlay() {
   } else if (isRelayGame(g) && g.phase !== 'over') {
     /* 接力：投票、倒數、公布答案用卡片；作畫與換棒緩衝不蓋住畫布 */
     html = relayOverlayHtml(v, g);
-  } else if (isPickdrawGame(g) && g.phase !== 'over') {
-    /* 你出我畫他猜：挑題、倒數、公布答案用卡片；作畫中不蓋住畫布 */
-    html = pickdrawOverlayHtml(v, g);
+  } else if (isTelephoneGame(g) && g.phase !== 'over') {
+    /* 畫圖傳話：挑題、換手、等別人、揭曉用卡片；輪到自己畫或猜時不蓋住畫布 */
+    html = telephoneOverlayHtml(v, g);
   } else if (g && g.phase === 'picking') {
     html = pickingHtml(v, g);
   } else if (g && g.phase === 'reveal') {
@@ -174,13 +174,17 @@ export function batonChoices() {
   return list.map(function (n) { return { v: n, label: w.I18N.t('relay.opt.sec', { n: n }) }; });
 }
 
-/* 你出我畫他猜的兩個欄位：圈數（1–5，一圈 3 題）、每題作畫秒數（30／60／90） */
-export function lapChoices() {
-  return [1, 2, 3, 4, 5].map(function (n) { return { v: n, label: w.I18N.t('pickdraw.opt.laps', { n: n, q: n * 3 }) }; });
+/* 畫圖傳話的三個欄位：每張畫秒數（30／45／60）、猜答案秒數（20／25／30）、輪次（1–3） */
+export function tpDrawChoices() {
+  var list = (w.TelephoneRules && w.TelephoneRules.CONST.DRAW_SEC) || [30, 45, 60];
+  return list.map(function (n) { return { v: n, label: w.I18N.t('telephone.opt.sec', { n: n }) }; });
 }
-export function pdSecChoices() {
-  var list = (w.PickdrawRules && w.PickdrawRules.CONST.DRAW_SEC) || [30, 60, 90];
-  return list.map(function (n) { return { v: n, label: w.I18N.t('pickdraw.opt.sec', { n: n }) }; });
+export function tpGuessChoices() {
+  var list = (w.TelephoneRules && w.TelephoneRules.CONST.GUESS_SEC) || [20, 25, 30];
+  return list.map(function (n) { return { v: n, label: w.I18N.t('telephone.opt.sec', { n: n }) }; });
+}
+export function tpRoundChoices() {
+  return [1, 2, 3].map(function (n) { return { v: n, label: w.I18N.t('telephone.opt.rounds', { n: n }) }; });
 }
 
 export function chips(act, list, current) {
@@ -248,16 +252,17 @@ export function renderRoomCreateOptions() {
   fillSelect('room-create-drawsec', SEC_CHOICES, c.drawSec);
   fillSelect('room-create-guessrounds', guessRoundChoices(), c.guessRounds || 1);
   fillSelect('room-create-baton', batonChoices(), c.batonSec || 12);
-  fillSelect('room-create-laps', lapChoices(), c.laps || 2);
-  fillSelect('room-create-pdsec', pdSecChoices(), c.pdDrawSec || 60);
+  fillSelect('room-create-tpdraw', tpDrawChoices(), c.tpDrawSec || 45);
+  fillSelect('room-create-tpguess', tpGuessChoices(), c.tpGuessSec || 25);
+  fillSelect('room-create-tprounds', tpRoundChoices(), c.tpRounds || 1);
   fillSelect('room-create-diff', DIFF_CHOICES, c.diff);
-  /* 一般房、接力房與你出我畫他猜房共用同一個彈窗：只顯示這個模式用得到的欄位 */
-  var mode = c.mode === 'relay' || c.mode === 'pickdraw' ? c.mode : 'classic';
-  var only = D.querySelectorAll('#room-create-modal .classic-only, #room-create-modal .relay-only, #room-create-modal .pickdraw-only');
+  /* 一般房、接力房與畫圖傳話房共用同一個彈窗：只顯示這個模式用得到的欄位 */
+  var mode = c.mode === 'relay' || c.mode === 'telephone' ? c.mode : 'classic';
+  var only = D.querySelectorAll('#room-create-modal .classic-only, #room-create-modal .relay-only, #room-create-modal .telephone-only');
   for (var i = 0; i < only.length; i++) {
     only[i].hidden = !only[i].classList.contains(mode + '-only');
   }
-  var titleKey = { relay: 'relay.createTitle', pickdraw: 'pickdraw.createTitle' }[mode] || 'text.374';
+  var titleKey = { relay: 'relay.createTitle', telephone: 'telephone.createTitle' }[mode] || 'text.374';
   var title = $('room-create-title').querySelector('[data-i18n]');
   title.setAttribute('data-i18n', titleKey);
   title.textContent = w.I18N.t(titleKey);
@@ -281,8 +286,9 @@ export function setupRoomCreate() {
   $('room-create-diff').addEventListener('change', function () { app.roomCreate.diff = Number(this.value); });
   $('room-create-guessrounds').addEventListener('change', function () { app.roomCreate.guessRounds = Number(this.value); });
   $('room-create-baton').addEventListener('change', function () { app.roomCreate.batonSec = Number(this.value); });
-  $('room-create-laps').addEventListener('change', function () { app.roomCreate.laps = Number(this.value); });
-  $('room-create-pdsec').addEventListener('change', function () { app.roomCreate.pdDrawSec = Number(this.value); });
+  $('room-create-tpdraw').addEventListener('change', function () { app.roomCreate.tpDrawSec = Number(this.value); });
+  $('room-create-tpguess').addEventListener('change', function () { app.roomCreate.tpGuessSec = Number(this.value); });
+  $('room-create-tprounds').addEventListener('change', function () { app.roomCreate.tpRounds = Number(this.value); });
 
   $('lobby-room-name').addEventListener('input', function () {
     app.roomCreate.roomName = this.value.slice(0, 24);
@@ -302,8 +308,9 @@ export function openRoomCreate() {
     mode: lobbyModeKey(),
     guessRounds: 1,
     batonSec: 12,
-    laps: 2,
-    pdDrawSec: 60
+    tpDrawSec: 45,
+    tpGuessSec: 25,
+    tpRounds: 1
   };
   renderRoomCreateOptions();
   modals.roomCreate.open();
@@ -315,17 +322,17 @@ export function createRoomFromSettings() {
   c.roomName = roomName;
   saveNick($('lobby-nick'));
   $('room-create-submit').disabled = true;
-  var relay = c.mode === 'relay', pickdraw = c.mode === 'pickdraw';
+  var relay = c.mode === 'relay', telephone = c.mode === 'telephone';
   var settings = relay
     ? { wordLang: c.wordLang || Store.wordLang(), guessRounds: c.guessRounds || 1, batonSec: c.batonSec || 12, diff: c.diff, category: c.category || '' }
-    : pickdraw
-      ? { wordLang: c.wordLang || Store.wordLang(), laps: c.laps || 2, drawSec: c.pdDrawSec || 60, diff: c.diff, category: c.category || '' }
+    : telephone
+      ? { wordLang: c.wordLang || Store.wordLang(), drawSec: c.tpDrawSec || 45, guessSec: c.tpGuessSec || 25, rounds: c.tpRounds || 1, diff: c.diff, category: c.category || '' }
       : { wordLang: c.wordLang || Store.wordLang(), rounds: c.rounds, drawSec: c.drawSec, diff: c.diff, category: c.category || '' };
   w.Online.send('room:create', {
     name: Store.ensureNick(),
     roomName: roomName,
     private: c.private,
-    mode: relay ? 'relay' : (pickdraw ? 'pickdraw' : 'classic'),
+    mode: relay ? 'relay' : (telephone ? 'telephone' : 'classic'),
     settings: settings
   }, function (res) {
     $('room-create-submit').disabled = false;
@@ -382,24 +389,26 @@ export function roomSetupHtml(v) {
   /* ---- 遊戲規則 ---- */
   var rules;
   var relay = r.mode === 'relay';
-  var pickdraw = r.mode === 'pickdraw';
-  if (pickdraw) {
-    /* 你出我畫他猜房：圈數、每題秒數、題型，再加種類；下面一句話講清楚角色怎麼輪 */
-    var pdNote = '<p class="setupnote relay-rules-note">' + esc(w.I18N.t('pickdraw.rulesNote')) + '</p>';
+  var telephone = r.mode === 'telephone';
+  if (telephone) {
+    /* 畫圖傳話房：每張畫秒數、猜答案秒數、輪次，再加題型與種類；下面一句話講清楚怎麼傳 */
+    var tpNote = '<p class="setupnote relay-rules-note">' + esc(w.I18N.t('telephone.rulesNote')) + '</p>';
     rules = host
       ? '<div class="setupblock"><h4>' + esc(w.I18N.t('text.123')) + '</h4>' +
         '<div class="rules-row">' +
-        '<div class="rule-field"><span>' + esc(w.I18N.t('pickdraw.field.laps')) + '</span>' + ruleDropdown('set-laps', lapChoices(), r.settings.laps) + '</div>' +
-        '<div class="rule-field"><span>' + esc(w.I18N.t('pickdraw.field.drawSec')) + '</span>' + ruleDropdown('set-pdsec', pdSecChoices(), r.settings.drawSec) + '</div>' +
+        '<div class="rule-field"><span>' + esc(w.I18N.t('telephone.field.drawSec')) + '</span>' + ruleDropdown('set-tpdraw', tpDrawChoices(), r.settings.drawSec) + '</div>' +
+        '<div class="rule-field"><span>' + esc(w.I18N.t('telephone.field.guessSec')) + '</span>' + ruleDropdown('set-tpguess', tpGuessChoices(), r.settings.guessSec) + '</div>' +
+        '<div class="rule-field"><span>' + esc(w.I18N.t('telephone.field.rounds')) + '</span>' + ruleDropdown('set-tprounds', tpRoundChoices(), r.settings.rounds) + '</div>' +
+        '</div><div class="rules-row">' +
         '<div class="rule-field"><span>' + esc(w.I18N.t('text.124')) + '</span>' + ruleDropdown('set-diff', DIFF_CHOICES, r.settings.diff) + '</div>' +
-        '</div><div class="rule-field category-rule"><span>' + esc(w.I18N.t('category.select')) + '</span>' +
-        ruleDropdown('set-category', categoryChoices(), r.settings.category || '') + '</div>' +
-        langField + pdNote + '</div>'
+        '<div class="rule-field category-rule"><span>' + esc(w.I18N.t('category.select')) + '</span>' +
+        ruleDropdown('set-category', categoryChoices(), r.settings.category || '') + '</div></div>' +
+        langField + tpNote + '</div>'
       : '<div class="setupblock"><h4>' + esc(w.I18N.t('text.123')) + '</h4>' +
         '<div class="setup-rulechips" id="room-wordlang-note">' + roomRuleChips({
-          mode: 'pickdraw', laps: r.settings.laps, drawSec: r.settings.drawSec, diff: r.settings.diff,
-          category: r.settings.category || '', wordLang: r.settings.wordLang
-        }) + '</div>' + pdNote + '</div>';
+          mode: 'telephone', drawSec: r.settings.drawSec, guessSec: r.settings.guessSec, rounds: r.settings.rounds,
+          diff: r.settings.diff, category: r.settings.category || '', wordLang: r.settings.wordLang
+        }) + '</div>' + tpNote + '</div>';
   } else if (relay) {
     /* 接力房：猜題次數、每棒秒數、題型，再加種類；下面一句話講清楚怎麼玩 */
     var relayNote = '<p class="setupnote relay-rules-note">' + esc(w.I18N.t('relay.rulesNote')) + '</p>';
@@ -494,7 +503,7 @@ export function roomSetupHtml(v) {
      一個畫面就看得完不用捲；窄螢幕兩欄上下接著排，跟以前一樣是一欄。 */
   return ("<h3>" + esc(I18N.t("text.103")) +
     (relay ? ' <span class="relay-badge"><span class="ico" data-ico="relay" aria-hidden="true"></span>' + esc(w.I18N.t('relay.name')) + '</span>' : '') +
-    (pickdraw ? ' <span class="relay-badge pickdraw-badge"><span class="ico" data-ico="pickdraw" aria-hidden="true"></span>' + esc(w.I18N.t('pickdraw.name')) + '</span>' : '') + "</h3>") +
+    (telephone ? ' <span class="relay-badge telephone-badge"><span class="ico" data-ico="telephone" aria-hidden="true"></span>' + esc(w.I18N.t('telephone.name')) + '</span>' : '') + "</h3>") +
     '<div class="setup-cols"><div class="setup-col">' +
     '<div class="roomcode"><b>' + esc(r.code) + '</b><span>' +
     esc(w.I18N.t(r.private ? 'room.privateInvite' : 'text.102')) + '</span></div>' +
@@ -646,7 +655,7 @@ export function overHtml(v, g) {
     if (v.you.can.rematch) btns += ("<button class=\"btn3d\" data-color=\"mint\" data-act=\"rematch\">" + esc(I18N.t("text.081")) + "</button>");
     btns += ("<button class=\"btn3d small\" data-color=\"cream\" data-act=\"home\">" + esc(I18N.t("text.080")) + "</button>");
   }
-  return confettiHtml() + '<section data-result-share class="result-share-card">' + ("<div class=\"result-heading\"><h3>" + esc(I18N.t("text.079")) + "</h3><span>" + esc(I18N.t("text.079.2")) + "</span></div>") + hero + (isRelayGame(g) ? relayAwardsHtml(g) : (isPickdrawGame(g) ? pickdrawAwardsHtml(g) : bestDrawerHtml(g))) + '<ol class="resultlist">' + rows + '</ol>' + note + '</section>' +
+  return confettiHtml() + '<section data-result-share class="result-share-card">' + ("<div class=\"result-heading\"><h3>" + esc(I18N.t("text.079")) + "</h3><span>" + esc(I18N.t("text.079.2")) + "</span></div>") + hero + (isRelayGame(g) ? relayAwardsHtml(g) : (isTelephoneGame(g) ? telephoneAwardsHtml(g) : bestDrawerHtml(g))) + '<ol class="resultlist">' + rows + '</ol>' + note + '</section>' +
     galleryHtml(g) +
     (app.mode === 'online' ? chatBlockHtml(v) : '') +
     /* 主要動作（再來一局）自己一列，其餘次要鈕在下一列平分寬度，不會落單一顆 */
@@ -750,7 +759,7 @@ export function onOverlayAct(el) {
   else if (act === 'online-rematch') w.Online.send('room:rematch', {});
   else if (act === 'react') w.Online.send('room:react', { kind: el.getAttribute('data-kind') });
   else if (act === 'relay-vote') relayVote(el.getAttribute('data-word'));
-  else if (act === 'pickdraw-pick') w.Online.send('room:pick', { wordId: el.getAttribute('data-word') });
+  else if (act.indexOf('telephone-') === 0) { if (telephoneOverlayAct(act, el) === 'render') renderOverlay(); }
   else if (act === 'gallery-open') openGalleryItem(Number(el.getAttribute('data-i')));
   else if (act === 'gallery-retry') retryGallery();
   else if (act === 'lobby') leaveGame('s-lobby');
@@ -768,7 +777,7 @@ export function onOverlayAct(el) {
     var optValue = optField === 'set-category' ? el.getAttribute('data-v') : Number(el.getAttribute('data-v'));
     var key = optField === 'set-category' ? 'category' : optField === 'set-rounds' ? 'rounds' : optField === 'set-drawsec' ? 'drawSec' : optField === 'set-diff' ? 'diff'
       : optField === 'set-guessrounds' ? 'guessRounds' : optField === 'set-batonsec' ? 'batonSec'
-      : optField === 'set-laps' ? 'laps' : optField === 'set-pdsec' ? 'drawSec' : null;
+      : optField === 'set-tpdraw' ? 'drawSec' : optField === 'set-tpguess' ? 'guessSec' : optField === 'set-tprounds' ? 'rounds' : null;
     if (key) {
       var payload = {};
       payload[key] = optValue;
@@ -797,10 +806,10 @@ export function sendChatMessage() {
 
 export function renderControls() {
   var v = app.view, g = v.game;
-  if (!isPickdrawGame(g)) hidePickdrawUi();
+  if (!isTelephoneGame(g)) hideTelephoneUi();
   if (isRelayGame(g)) { renderRelayControls(v, g); return; }
   hideRelayUi();
-  if (isPickdrawGame(g)) { renderPickdrawControls(v, g); return; }
+  if (isTelephoneGame(g)) { renderTelephoneControls(v, g); return; }
   var canDraw = !!(g && v.you.can.draw);
   var canGuess = !!(g && v.you.can.guess);
   var spectator = v.you.role === 'spectator';
@@ -888,12 +897,12 @@ export function renderRelayControls(v, g) {
 }
 
 /**
- * 你出我畫他猜的操作列：
- *   畫家有工具列與提示鈕；猜題者有猜題框與放棄鈕；出題者只有表情列（不能打字）；觀戰者都沒有。
+ * 畫圖傳話的操作列：
+ *   輪到畫的人有工具列（「畫完了」改成「交出去」）；輪到猜的人有答案框、提示與偷看；其他人與觀戰者都沒有。
  */
-export function renderPickdrawControls(v, g) {
+export function renderTelephoneControls(v, g) {
   var closed = !!(v.room && v.room.closed) || g.phase === 'over';
-  var tools = !closed && pickdrawToolsShown(g);
+  var tools = !closed && telephoneToolsShown(g);
   var canDraw = !closed && !!v.you.can.draw;
   $('toolbar').hidden = !tools;
   $('solo-file-actions').hidden = true;
@@ -906,18 +915,32 @@ export function renderPickdrawControls(v, g) {
     syncToolbar();
     if (!$('tool-hint').textContent) toolHint(TOOL_TIP[app.paint.getTool()]);
   }
-  if (closed) { $('hintrow').hidden = true; $('relay-cheers').hidden = true; $('b-relay-giveup').hidden = true; }
-  else renderPickdrawAssist(v, g);
+  if (closed) { $('hintrow').hidden = true; $('relay-cheers').hidden = true; $('b-relay-giveup').hidden = true; hideTelephoneUi(); }
+  else renderTelephoneAssist(v, g);
   syncDoneButtons();
 
-  var bar = $('guessbar'), input = $('guess-input');
-  bar.hidden = closed || g.you.role !== 'guesser' || (g.phase !== 'countdown' && g.phase !== 'drawing');
+  var bar = $('guessbar'), input = $('guess-input'), btn = $('b-guess');
+  bar.hidden = closed || g.phase !== 'step' || g.you.role !== 'guesser';
   if (!bar.hidden) {
-    var canGuess = !!v.you.can.guess;
-    input.maxLength = 24;
-    input.disabled = !canGuess;
-    $('b-guess').disabled = !canGuess;
-    input.placeholder = w.I18N.t(canGuess ? 'pickdraw.guess.placeholder' : 'pickdraw.guess.wait');
+    var canAnswer = !!v.you.can.answer;
+    var sig = 'tp:' + w.I18N.lang;
+    if (bar.getAttribute('data-sig') !== sig) {
+      if (bar.getAttribute('data-mode') !== 'answer') input.value = '';
+      bar.setAttribute('data-mode', 'answer');
+      bar.setAttribute('data-sig', sig);
+      S.setLabel(btn, esc(w.I18N.t('telephone.answer.send')));
+      S.setColor(btn, 'mint');
+    }
+    input.maxLength = (w.TelephoneRules && w.TelephoneRules.CONST.ANSWER_MAX) || 40;
+    input.disabled = !canAnswer;
+    btn.disabled = !canAnswer;
+    input.placeholder = w.I18N.t(canAnswer ? 'telephone.answer.placeholder' : 'telephone.answer.wait');
+  } else if (bar.getAttribute('data-mode') === 'answer') {
+    /* 交出答案或換人之後，下一次這個框給一般猜題用時要換回原本的字 */
+    bar.removeAttribute('data-mode');
+    bar.removeAttribute('data-sig');
+    input.value = '';
+    S.setLabel(btn, esc(w.I18N.t('text.393')));
   }
   syncGuessbarSpace();
 }
@@ -992,13 +1015,13 @@ export function renderHintRow(g, canDraw) {
 export function renderAside() {
   var v = app.view, g = v.game;
   var relayRole = isRelayGame(g) && v.you.role !== 'spectator' ? w.I18N.t('relay.role.' + (g.you.role === 'spectator' ? 'painter' : g.you.role))
-    : (isPickdrawGame(g) && v.you.role !== 'spectator' && g.phase !== 'over' ? pickdrawRoleLabel(g.you.role) : '');
+    : (isTelephoneGame(g) && v.you.role !== 'spectator' && g.phase !== 'over' ? telephoneRoleLabel(g.you.role) : '');
   var youRole = relayRole ? relayRole : v.you.role === 'spectator' ? (globalThis.I18N ? globalThis.I18N.t("text.036") : "觀戰者")
     : (g && g.you.isDrawer ? (globalThis.I18N ? globalThis.I18N.t("text.035") : "這一題的畫家") : (globalThis.I18N ? globalThis.I18N.t("text.072") : "猜題者"));
 
   $('sum-phase').textContent = (v.room && v.room.closed) ? (globalThis.I18N ? globalThis.I18N.t("text.071") : "房間已結束")
     : (v.room && v.room.phase === 'waiting' ? (globalThis.I18N ? globalThis.I18N.t("text.070") : "等待開始")
-      : (g ? (isRelayGame(g) ? relayPhaseLabel(g.phase) : (isPickdrawGame(g) ? pickdrawPhaseLabel(g.phase) : (PHASE_LABEL[g.phase] || g.phase))) : '—'));
+      : (g ? (isRelayGame(g) ? relayPhaseLabel(g.phase) : (isTelephoneGame(g) ? telephonePhaseLabel(g) : (PHASE_LABEL[g.phase] || g.phase))) : '—'));
   $('sum-drawer').textContent = g ? drawerName(g) : '—';
   $('sum-role').textContent = youRole;
   $('sum-can').textContent = canDoText(v, g);
@@ -1050,7 +1073,7 @@ export function canDoText(v, g) {
   }
   if (!g) return '—';
   if (isRelayGame(g) && g.phase !== 'over') return relayCanDo(v, g);
-  if (isPickdrawGame(g) && g.phase !== 'over') return pickdrawCanDo(v, g);
+  if (isTelephoneGame(g) && g.phase !== 'over') return telephoneCanDo(v, g);
   if (v.you.role === 'spectator') return (globalThis.I18N ? globalThis.I18N.t("text.055") : "觀戰中：可以看畫與猜題紀錄，不能畫也不能猜。");
   if (g.phase === 'picking') return g.you.canPick ? (globalThis.I18N ? globalThis.I18N.t("text.054") : "從三個題目裡挑一個。") : (globalThis.I18N ? globalThis.I18N.t("text.053") : "等畫家挑題目。");
   if (g.phase === 'drawing') {

@@ -12,7 +12,7 @@
  *
  * 一輪的節奏
  *   picking  開頭的人挑題（15 秒；時間到沒選就隨機）
- *   step     一格一格傳：每格先有 3 秒換手（stepStartsAt 之前不能動），作畫照開房秒數、
+ *   step     一格一格傳：每格先有 5 秒換手（stepStartsAt 之前不能動），作畫照開房秒數、
  *            最後一格寫答案照開房秒數；時間到就送出目前內容（畫一半照傳、答案用草稿）
  *   reveal   揭曉整串，每一格可以按愛心／大笑
  *   →（下一輪）… 輪次跑完就 over；遊戲中剩不到 3 人立即 over
@@ -22,6 +22,8 @@
  *   字數 → 種類 → 揭一個字，每張 ×0.6；偷看前面的畫，第一張 ×0.3、越後面越接近 ×0.7，倍數相乘。
  *
  * 隱藏資訊：一律走 toPublic(state, viewerId)。輪到的人只拿到上一格（開頭的人拿題目）；
+ *   照畫的人只在換手 5 秒內拿得到上一張畫，開始作畫後就不給（憑記憶畫）；
+ *   前面已經畫完的人與下一位可以即時看目前這一格作畫（watchersOf），再後面的人看不到；
  *   作畫中其他人只拿到「輪到誰、剩幾秒」；最後一人猜時其他人可以翻看所有的畫（沒有題目）；
  *   偷看的畫只給猜的人；揭曉後才給整串。
  */
@@ -43,7 +45,7 @@
     MAX_PLAYERS: 5,
     CHOICES: 3,
     PICK_MS: 15000,
-    HANDOFF_MS: 3000,
+    HANDOFF_MS: 5000,
     DRAW_SEC: [30, 45, 60],
     DRAW_SEC_DEFAULT: 45,
     GUESS_SEC: [20, 25, 30],
@@ -784,6 +786,24 @@
     };
   }
 
+  /**
+   * 誰可以即時看目前這一格作畫：前面已經畫完（沒被跳過）的人，加上下一位（先看著，等一下憑記憶照畫或猜）。
+   * 例：ABCD 四人，A 畫只有 B 看得到；B 畫 A、C 看得到；C 畫 A、B、D 看得到。
+   * 再後面還沒輪到的人與觀戰者都看不到。
+   */
+  function watchersOf(state) {
+    var cell = currentCell(state);
+    if (!cell || cell.kind !== 'draw') return [];
+    var out = [];
+    for (var i = 0; i < state.stepNo; i++) {
+      var c = state.chain.cells[i];
+      if (c.kind === 'draw' && c.done && !c.skipped && c.authorId !== cell.authorId && out.indexOf(c.authorId) < 0 && player(state, c.authorId)) out.push(c.authorId);
+    }
+    var next = state.chain.cells[state.stepNo + 1];
+    if (next && !next.skipped && next.authorId !== cell.authorId && out.indexOf(next.authorId) < 0 && player(state, next.authorId)) out.push(next.authorId);
+    return out;
+  }
+
   /** 看的人現在的身分：starter（挑題中）／turn（輪到他）／waiting／spectator（結束後玩家都算 player） */
   function roleOf(state, viewerId) {
     var p = viewerId ? player(state, viewerId) : null;
@@ -864,6 +884,7 @@
         canHint: role === 'guesser' && started && state.hints < Rules.hintTotal(state),
         canPeek: false,
         canChat: !isActive(state.phase),
+        watching: false,
         guessed: false
       }
     };
@@ -885,7 +906,10 @@
           view.answer = w ? w.text : null;
           view.referenceId = role === 'drawer' && w ? w.id : null;
         } else {
-          view.prev = { kind: 'drawing', idx: pi, authorName: chain.cells[pi].authorName, strokes: chain.cells[pi].strokes };
+          /* 照畫的人只有換手那 5 秒看得到上一張畫，開始作畫後就收起來（畫完揭曉時才再看到）；
+             猜的人整格都看得到 */
+          var showPrev = role === 'guesser' || !started;
+          view.prev = { kind: 'drawing', idx: pi, authorName: chain.cells[pi].authorName, strokes: showPrev ? chain.cells[pi].strokes : null, hidden: !showPrev };
         }
         if (role === 'drawer') view.strokes = cell.strokes;
         if (role === 'guesser') {
@@ -895,6 +919,10 @@
           view.you.canPeek = started && view.peekable.some(function (x) { return x.state === 'available'; });
           view.draft = cell.draft;
         }
+      } else if (role === 'waiting' && watchersOf(state).indexOf(viewerId) >= 0) {
+        /* 前面畫完的人與下一位：即時看目前這一格作畫（只有正在畫的這一張） */
+        view.you.watching = true;
+        view.strokes = cell.strokes;
       } else if (cell.kind === 'write') {
         /* 等最後一人猜：其他人（含觀戰者）可以翻看這一輪所有的畫，看不到題目與正在打的字 */
         view.drawings = chain.cells.filter(function (c, i) { return c.kind === 'draw' && !c.skipped && c.done && i < state.stepNo; })
@@ -937,6 +965,7 @@
     player: player,
     word: word,
     currentCell: currentCell,
+    watchersOf: watchersOf,
     isActive: isActive,
     peekFactor: peekFactor,
     hintFactor: hintFactor,

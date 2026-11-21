@@ -90,7 +90,7 @@ section('挑題與換手');
   check('只能從候選挑', TP.pick(st, 'a', 'zzz', T0).error === 'srv.err.telephonePickFromThree');
   TP.tick(st, T0 + C.PICK_MS);
   check('時間到隨機挑題並開始第一格', st.phase === 'step' && st.choices.indexOf(st.wordId) >= 0 && st.stepNo === 0);
-  check('每格先有 3 秒換手', st.stepStartsAt === T0 + C.PICK_MS + C.HANDOFF_MS && st.deadline === st.stepStartsAt + 45000);
+  check('每格先有 5 秒換手', C.HANDOFF_MS === 5000 && st.stepStartsAt === T0 + C.PICK_MS + C.HANDOFF_MS && st.deadline === st.stepStartsAt + 45000);
   check('換手中不能畫', TP.addStroke(st, 'a', LINE, st.stepStartsAt - 1).error === 'srv.err.telephoneHandoff');
   check('換手結束可以畫', TP.addStroke(st, 'a', LINE, st.stepStartsAt).ok);
   check('沒輪到的人不能畫', TP.addStroke(st, 'b', LINE, st.stepStartsAt).error === 'srv.err.telephoneNotYourTurn');
@@ -170,13 +170,21 @@ section('隱藏資訊（toPublic）');
   let t = toStep(st, T0);
   const a = TP.toPublic(st, 'a', t);
   check('開頭的人看題目、有參考範本', a.prev.kind === 'word' && a.prev.text === answerOf(st) && a.referenceId === st.wordId);
-  const b = TP.toPublic(st, 'b', t);
+  check('A 畫：只有下一位 B 看得到', TP.watchersOf(st).join() === 'b');
+  const b = TP.toPublic(st, 'c', t);
   check('作畫中其他人只知道輪到誰', b.turnId === 'a' && !b.prev && !b.answer && !b.drawings && b.strokes.length === 0);
   check('觀戰者也拿不到內容', !TP.toPublic(st, null, t).prev && !TP.toPublic(st, null, t).answer);
   t = drawAndPass(st, t);
   const b2 = TP.toPublic(st, 'b', t);
-  check('下一位只拿到上一張畫、沒有題目', b2.prev.kind === 'drawing' && b2.prev.idx === 0 && !b2.answer);
-  check('換手中還不能畫', !TP.toPublic(st, 'b', t - 1).you.canDraw && b2.you.canDraw);
+  const b2h = TP.toPublic(st, 'b', t - 1);
+  check('下一位換手 5 秒內拿到上一張畫、沒有題目', b2h.prev.kind === 'drawing' && b2h.prev.idx === 0 && b2h.prev.strokes.length === 1 && !b2h.answer);
+  check('開始作畫後上一張畫收起來', b2.prev.strokes === null && b2.prev.hidden === true && b2.prev.idx === 0);
+  check('換手中還不能畫', !b2h.you.canDraw && b2.you.canDraw);
+  TP.addStroke(st, 'b', LINE, t);
+  const aw = TP.toPublic(st, 'a', t);
+  check('B 畫：前面的 A 與下一位 C 看得到', aw.you.watching && aw.strokes.length === 1 && TP.watchersOf(st).join() === 'a,c' && TP.toPublic(st, 'c', t).strokes.length === 1);
+  check('B 畫：最後的 D 與觀戰者看不到', !TP.toPublic(st, 'd', t).you.watching && TP.toPublic(st, 'd', t).strokes.length === 0 && !TP.toPublic(st, null, t).you.watching);
+  TP.undoStroke(st, 'b', t);
   t = drawAndPass(st, t);
   const c3 = TP.toPublic(st, 'c', t);
   check('第三位只拿到第二張', c3.prev.idx === 1 && !c3.drawings);
@@ -285,11 +293,136 @@ section('種子重現');
   check('同種子逾時隨機結果相同', a.wordId === b.wordId);
 }
 
-/* 房間層在 stage 2 接上後補在這裡 */
-if (typeof module === 'object' && require.main === module) {
-  const done = () => {
-    console.log('\n' + passed + ' 通過、' + failed + ' 失敗');
-    process.exit(failed ? 1 : 0);
+section('戰績分模式（storage.js）');
+{
+  const vm = require('vm');
+  const fs = require('fs');
+  const path = require('path');
+  const mem = {};
+  const box = {
+    localStorage: {
+      getItem: (k) => (k in mem ? mem[k] : null),
+      setItem: (k, v) => { mem[k] = String(v); },
+      removeItem: (k) => { delete mem[k]; }
+    },
+    crypto: { getRandomValues: (a) => a }, Math, Date, JSON
   };
-  done();
+  box.window = box; box.globalThis = box;
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../public/js/storage.js'), 'utf8'), box);
+  const Store = box.Store || box.window.Store;
+  mem.dg_stats = JSON.stringify({ solo: { games: 1, win: 0, correct: 2, drawn: 1, best: 50 }, online: { games: 3, win: 1, correct: 4, drawn: 3, best: 600 } });
+  const s0 = Store.stats();
+  check('舊存檔讀得出來，新模式補 0', s0.online.games === 3 && s0.telephone && s0.telephone.games === 0);
+  Store.recordGame('telephone', { win: true, correct: 1, drawn: 2, score: 500 });
+  const s1 = Store.stats();
+  check('畫圖傳話記在自己那一欄', s1.telephone.games === 1 && s1.telephone.best === 500 && s1.online.games === 3);
 }
+
+section('房間層（lib/rooms.js）');
+{
+  const { RoomStore } = require('../lib/rooms.js');
+  const store = new RoomStore({ idleMs: 0 });
+  let t = T0;
+  const made = store.create('h', { name: '房主', roomName: '傳話房', settings: { drawSec: 30, guessSec: 20, rounds: 2 }, now: t, mode: 'telephone' });
+  check('可以開畫圖傳話房', made.ok && made.room.mode === 'telephone' && made.room.telephone);
+  const room = made.room;
+  check('設定套用（30／20 秒、2 輪）、人數上限 5', room.settings.drawSec === 30 && room.settings.guessSec === 20 && room.settings.rounds === 2 && room.settings.maxPlayers === 5);
+  check('每張畫秒數只收 30／45／60', !room.setSettings('h', { drawSec: 90 }).ok && room.setSettings('h', { drawSec: 45 }).ok);
+  check('猜答案秒數只收 20／25／30', !room.setSettings('h', { guessSec: 15 }).ok && room.setSettings('h', { guessSec: 25 }).ok);
+  check('輪次只收 1–3', !room.setSettings('h', { rounds: 4 }).ok && !room.setSettings('h', { rounds: 0 }).ok && room.setSettings('h', { rounds: 1 }).ok);
+  store.create('r', { name: '接力', roomName: '接力房', now: t, mode: 'relay' });
+  store.create('c', { name: '一般', roomName: '一般房', now: t });
+  check('一般大廳與接力大廳看不到這種房', store.list().every((r) => r.mode === 'classic') && store.list('relay').every((r) => r.mode === 'relay'));
+  check('畫圖傳話大廳只列這種房', store.list('telephone').length === 1 && store.list('telephone')[0].code === room.code && store.list('telephone')[0].guessSec === 25);
+
+  room.join('a', { name: '阿明', now: t + 1 });
+  check('2 人不能開始', !room.start('h', t).ok && room.canStart().error === 'srv.err.needPlayers');
+  room.join('b', { name: '小美', now: t + 2 });
+  room.join('c', { name: '大雄', now: t + 3 });
+  room.join('d', { name: '胖虎', now: t + 4 });
+  const sixth = room.join('e', { name: '路人', now: t + 5 });
+  check('第 6 人只能觀戰', sixth.ok && room.member('e').role === 'spectator');
+  check('聊天：等待室可以聊', room.chat('a', '哈囉', t + 10).ok);
+  ['a', 'b', 'c', 'd'].forEach((id) => room.setReady(id, true));
+  check('5 人可以開始', room.start('h', t + 20).ok && room.state.phase === 'picking' && room.state.starterId === 'h');
+  t += 20;
+  check('傳話中聊天被擋', room.chat('a', '嗨', t + 3000).error === 'srv.err.telephoneNoChat');
+  check('傳話中不送聊天紀錄', room.viewFor('a', t).room.chat.length === 0 && !room.viewFor('a', t).you.can.chat);
+  check('不能用一般猜題', room.guess('d', 'x', t).error === 'srv.err.telephoneUseAnswer');
+  const vh = room.viewFor('h', t), va = room.viewFor('a', t), ve = room.viewFor('e', t);
+  check('開頭的人看得到候選並可挑', vh.game.choices.length === 3 && vh.you.can.pick);
+  check('其他人與觀戰者拿不到候選', va.game.choices.length === 0 && ve.game.choices.length === 0);
+  const want = room.state.choices[0];
+  const ans = Words.byId(want, room.state.lang).text;
+  check('挑題', room.pickWord('h', want, t).ok && room.state.phase === 'step');
+  check('換手中不能畫', !room.stroke('h', LINE, t + 10).ok);
+  t = room.state.stepStartsAt;
+  const tk = room.tick(t);
+  check('換手結束發出 go 事件', tk.events.some((e) => e.type === 'go') && room.viewFor('h', t).you.can.draw);
+  check('只有輪到的人能畫', room.stroke('h', LINE, t).ok && !room.stroke('a', LINE, t).ok);
+  check('別人的視圖沒有題目與畫', ['a', 'b', 'c', 'd', 'e'].every((id) => !JSON.stringify(room.viewFor(id, t).game).includes(ans) && !room.viewFor(id, t).game.prev));
+  check('紀錄裡沒有題目', !JSON.stringify(room.feed).includes(ans) && !JSON.stringify(room.summary).includes(ans));
+  check('交出畫', room.telephoneSubmit('h', t).ok && room.state.stepNo === 1);
+  t = room.state.stepStartsAt; room.tick(t);
+  const a1 = room.viewFor('a', t - 1);
+  check('下一位換手時拿到上一張畫、沒有題目', a1.game.prev.kind === 'drawing' && a1.game.prev.strokes.length === 1 && !JSON.stringify(a1.game).includes(ans));
+  check('開始作畫後上一張畫收起來、房主可以看阿明畫', room.viewFor('a', t).game.prev.strokes === null && room.viewFor('h', t).game.you.watching);
+  /* 阿明斷線：5 秒內照常，超過就跳過 */
+  room.disconnect('a', t);
+  check('狀態列：斷線的是畫的人', room.viewFor('b', t).room.awayRole === 'drawer');
+  room.tick(t + 4999);
+  check('5 秒內不跳過', room.state.stepNo === 1);
+  room.tick(t + 5000);
+  check('超過 5 秒跳過', room.state.stepNo === 2 && room.state.chain.cells[1].skipped && room.feed.some((e) => e.key === 'srv.feed.telephoneSkip'));
+  t = room.state.stepStartsAt; room.tick(t);
+  check('小美拿到房主的畫', room.viewFor('b', t).game.prev.idx === 0);
+  room.stroke('b', LINE, t); room.telephoneSubmit('b', t);
+  t = room.state.stepStartsAt; room.tick(t);
+  room.telephoneSubmit('c', t);
+  t = room.state.stepStartsAt; room.tick(t);
+  const vd = room.viewFor('d', t);
+  check('最後一人是猜的人', vd.game.you.role === 'guesser' && vd.you.can.answer && vd.you.can.hint);
+  check('猜的人可以偷看', vd.you.can.peek && vd.game.peekable.length > 0);
+  check('畫的人不能偷看', !room.telephonePeek('h', 0, t).ok);
+  check('偷看第一張', room.telephonePeek('d', 0, t).ok && room.viewFor('d', t).game.peeks.length === 1);
+  check('偷看的畫只給猜的人', room.viewFor('h', t).game.peeks === null);
+  const vb = room.viewFor('b', t), ve2 = room.viewFor('e', t);
+  check('等猜答案時其他人與觀戰者可翻看畫', vb.game.drawings.length === 3 && ve2.game.drawings.length === 3 && !JSON.stringify(vb.game).includes(ans));
+  check('草稿不廣播也不揭曉', room.telephoneAnswer('d', '草稿字', true, t).ok && room.state.phase === 'step' && !JSON.stringify(room.viewFor('h', t)).includes('草稿字'));
+  const fin = room.telephoneAnswer('d', ans, false, t + 100);
+  check('寫答案就揭曉', fin.ok && room.state.phase === 'reveal');
+  const rv = room.viewFor('b', t + 100);
+  check('揭曉整串給大家', rv.game.chain.word === ans && rv.game.chain.cells.length === 5 && rv.game.chain.hit);
+  check('揭曉後紀錄才有題目', JSON.stringify(room.summary).includes(ans));
+  check('揭曉時可以聊天', room.chat('b', '笑死', t + 3000).ok && room.viewFor('b', t + 3000).you.can.chat);
+  check('揭曉時可以按表情（指定格子）', room.react('b', 'laugh', 0).ok && !room.react('h', 'laugh', 0).ok);
+  /* 偷看第一張 ×0.3：300／250／200／150／100 → 90／0（跳過）／60／45／30 */
+  const pts = room.state.chain.cells.map((c) => c.points).join();
+  check('計分：偷看 ×0.3、被跳過的人 0 分', pts === '90,0,60,45,30', pts);
+  check('單輪揭曉後結算', (room.tick(room.state.deadline), room.phase === 'finished' && room.state.awards.funniest[0].id === 'h'));
+  check('結算畫廊', room.gallery().ok && room.gallery().mode === 'telephone' && room.gallery().items.length === 2);
+  check('結算可以聊天', room.viewFor('b', room.state.deadline).you.can.chat || room.chat('c', '再一局', room.state.endedAt + 5000).ok);
+}
+
+section('房間層：中途離開與最後一人代猜');
+{
+  const { RoomStore } = require('../lib/rooms.js');
+  const store = new RoomStore({ idleMs: 0 });
+  let t = T0;
+  const room = store.create('h', { name: '房主', roomName: '傳話房', settings: { rounds: 1 }, now: t, mode: 'telephone' }).room;
+  ['a', 'b', 'c'].forEach((id, i) => { room.join(id, { name: id, now: t + i + 1 }); room.setReady(id, true); });
+  room.start('h', t + 10);
+  t += 10;
+  room.pickWord('h', room.state.choices[0], t);
+  t = room.state.stepStartsAt;
+  room.telephoneSubmit('h', t); t = room.state.stepStartsAt;
+  room.telephoneSubmit('a', t); t = room.state.stepStartsAt;
+  room.telephoneSubmit('b', t); t = room.state.stepStartsAt;
+  room.leave('c', t);
+  check('最後一人離開由前一位代猜', room.state.stepNo === 3 && room.state.chain.cells[3].authorId === 'b' && room.feed.some((e) => e.key === 'srv.feed.telephoneStandIn'));
+  room.leave('b', t + 1);
+  check('剩不到 3 人立即結算', room.phase === 'finished' && room.feed.some((e) => e.key === 'srv.feed.telephonePlayerLeft'));
+}
+
+console.log('\n' + (failed ? '✗ ' : '✓ ') + '畫圖傳話規則：' + passed + ' 通過，' + failed + ' 失敗');
+if (failed) process.exit(1);

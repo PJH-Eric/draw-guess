@@ -1,21 +1,22 @@
 /* ===== app/main.js — 啟動 ===== */
 
-import { $, Cfg, D, S, Sound, Store, app, paintIcons, show } from './core.js?v=363abaebc3';
-import { askLeaveGame, modals, setupConfirm, setupReference } from './modal.js?v=363abaebc3';
-import { applyDisplaySettings, setupSettings, syncSettingsUI } from './settings.js?v=363abaebc3';
-import { renderSoloOptions, renderStats, renderTutorial, setupSoloScreen, setupTutorial, tut } from './menus.js?v=363abaebc3';
-import { layoutAside, relayoutFeed, renderRecent, setAsideOpen } from './feed.js?v=363abaebc3';
-import { buildToolbar, ensurePaint, layoutStage, syncToolbar } from './canvas.js?v=363abaebc3';
-import { setupGuessbar } from './guess.js?v=363abaebc3';
-import { render } from './render.js?v=363abaebc3';
-import { placeCanvasTop, placeGuessFeed, placeSoloActions, renderRoomCreateOptions, setupOverlayEvents, setupRoomCreate, syncGuessbarSpace } from './overlay.js?v=363abaebc3';
-import { renderGameSettings, setupGameSettings } from './game-settings.js?v=363abaebc3';
-import { connectOnline, leaveGame, renderRoomList, savedRoom, setLobbyState, setupLobby } from './lobby.js?v=363abaebc3';
-import { renderOnlineCount, setupOnlineEvents } from './online-events.js?v=363abaebc3';
-import { setupHistory } from './history.js?v=363abaebc3';
-import { setupGallery } from './gallery.js?v=363abaebc3';
-import { setupKeys, setupRuleMenuClose } from './keys.js?v=363abaebc3';
-import { setupRelayControls } from './relay.js?v=363abaebc3';
+import { $, Cfg, D, S, Sound, Store, app, paintIcons, show } from './core.js?v=e1f7d4231d';
+import { askLeaveGame, modals, setupConfirm, setupReference } from './modal.js?v=e1f7d4231d';
+import { applyDisplaySettings, setupSettings, syncSettingsUI } from './settings.js?v=e1f7d4231d';
+import { renderSoloOptions, renderStats, renderTutorial, setupSoloScreen, setupTutorial, tut } from './menus.js?v=e1f7d4231d';
+import { layoutAside, relayoutFeed, renderRecent, setAsideOpen } from './feed.js?v=e1f7d4231d';
+import { buildToolbar, ensurePaint, layoutStage, syncToolbar } from './canvas.js?v=e1f7d4231d';
+import { setupGuessbar } from './guess.js?v=e1f7d4231d';
+import { render } from './render.js?v=e1f7d4231d';
+import { placeCanvasTop, placeGuessFeed, placeSoloActions, renderRoomCreateOptions, setupOverlayEvents, setupRoomCreate, syncGuessbarSpace } from './overlay.js?v=e1f7d4231d';
+import { renderGameSettings, setupGameSettings } from './game-settings.js?v=e1f7d4231d';
+import { connectOnline, leaveGame, renderRoomList, savedRoom, setLobbyState, setupLobby } from './lobby.js?v=e1f7d4231d';
+import { renderOnlineCount, setupOnlineEvents } from './online-events.js?v=e1f7d4231d';
+import { setupHistory } from './history.js?v=e1f7d4231d';
+import { setupGallery } from './gallery.js?v=e1f7d4231d';
+import { setupKeys, setupRuleMenuClose } from './keys.js?v=e1f7d4231d';
+import { setupRelayControls } from './relay.js?v=e1f7d4231d';
+import { setupTelephoneControls } from './telephone.js?v=e1f7d4231d';
 
 var w = window;
 
@@ -63,6 +64,7 @@ export function init() {
   setupOverlayEvents();
   setupGallery();
   setupRelayControls();
+  setupTelephoneControls();
   buildToolbar();
   ensurePaint();
   syncToolbar();
@@ -72,7 +74,7 @@ export function init() {
   /* 接力模式：只有線上，進的是只列接力房的大廳 */
   $('b-relay').addEventListener('click', function () { Sound.play('click'); app.lobbyMode = 'relay'; show('s-lobby'); connectOnline(); });
   /* 你出我畫他猜（Beta）：只有線上，固定 3 人，有自己的大廳 */
-  $('b-pickdraw').addEventListener('click', function () { Sound.play('click'); app.lobbyMode = 'pickdraw'; show('s-lobby'); connectOnline(); });
+  $('b-telephone').addEventListener('click', function () { Sound.play('click'); app.lobbyMode = 'telephone'; show('s-lobby'); connectOnline(); });
   $('b-help').addEventListener('click', function () { Sound.play('click'); tut.index = 0; show('s-help'); renderTutorial(); });
   $('b-stats').addEventListener('click', function () { Sound.play('click'); renderStats(); show('s-stats'); });
 

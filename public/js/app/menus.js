@@ -1,7 +1,7 @@
 /* ===== app/menus.js — 教學、戰績與單機設定畫面 ===== */
 
-import { $, D, ME, S, Sound, Store, Words, app, esc, show, toast } from './core.js?v=363abaebc3';
-import { soloRefresh, startSolo, withWordPack } from './solo.js?v=363abaebc3';
+import { $, D, ME, S, Sound, Store, Words, app, esc, show, toast } from './core.js?v=e1f7d4231d';
+import { soloRefresh, startSolo, withWordPack } from './solo.js?v=e1f7d4231d';
 
 var w = window;
 
@@ -50,7 +50,7 @@ export var TUTORIAL = [
     (globalThis.I18N ? globalThis.I18N.t("text.225") : "<p>右上角的摘要鈕打開操作摘要：目前階段、你能做什麼、比分，還有「猜題紀錄」——每一則猜題（含猜錯的）與對局事件都在那裡。房間裡沒有任何真人玩家時會立刻關閉。</p>") +
     (globalThis.I18N ? globalThis.I18N.t("text.224") : "<p>等待畫面的「房間設定」最下面有<b>離開房間</b>（房主是<b>退出房間</b>）：房主退出會把房主交給下一位，最後一個人退出房間就會關掉。</p>"); } },
   { get h() { return w.I18N.t('tut.relay.h'); }, get b() { return w.I18N.t('tut.relay.b1') + w.I18N.t('tut.relay.b2') + w.I18N.t('tut.relay.b3'); } },
-  { get h() { return w.I18N.t('tut.pickdraw.h'); }, get b() { return w.I18N.t('tut.pickdraw.b1') + w.I18N.t('tut.pickdraw.b2') + w.I18N.t('tut.pickdraw.b3'); } }
+  { get h() { return w.I18N.t('tut.telephone.h'); }, get b() { return w.I18N.t('tut.telephone.b1') + w.I18N.t('tut.telephone.b2') + w.I18N.t('tut.telephone.b3'); } }
 ];
 
 /* 每一段配一張小示意圖：用現成的圖示與表情拼出來（純裝飾，文字才是內容，所以 aria-hidden）。 */
@@ -120,7 +120,7 @@ export function setupTutorial() {
 export function renderStats() {
   var s = Store.stats();
   var blank = function (b) { return !b.games && !b.win && !b.correct && !b.drawn && !b.best; };
-  if (blank(s.solo) && blank(s.online) && blank(s.relay) && blank(s.pickdraw)) {
+  if (blank(s.solo) && blank(s.online) && blank(s.relay) && blank(s.telephone)) {
     /* 還沒有任何紀錄：兩張全是 0 的表格沒有意義，直接帶人去畫第一張 */
     $('statgrid').innerHTML = '<div class="stat-empty"><span class="stat-empty-face" aria-hidden="true">' + S.face(2, 'happy') + '</span>' +
       '<h3>' + esc(w.I18N.t('stats.empty.title')) + '</h3><p>' + esc(w.I18N.t('stats.empty.text')) + '</p>' +
@@ -141,7 +141,7 @@ export function renderStats() {
       '</div>';
   };
   $('statgrid').innerHTML = card((globalThis.I18N ? globalThis.I18N.t("text.212") : "單機練習"), s.solo) + card((globalThis.I18N ? globalThis.I18N.t("text.211") : "線上對戰"), s.online) +
-    card(esc(w.I18N.t('relay.name')), s.relay) + card(esc(w.I18N.t('pickdraw.name')), s.pickdraw);
+    card(esc(w.I18N.t('relay.name')), s.relay) + card(esc(w.I18N.t('telephone.name')), s.telephone);
 }
 
 /* ================================================================

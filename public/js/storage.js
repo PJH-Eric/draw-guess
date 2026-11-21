@@ -51,9 +51,9 @@
     solo: { games: 0, win: 0, correct: 0, drawn: 0, best: 0 },
     online: { games: 0, win: 0, correct: 0, drawn: 0, best: 0 },
     relay: { games: 0, win: 0, correct: 0, drawn: 0, best: 0 },
-    pickdraw: { games: 0, win: 0, correct: 0, drawn: 0, best: 0 }
+    telephone: { games: 0, win: 0, correct: 0, drawn: 0, best: 0 }
   };
-  var STAT_MODES = ['solo', 'online', 'relay', 'pickdraw'];
+  var STAT_MODES = ['solo', 'online', 'relay', 'telephone'];
 
   function stats() {
     var s = getJson(KEY.stats, null);
@@ -65,7 +65,7 @@
 
   /**
    * 記一場的結果。
-   * @param {'solo'|'online'|'relay'|'pickdraw'} mode
+   * @param {'solo'|'online'|'relay'|'telephone'} mode
    * @param {{win:boolean, correct:number, drawn:number, score:number}} result
    */
   function recordGame(mode, result) {

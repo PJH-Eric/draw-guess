@@ -5,9 +5,9 @@
  * 縮圖在本機用同一套畫布引擎（Paint.drawStroke，固定 1400×1400，油漆桶才會跟原圖一致）重畫後縮小。
  */
 
-import { $, D, app, esc, toast } from './core.js?v=363abaebc3';
-import { makeModal, modals } from './modal.js?v=363abaebc3';
-import { renderOverlay } from './overlay.js?v=363abaebc3';
+import { $, D, app, esc, toast } from './core.js?v=e1f7d4231d';
+import { makeModal, modals } from './modal.js?v=e1f7d4231d';
+import { renderOverlay } from './overlay.js?v=e1f7d4231d';
 
 var w = window;
 var THUMB = 240;
@@ -33,16 +33,30 @@ function renderFull(strokes) {
   return c;
 }
 
-function thumbOf(strokes) {
+function thumbOf(strokes, size) {
+  var px = size || THUMB;
   try {
     var full = renderFull(strokes);
     var t = D.createElement('canvas');
-    t.width = THUMB; t.height = THUMB;
+    t.width = px; t.height = px;
     var ctx = t.getContext('2d');
     ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(full, 0, 0, THUMB, THUMB);
+    ctx.drawImage(full, 0, 0, px, px);
     return t.toDataURL('image/png');
   } catch (e) { return ''; }
+}
+
+/* 畫圖傳話用：把一張畫縮成圖片網址；同一張畫（key 相同）只算一次 */
+var thumbCache = {};
+var thumbKeys = [];
+export function strokesThumb(key, strokes, size) {
+  var k = key + ':' + (size || THUMB) + ':' + (strokes ? strokes.length : 0);
+  if (thumbCache[k] !== undefined) return thumbCache[k];
+  var url = strokes && strokes.length ? thumbOf(strokes, size) : '';
+  thumbCache[k] = url;
+  thumbKeys.push(k);
+  if (thumbKeys.length > 60) delete thumbCache[thumbKeys.shift()];
+  return url;
 }
 
 /* 公布答案卡上的小縮圖：卡片蓋住了畫布，按表情前要看得到在評哪一張。

@@ -89,7 +89,7 @@ async function main() {
     assert.deepEqual(store.sweep(120000).forget, [room]);
     assert.equal(store.getAny(room.code), null);
   });
-  for (const mode of ['classic', 'relay', 'pickdraw']) {
+  for (const mode of ['classic', 'relay', 'telephone']) {
     await check(mode + ' 私人房從大廳隱藏且須持邀請連結加入', async () => {
       const host = await client('private-host');
       const guest = await client('private-guest');
