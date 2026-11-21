@@ -237,6 +237,33 @@ async function sweep(cdp, name, opts) {
     if (o.instructions || lay.instructions) {
       check(name + '／' + v.name + '：說明文字完整', lay.instructions > 0 && lay.clippedText.length === 0, lay.clippedText.join(' | '));
     }
+    if (o.roomSetup) {
+      const setup = await cdp.eval(`
+        const card = document.getElementById('overlay-card');
+        const body = document.getElementById('tp-setup-body');
+        const footer = card.querySelector('.tp-setup-actions');
+        const diff = body.querySelector('.ruledd-btn[data-field=set-diff]');
+        const category = body.querySelector('.ruledd-btn[data-field=set-category]');
+        const note = body.querySelector('.tp-flow-note');
+        const footerTop = footer.getBoundingClientRect().top;
+        const scrollTop = body.scrollTop;
+        note.scrollIntoView({block: 'end'});
+        const fits = note.getBoundingClientRect().bottom <= footerTop + 1 &&
+          note.getBoundingClientRect().top >= body.getBoundingClientRect().top - 1;
+        body.scrollTop = scrollTop;
+        const bounds = card.getBoundingClientRect();
+        return {
+          aligned: Math.abs(diff.getBoundingClientRect().top - category.getBoundingClientRect().top) <= 1,
+          fits: fits && body.scrollWidth <= body.clientWidth + 1 && bounds.left >= 0 && bounds.right <= innerWidth,
+          buttons: Array.from(footer.querySelectorAll('button')).every(function (button) {
+            const r = button.getBoundingClientRect();
+            return r.bottom <= innerHeight && button.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2));
+          })
+        };
+      `);
+      check(name + '／' + v.name + '：規則欄對齊、說明可捲至完整顯示、房間按鈕可點擊',
+        setup.aligned && setup.fits && setup.buttons, JSON.stringify(setup));
+    }
     if (o.waitCard) {
       const wait = await cdp.eval(`
         const card = document.querySelector('#overlay-card');
@@ -437,7 +464,7 @@ async function main() {
   await host.waitFor('window.DrawGuessApp.view.you.can.start', 6000, '可以開始');
   check('等待畫面有模式徽章與規則說明', await host.eval('return !!document.querySelector("#overlay-card .telephone-badge") && /傳一串/.test(document.getElementById("overlay-card").textContent);'));
   check('等待畫面可以聊天', await p2.eval(visible('#chat-input')));
-  await sweep(host, '05-等待畫面-房主');
+  await sweep(host, '05-等待畫面-房主', { roomSetup: true });
   await sweep(p2, '05-等待畫面-玩家', { one: true });
   if (STOP_AFTER === 'setup') return finish(tabs);
 

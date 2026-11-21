@@ -1,17 +1,17 @@
 /* ===== app/overlay.js — 疊層卡片：房間設定、選題、公布答案、結算 ===== */
 
-import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=420634abae';
-import { askLeaveRoom, makeModal, modals } from './modal.js?v=420634abae';
-import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=420634abae';
-import { soloRefresh, soloStep, startSolo } from './solo.js?v=420634abae';
-import { renderRecent } from './feed.js?v=420634abae';
-import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=420634abae';
-import { PHASE_LABEL, moodOf } from './render.js?v=420634abae';
-import { copyText, newInvite, revokeInvite } from './game-settings.js?v=420634abae';
-import { enterOnlineRoom, leaveGame, lobbyModeKey, roomRuleChips, saveNick } from './lobby.js?v=420634abae';
-import { hideRelayUi, isRelayGame, relayAwardsHtml, relayCanDo, relayBarMode, relayOverlayHtml, relayPhaseLabel, relayToolsShown, relayVote, renderRelayAssist, renderRelayBanner } from './relay.js?v=420634abae';
-import { hideTelephoneUi, isTelephoneGame, renderTelephoneAssist, telephoneAwardsHtml, telephoneCanDo, telephoneOverlayAct, telephoneOverlayHtml, telephonePhaseLabel, telephoneRoleLabel, telephoneToolsShown } from './telephone.js?v=420634abae';
-import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=420634abae';
+import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=faead5a5c6';
+import { askLeaveRoom, makeModal, modals } from './modal.js?v=faead5a5c6';
+import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=faead5a5c6';
+import { soloRefresh, soloStep, startSolo } from './solo.js?v=faead5a5c6';
+import { renderRecent } from './feed.js?v=faead5a5c6';
+import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=faead5a5c6';
+import { PHASE_LABEL, moodOf } from './render.js?v=faead5a5c6';
+import { copyText, newInvite, revokeInvite } from './game-settings.js?v=faead5a5c6';
+import { enterOnlineRoom, leaveGame, lobbyModeKey, roomRuleChips, saveNick } from './lobby.js?v=faead5a5c6';
+import { hideRelayUi, isRelayGame, relayAwardsHtml, relayCanDo, relayBarMode, relayOverlayHtml, relayPhaseLabel, relayToolsShown, relayVote, renderRelayAssist, renderRelayBanner } from './relay.js?v=faead5a5c6';
+import { hideTelephoneUi, isTelephoneGame, renderTelephoneAssist, telephoneAwardsHtml, telephoneCanDo, telephoneOverlayAct, telephoneOverlayHtml, telephonePhaseLabel, telephoneRoleLabel, telephoneToolsShown } from './telephone.js?v=faead5a5c6';
+import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=faead5a5c6';
 
 var w = window;
 
@@ -398,14 +398,14 @@ export function roomSetupHtml(v) {
     /* 畫圖傳話房：每張畫秒數、猜答案秒數、輪次，再加題型與種類；下面一句話講清楚怎麼傳 */
     var tpNote = '<p class="setupnote tp-flow-note">' + esc(w.I18N.t('telephone.rulesNote')) + '</p>';
     rules = host
-      ? '<div class="setupblock"><h4>' + esc(w.I18N.t('text.123')) + '</h4>' +
+      ? '<div class="setupblock tp-setup-rules"><h4>' + esc(w.I18N.t('text.123')) + '</h4>' +
         '<div class="rules-row">' +
         '<div class="rule-field"><span>' + esc(w.I18N.t('telephone.field.drawSec')) + '</span>' + ruleDropdown('set-tpdraw', tpDrawChoices(), r.settings.drawSec) + '</div>' +
         '<div class="rule-field"><span>' + esc(w.I18N.t('telephone.field.guessSec')) + '</span>' + ruleDropdown('set-tpguess', tpGuessChoices(), r.settings.guessSec) + '</div>' +
         '<div class="rule-field"><span>' + esc(w.I18N.t('telephone.field.rounds')) + '</span>' + ruleDropdown('set-tprounds', tpRoundChoices(), r.settings.rounds) + '</div>' +
         '</div><div class="rules-row">' +
         '<div class="rule-field"><span>' + esc(w.I18N.t('text.124')) + '</span>' + ruleDropdown('set-diff', DIFF_CHOICES, r.settings.diff) + '</div>' +
-        '<div class="rule-field category-rule"><span>' + esc(w.I18N.t('category.select')) + '</span>' +
+        '<div class="rule-field"><span>' + esc(w.I18N.t('category.select')) + '</span>' +
         ruleDropdown('set-category', categoryChoices(), r.settings.category || '') + '</div></div>' +
         langField + tpNote + '</div>'
       : '<div class="setupblock"><h4>' + esc(w.I18N.t('text.123')) + '</h4>' +
@@ -505,18 +505,22 @@ export function roomSetupHtml(v) {
      那行字拿掉、房號也縮小，卡片才有地方放下面新的聊天室。
      內容分成兩欄（.setup-col）：寬螢幕並排（左：房號、名單、規則；右：邀請、聊天室），
      一個畫面就看得完不用捲；窄螢幕兩欄上下接著排，跟以前一樣是一欄。 */
-  return ("<h3>" + esc(I18N.t("text.103")) +
+  var heading = ("<h3>" + esc(I18N.t("text.103")) +
     (relay ? ' <span class="relay-badge"><span class="ico" data-ico="relay" aria-hidden="true"></span>' + esc(w.I18N.t('relay.name')) + '</span>' : '') +
-    (telephone ? ' <span class="relay-badge telephone-badge"><span class="ico" data-ico="telephone" aria-hidden="true"></span>' + esc(w.I18N.t('telephone.name')) + '</span>' : '') + "</h3>") +
-    '<div class="setup-cols"><div class="setup-col">' +
+    (telephone ? ' <span class="relay-badge telephone-badge"><span class="ico" data-ico="telephone" aria-hidden="true"></span>' + esc(w.I18N.t('telephone.name')) + '</span>' : '') + "</h3>");
+  var content = '<div class="setup-cols"><div class="setup-col">' +
     '<div class="roomcode"><b>' + esc(r.code) + '</b><span>' +
     esc(w.I18N.t(r.private ? 'room.privateInvite' : 'text.102')) + '</span></div>' +
     '<div class="seatlist">' + (seats || ("<div class=\"seatrow\">" + esc(I18N.t("text.101")) + "</div>")) +
     openSeats +
     (specs.length ? '<div class="seatrow spec"><span class="ico" data-ico="eye" aria-hidden="true"></span> ' + specs.length + (esc(I18N.t("text.100")) + "</div>") : '') + '</div>' +
-    rules + '</div><div class="setup-col">' + invite + chatHtml + '</div></div>' +
-    (v.you.can.start ? '' : '<p class="setup-blocked">' + esc(blockedMessage) + '</p>') +
+    rules + '</div><div class="setup-col">' + invite + chatHtml + '</div></div>';
+  var actions = (v.you.can.start ? '' : '<p class="setup-blocked">' + esc(blockedMessage) + '</p>') +
     '<div class="overlay-btns">' + btns + '</div>';
+  return telephone
+    ? heading + '<div class="tp-setup-body" id="tp-setup-body" tabindex="0">' + content + '</div>' +
+      '<div class="tp-setup-actions">' + actions + '</div>'
+    : heading + content + actions;
 }
 
 export function pickingHtml(v, g) {

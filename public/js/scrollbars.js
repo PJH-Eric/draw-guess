@@ -2,7 +2,7 @@
 (function (w, d) {
   'use strict';
   var selector = '.screen,.overlay-card,.settings-body,.aside-body,.playbar,.guessfeed,.paint-controls,' +
-    '.ruledd-list,.chatlist,.playerstrip,.toolrow-tools,.toolrow-colors,.toolscroll,.result-share-dialog,.dropdown-list';
+    '.ruledd-list,.chatlist,.tp-setup-body,.playerstrip,.toolrow-tools,.toolrow-colors,.toolscroll,.result-share-dialog,.dropdown-list';
   var records = new Map();
   var frame = 0;
   var discover = true;
