@@ -866,6 +866,16 @@ async function runTelephone() {
     me.emit('room:submit', {});
     await a.until((x) => x.view.game.stepNo === i + 1, 3000);
   }
+  /* 中間的人交出畫後猜原本的題目：猜錯只有自己知道，猜中大家看到「某某猜中了」 */
+  const mid = order[1];
+  mid.privates = [];
+  mid.emit('room:midguess', { text: '一定不是這個' });
+  check('中間的人猜錯只回給自己', await mid.until((x) => x.privates.some((p) => p.kind === 'miss' && p.params && p.params.next === 40), 3000));
+  await sleep(1300);
+  mid.emit('room:midguess', { text: ans });
+  check('中間的人猜中 +40', await mid.until((x) => x.privates.some((p) => p.kind === 'hit' && p.points === 40), 3000));
+  check('大家看到猜中了、沒有題目', await order[0].until((x) => (x.view.room.feed || []).some((e) => e.key === 'srv.feed.telephoneMidHit'), 3000) &&
+    !JSON.stringify(order[3].view).includes(ans));
   const guesser = order[3];
   check('猜的人可以寫答案與偷看', await guesser.until((x) => x.view.you.can.answer && x.view.you.can.peek && x.view.game.prev && x.view.game.prev.kind === 'drawing', 6000));
   check('其他人與觀戰者可翻看所有畫', await w.until((x) => x.view.game.drawings && x.view.game.drawings.length === 3, 3000) && order[0].view.game.drawings.length === 3);

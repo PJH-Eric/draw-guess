@@ -1,17 +1,17 @@
 /* ===== app/overlay.js — 疊層卡片：房間設定、選題、公布答案、結算 ===== */
 
-import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=e977256a55';
-import { askLeaveRoom, makeModal, modals } from './modal.js?v=e977256a55';
-import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=e977256a55';
-import { soloRefresh, soloStep, startSolo } from './solo.js?v=e977256a55';
-import { renderRecent } from './feed.js?v=e977256a55';
-import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=e977256a55';
-import { PHASE_LABEL, moodOf } from './render.js?v=e977256a55';
-import { copyText, newInvite, revokeInvite } from './game-settings.js?v=e977256a55';
-import { enterOnlineRoom, leaveGame, lobbyModeKey, roomRuleChips, saveNick } from './lobby.js?v=e977256a55';
-import { hideRelayUi, isRelayGame, relayAwardsHtml, relayCanDo, relayBarMode, relayOverlayHtml, relayPhaseLabel, relayToolsShown, relayVote, renderRelayAssist, renderRelayBanner } from './relay.js?v=e977256a55';
-import { hideTelephoneUi, isTelephoneGame, renderTelephoneAssist, telephoneAwardsHtml, telephoneCanDo, telephoneOverlayAct, telephoneOverlayHtml, telephonePhaseLabel, telephoneRoleLabel, telephoneToolsShown } from './telephone.js?v=e977256a55';
-import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=e977256a55';
+import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=df4cf5d8fd';
+import { askLeaveRoom, makeModal, modals } from './modal.js?v=df4cf5d8fd';
+import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=df4cf5d8fd';
+import { soloRefresh, soloStep, startSolo } from './solo.js?v=df4cf5d8fd';
+import { renderRecent } from './feed.js?v=df4cf5d8fd';
+import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=df4cf5d8fd';
+import { PHASE_LABEL, moodOf } from './render.js?v=df4cf5d8fd';
+import { copyText, newInvite, revokeInvite } from './game-settings.js?v=df4cf5d8fd';
+import { enterOnlineRoom, leaveGame, lobbyModeKey, roomRuleChips, saveNick } from './lobby.js?v=df4cf5d8fd';
+import { hideRelayUi, isRelayGame, relayAwardsHtml, relayCanDo, relayBarMode, relayOverlayHtml, relayPhaseLabel, relayToolsShown, relayVote, renderRelayAssist, renderRelayBanner } from './relay.js?v=df4cf5d8fd';
+import { hideTelephoneUi, isTelephoneGame, renderTelephoneAssist, telephoneAwardsHtml, telephoneCanDo, telephoneOverlayAct, telephoneOverlayHtml, telephonePhaseLabel, telephoneRoleLabel, telephoneToolsShown } from './telephone.js?v=df4cf5d8fd';
+import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=df4cf5d8fd';
 
 var w = window;
 
@@ -920,22 +920,28 @@ export function renderTelephoneControls(v, g) {
   syncDoneButtons();
 
   var bar = $('guessbar'), input = $('guess-input'), btn = $('b-guess');
-  bar.hidden = closed || g.phase !== 'step' || g.you.role !== 'guesser';
+  /* 中間的人交出畫之後，同一個框拿來猜原本的題目（猜中前可以一直猜） */
+  var mid = g.phase === 'step' && g.you.role === 'waiting' && g.you.midGuess;
+  bar.hidden = closed || g.phase !== 'step' || (g.you.role !== 'guesser' && !mid);
   if (!bar.hidden) {
-    var canAnswer = !!v.you.can.answer;
-    var sig = 'tp:' + w.I18N.lang;
+    var mode = mid ? 'midguess' : 'answer';
+    var canAnswer = mid ? !!g.you.midGuess.can : !!v.you.can.answer;
+    var sig = 'tp:' + mode + ':' + w.I18N.lang;
     if (bar.getAttribute('data-sig') !== sig) {
-      if (bar.getAttribute('data-mode') !== 'answer') input.value = '';
-      bar.setAttribute('data-mode', 'answer');
+      if (bar.getAttribute('data-mode') !== mode) input.value = '';
+      bar.setAttribute('data-mode', mode);
       bar.setAttribute('data-sig', sig);
-      S.setLabel(btn, esc(w.I18N.t('telephone.answer.send')));
-      S.setColor(btn, 'mint');
+      S.setLabel(btn, esc(w.I18N.t(mid ? 'telephone.mid.send' : 'telephone.answer.send')));
+      S.setColor(btn, mid ? 'sky' : 'mint');
     }
     input.maxLength = (w.TelephoneRules && w.TelephoneRules.CONST.ANSWER_MAX) || 40;
     input.disabled = !canAnswer;
     btn.disabled = !canAnswer;
-    input.placeholder = w.I18N.t(canAnswer ? 'telephone.answer.placeholder' : 'telephone.answer.wait');
-  } else if (bar.getAttribute('data-mode') === 'answer') {
+    input.placeholder = mid
+      ? w.I18N.t(g.you.midGuess.hit ? 'telephone.mid.done' : 'telephone.mid.placeholder', { n: g.you.midGuess.points })
+      : w.I18N.t(canAnswer ? 'telephone.answer.placeholder' : 'telephone.answer.wait');
+    if (mid && g.you.midGuess.hit) input.value = '';
+  } else if (bar.getAttribute('data-mode') === 'answer' || bar.getAttribute('data-mode') === 'midguess') {
     /* 交出答案或換人之後，下一次這個框給一般猜題用時要換回原本的字 */
     bar.removeAttribute('data-mode');
     bar.removeAttribute('data-sig');

@@ -1,8 +1,8 @@
 /* ===== app/guess.js — 猜題列 ===== */
 
-import { $, ME, Rules, Sound, app, toast } from './core.js?v=e977256a55';
-import { soloRefresh } from './solo.js?v=e977256a55';
-import { pushFeed } from './feed.js?v=e977256a55';
+import { $, ME, Rules, Sound, app, toast } from './core.js?v=df4cf5d8fd';
+import { soloRefresh } from './solo.js?v=df4cf5d8fd';
+import { pushFeed } from './feed.js?v=df4cf5d8fd';
 
 var w = window;
 
@@ -45,5 +45,7 @@ export function submitGuess(text) {
   if ($('guessbar').getAttribute('data-mode') === 'chat') { w.Online.send('room:chat', { text: text }); return; }
   /* 畫圖傳話：最後一人寫答案，送出就揭曉 */
   if ($('guessbar').getAttribute('data-mode') === 'answer') { w.Online.send('room:answer', { text: text }); return; }
+  /* 畫圖傳話：中間的人交出畫後猜原本的題目 */
+  if ($('guessbar').getAttribute('data-mode') === 'midguess') { w.Online.send('room:midguess', { text: text }); return; }
   w.Online.send('room:guess', { text: text });
 }

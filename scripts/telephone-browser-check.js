@@ -395,6 +395,17 @@ async function telephoneGame(host, players, watch, tabs) {
     }
     await me.click('#b-done');
     await me.waitFor(GAME + 'return g.stepNo === ' + (i + 1) + ';', 6000, '交出去');
+    if (i === 1) {
+      /* 中間的人交出畫後猜原本的題目 */
+      check('交出畫後出現「猜原本的題目」框', await me.waitFor('document.getElementById("guessbar").getAttribute("data-mode") === "midguess" && !document.getElementById("guessbar").hidden && !document.getElementById("guess-input").disabled', 4000, '中間猜題').catch(() => false));
+      await me.eval('var i=document.getElementById("guess-input"); i.value="一定不是這個"; document.getElementById("guessbar").requestSubmit(); return 1;');
+      check('猜錯有提示、下一次剩 40 分', await me.waitFor('/40/.test(document.getElementById("guess-input").placeholder)', 4000, '猜錯').catch(() => false));
+      await sweep(me, '09-中間猜題', { list: FIRST_HALF });
+      await sleep(500);
+      await me.eval('var i=document.getElementById("guess-input"); i.value=' + JSON.stringify(answer) + '; document.getElementById("guessbar").requestSubmit(); return 1;');
+      check('猜中後框停用、大家看到猜中了', await me.waitFor('document.getElementById("guess-input").disabled', 4000, '猜中').catch(() => false) &&
+        await host.waitFor('/猜中原本的題目/.test(document.body.innerText)', 4000, '公告').catch(() => false));
+    }
   }
 
   /* ---- 最後一人猜答案 ---- */

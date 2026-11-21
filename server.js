@@ -601,6 +601,25 @@ io.on('connection', (socket) => {
     syncRoom(room, true); syncLobby();
   }));
 
+  /* 中間的人交出畫後猜原本的題目：結果只回給自己；猜中才同步（大家看到「某某猜中了」） */
+  socket.on('room:midguess', withRoom((room, p) => {
+    const res = room.telephoneMidGuess(socket.data.clientId, typeof p.text === 'string' ? p.text : '', now());
+    if (!res.ok) {
+      socket.emit('room:private', { kind: 'rejected', message: res.error, code: res.code });
+      return;
+    }
+    if (res.kind === 'hit') {
+      socket.emit('room:private', { kind: 'hit', message: 'srv.private.telephoneMidHit', params: { points: res.points }, points: res.points });
+      syncRoom(room, true);
+      return;
+    }
+    socket.emit('room:private', {
+      kind: res.kind,
+      message: res.kind === 'close' ? 'srv.private.telephoneMidClose' : 'srv.private.telephoneMidMiss',
+      params: { next: res.next }
+    });
+  }));
+
   /* 猜的人偷看前面的畫：只有他拿得到那張畫（toPublic 控制），其他人只看到紀錄 */
   socket.on('room:peek', withRoom((room, p) => {
     const res = room.telephonePeek(socket.data.clientId, p.idx, now());

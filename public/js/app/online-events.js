@@ -1,15 +1,15 @@
 /* ===== app/online-events.js — 線上事件 ===== */
 
-import { $, Sound, Store, Words, app, toast } from './core.js?v=e977256a55';
-import { modals } from './modal.js?v=e977256a55';
-import { localizeGame } from './solo.js?v=e977256a55';
-import { pushFeed, replaceFeed } from './feed.js?v=e977256a55';
-import { render } from './render.js?v=e977256a55';
-import { renderAside } from './overlay.js?v=e977256a55';
-import { renderGameSettings } from './game-settings.js?v=e977256a55';
-import { isRelayGame, relayRecord, relayTransition, showCheer } from './relay.js?v=e977256a55';
-import { applyTelephoneCanvas, isTelephoneGame, telephoneRecord, telephoneTransition } from './telephone.js?v=e977256a55';
-import { forgetRoom, joinRoom, leaveGame, lobbyModeKey, renderRoomList, saveNick, setLobbyEnabled, subscribeLobby } from './lobby.js?v=e977256a55';
+import { $, Sound, Store, Words, app, toast } from './core.js?v=df4cf5d8fd';
+import { modals } from './modal.js?v=df4cf5d8fd';
+import { localizeGame } from './solo.js?v=df4cf5d8fd';
+import { pushFeed, replaceFeed } from './feed.js?v=df4cf5d8fd';
+import { render } from './render.js?v=df4cf5d8fd';
+import { renderAside } from './overlay.js?v=df4cf5d8fd';
+import { renderGameSettings } from './game-settings.js?v=df4cf5d8fd';
+import { isRelayGame, relayRecord, relayTransition, showCheer } from './relay.js?v=df4cf5d8fd';
+import { applyTelephoneCanvas, isTelephoneGame, telephoneRecord, telephoneTransition } from './telephone.js?v=df4cf5d8fd';
+import { forgetRoom, joinRoom, leaveGame, lobbyModeKey, renderRoomList, saveNick, setLobbyEnabled, subscribeLobby } from './lobby.js?v=df4cf5d8fd';
 
 var w = window;
 
@@ -150,8 +150,21 @@ export function setupOnlineEvents() {
 
   O.on('room:private', function (p) {
     if (p.kind === 'hit') { toast(w.I18N.message(p.message, p.params), 'ok'); Sound.play('correct'); Sound.vibrate([12, 40, 12]); }
-    else if (p.kind === 'close') { toast(w.I18N.message(p.message, p.params), 'ok'); Sound.play('close'); }
-    else if (p.kind === 'miss') { Sound.play('wrong'); }
+    else if (p.kind === 'close') {
+      toast(w.I18N.message(p.message, p.params), 'ok'); Sound.play('close');
+      var mc = p.message && /telephoneMid/.test(p.message) && app.view && app.view.game && app.view.game.you && app.view.game.you.midGuess;
+      if (mc && p.params && typeof p.params.next === 'number') { mc.points = p.params.next; mc.wrong += 1; render(); }
+    }
+    else if (p.kind === 'miss') {
+      /* 畫圖傳話的中間猜題：猜錯也說一聲，並告訴他下一次猜中剩幾分 */
+      if (p.message && /telephoneMid/.test(p.message)) {
+        toast(w.I18N.message(p.message, p.params), 'error');
+        /* 猜錯不會同步整個房間：自己更新「猜中 +幾分」的提示字 */
+        var mg = app.view && app.view.game && app.view.game.you && app.view.game.you.midGuess;
+        if (mg && p.params && typeof p.params.next === 'number') { mg.points = p.params.next; mg.wrong += 1; render(); }
+      }
+      Sound.play('wrong');
+    }
     else if (p.kind === 'rejected') { toast(w.I18N.message(p.message, p.params), 'error'); Sound.play('blocked'); }
   });
 

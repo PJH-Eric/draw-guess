@@ -2191,6 +2191,7 @@ body.lobby-telephone #lobby-title{color:var(--tp-t)}
 .tp-cell-pts[data-on=true]{color:var(--ok)}
 .tp-cell-pic{display:flex;justify-content:center}
 .tp-cell-pic .tp-pic{width:100%}
+.tp-cell-mid{margin:0 0 6px;text-align:center;font-size:.74rem;font-weight:800;color:var(--ok)}
 .tp-cell-skip{margin:0;text-align:center;color:var(--ink-soft);font-weight:700}
 .tp-cell-answer{text-align:center;font-size:1.3rem;font-weight:900;overflow-wrap:anywhere}
 .tp-cell-write[data-hit=true]{border-color:var(--ok)}

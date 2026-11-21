@@ -17,6 +17,10 @@
  *   reveal   揭曉整串，每一格可以按愛心／大笑
  *   →（下一輪）… 輪次跑完就 over；遊戲中剩不到 3 人立即 over
  *
+ * 中間的人（不是開頭、也不是最後猜的人）交出畫之後，可以一直猜原本的題目直到猜中：
+ *   猜中 50 分、每猜錯一次 -10（最低 10），不能用提示；猜中時大家都看到「某某猜中了」（不顯示題目）。
+ *   這個分數跟整串的分數分開算。
+ *
  * 計分：最後一人猜中，整串的人依順序從 300 線性遞減到 100，再乘這一輪所有提示倍數；
  *   猜錯或沒寫全部 0 分；被跳過的人不得分。提示由猜的人使用：
  *   字數 → 種類 → 揭一個字，每張 ×0.6；偷看前面的畫，第一張 ×0.3、越後面越接近 ×0.7，倍數相乘。
@@ -62,6 +66,9 @@
     PEEK_LOW: 0.3,
     PEEK_HIGH: 0.7,
     ANSWER_MAX: 40,
+    MID_POINTS: 50,       // 中間的人交出畫後自己猜中原本題目：50 分起
+    MID_STEP: 10,         // 每猜錯一次 -10
+    MID_MIN: 10,          // 最低 10 分
     MAX_STROKES: Rules.CONST.MAX_STROKES,
     MAX_TOTAL_POINTS: Rules.CONST.MAX_TOTAL_POINTS
   };
@@ -262,6 +269,9 @@
         skipped: false,
         stand: null,       // 最後一人斷線時改由誰代猜（原本的人的 id）
         points: 0,
+        midHit: false,     // 中間的人交出畫後自己猜中原本題目
+        midWrong: 0,       // 猜錯幾次
+        midPts: 0,         // 猜中拿到的分數
         reactions: { heart: [], laugh: [] }
       });
     }
@@ -320,7 +330,8 @@
   function standIn(state, gone) {
     var cells = state.chain.cells;
     for (var i = cells.length - 2; i >= 1; i--) {
-      if (!gone(cells[i].authorId)) return cells[i].authorId;
+      /* 已經自己猜中題目的人不能代猜（他知道答案） */
+      if (!gone(cells[i].authorId) && !cells[i].midHit) return cells[i].authorId;
     }
     return null;
   }
@@ -472,6 +483,47 @@
     return ok({ idx: i, factor: hintFactor(state.chain), pick: peekFactor(i, peekableCount(state.chain)) });
   }
 
+  /** 中間的人可以猜的那一格（交出畫、沒被跳過、不是開頭也不是最後一格）；不能猜回 null */
+  function midCellOf(state, playerId) {
+    if (state.phase !== 'step' || !state.chain) return null;
+    var cells = state.chain.cells;
+    for (var i = 1; i < cells.length - 1; i++) {
+      var c = cells[i];
+      if (c.authorId === playerId && c.kind === 'draw' && c.done && !c.skipped && i < state.stepNo) return c;
+    }
+    return null;
+  }
+
+  function midNextPoints(cell) {
+    return Math.max(CONST.MID_MIN, CONST.MID_POINTS - CONST.MID_STEP * cell.midWrong);
+  }
+
+  /**
+   * 中間的人交出畫之後猜原本的題目（可以一直猜到猜中）。
+   * 回傳 { kind: 'hit'|'close'|'miss', points }；猜的內容不會給任何人。
+   */
+  function midGuess(state, playerId, text, now) {
+    var cell = midCellOf(state, playerId);
+    if (!cell) return err('srv.err.telephoneCantMidGuess', 'forbidden');
+    var cur = currentCell(state);
+    if (cur && cur.authorId === playerId) return err('srv.err.telephoneCantMidGuess', 'forbidden');
+    if (cell.midHit) return err('srv.err.telephoneMidDone', 'done');
+    var clean = String(text === undefined || text === null ? '' : text).replace(/\s+/g, ' ').trim().slice(0, CONST.ANSWER_MAX);
+    if (!clean) return err('srv.err.emptyGuess', 'empty');
+    var w = word(state);
+    var m = w ? Words.match(w, clean) : 'miss';
+    if (m === 'hit') {
+      var pts = midNextPoints(cell);
+      cell.midHit = true;
+      cell.midPts = pts;
+      var p = player(state, playerId);
+      if (p) p.score += pts;
+      return ok({ kind: 'hit', points: pts, name: cell.authorName });
+    }
+    cell.midWrong += 1;
+    return ok({ kind: m === 'close' ? 'close' : 'miss', next: midNextPoints(cell) });
+  }
+
   /* ------------------------------------------------------------ 揭曉與結算 */
 
   function scoreChain(state) {
@@ -518,7 +570,7 @@
       factor: chain.factor,
       hints: chain.hints.basic,
       peeks: chain.hints.peeks.slice(),
-      points: chain.cells.map(function (c) { return { id: c.authorId, name: c.authorName, points: c.points, skipped: c.skipped }; }),
+      points: chain.cells.map(function (c) { return { id: c.authorId, name: c.authorName, points: c.points, skipped: c.skipped, midHit: c.midHit, midPts: c.midPts }; }),
       at: now
     };
     state.log.push(entry);
@@ -781,6 +833,7 @@
           strokes: c.kind === 'draw' && !c.skipped ? c.strokes : [],
           text: c.kind === 'write' ? c.text : '', skipped: c.skipped, stand: c.stand ? nameOf(state, c.stand) : null,
           points: c.points, counts: counts, mine: mine,
+          midHit: c.midHit, midPts: c.midPts, midWrong: c.midWrong,
           canReact: canReact && !c.skipped && c.authorId !== viewerId
         };
       })
@@ -852,7 +905,8 @@
         return {
           id: p.id, name: p.name, score: p.score, pending: p.pending,
           isDrawer: !!cell && cell.authorId === p.id && cell.kind === 'draw',
-          isGuesser: !!cell && cell.authorId === p.id && cell.kind === 'write'
+          isGuesser: !!cell && cell.authorId === p.id && cell.kind === 'write',
+          midHit: !!state.chain && state.chain.cells.some(function (c) { return c.authorId === p.id && c.midHit; })
         };
       }),
       choices: [],
@@ -886,6 +940,7 @@
         canPeek: false,
         canChat: !isActive(state.phase),
         watching: false,
+        midGuess: null,
         guessed: false
       }
     };
@@ -931,6 +986,12 @@
       }
     }
 
+    /* 中間的人交出畫之後可以猜原本的題目（猜中前一直可以猜） */
+    if (role === 'waiting') {
+      var mc = midCellOf(state, viewerId);
+      if (mc) view.you.midGuess = { can: !mc.midHit, hit: mc.midHit, wrong: mc.midWrong, points: mc.midHit ? mc.midPts : midNextPoints(mc) };
+    }
+
     /* 觀戰者全部都看得到：題目、每一格作畫的過程（不能聊天，不會暴雷） */
     if (role === 'spectator' && state.phase === 'step' && state.wordId) {
       var sw = word(state);
@@ -961,6 +1022,7 @@
     answer: answer,
     giveHint: giveHint,
     peek: peek,
+    midGuess: midGuess,
     tick: tick,
     finish: finish,
     removePlayer: removePlayer,

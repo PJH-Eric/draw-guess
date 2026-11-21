@@ -10,9 +10,9 @@
  * 前面已經畫完的人可以在畫布上即時看後面的人作畫；其他人在傳話中看不到任何畫，畫布被等待卡蓋住；等最後一人猜時，等待卡改成可以左右翻看所有的畫。
  */
 
-import { $, D, S, Sound, app, esc, secsLeft } from './core.js?v=e977256a55';
-import { strokesThumb } from './gallery.js?v=e977256a55';
-import { chatBlockHtml } from './overlay.js?v=e977256a55';
+import { $, D, S, Sound, app, esc, secsLeft } from './core.js?v=df4cf5d8fd';
+import { strokesThumb } from './gallery.js?v=df4cf5d8fd';
+import { chatBlockHtml } from './overlay.js?v=df4cf5d8fd';
 
 var w = window;
 var REACT = { heart: '❤️', laugh: '😂' };
@@ -196,7 +196,8 @@ export function chainHtml(g, chain) {
       return;
     }
     if (c.kind === 'draw') {
-      rows += '<li class="tp-cell tp-cell-draw">' + head +
+      var midTag = c.midHit ? '<p class="tp-cell-mid">' + esc(t('telephone.reveal.midHit', { n: c.midPts, wrong: c.midWrong })) + '</p>' : '';
+      rows += '<li class="tp-cell tp-cell-draw">' + head + midTag +
         '<div class="tp-cell-pic">' + pictureHtml(g, 'r' + chain.roundNo + ':' + i, c.strokes, 240, t('telephone.alt.drawing', { name: c.authorName })) + '</div>' +
         reactBtns(c) + '</li>';
     } else {
@@ -242,6 +243,7 @@ function stateText(g, p) {
   if (g.phase === 'picking') return p.id === g.starterId ? t('telephone.state.picking') : t('telephone.state.waiting');
   if (!o) return t('telephone.state.waiting');
   if (o.current) return t(o.kind === 'write' ? 'telephone.state.guessing' : 'telephone.state.drawing');
+  if (p.midHit) return t('telephone.state.midHit');
   if (o.done) return t('telephone.state.done');
   return t('telephone.state.waiting');
 }
@@ -488,6 +490,7 @@ export function telephoneCanDo(v, g) {
   if (g.phase === 'reveal') return t('telephone.can.reveal');
   if (role === 'drawer') return t(g.prev && g.prev.kind === 'word' ? 'telephone.can.drawWord' : 'telephone.can.copy');
   if (role === 'guesser') return t('telephone.can.guesser');
+  if (g.you.midGuess && g.you.midGuess.can) return t('telephone.can.midGuess', { n: g.you.midGuess.points });
   if (g.you.watching) return t('telephone.can.watch');
   return t(g.turnKind === 'write' ? 'telephone.can.browse' : 'telephone.can.wait');
 }

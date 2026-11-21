@@ -261,6 +261,43 @@ section('中途進房');
   check('滿 5 人後不能再加入', TP.addPlayer(st, { id: 'f' }).error === 'srv.err.seatsFull');
 }
 
+section('中間的人猜原本的題目');
+{
+  const st = make(4);
+  let t = toStep(st, T0);
+  check('開頭的人不能猜', TP.midGuess(st, 'a', 'x', t).error === 'srv.err.telephoneCantMidGuess');
+  t = drawAndPass(st, t);
+  check('還沒交出畫不能猜', TP.midGuess(st, 'b', 'x', t).error === 'srv.err.telephoneCantMidGuess');
+  t = drawAndPass(st, t);
+  check('交出畫之後可以猜', TP.toPublic(st, 'b', t).you.midGuess.can && TP.toPublic(st, 'b', t).you.midGuess.points === 50);
+  check('猜錯可以再猜，下一次剩 40', TP.midGuess(st, 'b', '一定不是這個', t).next === 40 && TP.midGuess(st, 'b', '也不是', t).next === 30);
+  const hit = TP.midGuess(st, 'b', answerOf(st), t);
+  check('猜中 50 - 10×猜錯次數', hit.kind === 'hit' && hit.points === 30 && TP.player(st, 'b').score === 30);
+  check('猜中後不能再猜', TP.midGuess(st, 'b', answerOf(st), t).error === 'srv.err.telephoneMidDone');
+  check('玩家列標記猜中', TP.toPublic(st, 'a', t).players.find((p) => p.id === 'b').midHit);
+  check('猜中的訊息不含題目、別人拿不到猜的內容', !JSON.stringify(TP.toPublic(st, 'c', t)).includes(answerOf(st)));
+  t = drawAndPass(st, t);
+  check('最後一人不能用中間猜題', TP.midGuess(st, 'd', 'x', t).error === 'srv.err.telephoneCantMidGuess');
+  check('C 交出畫後也能猜', TP.toPublic(st, 'c', t).you.midGuess.can);
+  TP.answer(st, 'd', answerOf(st), t);
+  check('整串分數另外算：B 233＋30', TP.player(st, 'b').score === 263 && st.chain.cells[1].midPts === 30);
+  const rv = TP.toPublic(st, 'a', t);
+  check('揭曉列表標出誰自己猜中', rv.chain.cells[1].midHit && rv.chain.cells[1].midWrong === 2 && !rv.chain.cells[2].midHit);
+  check('揭曉後不能再猜', TP.midGuess(st, 'c', 'x', t).error === 'srv.err.telephoneCantMidGuess');
+
+  const s2 = make(4);
+  t = toStep(s2, T0); t = drawAndPass(s2, t); t = drawAndPass(s2, t);
+  TP.midGuess(s2, 'b', answerOf(s2), t);
+  t = drawAndPass(s2, t);
+  TP.tick(s2, t, { away: ['d'] });
+  check('已經猜中的人不會被找去代猜', s2.chain.cells[3].authorId === 'c');
+  const s3 = make(3);
+  t = toStep(s3, T0); t = drawAndPass(s3, t); t = drawAndPass(s3, t);
+  TP.midGuess(s3, 'b', answerOf(s3), t);
+  TP.tick(s3, t, { away: ['c'] });
+  check('沒人能代猜就直接揭曉、沒寫答案', s3.phase === 'reveal' && s3.chain.cells[2].skipped);
+}
+
 section('揭曉表情與最好笑');
 {
   const st = make(3, { rounds: 1 });
@@ -379,6 +416,11 @@ section('房間層（lib/rooms.js）');
   t = room.state.stepStartsAt; room.tick(t);
   check('小美拿到房主的畫', room.viewFor('b', t).game.prev.idx === 0);
   room.stroke('b', LINE, t); room.telephoneSubmit('b', t);
+  check('房間層：中間的人猜錯回 miss、不廣播', room.telephoneMidGuess('b', '一定不對', t + 10).kind === 'miss' && !room.feed.some((e) => e.key === 'srv.feed.telephoneMidHit'));
+  check('房間層：猜太快被擋', room.telephoneMidGuess('b', ans, t + 11).error === 'srv.err.guessTooFast');
+  check('房間層：猜中大家看到「猜中了」但沒有題目', room.telephoneMidGuess('b', ans, t + 5000).kind === 'hit' &&
+    room.feed.some((e) => e.key === 'srv.feed.telephoneMidHit') && !JSON.stringify(room.feed).includes(ans));
+  check('房間層：等待中的人視圖有猜題框旗標', room.viewFor('b', t + 5000).game.you.midGuess.hit && room.viewFor('b', t + 5000).game.you.midGuess.points === 40);
   t = room.state.stepStartsAt; room.tick(t);
   room.telephoneSubmit('c', t);
   t = room.state.stepStartsAt; room.tick(t);
