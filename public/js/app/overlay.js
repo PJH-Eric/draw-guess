@@ -1,17 +1,17 @@
 /* ===== app/overlay.js — 疊層卡片：房間設定、選題、公布答案、結算 ===== */
 
-import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=339dfe2aa4';
-import { askLeaveRoom, makeModal, modals } from './modal.js?v=339dfe2aa4';
-import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=339dfe2aa4';
-import { soloRefresh, soloStep, startSolo } from './solo.js?v=339dfe2aa4';
-import { renderRecent } from './feed.js?v=339dfe2aa4';
-import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=339dfe2aa4';
-import { PHASE_LABEL, moodOf } from './render.js?v=339dfe2aa4';
-import { copyText, newInvite, revokeInvite } from './game-settings.js?v=339dfe2aa4';
-import { enterOnlineRoom, leaveGame, lobbyModeKey, roomRuleChips, saveNick } from './lobby.js?v=339dfe2aa4';
-import { hideRelayUi, isRelayGame, relayAwardsHtml, relayCanDo, relayBarMode, relayOverlayHtml, relayPhaseLabel, relayToolsShown, relayVote, renderRelayAssist, renderRelayBanner } from './relay.js?v=339dfe2aa4';
-import { hideTelephoneUi, isTelephoneGame, renderTelephoneAssist, telephoneAwardsHtml, telephoneCanDo, telephoneOverlayAct, telephoneOverlayHtml, telephonePhaseLabel, telephoneRoleLabel, telephoneToolsShown } from './telephone.js?v=339dfe2aa4';
-import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=339dfe2aa4';
+import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=7d2444b4a5';
+import { askLeaveRoom, makeModal, modals } from './modal.js?v=7d2444b4a5';
+import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=7d2444b4a5';
+import { soloRefresh, soloStep, startSolo } from './solo.js?v=7d2444b4a5';
+import { renderRecent } from './feed.js?v=7d2444b4a5';
+import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=7d2444b4a5';
+import { PHASE_LABEL, moodOf } from './render.js?v=7d2444b4a5';
+import { copyText, newInvite, revokeInvite } from './game-settings.js?v=7d2444b4a5';
+import { enterOnlineRoom, leaveGame, lobbyModeKey, roomRuleChips, saveNick } from './lobby.js?v=7d2444b4a5';
+import { hideRelayUi, isRelayGame, relayAwardsHtml, relayCanDo, relayBarMode, relayOverlayHtml, relayPhaseLabel, relayToolsShown, relayVote, renderRelayAssist, renderRelayBanner } from './relay.js?v=7d2444b4a5';
+import { hideTelephoneUi, isTelephoneGame, renderTelephoneAssist, telephoneAwardsHtml, telephoneCanDo, telephoneOverlayAct, telephoneOverlayHtml, telephonePhaseLabel, telephoneRoleLabel, telephoneToolsShown } from './telephone.js?v=7d2444b4a5';
+import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=7d2444b4a5';
 
 var w = window;
 
@@ -52,6 +52,7 @@ export function renderOverlay() {
      提示訊息要改到上方出現，不然會蓋住卡片底部的「準備／開始」（body.setup-open）。 */
   var isSetup = !!html && !!v.room && !v.room.closed && v.room.phase === 'waiting';
   card.classList.toggle('setup-card', isSetup);
+  card.classList.toggle('tp-flow-card', !!v.room && v.room.mode === 'telephone');
   D.body.classList.toggle('setup-open', isSetup);
 
   if (!html) {
@@ -393,7 +394,7 @@ export function roomSetupHtml(v) {
   var telephone = r.mode === 'telephone';
   if (telephone) {
     /* 畫圖傳話房：每張畫秒數、猜答案秒數、輪次，再加題型與種類；下面一句話講清楚怎麼傳 */
-    var tpNote = '<p class="setupnote relay-rules-note">' + esc(w.I18N.t('telephone.rulesNote')) + '</p>';
+    var tpNote = '<p class="setupnote tp-flow-note">' + esc(w.I18N.t('telephone.rulesNote')) + '</p>';
     rules = host
       ? '<div class="setupblock"><h4>' + esc(w.I18N.t('text.123')) + '</h4>' +
         '<div class="rules-row">' +

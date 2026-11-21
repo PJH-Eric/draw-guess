@@ -10,9 +10,9 @@
  * 前面已經畫完的人可以在畫布上即時看後面的人作畫；其他人在傳話中看不到任何畫，畫布被等待卡蓋住；等最後一人猜時，等待卡改成可以左右翻看所有的畫。
  */
 
-import { $, D, S, Sound, app, esc, secsLeft } from './core.js?v=339dfe2aa4';
-import { strokesThumb } from './gallery.js?v=339dfe2aa4';
-import { chatBlockHtml } from './overlay.js?v=339dfe2aa4';
+import { $, D, S, Sound, app, esc, secsLeft } from './core.js?v=7d2444b4a5';
+import { strokesThumb } from './gallery.js?v=7d2444b4a5';
+import { chatBlockHtml } from './overlay.js?v=7d2444b4a5';
 
 var w = window;
 var REACT = { heart: '❤️', laugh: '😂' };
@@ -77,6 +77,8 @@ function orderHtml(v, g) {
 
 /* ---------------------------------------------------- 疊層卡片 */
 
+function flowNote(html) { return '<p class="tp-flow-note">' + html + '</p>'; }
+
 /** 挑題、換手、等別人、揭曉用疊層卡片；輪到自己畫或猜的時候不蓋住畫布（回傳 null） */
 export function telephoneOverlayHtml(v, g) {
   if (g.phase === 'picking') return pickingHtml(v, g);
@@ -98,12 +100,12 @@ function pickingHtml(v, g) {
         '<b>' + esc(c.text) + '</b><span class="s">' + esc(c.catLabel) + '・' + esc(c.diffLabel) + '</span></button>';
     }).join('');
     return roundHtml(g) + '<h3>' + esc(t('telephone.pick.title')) + '</h3>' +
-      '<p>' + withSecs('telephone.pick.note', s) + '</p>' +
+      flowNote(withSecs('telephone.pick.note', s)) +
       '<div class="wordchoices tp-choices">' + cards + '</div>' + orderHtml(v, g);
   }
   return roundHtml(g) + '<div class="relay-guesser-card tp-wait-card"><span class="relay-hero-face" aria-hidden="true">' +
     S.face(playerIdx(g, g.starterId), 'think') + '</span>' +
-    '<h3>' + esc(t('telephone.pick.wait', { name: g.starterName })) + '</h3><p>' + esc(t('telephone.pick.waitNote')) + '</p>' +
+    '<h3>' + esc(t('telephone.pick.wait', { name: g.starterName })) + '</h3>' + flowNote(esc(t('telephone.pick.waitNote'))) +
     '<p class="tp-secs">' + withSecs('telephone.secs', s) + '</p></div>';
 }
 
@@ -118,7 +120,7 @@ function handoffHtml(v, g) {
   } else if (prev && prev.kind === 'drawing') {
     body = '<p class="tp-hand-label">' + esc(t(guess ? 'telephone.hand.guessFrom' : 'telephone.hand.copyFrom', { name: prev.authorName })) + '</p>' +
       '<div class="tp-hand-pic">' + pictureHtml(g, prev.idx, prev.strokes || [], 320, t('telephone.alt.drawing', { name: prev.authorName })) + '</div>' +
-      (guess ? '' : '<p class="tp-hand-warn">' + esc(t('telephone.hand.memorize')) + '</p>');
+      (guess ? '' : flowNote(esc(t('telephone.hand.memorize'))));
   }
   return '<div class="relay-countdown tp-handoff">' + roundHtml(g) +
     '<p class="relay-count-who">' + esc(t(guess ? 'telephone.hand.guess' : 'telephone.hand.draw')) + '</p>' +
@@ -133,7 +135,7 @@ function waitHtml(v, g) {
   return roundHtml(g) + '<div class="relay-guesser-card tp-wait-card"><span class="relay-hero-face" aria-hidden="true">' +
     S.face(playerIdx(g, g.turnId), g.turnKind === 'write' ? 'think' : 'draw') + '</span>' +
     '<h3>' + esc(t(key, { name: g.turnName, n: g.stepNo + 1 })) + '</h3>' +
-    '<p>' + esc(t(spectating && v.you.role === 'player' ? 'telephone.wait.next' : 'telephone.wait.note')) + '</p>' +
+    flowNote(esc(t(spectating && v.you.role === 'player' ? 'telephone.wait.next' : 'telephone.wait.note'))) +
     '<p class="tp-secs">' + withSecs('telephone.secs', s) + '</p></div>' + orderHtml(v, g);
 }
 
@@ -152,7 +154,7 @@ function browseHtml(v, g) {
       '<figure class="tp-browse-fig">' + pic + '<figcaption>' + esc(t('telephone.browse.pos', { i: i + 1, n: list.length, name: cur.authorName })) + '</figcaption></figure>' +
       '<button class="pillbtn tp-browse-btn" type="button" data-act="telephone-browse" data-d="1" aria-label="' + esc(t('telephone.browse.next')) + '"' + (list.length < 2 ? ' disabled' : '') + '>›</button>' +
       '</div>' : '') +
-    '<p class="setupnote">' + esc(t('telephone.browse.note')) + '</p>';
+    flowNote(esc(t('telephone.browse.note')));
 }
 
 function hintsLine(chain) {

@@ -445,6 +445,12 @@ body.big-tools .fillbox{min-height:56px}
 .sum-line:last-child{border-bottom:0}
 .sum-line span{flex:0 0 auto;color:var(--ink-soft);font-weight:800}
 .sum-line b{flex:1 1 auto;text-align:right;font-weight:900;overflow-wrap:anywhere}
+.sum-line-action{
+  display:grid;gap:3px;margin:4px 0;padding:7px 9px;
+  border:2px solid var(--line);border-radius:12px;background:var(--grape-wash);
+}
+.sum-line-action span{color:var(--grape-t);overflow-wrap:anywhere}
+.sum-line-action b{text-align:start;min-width:0;line-height:1.55}
 .sum-h{margin:10px 2px 5px;font-size:.84rem;color:var(--grape-t)}
 .scorelist{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:5px}
 .scorelist li{display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:7px;min-height:54px;border:2px solid var(--line);border-radius:12px;background:var(--surface);padding:4px 8px;font-size:.78rem;font-weight:800}

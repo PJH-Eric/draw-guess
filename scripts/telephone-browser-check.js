@@ -153,7 +153,7 @@ async function boot(cdp, nick, lang) {
 const LAYOUT = `
   var vw = window.innerWidth, vh = window.innerHeight;
   var doc = document.documentElement;
-  var out = { overflowX: Math.max(doc.scrollWidth, document.body.scrollWidth) - vw, clipped: [] };
+  var out = { overflowX: Math.max(doc.scrollWidth, document.body.scrollWidth) - vw, clipped: [], instructions: 0, clippedText: [] };
   function visible(el) {
     if (el.closest('[hidden]')) return false;
     var cs = getComputedStyle(el);
@@ -180,6 +180,15 @@ const LAYOUT = `
       out.clipped.push((el.id || el.getAttribute('data-act') || el.className || el.tagName) + '@' + Math.round(r.left) + ',' + Math.round(r.top) + ' ' + Math.round(r.width) + 'x' + Math.round(r.height));
     }
   }
+  var instructions = document.querySelectorAll('.tp-guide-step, .telephone-lobby-note, .tp-flow-note, .tp-hints-used, .tp-hand-label, .tp-next, .tp-browse-fig figcaption, .sum-line-action');
+  for (var note of instructions) {
+    var bounds = note.getBoundingClientRect();
+    if (!visible(note) || (note.closest('#game-aside') && bounds.right <= 0)) continue;
+    out.instructions++;
+    if (note.scrollWidth > note.clientWidth + 1 || bounds.left < -1 || bounds.right > vw + 1) {
+      out.clippedText.push(note.textContent.trim());
+    }
+  }
   return out;
 `;
 
@@ -198,6 +207,9 @@ async function sweep(cdp, name, opts) {
     const lay = await cdp.eval(LAYOUT);
     check(name + '／' + v.name + '：沒有水平溢出', lay.overflowX <= 1, 'overflow ' + lay.overflowX + 'px');
     check(name + '／' + v.name + '：按鈕與輸入框沒被裁到畫面外', lay.clipped.length === 0, lay.clipped.slice(0, 4).join(' | '));
+    if (o.instructions || lay.instructions) {
+      check(name + '／' + v.name + '：說明文字完整', lay.instructions > 0 && lay.clippedText.length === 0, lay.clippedText.join(' | '));
+    }
     if (o.roomCreate) {
       const modal = await cdp.eval(`
         const panel = document.getElementById('room-create-panel');
@@ -282,13 +294,13 @@ async function main() {
   const tutTotal = await host.eval('return document.querySelectorAll("#tut-progress .tut-dots i").length;');
   for (let i = 1; i < tutTotal; i++) await host.click('#b-tut-next');
   check('教學最後一段是畫圖傳話', await host.eval('return /畫圖傳話/.test(document.querySelector("#tut-box h3").textContent);'));
-  await sweep(host, '00-教學-畫圖傳話', { list: [VIEWPORTS[0], BASE_VP] });
+  await sweep(host, '00-教學-畫圖傳話', { instructions: true });
   await host.click('#b-tut-skip');
   await host.waitFor('document.getElementById("s-home").classList.contains("active")', 4000, '回首頁');
   await host.click('#b-telephone');
   await host.waitFor('window.Online && window.Online.isConnected() && !document.getElementById("b-lobby-host").disabled', 15000, '大廳連線');
   check('大廳標題與說明', await host.eval('return /畫圖傳話/.test(document.getElementById("lobby-title").textContent) && !document.getElementById("telephone-lobby-note").hidden && document.getElementById("relay-lobby-note").hidden;'));
-  await sweep(host, '02-大廳-空');
+  await sweep(host, '02-大廳-空', { instructions: true });
   await host.click('#b-lobby-host');
   await host.waitFor('document.getElementById("room-create-modal").classList.contains("open")', 4000, '開房彈窗');
   const fields = await host.eval('function vis(id){var l=document.querySelector("label[for="+id+"]");return !!l && !l.hidden;} function opts(id){return Array.from(document.getElementById(id).options).map(function(o){return o.value;}).join(",");} return {d:vis("room-create-tpdraw"),g:vis("room-create-tpguess"),r:vis("room-create-tprounds"),gr:vis("room-create-guessrounds"),rd:vis("room-create-rounds"),ds:vis("room-create-drawsec"),title:document.getElementById("room-create-title").textContent,dopt:opts("room-create-tpdraw"),gopt:opts("room-create-tpguess"),ropt:opts("room-create-tprounds"),dval:document.getElementById("room-create-tpdraw").value,gval:document.getElementById("room-create-tpguess").value};');
@@ -389,8 +401,8 @@ async function telephoneGame(host, players, watch, tabs) {
   check('開頭的人看到 3 個候選題', await host.eval('return document.querySelectorAll("#overlay-card [data-act=telephone-pick]").length === 3;'));
   check('其他人看到等待卡、看不到候選', await players[1].eval('return document.querySelectorAll("#overlay-card [data-act=telephone-pick]").length === 0 && /挑題目/.test(document.getElementById("overlay-card").textContent);'));
   check('傳話中聊天輸入框隱藏', !(await players[1].eval(visible('#chat-input'))));
-  await sweep(host, '06-挑題-開頭', { list: FIRST_HALF });
-  await sweep(players[1], '06-挑題-等待', { list: SECOND_HALF });
+  await sweep(host, '06-挑題-開頭', { list: FIRST_HALF, instructions: true });
+  await sweep(players[1], '06-挑題-等待', { list: SECOND_HALF, instructions: true });
   const answer = await host.eval('return document.querySelector("#overlay-card [data-act=telephone-pick] b").textContent;');
   await host.click('#overlay-card [data-act=telephone-pick]');
 
@@ -437,6 +449,21 @@ async function telephoneGame(host, players, watch, tabs) {
     })());
     if (i === 0) {
       await sweep(me, '08-作畫-開頭');
+      await setViewport(me, VIEWPORTS[0]);
+      await me.click('#b-aside-toggle');
+      await me.waitFor('document.getElementById("game-aside").classList.contains("open")', 2500, '展開操作摘要');
+      await sleep(260);
+      const summary = await me.eval(`
+        const note = document.querySelector('.sum-line-action');
+        const description = note.querySelector('b');
+        const bounds = note.getBoundingClientRect();
+        return description.textContent.trim() !== '' && description.textContent.trim() !== '—' &&
+          note.scrollWidth <= note.clientWidth + 1 && bounds.left >= 0 && bounds.right <= innerWidth;
+      `);
+      check('手機窄版：操作摘要的當前步驟說明完整', summary);
+      await shot(me, '08-操作摘要-phone-narrow');
+      await me.click('#b-aside-close');
+      await setViewport(me, BASE_VP);
       await sweep(chain[2], '09-等待-作畫中', { list: FIRST_HALF });
       await sweep(watch, '09-觀戰-作畫中', { list: SECOND_HALF });
       await sweep(chain[1], '09-下一位-觀看', { list: FIRST_HALF });
@@ -474,7 +501,7 @@ async function telephoneGame(host, players, watch, tabs) {
   check('翻看可以換下一張', await watch.eval('return /2 \\/ 3/.test(document.querySelector("#overlay-card .tp-browse-fig figcaption").textContent);'));
   check('玩家翻看時沒有題目', !(await chain[1].eval('return document.body.innerText.indexOf(' + JSON.stringify(answer) + ') >= 0;')));
   await sweep(guesser, '10-猜答案');
-  await sweep(watch, '11-翻看全部的畫');
+  await sweep(watch, '11-翻看全部的畫', { instructions: true });
   await guesser.eval('var i=document.getElementById("guess-input"); i.value=' + JSON.stringify(answer) + '; i.dispatchEvent(new Event("input",{bubbles:true})); document.getElementById("guessbar").requestSubmit(); return 1;');
 
   /* ---- 揭曉 ---- */
@@ -485,7 +512,7 @@ async function telephoneGame(host, players, watch, tabs) {
   await players[1].click('#overlay-card .tp-cell-draw [data-act=telephone-react][data-kind=laugh]');
   check('可以對別人的格子按大笑', await host.waitFor(GAME + 'return g.chain && g.chain.cells[0].counts.laugh === 1;', 4000, '表情').catch(() => false));
   check('自己那格的表情按鈕停用', await host.eval('return document.querySelector("#overlay-card .tp-cell-draw [data-act=telephone-react]").disabled;'));
-  await sweep(host, '12-揭曉');
+  await sweep(host, '12-揭曉', { instructions: true });
 
   await host.waitFor('window.DrawGuessApp.view.room.phase === "finished"', 40000, '結算');
   await host.waitFor('document.querySelectorAll("#overlay-card .gal-item").length >= 1', 8000, '畫廊').catch(() => {});

@@ -751,6 +751,12 @@ body.big-tools .fillbox{min-height:56px}
 .sum-line:last-child{border-bottom:0}
 .sum-line span{flex:0 0 auto;color:var(--ink-soft);font-weight:800}
 .sum-line b{flex:1 1 auto;text-align:right;font-weight:900;overflow-wrap:anywhere}
+.sum-line-action{
+  display:grid;gap:3px;margin:4px 0;padding:7px 9px;
+  border:2px solid var(--line);border-radius:12px;background:var(--grape-wash);
+}
+.sum-line-action span{color:var(--grape-t);overflow-wrap:anywhere}
+.sum-line-action b{text-align:start;min-width:0;line-height:1.55}
 .sum-h{margin:10px 2px 5px;font-size:.84rem;color:var(--grape-t)}
 .scorelist{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:5px}
 .scorelist li{display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:7px;min-height:54px;border:2px solid var(--line);border-radius:12px;background:var(--surface);padding:4px 8px;font-size:.78rem;font-weight:800}
@@ -2244,9 +2250,25 @@ body.reduced-motion .relay-cheer,body.reduced-motion .relay-typing{animation:non
 }
 
 /* 大廳：說明條與標題色 */
-.telephone-lobby-note{border-color:var(--tp-d);background:var(--tp-tint)}
+.telephone-lobby-note{
+  align-items:flex-start;border-color:var(--tp-d);background:var(--tp-tint);
+  font-weight:700;overflow-wrap:anywhere;
+}
+.telephone-lobby-note .ico{color:var(--tp-t)}
 body.lobby-telephone #lobby-title{color:var(--tp-t)}
 @media (max-width:480px){body.lobby-telephone #lobby-title{font-size:1.05rem;letter-spacing:0}}
+
+.tp-guide{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,13.5rem),1fr));
+  gap:10px;
+}
+.tp-guide-step{
+  min-width:0;padding:clamp(10px,2vw,16px);
+  border:2px solid var(--tp-d);border-radius:16px;background:var(--tp-tint);
+  font-size:.92rem;line-height:1.65;overflow-wrap:anywhere;
+}
+.tp-guide-step h4{margin:0 0 4px;color:var(--tp-t);font-size:1rem}
+.tp-guide-step p{margin:0}
 
 /* 房間卡片與房間設定卡的模式標記 */
 .rc-rule[data-k=tpmode]{background:var(--tp);border-color:var(--tp-d)}
@@ -2254,14 +2276,35 @@ body.lobby-telephone #lobby-title{color:var(--tp-t)}
 
 /* ---------- 對局：輪次、等待卡 ---------- */
 .tp-qno{color:var(--tp-t)}
+.tp-flow-card h3{color:var(--tp-t);overflow-wrap:anywhere}
+.tp-flow-card .tp-flow-note,
+.tp-flow-card .tp-hints-used{
+  max-width:52ch;margin:6px auto 10px;padding:7px 10px;
+  border:2px solid var(--tp-d);border-radius:12px;background:var(--tp-tint);
+  color:var(--ink);font-size:.86rem;line-height:1.55;overflow-wrap:anywhere;
+}
+.tp-flow-card .setupnote.tp-flow-note{text-align:start;margin:8px 0 0}
+.tp-flow-note .pick-secs,.tp-flow-card p.tp-secs,.tp-flow-card p.tp-next{
+  color:var(--tp-t);font-weight:900;font-variant-numeric:tabular-nums;
+}
+.tp-flow-card p.tp-secs,.tp-flow-card p.tp-next{margin:4px 0 8px}
+.tp-wait-card .relay-hero-face{width:clamp(44px,12vmin,68px);height:auto;aspect-ratio:1}
 .tp-choices .wordchoice b{overflow-wrap:anywhere;text-align:center}
-.tp-secs{margin:4px 0 0;font-weight:800;color:var(--tp-t)}
 .tp-handoff .relay-count-n{color:var(--tp-t)}
+.tp-flow-card .tp-handoff .relay-count-who{
+  margin:2px 0 4px;color:var(--ink);font-weight:900;
+}
 .tp-hand-label{margin:6px 0 4px;font-weight:800;color:var(--ink-soft)}
 .tp-hand-word{color:var(--tp-t);overflow-wrap:anywhere}
 .tp-hand-pic{display:flex;justify-content:center}
 .tp-hand-pic .tp-pic{width:min(320px,70vw,42vh)}
-.tp-hand-warn{margin:6px 0 0;font-weight:800;color:var(--tp-t)}
+@media (max-height:480px) and (orientation:landscape){
+  .tp-handoff .relay-count-n{font-size:2.75rem;margin:2px auto}
+  .tp-hand-pic .tp-pic{width:min(250px,28dvh)}
+  .tp-flow-card .tp-flow-note{margin-block:4px 6px;padding-block:5px}
+  .tp-wait-card .relay-hero-face{width:36px}
+  .tp-wait-card .tp-order{margin-top:6px}
+}
 
 /* 一張畫：白紙底、圓角；空白的畫顯示一張寫著「空白」的紙 */
 .tp-pic{display:block;width:100%;height:auto;aspect-ratio:1;border:2px solid var(--line);border-radius:12px;background:#fff}
@@ -2284,12 +2327,12 @@ body.lobby-telephone #lobby-title{color:var(--tp-t)}
 .tp-order-face{width:34px;height:34px;display:block}
 .tp-order-face svg{width:100%;height:100%;display:block}
 .tp-order-name{font-size:.74rem;font-weight:800;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tp-order-tag{font-size:.64rem;font-weight:800;color:var(--ink-soft)}
+.tp-order-tag{font-size:.64rem;font-weight:800;color:var(--ink-soft);overflow-wrap:anywhere;max-width:100%}
 
 /* ---------- 等最後一人猜：左右翻看所有的畫 ---------- */
 .tp-browse{display:flex;align-items:center;justify-content:center;gap:8px;margin:8px 0 4px}
-.tp-browse-fig{margin:0;flex:0 1 auto;width:min(360px,64vw,46vh);text-align:center}
-.tp-browse-fig figcaption{margin-top:4px;font-size:.8rem;font-weight:800;color:var(--ink-soft)}
+.tp-browse-fig{margin:0;flex:0 1 auto;min-width:0;width:min(360px,64vw,46vh);text-align:center}
+.tp-browse-fig figcaption{margin-top:4px;font-size:.8rem;font-weight:800;color:var(--ink-soft);overflow-wrap:anywhere}
 .tp-browse-btn{flex:0 0 auto;min-width:44px;min-height:44px;font-size:1.4rem;line-height:1}
 
 /* ---------- 揭曉整串 ---------- */
@@ -2319,8 +2362,6 @@ body.lobby-telephone #lobby-title{color:var(--tp-t)}
 .tp-cell-write[data-hit=true]{border-color:var(--ok)}
 .tp-reacts{display:flex;justify-content:center;gap:6px;margin-top:auto;padding-top:6px}
 .tp-react{min-width:0;flex:1 1 0;max-width:72px;min-height:44px;padding:4px 6px}
-.tp-hints-used{margin:8px 0 0;text-align:center;font-size:.82rem;font-weight:700;color:var(--ink-soft)}
-.tp-next{margin:8px 0 0;text-align:center;font-weight:800}
 
 /* ---------- 結算：最好笑 ---------- */
 .tp-award{border-color:var(--tp-d);background:var(--tp-tint)}
