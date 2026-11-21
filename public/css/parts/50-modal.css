@@ -113,3 +113,131 @@ body.modal-open .language-menu{display:none!important}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+/* 開房：寬版把房間資料與規則並排，窄版保留兩欄規則和固定操作列。 */
+#room-create-panel:is([data-mode=relay],[data-mode=telephone]){
+  width:min(100%,760px);
+  max-height:min(820px,calc(100dvh - 32px));
+}
+.room-create-panel:is([data-mode=relay],[data-mode=telephone]) > .settings-head{
+  background:linear-gradient(180deg,var(--create-tint),var(--paper));
+}
+.room-create-panel:is([data-mode=relay],[data-mode=telephone]) > .settings-head h2{
+  min-width:0;
+  color:var(--create-ink);
+  letter-spacing:0;
+  overflow-wrap:anywhere;
+}
+.room-create-panel:is([data-mode=relay],[data-mode=telephone]) > .settings-head .settings-badge{
+  background:var(--create-accent);
+  box-shadow:0 3px 0 var(--create-line);
+}
+.room-create-panel:is([data-mode=relay],[data-mode=telephone]) > .settings-body{
+  display:grid;
+  gap:10px;
+  align-content:start;
+  align-items:start;
+}
+.room-create-panel:is([data-mode=relay],[data-mode=telephone]) > .settings-body .settings-group{
+  min-width:0;
+  margin:0;
+}
+.room-create-panel:is([data-mode=relay],[data-mode=telephone]) > .settings-body .settings-group h3{
+  margin-bottom:0;
+  color:var(--create-ink);
+}
+.room-create-panel:is([data-mode=relay],[data-mode=telephone]) > .settings-body .settings-group .gico{
+  background:var(--create-tint);
+}
+.room-create-panel:is([data-mode=relay],[data-mode=telephone]) > .settings-body .setting-text{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:4px;
+  align-content:start;
+}
+.room-create-panel:is([data-mode=relay],[data-mode=telephone]) > .settings-body .setting-text input{
+  width:100%;
+}
+.room-create-panel:is([data-mode=relay],[data-mode=telephone]) > .settings-body .create-room-rules{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+.room-create-panel:is([data-mode=relay],[data-mode=telephone]) .create-room-rules .setting-text{
+  gap:3px;
+  padding:0;
+}
+.room-create-panel:is([data-mode=relay],[data-mode=telephone]) .create-room-rules .setting-text b,
+.room-create-panel:is([data-mode=relay],[data-mode=telephone]) .create-rules .rule-field > span{
+  color:var(--ink-soft);
+  font-size:.78rem;
+}
+.room-create-panel:is([data-mode=relay],[data-mode=telephone]) .create-room-rules h3,
+.room-create-panel:is([data-mode=relay],[data-mode=telephone]) .create-rules{
+  grid-column:1 / -1;
+}
+.room-create-panel:is([data-mode=relay],[data-mode=telephone]) .create-rules{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  padding:0 0 6px;
+}
+#room-create-panel:is([data-mode=relay],[data-mode=telephone]) .dropdown-button{
+  gap:6px;
+  padding-inline:10px;
+  font-size:.875rem;
+}
+#room-create-panel:is([data-mode=relay],[data-mode=telephone]) .dropdown-button span{
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+.room-create-panel:is([data-mode=relay],[data-mode=telephone]) .room-create-invite-note{
+  grid-column:1 / -1;
+  margin:0;
+  border-color:var(--create-line);
+  background:var(--create-tint);
+  color:var(--create-ink);
+}
+.room-create-panel:is([data-mode=relay],[data-mode=telephone]) > .settings-foot .btn3d{
+  min-width:0;
+  white-space:normal;
+}
+@media (min-width:620px){
+  .room-create-panel:is([data-mode=relay],[data-mode=telephone]) > .settings-body{
+    grid-template-columns:minmax(0,1fr) minmax(0,1.48fr);
+    grid-template-areas:"details rules" "invite rules";
+    grid-template-rows:auto 1fr;
+  }
+  .room-create-panel:is([data-mode=relay],[data-mode=telephone]) .create-room-details{grid-area:details}
+  .room-create-panel:is([data-mode=relay],[data-mode=telephone]) .create-room-rules{grid-area:rules}
+  .room-create-panel:is([data-mode=relay],[data-mode=telephone]) .room-create-invite-note{grid-area:invite}
+}
+@media (max-width:480px), (max-height:480px) and (orientation:landscape){
+  #room-create-modal:has(#room-create-panel:is([data-mode=relay],[data-mode=telephone])){
+    padding:8px;
+  }
+  #room-create-panel:is([data-mode=relay],[data-mode=telephone]){
+    max-height:calc(100dvh - 16px);
+  }
+  .room-create-panel:is([data-mode=relay],[data-mode=telephone]) > .settings-body{
+    padding:8px;
+  }
+  .room-create-panel:is([data-mode=relay],[data-mode=telephone]) > .settings-head h2{
+    font-size:1.1rem;
+  }
+  .room-create-panel:is([data-mode=relay],[data-mode=telephone]) > .settings-foot{
+    padding:6px 10px calc(6px + var(--safe-b));
+  }
+}
+@media (max-width:480px){
+  .room-create-panel:is([data-mode=relay],[data-mode=telephone]) > .settings-foot{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);
+  }
+}
+
+.room-create-panel[data-mode=relay]{
+  --create-accent:var(--relay);--create-line:var(--relay-d);
+  --create-tint:var(--relay-tint);--create-ink:var(--relay-ink);
+}
+.room-create-panel[data-mode=relay] .create-rules{grid-template-columns:repeat(3,minmax(0,1fr))}

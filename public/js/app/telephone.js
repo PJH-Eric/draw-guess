@@ -10,9 +10,9 @@
  * 前面已經畫完的人可以在畫布上即時看後面的人作畫；其他人在傳話中看不到任何畫，畫布被等待卡蓋住；等最後一人猜時，等待卡改成可以左右翻看所有的畫。
  */
 
-import { $, D, S, Sound, app, esc, secsLeft } from './core.js?v=b74899ab80';
-import { strokesThumb } from './gallery.js?v=b74899ab80';
-import { chatBlockHtml } from './overlay.js?v=b74899ab80';
+import { $, D, S, Sound, app, esc, secsLeft } from './core.js?v=6d05b1bb91';
+import { strokesThumb } from './gallery.js?v=6d05b1bb91';
+import { chatBlockHtml } from './overlay.js?v=6d05b1bb91';
 
 var w = window;
 var REACT = { heart: '❤️', laugh: '😂' };
@@ -283,7 +283,7 @@ export function renderTelephoneWordbar(v, g) {
   var wb = $('wordbar');
   wb.hidden = false;
   var role = g.you.role;
-  var label, mask;
+  var label, mask, isStatus = false;
   var meta = [];
   if (g.phase === 'reveal' || g.phase === 'over') {
     label = t('telephone.word.answer');
@@ -292,6 +292,7 @@ export function renderTelephoneWordbar(v, g) {
     label = t('telephone.word.draw');
     mask = g.prev.text;
   } else if (role === 'drawer') {
+    isStatus = true;
     label = t('telephone.word.copy');
     mask = t('telephone.word.copyMask', { name: g.prev ? g.prev.authorName : '—' });
   } else if (role === 'spectator' && g.answer) {
@@ -300,6 +301,7 @@ export function renderTelephoneWordbar(v, g) {
     mask = g.answer;
     meta.push(t(g.turnKind === 'write' ? 'telephone.word.spectateWrite' : 'telephone.word.watchMask', { name: g.turnName }));
   } else if (g.you.watching) {
+    isStatus = true;
     label = t('telephone.word.watch');
     mask = t('telephone.word.watchMask', { name: g.turnName });
   } else if (role === 'guesser') {
@@ -316,6 +318,7 @@ export function renderTelephoneWordbar(v, g) {
     meta.push(t('telephone.word.secret'));
   }
   wb.setAttribute('data-mine', String(role === 'drawer' && !!g.prev && g.prev.kind === 'word'));
+  wb.toggleAttribute('data-tp-status', isStatus);
   $('wordbar-label').textContent = label;
   $('wordbar-mask').textContent = mask;
   meta.push(t('telephone.roundNo', { n: g.roundNo, total: g.rounds }));
@@ -463,6 +466,7 @@ function renderPeekDock(v, g, guesser) {
 export function hideTelephoneUi() {
   var row = $('hintrow');
   if (row) row.classList.remove('tp-guesser-row');
+  $('wordbar').removeAttribute('data-tp-status');
   D.body.classList.remove('tp-guessing');
   var dock = $('tp-peekdock');
   if (dock) { dock.hidden = true; dock.removeAttribute('data-sig'); }

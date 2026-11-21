@@ -170,7 +170,7 @@ const LAYOUT = `
     }
     return false;
   }
-  var screen = document.querySelector('#room-create-modal.open') || document.querySelector('.screen.active');
+  var screen = document.querySelector('#gallery-modal.open') || document.querySelector('#room-create-modal.open') || document.querySelector('.screen.active');
   var els = (screen ? screen.querySelectorAll('button, input, select, textarea') : []);
   for (var i = 0; i < els.length; i++) {
     var el = els[i];
@@ -205,6 +205,33 @@ async function sweep(cdp, name, opts) {
     await setViewport(cdp, v);
     await sleep(o.settle || 260);
     const lay = await cdp.eval(LAYOUT);
+    if (v.width > v.height && v.height <= 560) {
+      const result = await cdp.eval(`
+        const card = document.getElementById('overlay-card');
+        const footer = card.querySelector('.party-result ~ .result-btns');
+        if (!footer || card.closest('[hidden]') || document.querySelector('#gallery-modal.open')) return null;
+        const buttons = Array.from(footer.querySelectorAll('button'), function (button) { return button.getBoundingClientRect(); });
+        const name = card.querySelector('.result-hero-name').getBoundingClientRect();
+        const first = card.querySelector('.result-row').getBoundingClientRect();
+        const top = footer.getBoundingClientRect().top;
+        return name.bottom <= top && first.bottom <= top && buttons.every(function (r) {
+          return Math.abs(r.top - buttons[0].top) <= 1 && r.bottom <= innerHeight + 1;
+        });
+      `);
+      if (result !== null) check(name + '／' + v.name + '：冠軍與首列排名可見，結算按鈕排成一列', result);
+      if (o.drawing || o.picking) {
+        const actions = await cdp.eval(`
+          const buttons = Array.from(document.querySelectorAll(${JSON.stringify(o.drawing ? '#playbar > .donebox #b-done' : '.tp-choices button')}));
+          return {count: buttons.length, visible: buttons.every(function (button) {
+            const r = button.getBoundingClientRect();
+            return r.top >= 0 && r.bottom <= innerHeight &&
+              button.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2));
+          })};
+        `);
+        check(name + '／' + v.name + '：限時操作無須捲動即可點擊',
+          actions.count === (o.drawing ? 1 : 3) && actions.visible, JSON.stringify(actions));
+      }
+    }
     check(name + '／' + v.name + '：沒有水平溢出', lay.overflowX <= 1, 'overflow ' + lay.overflowX + 'px');
     check(name + '／' + v.name + '：按鈕與輸入框沒被裁到畫面外', lay.clipped.length === 0, lay.clipped.slice(0, 4).join(' | '));
     if (o.instructions || lay.instructions) {
@@ -446,7 +473,7 @@ async function telephoneGame(host, players, watch, tabs) {
   check('開頭的人看到 3 個候選題', await host.eval('return document.querySelectorAll("#overlay-card [data-act=telephone-pick]").length === 3;'));
   check('其他人看到等待卡、看不到候選', await players[1].eval('return document.querySelectorAll("#overlay-card [data-act=telephone-pick]").length === 0 && /挑題目/.test(document.getElementById("overlay-card").textContent);'));
   check('傳話中聊天輸入框隱藏', !(await players[1].eval(visible('#chat-input'))));
-  await sweep(host, '06-挑題-開頭', { list: FIRST_HALF, instructions: true });
+  await sweep(host, '06-挑題-開頭', { list: [...FIRST_HALF, VIEWPORTS[4]], instructions: true, picking: true });
   await sweep(players[1], '06-挑題-等待', { list: SECOND_HALF, instructions: true });
   const answer = await host.eval('return document.querySelector("#overlay-card [data-act=telephone-pick] b").textContent;');
   await host.click('#overlay-card [data-act=telephone-pick]');
@@ -493,7 +520,7 @@ async function telephoneGame(host, players, watch, tabs) {
       return true;
     })());
     if (i === 0) {
-      await sweep(me, '08-作畫-開頭');
+      await sweep(me, '08-作畫-開頭', { drawing: true });
       await setViewport(me, VIEWPORTS[0]);
       await me.click('#b-aside-toggle');
       await me.waitFor('document.getElementById("game-aside").classList.contains("open")', 2500, '展開操作摘要');
@@ -513,7 +540,7 @@ async function telephoneGame(host, players, watch, tabs) {
       await sweep(watch, '09-觀戰-作畫中', { list: SECOND_HALF });
       await sweep(chain[1], '09-下一位-觀看', { list: FIRST_HALF });
     } else if (i === 1) {
-      await sweep(me, '08-照畫');
+      await sweep(me, '08-照畫', { drawing: true });
       await sweep(chain[0], '09-畫完-觀看', { one: true });
     }
     await me.click('#b-done');
@@ -564,6 +591,15 @@ async function telephoneGame(host, players, watch, tabs) {
   check('結算有「最好笑」', await host.eval('return /最好笑/.test(document.getElementById("overlay-card").textContent) && /房主小明/.test(document.querySelector("#overlay-card .tp-award").textContent);'));
   check('結算畫廊有每一張畫', await host.eval('return document.querySelectorAll("#overlay-card .gal-item").length === 3;'));
   await sweep(host, '13-結算');
+  await host.click('#overlay-card [data-act=gallery-open]');
+  await host.waitFor('document.getElementById("gallery-modal").classList.contains("open")', 3000, '開啟畫廊');
+  const firstPicture = await host.eval('return document.getElementById("gallery-view-pos").textContent;');
+  await host.click('#gallery-next');
+  check('結算畫廊可切換到下一張', (await host.eval('return document.getElementById("gallery-view-pos").textContent;')) !== firstPicture);
+  await sweep(host, '13-結算畫廊');
+  await host.click('#gallery-close');
+  await host.waitFor('!document.getElementById("gallery-modal").classList.contains("open")', 3000, '關閉畫廊');
+  await host.eval('document.getElementById("overlay-card").scrollTop = 0; return 1;');
 
   /* ---- 英文版：再來一局 ---- */
   console.log('\n【英文版】');
@@ -583,6 +619,11 @@ async function telephoneGame(host, players, watch, tabs) {
   check('英文版的對局文字沒有中文殘留', !(await e[1].eval('var t=[document.getElementById("phase-chip"),document.getElementById("wordbar"),document.getElementById("overlay-card"),document.getElementById("playerstrip")].map(function(x){return x?x.innerText:"";}).join(" "); return /[\\u3400-\\u9fff]/.test(t.replace(/玩家[乙丙丁]|房主小明|觀戰者/g,""));')));
   await e[0].click('#b-done');
   await e[1].waitFor('window.DrawGuessApp.view.you.can.draw', 8000, '下一格可以畫');
+  check('英文接畫提示沿單字換行', await e[1].eval(`
+    const header = document.getElementById('wordbar');
+    const text = document.getElementById('wordbar-mask');
+    return header.hasAttribute('data-tp-status') && getComputedStyle(text).wordBreak === 'normal';
+  `));
   await sweep(e[1], '17-照畫-en', { one: true });
 
   /* ---- 兩人離開：剩不到 3 人立即結算 ---- */

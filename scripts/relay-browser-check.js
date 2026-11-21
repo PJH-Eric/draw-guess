@@ -169,7 +169,7 @@ const LAYOUT = `
     }
     return false;
   }
-  var screen = document.querySelector('.screen.active');
+  var screen = document.querySelector('#gallery-modal.open') || document.querySelector('.screen.active');
   var els = (screen ? screen.querySelectorAll('button, input, select, textarea') : []);
   for (var i = 0; i < els.length; i++) {
     var el = els[i];
@@ -204,11 +204,44 @@ async function sweep(cdp, name, opts) {
     await setViewport(cdp, v);
     await sleep(o.settle || 260);
     const lay = await cdp.eval(LAYOUT);
+    if (v.width > v.height && v.height <= 560) {
+      const result = await cdp.eval(`
+        const card = document.getElementById('overlay-card');
+        const footer = card.querySelector('.party-result ~ .result-btns');
+        if (!footer || card.closest('[hidden]') || document.querySelector('#gallery-modal.open')) return null;
+        const buttons = Array.from(footer.querySelectorAll('button'), function (button) { return button.getBoundingClientRect(); });
+        const name = card.querySelector('.result-hero-name').getBoundingClientRect();
+        const first = card.querySelector('.result-row').getBoundingClientRect();
+        const top = footer.getBoundingClientRect().top;
+        return name.bottom <= top && first.bottom <= top && buttons.every(function (r) {
+          return Math.abs(r.top - buttons[0].top) <= 1 && r.bottom <= innerHeight + 1;
+        });
+      `);
+      if (result !== null) check(name + '／' + v.name + '：冠軍與首列排名可見，結算按鈕排成一列', result);
+    }
     check(name + '／' + v.name + '：沒有水平溢出', lay.overflowX <= 1, 'overflow ' + lay.overflowX + 'px');
     check(name + '／' + v.name + '：按鈕與輸入框沒被裁到畫面外', lay.clipped.length === 0, lay.clipped.slice(0, 4).join(' | '));
     if (o.instructions || lay.instructions) {
       check(name + '／' + v.name + '：說明文字完整',
         lay.instructions > 0 && lay.clippedText.length === 0, lay.clippedText.join(' | '));
+    }
+    if (o.roomCreate) {
+      const form = await cdp.eval(`
+        const panel = document.getElementById('room-create-panel');
+        const details = panel.querySelector('.create-room-details').getBoundingClientRect();
+        const rules = panel.querySelector('.create-room-rules').getBoundingClientRect();
+        const body = panel.querySelector('.settings-body');
+        return {
+          columns: rules.left > details.left ? 2 : 1,
+          fits: body.scrollWidth <= body.clientWidth + 1,
+          buttons: Array.from(panel.querySelectorAll('.settings-foot button, .settings-close')).every(function (button) {
+            const r = button.getBoundingClientRect();
+            return button.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2));
+          })
+        };
+      `);
+      check(name + '／' + v.name + '：開房欄位完整且操作可點擊',
+        form.columns === (v.width >= 620 ? 2 : 1) && form.fits && form.buttons, JSON.stringify(form));
     }
     if (v.width > v.height && v.height <= 480) {
       const choices = await cdp.eval(`
@@ -299,7 +332,7 @@ async function main() {
   check('開接力房彈窗標題', /接力/.test(fields.title), fields.title);
   /* 每棒選 17 秒，截圖時才有時間在各尺寸之間切換 */
   await host.eval('var s=document.getElementById("room-create-baton"); s.value="17"; s.dispatchEvent(new Event("change",{bubbles:true})); return 1;');
-  await sweep(host, '03-開接力房彈窗');
+  await sweep(host, '03-開接力房彈窗', { roomCreate: true });
   await host.click('#room-create-submit');
   await host.waitFor('window.DrawGuessApp.view && window.DrawGuessApp.view.room && window.DrawGuessApp.view.room.mode === "relay"', 6000, '進入接力房');
   const code = await host.eval('return window.DrawGuessApp.roomCode;');
@@ -493,6 +526,12 @@ async function relayGame(host, p2, p3, watch, tabs) {
   check('結算有三個獎項', await host.eval('return document.querySelectorAll("#overlay-card .relay-award").length === 3;'));
   check('畫廊列出接力畫家', await host.eval('var b=document.querySelector("#overlay-card .gal-by"); return !!b && b.textContent.length > 0;'));
   await sweep(host, '12-結算');
+  await host.click('#overlay-card [data-act=gallery-open]');
+  await host.waitFor('document.getElementById("gallery-modal").classList.contains("open")', 3000, '開啟畫廊');
+  await sweep(host, '12-結算畫廊');
+  await host.click('#gallery-close');
+  await host.waitFor('!document.getElementById("gallery-modal").classList.contains("open")', 3000, '關閉畫廊');
+  await host.eval('document.getElementById("overlay-card").scrollTop = 0; return 1;');
 
   /* ---- 英文版：再來一局 ---- */
   console.log('\n【英文版】');

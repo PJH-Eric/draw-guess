@@ -1,17 +1,17 @@
 /* ===== app/overlay.js — 疊層卡片：房間設定、選題、公布答案、結算 ===== */
 
-import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=b74899ab80';
-import { askLeaveRoom, makeModal, modals } from './modal.js?v=b74899ab80';
-import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=b74899ab80';
-import { soloRefresh, soloStep, startSolo } from './solo.js?v=b74899ab80';
-import { renderRecent } from './feed.js?v=b74899ab80';
-import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=b74899ab80';
-import { PHASE_LABEL, moodOf } from './render.js?v=b74899ab80';
-import { copyText, newInvite, revokeInvite } from './game-settings.js?v=b74899ab80';
-import { enterOnlineRoom, leaveGame, lobbyModeKey, roomRuleChips, saveNick } from './lobby.js?v=b74899ab80';
-import { hideRelayUi, isRelayGame, relayAwardsHtml, relayCanDo, relayBarMode, relayOverlayHtml, relayPhaseLabel, relayToolsShown, relayVote, renderRelayAssist, renderRelayBanner } from './relay.js?v=b74899ab80';
-import { hideTelephoneUi, isTelephoneGame, renderTelephoneAssist, telephoneAwardsHtml, telephoneCanDo, telephoneOverlayAct, telephoneOverlayHtml, telephonePhaseLabel, telephoneRoleLabel, telephoneToolsShown } from './telephone.js?v=b74899ab80';
-import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=b74899ab80';
+import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=6d05b1bb91';
+import { askLeaveRoom, makeModal, modals } from './modal.js?v=6d05b1bb91';
+import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=6d05b1bb91';
+import { soloRefresh, soloStep, startSolo } from './solo.js?v=6d05b1bb91';
+import { renderRecent } from './feed.js?v=6d05b1bb91';
+import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=6d05b1bb91';
+import { PHASE_LABEL, moodOf } from './render.js?v=6d05b1bb91';
+import { copyText, newInvite, revokeInvite } from './game-settings.js?v=6d05b1bb91';
+import { enterOnlineRoom, leaveGame, lobbyModeKey, roomRuleChips, saveNick } from './lobby.js?v=6d05b1bb91';
+import { hideRelayUi, isRelayGame, relayAwardsHtml, relayCanDo, relayBarMode, relayOverlayHtml, relayPhaseLabel, relayToolsShown, relayVote, renderRelayAssist, renderRelayBanner } from './relay.js?v=6d05b1bb91';
+import { hideTelephoneUi, isTelephoneGame, renderTelephoneAssist, telephoneAwardsHtml, telephoneCanDo, telephoneOverlayAct, telephoneOverlayHtml, telephonePhaseLabel, telephoneRoleLabel, telephoneToolsShown } from './telephone.js?v=6d05b1bb91';
+import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=6d05b1bb91';
 
 var w = window;
 
@@ -659,7 +659,13 @@ export function overHtml(v, g) {
     if (v.you.can.rematch) btns += ("<button class=\"btn3d\" data-color=\"mint\" data-act=\"rematch\">" + esc(I18N.t("text.081")) + "</button>");
     btns += ("<button class=\"btn3d small\" data-color=\"cream\" data-act=\"home\">" + esc(I18N.t("text.080")) + "</button>");
   }
-  return confettiHtml() + '<section data-result-share class="result-share-card">' + ("<div class=\"result-heading\"><h3>" + esc(I18N.t("text.079")) + "</h3><span>" + esc(I18N.t("text.079.2")) + "</span></div>") + hero + (isRelayGame(g) ? relayAwardsHtml(g) : (isTelephoneGame(g) ? telephoneAwardsHtml(g) : bestDrawerHtml(g))) + '<ol class="resultlist">' + rows + '</ol>' + note + '</section>' +
+  var partyMode = isRelayGame(g) || isTelephoneGame(g);
+  var standings = '<ol class="resultlist">' + rows + '</ol>';
+  var awards = isRelayGame(g) ? relayAwardsHtml(g) : (isTelephoneGame(g) ? telephoneAwardsHtml(g) : bestDrawerHtml(g));
+  var details = partyMode ? '<div class="party-result-details">' + standings + awards + '</div>' : awards + standings;
+  return confettiHtml() + '<section data-result-share class="result-share-card' + (partyMode ? ' party-result' : '') + '">' +
+    '<div class="result-heading"><h3>' + esc(I18N.t('text.079')) + '</h3><span>' + esc(I18N.t('text.079.2')) + '</span></div>' +
+    hero + details + note + '</section>' +
     galleryHtml(g) +
     (app.mode === 'online' ? chatBlockHtml(v) : '') +
     /* 主要動作（再來一局）自己一列，其餘次要鈕在下一列平分寬度，不會落單一顆 */
@@ -965,8 +971,15 @@ export function placeCanvasTop() {
   var side = app.mode !== 'solo' &&
     w.matchMedia('(orientation:landscape) and (min-width:560px)').matches;
   D.body.classList.toggle('side-top', side);
-  if (top.parentNode === (side ? bar : head)) return;
-  if (side) bar.insertBefore(top, bar.firstChild); else head.appendChild(top);
+  if (top.parentNode !== (side ? bar : head)) {
+    if (side) bar.insertBefore(top, bar.firstChild); else head.appendChild(top);
+  }
+  var donebox = $('b-done').parentNode;
+  var row = tools.querySelector('.toolrow-misc');
+  var pinned = side && app.view && isTelephoneGame(app.view.game) && !$('b-done').hidden &&
+    w.matchMedia('(max-height:560px)').matches;
+  if (donebox.parentNode === (pinned ? bar : row)) return;
+  if (pinned) bar.insertBefore(donebox, tools); else row.appendChild(donebox);
 }
 
 /** 猜題流的位置：橫向放在右欄（玩家列與猜題框之間）；
