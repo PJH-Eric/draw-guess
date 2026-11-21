@@ -1,17 +1,17 @@
 /* ===== app/overlay.js — 疊層卡片：房間設定、選題、公布答案、結算 ===== */
 
-import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=f66810618b';
-import { askLeaveRoom, makeModal, modals } from './modal.js?v=f66810618b';
-import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=f66810618b';
-import { soloRefresh, soloStep, startSolo } from './solo.js?v=f66810618b';
-import { renderRecent } from './feed.js?v=f66810618b';
-import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=f66810618b';
-import { PHASE_LABEL, moodOf } from './render.js?v=f66810618b';
-import { copyText, newInvite, revokeInvite } from './game-settings.js?v=f66810618b';
-import { enterOnlineRoom, leaveGame, lobbyModeKey, roomRuleChips, saveNick } from './lobby.js?v=f66810618b';
-import { hideRelayUi, isRelayGame, relayAwardsHtml, relayCanDo, relayBarMode, relayOverlayHtml, relayPhaseLabel, relayToolsShown, relayVote, renderRelayAssist, renderRelayBanner } from './relay.js?v=f66810618b';
-import { hideTelephoneUi, isTelephoneGame, renderTelephoneAssist, telephoneAwardsHtml, telephoneCanDo, telephoneOverlayAct, telephoneOverlayHtml, telephonePhaseLabel, telephoneRoleLabel, telephoneToolsShown } from './telephone.js?v=f66810618b';
-import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=f66810618b';
+import { $, D, ME, Rules, S, Sound, Store, app, esc, paintIcons, secsLeft, toast } from './core.js?v=b74899ab80';
+import { askLeaveRoom, makeModal, modals } from './modal.js?v=b74899ab80';
+import { categoryChoices, renderCategorySelect, renderWordLangSelect, wordLangLabel } from './menus.js?v=b74899ab80';
+import { soloRefresh, soloStep, startSolo } from './solo.js?v=b74899ab80';
+import { renderRecent } from './feed.js?v=b74899ab80';
+import { TOOL_TIP, syncDoneButtons, syncToolbar, toolHint } from './canvas.js?v=b74899ab80';
+import { PHASE_LABEL, moodOf } from './render.js?v=b74899ab80';
+import { copyText, newInvite, revokeInvite } from './game-settings.js?v=b74899ab80';
+import { enterOnlineRoom, leaveGame, lobbyModeKey, roomRuleChips, saveNick } from './lobby.js?v=b74899ab80';
+import { hideRelayUi, isRelayGame, relayAwardsHtml, relayCanDo, relayBarMode, relayOverlayHtml, relayPhaseLabel, relayToolsShown, relayVote, renderRelayAssist, renderRelayBanner } from './relay.js?v=b74899ab80';
+import { hideTelephoneUi, isTelephoneGame, renderTelephoneAssist, telephoneAwardsHtml, telephoneCanDo, telephoneOverlayAct, telephoneOverlayHtml, telephonePhaseLabel, telephoneRoleLabel, telephoneToolsShown } from './telephone.js?v=b74899ab80';
+import { bestDrawerHtml, ensureGallery, galleryHtml, openGalleryItem, reactionEmoji, resetGallery, retryGallery, revealThumbUrl } from './gallery.js?v=b74899ab80';
 
 var w = window;
 

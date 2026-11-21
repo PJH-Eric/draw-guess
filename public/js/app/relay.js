@@ -6,9 +6,9 @@
  * 角色（game.you.role）：guesser 猜題者／drawer 正在畫／painter 等下一棒的畫家／pending 下一題才加入／spectator 觀戰
  */
 
-import { $, D, S, Sound, app, esc, netNow, secsLeft, toast } from './core.js?v=f66810618b';
-import { askConfirm } from './modal.js?v=f66810618b';
-import { reactionBarHtml } from './overlay.js?v=f66810618b';
+import { $, D, S, Sound, app, esc, netNow, secsLeft, toast } from './core.js?v=b74899ab80';
+import { askConfirm } from './modal.js?v=b74899ab80';
+import { reactionBarHtml } from './overlay.js?v=b74899ab80';
 
 var w = window;
 function t(key, params) { return w.I18N.t(key, params); }
@@ -45,7 +45,9 @@ export function relayOverlayHtml(v, g) {
 }
 
 function progressHtml(g) {
-  return '<p class="relay-progress" role="status">' + esc(t('relay.vote.progress', { n: g.voted, total: g.voters })) + '</p>';
+  var percent = g.voters ? Math.round(g.voted / g.voters * 100) : 0;
+  return '<div class="relay-progress"><span role="status">' + esc(t('relay.vote.progress', { n: g.voted, total: g.voters })) + '</span>' +
+    '<span class="relay-progress-track" aria-hidden="true"><span style="width:' + percent + '%"></span></span></div>';
 }
 
 function flowNote(html) { return '<p class="relay-flow-note">' + html + '</p>'; }
@@ -64,12 +66,16 @@ function votingHtml(v, g) {
     return '<button class="wordchoice relay-choice' + (mine ? ' mine' : '') + '" type="button" data-act="relay-vote" data-word="' + esc(c.id) + '"' +
       ' aria-pressed="' + mine + '"' + (canVote ? '' : ' disabled') + '>' +
       '<b>' + esc(c.text) + '</b><span class="s">' + esc(c.catLabel) + '・' + esc(c.diffLabel) + '</span>' +
+      '<span class="relay-option-foot">' +
       '<span class="relay-votes" data-n="' + c.votes + '">' + esc(t('relay.vote.votes', { n: c.votes })) + '</span>' +
-      (mine ? '<span class="relay-mine">' + esc(t('relay.vote.mine')) + '</span>' : '') + '</button>';
+      (mine ? '<span class="relay-mine" aria-hidden="true">✓</span><span class="sr-only">' + esc(t('relay.vote.mine')) + '</span>' : '') +
+      '</span></button>';
   }).join('');
-  var note = canVote ? withSecs('relay.vote.note', secsLeft(g.deadline))
-    : esc(t(g.you.role === 'pending' ? 'relay.vote.pendingNote' : 'relay.vote.watchNote'));
-  return qno + '<h3>' + esc(canVote ? t('relay.vote.title') : t('relay.vote.watch', { name: g.guesserName })) + '</h3>' + flowNote(note) +
+  var guidance = canVote
+    ? '<div class="relay-flow-note relay-vote-brief"><span class="relay-vote-timer">' +
+      withSecs('relay.vote.time', secsLeft(g.deadline)) + '</span><span>' + esc(t('relay.vote.note')) + '</span></div>'
+    : flowNote(esc(t(g.you.role === 'pending' ? 'relay.vote.pendingNote' : 'relay.vote.watchNote')));
+  return qno + '<h3>' + esc(canVote ? t('relay.vote.title') : t('relay.vote.watch', { name: g.guesserName })) + '</h3>' + guidance +
     '<div class="wordchoices relay-choices">' + cards + '</div>' + progressHtml(g);
 }
 

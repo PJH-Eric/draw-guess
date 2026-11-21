@@ -387,6 +387,17 @@ async function relayGame(host, p2, p3, watch, tabs) {
   await shot(watch, '06-投票-觀戰-tablet-land');
   await painters[0].click('#overlay-card [data-act=relay-vote]');
   check('投票後顯示票數（不顯示誰投的）', await painters[1].waitFor('document.querySelector("#overlay-card .relay-votes[data-n=\\"1\\"]")', 4000, '票數更新').catch(() => false));
+  check('投票後標示自己的選項與即時進度', await painters[0].eval(`
+    const card = document.getElementById('overlay-card');
+    return !!card.querySelector('.relay-choice[aria-pressed=true] .relay-mine') &&
+      card.querySelector('.relay-progress-track > span').style.width === '50%' &&
+      /1\\s*\\/\\s*2/.test(card.querySelector('.relay-progress [role=status]').textContent) &&
+      !!card.querySelector('.relay-vote-timer .pick-secs');
+  `));
+  await setViewport(painters[0], VIEWPORTS[0]);
+  await sleep(260);
+  await shot(painters[0], '06-投票-已投票-phone-narrow');
+  await setViewport(painters[0], BASE_VP);
   await painters[1].click('#overlay-card [data-act=relay-vote]');
 
   /* ---- 倒數 ---- */
