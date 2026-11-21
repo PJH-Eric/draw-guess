@@ -6,9 +6,9 @@
  * 角色（game.you.role）：guesser 猜題者／drawer 正在畫／painter 等下一棒的畫家／pending 下一題才加入／spectator 觀戰
  */
 
-import { $, D, S, Sound, app, esc, netNow, secsLeft, toast } from './core.js?v=7d2444b4a5';
-import { askConfirm } from './modal.js?v=7d2444b4a5';
-import { reactionBarHtml } from './overlay.js?v=7d2444b4a5';
+import { $, D, S, Sound, app, esc, netNow, secsLeft, toast } from './core.js?v=d1ec2bae26';
+import { askConfirm } from './modal.js?v=d1ec2bae26';
+import { reactionBarHtml } from './overlay.js?v=d1ec2bae26';
 
 var w = window;
 function t(key, params) { return w.I18N.t(key, params); }
@@ -48,12 +48,15 @@ function progressHtml(g) {
   return '<p class="relay-progress" role="status">' + esc(t('relay.vote.progress', { n: g.voted, total: g.voters })) + '</p>';
 }
 
+function flowNote(html) { return '<p class="relay-flow-note">' + html + '</p>'; }
+
 function votingHtml(v, g) {
   var qno = '<p class="relay-qno">' + esc(t('relay.questionNo', { n: g.questionNo })) + '</p>';
   if (g.you.isGuesser) {
     return qno + '<div class="relay-guesser-card"><span class="relay-hero-face" aria-hidden="true">' +
       S.face(playerIdx(g, g.guesserId), 'think') + '</span>' +
-      '<h3>' + esc(t('relay.vote.guesser')) + '</h3><p>' + esc(t('relay.vote.guesserNote')) + '</p></div>' + progressHtml(g);
+      '<h3>' + esc(t('relay.vote.guesser')) + '</h3>' +
+      flowNote(esc(t('relay.vote.guesserNote'))) + '</div>' + progressHtml(g);
   }
   var canVote = !!(v.you.can && v.you.can.vote);
   var cards = (g.choices || []).map(function (c) {
@@ -64,9 +67,9 @@ function votingHtml(v, g) {
       '<span class="relay-votes" data-n="' + c.votes + '">' + esc(t('relay.vote.votes', { n: c.votes })) + '</span>' +
       (mine ? '<span class="relay-mine">' + esc(t('relay.vote.mine')) + '</span>' : '') + '</button>';
   }).join('');
-  var note = canVote ? '<p>' + withSecs('relay.vote.note', secsLeft(g.deadline)) + '</p>'
-    : '<p>' + esc(t(g.you.role === 'pending' ? 'relay.vote.pendingNote' : 'relay.vote.watchNote')) + '</p>';
-  return qno + '<h3>' + esc(canVote ? t('relay.vote.title') : t('relay.vote.watch', { name: g.guesserName })) + '</h3>' + note +
+  var note = canVote ? withSecs('relay.vote.note', secsLeft(g.deadline))
+    : esc(t(g.you.role === 'pending' ? 'relay.vote.pendingNote' : 'relay.vote.watchNote'));
+  return qno + '<h3>' + esc(canVote ? t('relay.vote.title') : t('relay.vote.watch', { name: g.guesserName })) + '</h3>' + flowNote(note) +
     '<div class="wordchoices relay-choices">' + cards + '</div>' + progressHtml(g);
 }
 
@@ -103,7 +106,7 @@ function revealHtml(v, g) {
     '<h3>' + esc(t('text.089')) + '</h3><div class="revealword">' + esc(g.answer || (last && last.word) || '—') + '</div>' +
     '<p class="relay-result" data-hit="' + !!(last && last.hit) + '">' + resultLine(last) + '</p>' + painters +
     reactionBarHtml(g) +
-    '<p>' + esc(t(lastQ ? 'relay.reveal.last' : 'relay.reveal.next')) + '</p>';
+    flowNote(esc(t(lastQ ? 'relay.reveal.last' : 'relay.reveal.next')));
 }
 
 /** 結算卡上的三個獎項（放在分享範圍內，結算圖片也會帶到） */

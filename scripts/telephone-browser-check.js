@@ -180,7 +180,7 @@ const LAYOUT = `
       out.clipped.push((el.id || el.getAttribute('data-act') || el.className || el.tagName) + '@' + Math.round(r.left) + ',' + Math.round(r.top) + ' ' + Math.round(r.width) + 'x' + Math.round(r.height));
     }
   }
-  var instructions = document.querySelectorAll('.tp-guide-step, .telephone-lobby-note, .tp-flow-note, .tp-hints-used, .tp-hand-label, .tp-next, .tp-browse-fig figcaption, .sum-line-action');
+  var instructions = document.querySelectorAll('.mode-guide-step, .telephone-lobby-note, .tp-flow-note, .tp-hints-used, .tp-hand-label, .tp-next, .tp-browse-fig figcaption, .sum-line-action');
   for (var note of instructions) {
     var bounds = note.getBoundingClientRect();
     if (!visible(note) || (note.closest('#game-aside') && bounds.right <= 0)) continue;

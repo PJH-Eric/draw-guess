@@ -152,7 +152,7 @@ async function boot(cdp, nick, lang) {
 const LAYOUT = `
   var vw = window.innerWidth, vh = window.innerHeight;
   var doc = document.documentElement;
-  var out = { overflowX: Math.max(doc.scrollWidth, document.body.scrollWidth) - vw, clipped: [] };
+  var out = { overflowX: Math.max(doc.scrollWidth, document.body.scrollWidth) - vw, clipped: [], instructions: 0, clippedText: [] };
   function visible(el) {
     if (el.closest('[hidden]')) return false;
     var cs = getComputedStyle(el);
@@ -179,6 +179,15 @@ const LAYOUT = `
       out.clipped.push((el.id || el.getAttribute('data-act') || el.className || el.tagName) + '@' + Math.round(r.left) + ',' + Math.round(r.top) + ' ' + Math.round(r.width) + 'x' + Math.round(r.height));
     }
   }
+  var instructions = document.querySelectorAll('.mode-guide-step, #relay-lobby-note, .relay-rules-note, .relay-flow-note, .relay-count-who, .relay-first, .relay-banner, .relay-painters');
+  for (var note of instructions) {
+    if (!visible(note)) continue;
+    out.instructions++;
+    var bounds = note.getBoundingClientRect();
+    if (note.scrollWidth > note.clientWidth + 1 || bounds.left < -1 || bounds.right > vw + 1) {
+      out.clippedText.push(note.textContent.trim());
+    }
+  }
   return out;
 `;
 
@@ -197,6 +206,26 @@ async function sweep(cdp, name, opts) {
     const lay = await cdp.eval(LAYOUT);
     check(name + '／' + v.name + '：沒有水平溢出', lay.overflowX <= 1, 'overflow ' + lay.overflowX + 'px');
     check(name + '／' + v.name + '：按鈕與輸入框沒被裁到畫面外', lay.clipped.length === 0, lay.clipped.slice(0, 4).join(' | '));
+    if (o.instructions || lay.instructions) {
+      check(name + '／' + v.name + '：說明文字完整',
+        lay.instructions > 0 && lay.clippedText.length === 0, lay.clippedText.join(' | '));
+    }
+    if (v.width > v.height && v.height <= 480) {
+      const choices = await cdp.eval(`
+        const buttons = Array.from(document.querySelectorAll('#overlay-card .relay-choice:not(:disabled)'));
+        return {
+          count: buttons.length,
+          visible: buttons.every(function (button) {
+            const r = button.getBoundingClientRect();
+            return r.top >= 0 && r.bottom <= innerHeight &&
+              button.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2));
+          })
+        };
+      `);
+      if (choices.count) {
+        check(name + '／' + v.name + '：四個投票選項同時可見且可點擊', choices.count === 4 && choices.visible);
+      }
+    }
     await shot(cdp, name + '-' + v.key);
   }
   await setViewport(cdp, BASE_VP);
@@ -242,10 +271,26 @@ async function main() {
   console.log('\n【首頁與接力大廳】');
   check('首頁有「接力模式」入口', await host.eval('var b=document.getElementById("b-relay"); return !!b && /接力模式/.test(b.textContent);'));
   await sweep(host, '01-首頁', { one: !process.env.RELAY_HOME_ALL });
+  await host.click('#b-help');
+  await host.waitFor('document.getElementById("s-help").classList.contains("active")', 4000, '玩法教學');
+  const stepCount = await host.eval('return document.querySelectorAll("#tut-progress .tut-dots i").length;');
+  for (let i = 2; i < stepCount; i++) await host.click('#b-tut-next');
+  for (const [lang, heading] of [['zh-Hant', '投票選題'], ['zh-Hans', '投票选题'], ['en', 'Vote on a prompt']]) {
+    await host.eval('window.I18N.setLang(' + JSON.stringify(lang) + '); return 1;');
+    await host.waitFor('document.querySelector(".mode-guide[data-mode=relay] h4")?.textContent === ' + JSON.stringify(heading),
+      2500, '顯示接力教學 ' + lang);
+    await sweep(host, '00-接力教學-' + lang, {
+      instructions: true,
+      list: lang === 'zh-Hant' ? VIEWPORTS : [VIEWPORTS[0], VIEWPORTS[4], VIEWPORTS[5], VIEWPORTS[7]]
+    });
+  }
+  await host.eval('window.I18N.setLang("zh-Hant"); return 1;');
+  await host.click('#b-tut-skip');
+  await host.waitFor('document.getElementById("s-home").classList.contains("active")', 4000, '回首頁');
   await host.click('#b-relay');
   await host.waitFor('window.Online && window.Online.isConnected() && !document.getElementById("b-lobby-host").disabled', 15000, '接力大廳連線');
   check('接力大廳標題與說明', await host.eval('return /接力/.test(document.getElementById("lobby-title").textContent) && !document.getElementById("relay-lobby-note").hidden;'));
-  await sweep(host, '02-接力大廳-空');
+  await sweep(host, '02-接力大廳-空', { instructions: true });
   await host.click('#b-lobby-host');
   await host.waitFor('document.getElementById("room-create-modal").classList.contains("open")', 4000, '開房彈窗');
   const fields = await host.eval('function vis(id){var l=document.querySelector("label[for="+id+"]");return !!l && !l.hidden;} return {gr:vis("room-create-guessrounds"),bt:vis("room-create-baton"),rd:vis("room-create-rounds"),ds:vis("room-create-drawsec"),title:document.getElementById("room-create-title").textContent};');
@@ -281,7 +326,7 @@ async function main() {
   await p2.click('[data-act=ready]');
   await p3.click('[data-act=ready]');
   await host.waitFor('window.DrawGuessApp.view.you.can.start', 6000, '可以開始');
-  await sweep(host, '05-等待畫面-房主');
+  await sweep(host, '05-等待畫面-房主', { instructions: true });
   await sweep(p2, '05-等待畫面-玩家', { one: true });
   if (STOP_AFTER === 'setup') return finish(tabs);
 
@@ -337,7 +382,7 @@ async function relayGame(host, p2, p3, watch, tabs) {
   check('畫家看到 4 個候選題可以投', await painters[0].eval('return document.querySelectorAll("#overlay-card [data-act=relay-vote]:not([disabled])").length === 4;'));
   check('猜題者看不到候選題', await guesser.eval('return document.querySelectorAll("#overlay-card [data-act=relay-vote]").length === 0 && /猜題者/.test(document.getElementById("overlay-card").textContent);'));
   /* 投票只有 10 秒：這一題先截前半的尺寸，後半留到第二題 */
-  await sweep(painters[0], '06-投票-畫家', { list: FIRST_HALF });
+  await sweep(painters[0], '06-投票-畫家', { list: FIRST_HALF, instructions: true });
   await shot(guesser, '06-投票-猜題者-tablet-land');
   await shot(watch, '06-投票-觀戰-tablet-land');
   await painters[0].click('#overlay-card [data-act=relay-vote]');
@@ -413,15 +458,15 @@ async function relayGame(host, p2, p3, watch, tabs) {
   await guesser.click('#overlay-card [data-act=react][data-kind=heart]');
   check('公布時可以對整張圖按愛心', await host.waitFor(GAME + 'return g.reactions && g.reactions.counts.heart === 1;', 4000, '表情').catch(() => false));
   /* 公布只停 7 秒：一樣分兩題截 */
-  await sweep(guesser, '10-公布', { list: FIRST_HALF });
+  await sweep(guesser, '10-公布', { list: FIRST_HALF, instructions: true });
 
   /* ---- 其餘題目：放棄，直到結算 ---- */
   for (let q = 2; q <= 3; q++) {
     for (const t of tabs) await waitPhase(t, 'voting', 12000);
     const gTab = await findTab(players, (g) => g.role === 'guesser');
     const pTab = players.find((t) => t !== gTab);
-    if (q === 2) await sweep(pTab, '06-投票-畫家', { list: SECOND_HALF });
-    if (q === 3) await sweep(gTab, '06-投票-猜題者', { list: FIRST_HALF });
+    if (q === 2) await sweep(pTab, '06-投票-畫家', { list: SECOND_HALF, instructions: true });
+    if (q === 3) await sweep(gTab, '06-投票-猜題者', { list: FIRST_HALF, instructions: true });
     for (const t of players) if (t !== gTab) await t.click('#overlay-card [data-act=relay-vote]');
     await waitPhase(gTab, 'drawing', 8000);
     await gTab.click('#b-relay-giveup');
@@ -430,7 +475,7 @@ async function relayGame(host, p2, p3, watch, tabs) {
     await gTab.click('#confirm-ok');
     await waitPhase(host, 'reveal', 5000);
     check('第 ' + q + ' 題放棄 → 公布答案', true);
-    if (q === 2) await sweep(gTab, '10-公布', { list: SECOND_HALF });
+    if (q === 2) await sweep(gTab, '10-公布', { list: SECOND_HALF, instructions: true });
   }
   await host.waitFor('window.DrawGuessApp.view.room.phase === "finished"', 12000, '結算');
   await host.waitFor('document.querySelectorAll("#overlay-card .gal-item").length >= 1', 8000, '畫廊').catch(() => {});
@@ -447,7 +492,7 @@ async function relayGame(host, p2, p3, watch, tabs) {
   for (const t of tabs) await waitPhase(t, 'voting', 6000);
   const eg = await findTab(players, (g) => g.role === 'guesser');
   const ep = players.find((t) => t !== eg);
-  await sweep(ep, '14-投票-en');
+  await sweep(ep, '14-投票-en', { instructions: true });
   for (const t of players) if (t !== eg) await t.click('#overlay-card [data-act=relay-vote]');
   await waitPhase(eg, 'drawing', 8000);
   const ed = await findTab(players, (g) => g.role === 'drawer');

@@ -137,17 +137,7 @@
 body.lobby-telephone #lobby-title{color:var(--tp-t)}
 @media (max-width:480px){body.lobby-telephone #lobby-title{font-size:1.05rem;letter-spacing:0}}
 
-.tp-guide{
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,13.5rem),1fr));
-  gap:10px;
-}
-.tp-guide-step{
-  min-width:0;padding:clamp(10px,2vw,16px);
-  border:2px solid var(--tp-d);border-radius:16px;background:var(--tp-tint);
-  font-size:.92rem;line-height:1.65;overflow-wrap:anywhere;
-}
-.tp-guide-step h4{margin:0 0 4px;color:var(--tp-t);font-size:1rem}
-.tp-guide-step p{margin:0}
+.mode-guide[data-mode=telephone]{--guide-line:var(--tp-d);--guide-bg:var(--tp-tint);--guide-title:var(--tp-t)}
 
 /* 房間卡片與房間設定卡的模式標記 */
 .rc-rule[data-k=tpmode]{background:var(--tp);border-color:var(--tp-d)}

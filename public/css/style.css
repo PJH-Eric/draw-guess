@@ -1967,6 +1967,7 @@ body.reduced-motion .react-btn{transition:none}
  * 一眼就分得出現在是接力房，不會跟一般模式（grape）搞混。 */
 :root{
   --relay:#FFC2B4; --relay-d:#E89C8B; --relay-t:#B35A45; --relay-tint:#FFF1EC;
+  --relay-ink:#974632;
 }
 
 /* 大廳：接力大廳的說明條與標題色 */
@@ -1977,6 +1978,20 @@ body.reduced-motion .react-btn{transition:none}
 }
 .relay-lobby-note .ico{flex:0 0 auto;width:30px;height:30px}
 body.lobby-relay #lobby-title{color:var(--relay-t)}
+#relay-lobby-note{align-items:flex-start;font-weight:700;overflow-wrap:anywhere}
+#relay-lobby-note .ico{color:var(--relay-ink)}
+
+.mode-guide{
+  --guide-line:var(--relay-d);--guide-bg:var(--relay-tint);--guide-title:var(--relay-ink);
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,13.5rem),1fr));gap:10px;
+}
+.mode-guide-step{
+  min-width:0;padding:clamp(10px,2vw,16px);
+  border:2px solid var(--guide-line);border-radius:16px;background:var(--guide-bg);
+  font-size:.92rem;line-height:1.65;overflow-wrap:anywhere;
+}
+.mode-guide-step h4{margin:0 0 4px;color:var(--guide-title);font-size:1rem}
+.mode-guide-step p{margin:0}
 
 /* 房間卡片與房間設定卡的接力標記 */
 .rc-rule[data-k=mode]{background:var(--relay);border-color:var(--relay-d)}
@@ -1986,8 +2001,17 @@ body.lobby-relay #lobby-title{color:var(--relay-t)}
   font-size:.78rem;font-weight:900;color:var(--ink);white-space:nowrap
 }
 .relay-badge .ico{width:1.2em;height:1.2em}
-.relay-rules-note{margin:8px 0 0}
-
+.relay-flow-card h3{color:var(--relay-ink);overflow-wrap:anywhere}
+.relay-flow-card .relay-flow-note,.relay-flow-card .relay-rules-note{
+  max-width:52ch;margin:6px auto 10px;padding:7px 10px;
+  border:2px solid var(--relay-d);border-radius:12px;background:var(--relay-tint);
+  color:var(--ink);font-size:.86rem;line-height:1.55;overflow-wrap:anywhere;
+}
+.relay-flow-card .relay-rules-note{margin:8px 0 0;text-align:start}
+.relay-flow-note .pick-secs{color:var(--relay-ink);font-weight:900;font-variant-numeric:tabular-nums}
+.relay-flow-card .relay-guesser-card .relay-hero-face{width:clamp(44px,12vmin,68px);height:auto;aspect-ratio:1}
+.relay-flow-card .relay-count-who{color:var(--ink);font-weight:900;overflow-wrap:anywhere}
+.relay-flow-card .relay-first,.relay-flow-card .relay-painters,.relay-flow-card .relay-result{overflow-wrap:anywhere}
 /* ---------- 對局：投票卡 ---------- */
 .relay-qno{margin:0 0 2px;font-size:.78rem;font-weight:900;color:var(--relay-t);letter-spacing:.06em;text-align:center}
 .relay-progress{margin:6px 0 0;font-size:.82rem;font-weight:800;color:var(--ink-soft);text-align:center}
@@ -2016,6 +2040,12 @@ body.lobby-relay #lobby-title{color:var(--relay-t)}
 .relay-count-who{margin:2px 0;font-weight:900;font-size:1.05rem}
 .relay-first{margin:6px auto 0;display:inline-block;padding:4px 14px;border-radius:999px;border:2px solid var(--line);background:var(--muted-tint);font-weight:800;font-size:.86rem}
 .relay-first.me{border-color:var(--relay-d);background:var(--relay);font-size:1rem}
+@media (max-height:480px) and (orientation:landscape){
+  .relay-flow-card .relay-count-n{font-size:2.75rem;margin:2px auto}
+  .relay-flow-card .relay-flow-note{margin-block:4px 6px;padding-block:5px}
+  .relay-choices{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+  .relay-choices .wordchoice{min-height:76px;padding:6px;overflow-wrap:anywhere}
+}
 
 /* ---------- 對局：公布答案與結算獎項 ---------- */
 .relay-result{margin:0 0 4px;text-align:center;font-weight:800}
@@ -2071,8 +2101,8 @@ body.lobby-relay #lobby-title{color:var(--relay-t)}
 }
 /* left:50% 的絕對定位會把可用寬度砍半：用 max-content 撐開，字才不會斷成兩行 */
 .relay-banner{width:max-content}
-.relay-banner b{font-size:clamp(1.1rem,5vmin,1.7rem);font-weight:900;line-height:1.2;white-space:nowrap}
-.relay-banner small{font-size:.74rem;font-weight:800;color:var(--ink-soft)}
+.relay-banner b{font-size:clamp(1.1rem,5vmin,1.7rem);font-weight:900;line-height:1.2;overflow-wrap:anywhere}
+.relay-banner small{font-size:.74rem;font-weight:800;color:var(--ink-soft);line-height:1.45;overflow-wrap:anywhere}
 .relay-banner[data-tone=me]{border-color:var(--relay-t);background:var(--relay);animation:relay-banner-pop .45s ease-out}
 .relay-banner[data-tone=me] b{font-size:clamp(2rem,10vmin,3.4rem);color:var(--ink-deep)}
 .relay-banner[data-tone=go]{border-color:var(--mint-d);background:var(--mint);animation:relay-banner-pop .45s ease-out}
@@ -2258,17 +2288,7 @@ body.reduced-motion .relay-cheer,body.reduced-motion .relay-typing{animation:non
 body.lobby-telephone #lobby-title{color:var(--tp-t)}
 @media (max-width:480px){body.lobby-telephone #lobby-title{font-size:1.05rem;letter-spacing:0}}
 
-.tp-guide{
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,13.5rem),1fr));
-  gap:10px;
-}
-.tp-guide-step{
-  min-width:0;padding:clamp(10px,2vw,16px);
-  border:2px solid var(--tp-d);border-radius:16px;background:var(--tp-tint);
-  font-size:.92rem;line-height:1.65;overflow-wrap:anywhere;
-}
-.tp-guide-step h4{margin:0 0 4px;color:var(--tp-t);font-size:1rem}
-.tp-guide-step p{margin:0}
+.mode-guide[data-mode=telephone]{--guide-line:var(--tp-d);--guide-bg:var(--tp-tint);--guide-title:var(--tp-t)}
 
 /* 房間卡片與房間設定卡的模式標記 */
 .rc-rule[data-k=tpmode]{background:var(--tp);border-color:var(--tp-d)}
