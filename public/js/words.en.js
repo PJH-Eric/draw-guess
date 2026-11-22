@@ -6042,5 +6042,484 @@
     'w-trend-129': "photo booth|sticker booth", // 拍貼機
     'w-trend-130': "streamer|live streamer", // 直播主
     'w-trend-131': "hand sanitizer", // 乾洗手
+    'w-fruitveg-37': "European pear", // 西洋梨
+    'w-fruitveg-38': "ponkan mandarin", // 椪柑
+    'w-fruitveg-39': "prune", // 黑棗
+    'w-fruitveg-40': "hawthorn", // 山楂
+    'w-fruitveg-41': "muskmelon", // 香瓜
+    'w-fruitveg-42': "roselle", // 洛神花
+    'w-fruitveg-43': "sesame", // 芝麻
+    'w-fruitveg-44': "oats", // 燕麥
+    'w-fruitveg-45': "pearl barley", // 薏仁
+    'w-fruitveg-46': "sunflower seeds", // 葵瓜子
+    'w-fruitveg-47': "garlic shoots", // 蒜苗
+    'w-fruitveg-48': "salak", // 蛇皮果
+    'w-fruitveg-49': "chayote", // 佛手瓜
+    'w-fruitveg-50': "bottle gourd", // 葫蘆瓜
+    'w-fruitveg-51': "wasabi", // 山葵
+    'w-fruitveg-52': "turmeric", // 薑黃
+    'w-fruitveg-53': "lemongrass", // 檸檬草
+    'w-fruitveg-54': "parsley", // 巴西里
+    'w-fruitveg-55': "basil", // 羅勒
+    'w-fruitveg-56': "dill", // 蒔蘿
+    'w-fruitveg-57': "Chinese broccoli", // 芥藍菜
+    'w-fruitveg-58': "garland chrysanthemum", // 茼蒿
+    'w-fruitveg-59': "amaranth", // 莧菜
+    'w-fruitveg-60': "mature ginger", // 老薑
+    'w-fruitveg-61': "shimeji mushroom", // 鴻喜菇
+    'w-fruitveg-62': "white fungus", // 白木耳
+    'w-fruitveg-63': "truffle", // 松露
+    'w-fruitveg-64': "kelp", // 昆布
+    'w-fruitveg-65': "water chestnut", // 荸薺
+    'w-fruitveg-66': "cassava", // 樹薯
+    'w-fruitveg-67': "buckwheat", // 蕎麥
+    'w-fruitveg-68': "barley", // 大麥
+    'w-fruitveg-69': "sorghum", // 高粱
+    'w-fruitveg-70': "pumpkin seeds", // 南瓜子
+    'w-fruitveg-71': "green papaya", // 青木瓜
+    'w-fruitveg-72': "plum prune", // 西梅
+    'w-fruitveg-73': "sweet persimmon", // 甜柿
+    'w-fruitveg-74': "alfalfa sprouts", // 苜蓿芽
+    'w-fruitveg-75': "arrowhead", // 慈菇
+    'w-tech-108': "floor lamp", // 立燈
+    'w-tech-109': "ceiling light", // 吸頂燈
+    'w-tech-110': "electric kettle", // 電熱水壺
+    'w-tech-111': "headphones", // 頭戴式耳機
+    'w-tech-112': "wireless microphone", // 無線麥克風
+    'w-tech-113': "ring light", // 補光燈
+    'w-tech-114': "RC helicopter", // 遙控直升機
+    'w-tech-115': "phone stand", // 手機支架
+    'w-tech-116': "bluetooth speaker", // 藍牙喇叭
+    'w-tech-117': "film camera", // 底片相機
+    'w-tech-118': "DSLR camera", // 單眼相機
+    'w-tech-119': "action camera", // 運動相機
+    'w-tech-120': "card reader", // 刷卡機
+    'w-tech-121': "barcode scanner", // 條碼槍
+    'w-tech-122': "electric scooter", // 電動滑板車
+    'w-tech-123': "light switch", // 開關
+    'w-tech-124': "electronic dictionary", // 電子辭典
+    'w-tech-125': "handheld console", // 掌上遊戲機
+    'w-tech-126': "digital thermometer", // 電子溫度計
+    'w-tech-127': "pedometer", // 計步器
+    'w-tech-128': "water flosser", // 沖牙機
+    'w-tech-129': "circulator fan", // 循環扇
+    'w-tech-130': "smart plug", // 智慧插座
+    'w-tech-131': "smart bulb", // 智慧燈泡
+    'w-tech-132': "interactive whiteboard", // 電子白板
+    'w-tech-133': "touchscreen", // 觸控螢幕
+    'w-tech-134': "reading pen", // 點讀筆
+    'w-tech-135': "set-top box", // 機上盒
+    'w-tech-136': "graphics card", // 顯示卡
+    'w-tech-137': "floppy disk", // 磁碟片
+    'w-tech-138': "soldering iron", // 電烙鐵
+    'w-tech-139': "multimeter", // 萬用電表
+    'w-tech-140': "UPS", // 不斷電系統
+    'w-tech-141': "monitor arm", // 螢幕支架
+    'w-tech-142': "hand-crank generator", // 手搖發電機
+    'w-tech-143': "solar charger", // 太陽能充電器
+    'w-tech-144': "power supply unit", // 電源供應器
+    'w-tech-145': "bone conduction headphones", // 骨傳導耳機
+    'w-kitchen-90': "cake turntable", // 蛋糕轉台
+    'w-kitchen-91': "offset spatula", // 抹刀
+    'w-kitchen-92': "pizza stone", // 披薩石板
+    'w-kitchen-93': "ice cream maker", // 冰淇淋機
+    'w-kitchen-94': "yogurt maker", // 優格機
+    'w-kitchen-95': "shaved ice machine", // 刨冰機
+    'w-kitchen-96': "milk frother", // 奶泡壺
+    'w-kitchen-97': "moka pot", // 摩卡壺
+    'w-kitchen-98': "French press", // 濾壓壺
+    'w-kitchen-99': "tea strainer", // 茶漏
+    'w-kitchen-100': "tea caddy", // 茶葉罐
+    'w-kitchen-101': "teacup", // 茶杯
+    'w-kitchen-102': "champagne flute", // 香檳杯
+    'w-kitchen-103': "bamboo skewer", // 竹籤
+    'w-kitchen-104': "kitchen scissors", // 廚房剪刀
+    'w-kitchen-105': "steak knife", // 牛排刀
+    'w-kitchen-106': "bread knife", // 麵包刀
+    'w-kitchen-107': "milk pan", // 牛奶鍋
+    'w-kitchen-108': "Dutch oven", // 燉鍋
+    'w-kitchen-109': "cast iron skillet", // 鑄鐵鍋
+    'w-kitchen-110': "salad bowl", // 沙拉碗
+    'w-kitchen-111': "noodle bowl", // 麵碗
+    'w-kitchen-112': "dough scraper", // 刮板
+    'w-kitchen-113': "piping tip", // 擠花嘴
+    'w-kitchen-114': "pasta maker", // 製麵機
+    'w-kitchen-115': "gaiwan", // 蓋碗
+    'w-kitchen-116': "decanter", // 醒酒器
+    'w-kitchen-117': "jigger", // 量酒器
+    'w-kitchen-118': "sushi mat", // 壽司竹簾
+    'w-kitchen-119': "takoyaki pan", // 章魚燒盤
+    'w-kitchen-120': "spice rack", // 調味架
+    'w-kitchen-121': "cutlery set", // 刀叉組
+    'w-kitchen-122': "crab cracker", // 蟹鉗
+    'w-kitchen-123': "canning jar", // 密封罐
+    'w-kitchen-124': "chocolate mold", // 巧克力模
+    'w-kitchen-125': "rice ball mold", // 飯糰模
+    'w-clothes-121': "jumpsuit", // 連身褲
+    'w-clothes-122': "pinafore dress", // 背帶裙
+    'w-clothes-123': "cargo pants", // 工裝褲
+    'w-clothes-124': "leggings", // 緊身褲
+    'w-clothes-125': "yoga pants", // 瑜珈褲
+    'w-clothes-126': "varsity jacket", // 棒球外套
+    'w-clothes-127': "leather jacket", // 皮夾克
+    'w-clothes-128': "denim jacket", // 牛仔外套
+    'w-clothes-129': "windbreaker", // 防風外套
+    'w-clothes-130': "bell-bottoms", // 喇叭褲
+    'w-clothes-131': "ski jacket", // 滑雪衣
+    'w-clothes-132': "loafers", // 樂福鞋
+    'w-clothes-133': "riding boots", // 馬靴
+    'w-clothes-134': "flip-flops", // 夾腳拖
+    'w-clothes-135': "clogs", // 洞洞鞋
+    'w-clothes-136': "canvas shoes", // 帆布鞋
+    'w-clothes-137': "tank top", // 運動背心
+    'w-clothes-138': "lab coat", // 實驗袍
+    'w-clothes-139': "nurse uniform", // 護士服
+    'w-clothes-140': "firefighter suit", // 消防衣
+    'w-clothes-141': "army cap", // 軍帽
+    'w-clothes-142': "police cap", // 警帽
+    'w-clothes-143': "pirate hat", // 海盜帽
+    'w-clothes-144': "wizard hat", // 巫師帽
+    'w-clothes-145': "fur coat", // 毛皮大衣
+    'w-clothes-146': "dudou", // 肚兜
+    'w-clothes-147': "mandarin jacket", // 馬褂
+    'w-clothes-148': "tights", // 褲襪
+    'w-clothes-149': "leg warmers", // 襪套
+    'w-clothes-150': "corsage", // 胸花
+    'w-clothes-151': "flower crown", // 花冠
+    'w-clothes-152': "embroidered shoes", // 繡花鞋
+    'w-clothes-153': "platform shoes", // 厚底鞋
+    'w-clothes-154': "tutu", // 舞裙
+    'w-festival-113': "New Year goods", // 年貨
+    'w-festival-114': "burning incense", // 燒香
+    'w-festival-115': "joss paper", // 金紙
+    'w-festival-116': "dragon boat race", // 賽龍舟
+    'w-festival-117': "longevity noodles", // 長壽麵
+    'w-festival-118': "countdown clock", // 倒數鐘
+    'w-festival-119': "Christmas lights", // 聖誕燈
+    'w-festival-120': "jingle bells", // 聖誕鈴鐺
+    'w-festival-121': "graduation cap", // 畢業帽
+    'w-festival-133': "five-color thread", // 五彩線
+    'w-festival-134': "Laba porridge", // 臘八粥
+    'w-festival-135': "money tree", // 搖錢樹
+    'w-festival-136': "advent calendar", // 降臨曆
+    'w-festival-137': "mistletoe", // 槲寄生
+    'w-festival-138': "double happiness", // 囍字
+    'w-festival-139': "wedding invitation", // 喜帖
+    'w-festival-144': "Halloween mask", // 萬聖面具
+    'w-festival-122': "bamboo leaves for zongzi", // 粽葉
+    'w-festival-123': "yule log", // 聖誕蛋糕
+    'w-festival-124': "yukata", // 浴衣
+    'w-festival-125': "candy apple", // 蘋果糖
+    'w-festival-126': "Halloween candy", // 萬聖糖果
+    'w-festival-127': "pumpkin patch", // 南瓜田
+    'w-festival-128': "harvest", // 豐收
+    'w-festival-129': "party balloons", // 派對氣球
+    'w-festival-130': "lantern fair", // 燈會
+    'w-festival-131': "hand lantern", // 提燈
+    'w-festival-140': "prayer for blessings", // 祈福
+    'w-festival-141': "fortune stick", // 求籤
+    'w-festival-142': "ema plaque", // 繪馬
+    'w-festival-143': "kadomatsu", // 門松
+    'w-festival-132': "wish lantern", // 許願燈
+    'w-bird-61': "black-headed gull", // 紅嘴鷗
+    'w-bird-62': "cassowary", // 食火雞
+    'w-bird-63': "tit", // 山雀
+    'w-bird-64': "kestrel", // 紅隼
+    'w-bird-65': "swift", // 雨燕
+    'w-insect-54': "wolf spider", // 狼蛛
+    'w-insect-55': "tarantula", // 捕鳥蛛
+    'w-insect-56': "pill bug", // 鼠婦
+    'w-insect-57': "cabbage white butterfly", // 粉蝶
+    'w-insect-58': "queen bee", // 女王蜂
+    'w-insect-59': "bumblebee", // 熊蜂
+    'w-insect-60': "fire ant", // 火蟻
+    'w-insect-61': "mite", // 蟎
+    'w-insect-62': "tick", // 蜱
+    'w-bird-66': "oriole", // 黃鸝
+    'w-bird-67': "ibis", // 朱鷺
+    'w-bird-68': "wren", // 鷦鷯
+    'w-bird-69': "barn owl", // 倉鴞
+    'w-bird-70': "frigatebird", // 軍艦鳥
+    'w-bird-71': "booby", // 鰹鳥
+    'w-insect-63': "lacewing", // 草蛉
+    'w-insect-64': "katydid", // 螽斯
+    'w-insect-65': "click beetle", // 叩頭蟲
+    'w-insect-66': "silverfish", // 衣魚
+    'w-insect-67': "monarch butterfly", // 帝王斑蝶
+    'w-insect-68': "leafcutter ant", // 切葉蟻
+    'w-insect-69': "leafhopper", // 葉蟬
+    'w-insect-70': "owl butterfly", // 貓頭鷹蝶
+    'w-idiom-146': "smile through tears", // 破涕為笑
+    'w-idiom-147': "hair standing on end in rage", // 怒髮衝冠
+    'w-idiom-148': "a worried frown", // 愁眉苦臉
+    'w-idiom-149': "not knowing whether to laugh or cry", // 哭笑不得
+    'w-idiom-150': "stride with head held high", // 昂首闊步
+    'w-idiom-151': "tiptoe quietly", // 躡手躡腳
+    'w-idiom-152': "write furiously", // 奮筆疾書
+    'w-idiom-153': "can't put it down", // 愛不釋手
+    'w-idiom-154': "jump with rage", // 暴跳如雷
+    'w-idiom-155': "listen attentively", // 洗耳恭聽
+    'w-idiom-156': "rest with eyes closed", // 閉目養神
+    'w-idiom-157': "shake one's head complacently", // 搖頭晃腦
+    'w-idiom-158': "grind one's teeth in hatred", // 咬牙切齒
+    'w-idiom-159': "hold one's breath and focus", // 屏氣凝神
+    'w-idiom-160': "walk on thin ice", // 如履薄冰
+    'w-idiom-161': "lightning and thunder", // 電閃雷鳴
+    'w-idiom-162': "eye like a hungry tiger", // 虎視眈眈
+    'w-idiom-163': "a sheep in the tiger's mouth", // 羊入虎口
+    'w-idiom-164': "kill a chicken to scare the monkey", // 殺雞儆猴
+    'w-idiom-165': "smooth sailing", // 一帆風順
+    'w-idiom-166': "take the lead", // 一馬當先
+    'w-idiom-167': "hit the nail on the head", // 一針見血
+    'w-idiom-168': "drool with desire", // 垂涎三尺
+    'w-idiom-169': "tongue-tied", // 張口結舌
+    'w-idiom-170': "gasping for breath", // 氣喘吁吁
+    'w-idiom-171': "make a fuss over nothing", // 大驚小怪
+    'w-plant-110': "birch", // 白樺
+    'w-plant-111': "cypress", // 柏樹
+    'w-plant-112': "camphor tree", // 樟樹
+    'w-plant-113': "lemon tree", // 檸檬樹
+    'w-plant-114': "wild rose", // 薔薇
+    'w-plant-115': "snapdragon", // 金魚草
+    'w-plant-116': "chamomile", // 洋甘菊
+    'w-plant-117': "rubber tree", // 橡膠樹
+    'w-plant-118': "begonia", // 秋海棠
+    'w-plant-119': "lilac", // 紫丁香
+    'w-plant-120': "gladiolus", // 劍蘭
+    'w-body-86': "collarbone", // 鎖骨
+    'w-body-87': "armpit", // 腋下
+    'w-body-88': "temple", // 太陽穴
+    'w-body-89': "knuckle", // 指關節
+    'w-trend-132': "danmaku comments", // 彈幕
+    'w-trend-133': "photo retouching", // 修圖
+    'w-fruitveg-76': "lentil", // 扁豆
+    'w-fruitveg-77': "kidney bean", // 紅腰豆
+    'w-fruitveg-78': "pecan", // 碧根果
+    'w-fruitveg-79': "ginkgo nut", // 白果
+    'w-fruitveg-80': "choy sum", // 菜心
+    'w-fruitveg-81': "gynura", // 紅鳳菜
+    'w-fruitveg-82': "bird's nest fern", // 山蘇
+    'w-fruitveg-83': "shallot", // 紅蔥頭
+    'w-fruitveg-84': "watercress", // 西洋菜
+    'w-fruitveg-85': "kale", // 羽衣甘藍
+    'w-fruitveg-86': "artichoke", // 朝鮮薊
+    'w-fruitveg-87': "fennel", // 茴香
+    'w-fruitveg-88': "cranberry", // 蔓越莓
+    'w-fruitveg-89': "goji berry", // 枸杞
+    'w-fruitveg-90': "reishi mushroom", // 靈芝
+    'w-fruitveg-91': "dried longan", // 桂圓
+    'w-fruitveg-92': "dried tangerine peel", // 陳皮
+    'w-fruitveg-93': "green garlic", // 青蒜
+    'w-fruitveg-94': "yellow chives", // 韭黃
+    'w-fruitveg-95': "red onion", // 紫洋蔥
+    'w-fruitveg-96': "blackcurrant", // 黑加侖
+    'w-fruitveg-97': "gooseberry", // 醋栗
+    'w-tech-146': "microphone stand", // 麥克風架
+    'w-tech-147': "headphone stand", // 耳機架
+    'w-tech-148': "screen protector", // 螢幕保護貼
+    'w-tech-149': "burglar alarm", // 防盜警報器
+    'w-tech-150': "racing wheel", // 遊戲方向盤
+    'w-tech-151': "electric screwdriver", // 電動螺絲起子
+    'w-tech-152': "glue gun", // 熱熔膠槍
+    'w-tech-153': "satellite dish", // 衛星天線
+    'w-tech-154': "camcorder", // 錄影機
+    'w-tech-155': "laptop stand", // 筆電支架
+    'w-tech-156': "cooling pad", // 散熱墊
+    'w-tech-157': "star projector lamp", // 星空燈
+    'w-tech-158': "motion sensor light", // 感應燈
+    'w-tech-159': "hand warmer", // 暖手寶
+    'w-tech-160': "welding machine", // 電焊機
+    'w-tech-161': "circuit breaker", // 斷路器
+    'w-kitchen-126': "meat tenderizer", // 肉槌
+    'w-kitchen-127': "fish spatula", // 魚鏟
+    'w-kitchen-128': "bottle brush", // 瓶刷
+    'w-kitchen-129': "ice tongs", // 冰夾
+    'w-kitchen-130': "dish brush", // 洗碗刷
+    'w-kitchen-131': "toothpick holder", // 牙籤盒
+    'w-kitchen-132': "napkin holder", // 餐巾架
+    'w-kitchen-133': "cheese knife", // 起司刀
+    'w-kitchen-134': "toast rack", // 吐司架
+    'w-kitchen-135': "potato masher", // 馬鈴薯搗碎器
+    'w-kitchen-136': "takeout box", // 外帶盒
+    'w-kitchen-137': "fruit fork", // 水果叉
+    'w-clothes-155': "bomber jacket", // 飛行外套
+    'w-clothes-156': "board shorts", // 沙灘褲
+    'w-clothes-157': "shower cap", // 浴帽
+    'w-clothes-158': "leotard", // 緊身衣
+    'w-clothes-159': "newsboy cap", // 報童帽
+    'w-clothes-160': "hiking boots", // 登山靴
+    'w-clothes-161': "mittens", // 連指手套
+    'w-clothes-162': "nightcap", // 睡帽
+    'w-clothes-163': "clutch bag", // 手拿包
+    'w-clothes-164': "tote bag", // 托特包
+    'w-clothes-165': "blazer", // 西裝外套
+    'w-festival-145': "pumpkin pail", // 南瓜桶
+    'w-festival-146': "wedding ring", // 婚戒
+    'w-festival-147': "wedding cake", // 結婚蛋糕
+    'w-festival-148': "red carpet", // 紅毯
+    'w-festival-149': "Easter basket", // 彩蛋籃
+    'w-festival-150': "heart chocolate", // 心形巧克力
+    'w-festival-151': "flower girl", // 花童
+    'w-festival-152': "gift basket", // 禮籃
+    'w-festival-153': "cheers", // 乾杯
+    'w-festival-154': "wedding car", // 婚車
+    'w-festival-155': "wedding pastry", // 喜餅
+    'w-festival-156': "bottle rocket", // 沖天炮
+    'w-festival-157': "flower lei", // 夏威夷花環
+    'w-festival-158': "New Year hat", // 新年帽
+    'w-festival-159': "red bridal veil", // 紅蓋頭
+    'w-festival-160': "toast", // 敬酒
+    'w-festival-161': "bouquet toss", // 捧花拋
+    'w-bird-72': "budgerigar", // 虎皮鸚鵡
+    'w-bird-73': "cockatiel", // 玄鳳鸚鵡
+    'w-bird-74': "crested serpent eagle", // 大冠鷲
+    'w-bird-75': "tern", // 燕鷗
+    'w-bird-76': "nightingale", // 夜鶯
+    'w-insect-71': "damselfly", // 豆娘
+    'w-insect-72': "bed bug", // 臭蟲
+    'w-bird-77': "turtle dove", // 斑鳩
+    'w-bird-78': "silver pheasant", // 白鷴
+    'w-bird-79': "mallard", // 綠頭鴨
+    'w-bird-80': "peregrine falcon", // 游隼
+    'w-insect-73': "luna moth", // 天蠶蛾
+    'w-insect-74': "jewel beetle", // 吉丁蟲
+    'w-bird-81': "black kite", // 黑鳶
+    'w-bird-82': "rainbow lorikeet", // 彩虹吸蜜鸚鵡
+    'w-plant-121': "pear blossom", // 梨花
+    'w-plant-122': "apricot blossom", // 杏花
+    'w-plant-123': "peach tree", // 桃樹
+    'w-plant-124': "orange tree", // 橘子樹
+    'w-body-90': "instep", // 腳背
+    'w-fruitveg-98': "corn on the cob", // 玉米棒
+    'w-fruitveg-99': "garlic clove", // 蒜瓣
+    'w-fruitveg-100': "ginger slice", // 薑片
+    'w-fruitveg-101': "orange peel", // 橘子皮
+    'w-fruitveg-102': "banana bunch", // 香蕉串
+    'w-fruitveg-103': "bunch of grapes", // 葡萄串
+    'w-fruitveg-104': "dried fruit", // 果乾
+    'w-fruitveg-105': "pickles", // 醃黃瓜
+    'w-fruitveg-106': "red chili", // 紅辣椒
+    'w-fruitveg-107': "dried tofu", // 豆干
+    'w-fruitveg-108': "pickled mustard stem", // 榨菜
+    'w-fruitveg-109': "nectarine", // 油桃
+    'w-fruitveg-110': "yellow peach", // 黃桃
+    'w-fruitveg-111': "young coconut", // 椰青
+    'w-fruitveg-112': "pea shoots", // 豌豆苗
+    'w-fruitveg-113': "mung bean sprouts", // 綠豆芽
+    'w-fruitveg-114': "radish sprouts", // 蘿蔔嬰
+    'w-fruitveg-115': "apple peel", // 蘋果皮
+    'w-fruitveg-116': "lemon slice", // 檸檬片
+    'w-fruitveg-117': "purple sweet potato", // 紫薯
+    'w-fruitveg-118': "kabocha squash", // 栗南瓜
+    'w-fruitveg-119': "soybean sprouts", // 黃豆芽
+    'w-tech-162': "reading lamp", // 閱讀燈
+    'w-tech-163': "clip lamp", // 夾燈
+    'w-tech-164': "solar light", // 太陽能燈
+    'w-tech-165': "garden light", // 庭園燈
+    'w-tech-166': "work light", // 工作燈
+    'w-tech-167': "wall lamp", // 壁燈
+    'w-tech-168': "string lights", // 燈串
+    'w-tech-169': "desk fan", // 桌扇
+    'w-tech-170': "gaming mouse", // 電競滑鼠
+    'w-tech-171': "charging dock", // 充電座
+    'w-tech-172': "electric curtain", // 電動窗簾
+    'w-tech-173': "flameless candle", // 電子蠟燭
+    'w-tech-174': "computer desk", // 電腦桌
+    'w-tech-175': "standing fan", // 立扇
+    'w-tech-176': "electric stove", // 電熱爐
+    'w-tech-177': "HDMI cable", // HDMI線
+    'w-tech-178': "e-bike", // 電動腳踏車
+    'w-kitchen-138': "bubble tea cup", // 手搖杯
+    'w-kitchen-139': "takeaway cup", // 外帶杯
+    'w-kitchen-140': "cup lid", // 杯蓋
+    'w-kitchen-141': "cup sleeve", // 杯套
+    'w-kitchen-142': "milk bottle", // 牛奶瓶
+    'w-kitchen-143': "wine rack", // 酒架
+    'w-kitchen-144': "zip bag", // 保鮮袋
+    'w-kitchen-145': "cooler bag", // 保冷袋
+    'w-kitchen-146': "compost bin", // 廚餘桶
+    'w-kitchen-147': "kitchen counter", // 流理台
+    'w-kitchen-148': "kitchen cabinet", // 廚櫃
+    'w-kitchen-149': "pasta tongs", // 麵條夾
+    'w-kitchen-150': "meat fork", // 肉叉
+    'w-kitchen-151': "rotisserie rack", // 烤雞架
+    'w-kitchen-152': "sippy cup", // 吸管杯
+    'w-kitchen-153': "drinking glass", // 玻璃杯
+    'w-kitchen-154': "bowl lid", // 碗蓋
+    'w-kitchen-155': "cork", // 酒瓶塞
+    'w-clothes-166': "silk scarf", // 絲巾
+    'w-clothes-167': "track jacket", // 運動外套
+    'w-clothes-168': "dress pants", // 西裝褲
+    'w-clothes-169': "casual pants", // 休閒褲
+    'w-clothes-170': "undershirt", // 汗衫
+    'w-clothes-171': "polo shirt", // 馬球衫
+    'w-clothes-172': "striped shirt", // 條紋衫
+    'w-clothes-173': "skort", // 裙褲
+    'w-clothes-174': "velcro strap", // 魔鬼氈
+    'w-clothes-175': "sleeveless top", // 無袖衫
+    'w-festival-162': "colored lights", // 彩燈
+    'w-festival-163': "bunting", // 彩旗
+    'w-festival-164': "champagne", // 香檳
+    'w-festival-165': "cake knife", // 蛋糕刀
+    'w-festival-166': "birthday card", // 生日卡
+    'w-festival-167': "party ball", // 彩球
+    'w-festival-168': "candy jar", // 糖果罐
+    'w-festival-169': "lantern float", // 花燈車
+    'w-bird-83': "partridge", // 鷓鴣
+    'w-bird-84': "bamboo partridge", // 竹雞
+    'w-bird-85': "moorhen", // 紅冠水雞
+    'w-bird-86': "wagtail", // 鶺鴒
+    'w-bird-87': "bird's nest", // 鳥窩
+    'w-bird-88': "birdhouse", // 鳥屋
+    'w-insect-75': "queen of the hive", // 蜂王
+    'w-insect-76': "pupa shell", // 蛹殼
+    'w-insect-77': "butterfly swarm", // 蝶群
+    'w-plant-125': "apple blossom", // 蘋果花
+    'w-plant-126': "flower basket", // 花籃
+    'w-plant-127': "plum tree", // 梅樹
+    'w-animal-231': "white rabbit", // 白兔
+    'w-animal-232': "grey wolf", // 灰狼
+    'w-animal-233': "baby monkey", // 小猴
+    'w-animal-234': "yellow dog", // 黃狗
+    'w-animal-235': "black dog", // 黑狗
+    'w-animal-236': "big bear", // 大熊
+    'w-animal-237': "turtle shell", // 烏龜殼
+    'w-home-267': "tissue", // 紙巾
+    'w-home-268': "shoehorn", // 鞋拔
+    'w-home-269': "clothes brush", // 衣刷
+    'w-home-270': "chest of drawers", // 抽屜櫃
+    'w-home-271': "armchair", // 沙發椅
+    'w-home-272': "bed frame", // 床架
+    'w-home-273': "window frame", // 窗框
+    'w-home-274': "door frame", // 門框
+    'w-home-275': "floor", // 地板
+    'w-home-276': "ceiling", // 天花板
+    'w-astro-67': "star chart", // 星圖
+    'w-physics-59': "magnetic force", // 磁力
+    'w-fairy-60': "magic cauldron", // 魔法鍋
+    'w-fairy-61': "magic stone", // 魔法石
+    'w-fairy-62': "wizard robe", // 魔法袍
+    'w-fairy-63': "dragon scale", // 龍鱗
+    'w-place-186': "alley entrance", // 巷口
+    'w-place-187': "eaves", // 屋簷
+    'w-place-188': "front gate", // 大門
+    'w-place-189': "doorway", // 門口
+    'w-place-190': "back door", // 後門
+    'w-place-191': "street corner", // 街角
+    'w-place-192': "footpath", // 小路
+    'w-place-193': "main street", // 大街
+    'w-food-329': "cake slice", // 蛋糕片
+    'w-food-330': "bread slice", // 麵包片
+    'w-food-331': "scrambled eggs", // 炒蛋
+    'w-food-332': "meat bun", // 肉包
+    'w-food-333': "vegetable bun", // 菜包
+    'w-food-334': "steamed egg custard", // 蒸蛋
+    'w-food-335': "milk candy", // 牛奶糖
+    'w-food-336': "mashed potatoes", // 薯泥
+    'w-food-337': "whipped cream", // 鮮奶油
+    'w-food-338': "char siu", // 叉燒
+    'w-food-339': "noodle soup", // 湯麵
+    'w-food-340': "scallion oil noodles", // 蔥油麵
+    'w-home-277': "insole", // 鞋墊
   };
 }));
