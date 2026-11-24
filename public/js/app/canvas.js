@@ -1,10 +1,10 @@
 /* ===== app/canvas.js — 畫布與工具列 ===== */
 
-import { $, D, ME, Paint, Rules, S, Sound, Store, app, toast } from './core.js?v=8f46673fb4';
-import { telephoneBlockedTip } from './telephone.js?v=8f46673fb4';
-import { askConfirm } from './modal.js?v=8f46673fb4';
-import { handleGameEvents, soloRefresh, startSolo, withWordPack } from './solo.js?v=8f46673fb4';
-import { pushFeed } from './feed.js?v=8f46673fb4';
+import { $, D, ME, Paint, Rules, S, Sound, Store, app, toast } from './core.js?v=70bf0efa14';
+import { telephoneBlockedTip } from './telephone.js?v=70bf0efa14';
+import { askConfirm } from './modal.js?v=70bf0efa14';
+import { handleGameEvents, soloRefresh, startSolo, withWordPack } from './solo.js?v=70bf0efa14';
+import { pushFeed } from './feed.js?v=70bf0efa14';
 
 var w = window;
 

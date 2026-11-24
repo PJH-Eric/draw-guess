@@ -6521,5 +6521,147 @@
     'w-food-339': "noodle soup", // 湯麵
     'w-food-340': "scallion oil noodles", // 蔥油麵
     'w-home-277': "insole", // 鞋墊
+    'w-bird-89': "waterbird", // 水鳥
+    'w-bird-90': "bird droppings", // 鳥糞
+    'w-bird-91': "wild bird", // 野鳥
+    'w-bird-92': "eagle talon", // 鷹爪
+    'w-bird-93': "duck egg", // 鴨蛋
+    'w-bird-94': "goose egg", // 鵝蛋
+    'w-insect-78': "snail shell", // 蝸牛殼
+    'w-insect-79': "little bee", // 小蜜蜂
+    'w-insect-80': "big spider", // 大蜘蛛
+    'w-insect-81': "small spider", // 小蜘蛛
+    'w-insect-82': "little ant", // 小螞蟻
+    'w-insect-83': "big ant", // 大螞蟻
+    'w-insect-84': "black spider", // 黑蜘蛛
+    'w-insect-85': "silk thread", // 蠶絲
+    'w-insect-86': "beeswax", // 蜂蠟
+    'w-festival-170': "birthday song", // 生日歌
+    'w-festival-171': "gift bag", // 禮物袋
+    'w-festival-172': "lantern viewing", // 賞燈
+    'w-festival-173': "set off firecrackers", // 放鞭炮
+    'w-festival-174': "grab red packets", // 搶紅包
+    'w-festival-175': "new year", // 新年
+    'w-festival-176': "dance party", // 舞會
+    'w-festival-177': "celebration", // 慶典
+    'w-festival-178': "yuanxiao", // 元宵
+    'w-festival-179': "happy new year", // 新年快樂
+    'w-fruitveg-120': "green apple", // 青蘋果
+    'w-fruitveg-121': "mustard greens", // 芥菜
+    'w-fruitveg-122': "straw mushroom", // 草菇
+    'w-fruitveg-123': "citrus", // 柑橘
+    'w-fruitveg-124': "young ginger", // 嫩薑
+    'w-fruitveg-125': "dried radish", // 蘿蔔乾
+    'w-clothes-176': "collar", // 衣領
+    'w-clothes-177': "sleeve", // 袖子
+    'w-clothes-178': "pocket", // 口袋
+    'w-clothes-179': "shoe sole", // 鞋底
+    'w-clothes-180': "leather bag", // 皮包
+    'w-clothes-181': "shoulder bag", // 肩背包
+    'w-clothes-182': "pet collar", // 項圈
+    'w-clothes-183': "nightgown", // 睡袍
+    'w-plant-128': "small tree", // 小樹
+    'w-plant-129': "wildflower", // 野花
+    'w-plant-130': "nectar", // 花蜜
+    'w-plant-131': "pine needle", // 松針
+    'w-plant-132': "willow leaf", // 柳葉
+    'w-plant-133': "red leaves", // 紅葉
+    'w-plant-134': "dead tree", // 枯樹
+    'w-plant-135': "hedge", // 樹籬
+    'w-body-91': "palm of hand", // 手心
+    'w-body-92': "scalp", // 頭皮
+    'w-body-93': "eye corner", // 眼角
+    'w-body-94': "mouth corner", // 嘴角
+    'w-body-95': "ear piercing", // 耳洞
+    'w-body-96': "skin", // 皮膚
+    'w-body-97': "blood vessel", // 血管
+    'w-body-98': "nose tip", // 鼻尖
+    'w-trend-134': "Hebe Tien", // 田馥甄
+    'w-trend-135': "Show Lo", // 羅志祥
+    'w-trend-136': "Wang Leehom", // 王力宏
+    'w-trend-137': "Eddie Peng", // 彭于晏
+    'w-trend-138': "Justin Bieber", // 小賈斯汀
+    'w-trend-139': "Rihanna", // 蕾哈娜
+    'w-trend-140': "Bruno Mars", // 布魯諾火星
+    'w-trend-141': "Jeremy Lin", // 林書豪
+    'w-kitchen-156': "steamer pot", // 蒸鍋
+    'w-kitchen-157': "pot handle", // 鍋柄
+    'w-kitchen-158': "dinner plate", // 餐盤
+    'w-kitchen-159': "saucer", // 碟子
+    'w-kitchen-160': "water bottle", // 水瓶
+    'w-kitchen-161': "wine glass", // 酒杯
+    'w-kitchen-162': "glass bottle", // 玻璃瓶
+    'w-sport-90': "basketball stand", // 籃球架
+    'w-sport-91': "soccer cleats", // 足球鞋
+    'w-sport-92': "running shoes", // 跑鞋
+    'w-sport-93': "sports team", // 球隊
+    'w-sport-94': "silver medal", // 銀牌
+    'w-sport-95': "bronze medal", // 銅牌
+    'w-sport-96': "warm up", // 暖身
+    'w-tech-179': "earphone cable", // 耳機線
+    'w-tech-180': "charger head", // 充電頭
+    'w-outdoor-104': "fishing bait", // 魚餌
+    'w-outdoor-105': "picnic table", // 野餐桌
+    'w-action-179': "squeeze toothpaste", // 擠牙膏
+    'w-action-180': "polish shoes", // 擦鞋
+    'w-idiom-172': "in high spirits", // 興高采烈
+    'w-idiom-173': "talk to oneself", // 自言自語
+    'w-idiom-174': "bruised face", // 鼻青臉腫
+    'w-idiom-175': "bare fangs brandish claws", // 張牙舞爪
+    'w-idiom-176': "perfect in every way", // 十全十美
+    'w-idiom-177': "all sorts", // 五花八門
+    'w-idiom-178': "give up halfway", // 半途而廢
+    'w-idiom-179': "cannot wait", // 迫不及待
+    'w-clothes-184': "wool socks", // 毛襪
+    'w-clothes-185': "cotton socks", // 棉襪
+    'w-clothes-186': "one-piece dress", // 連身裙
+    'w-clothes-187': "waistcoat", // 馬甲
+    'w-body-99': "side face", // 側臉
+    'w-body-100': "back view", // 背影
+    'w-body-101': "lower belly", // 小腹
+    'w-body-102': "back of head", // 後腦
+    'w-trend-142': "Yani Tseng", // 曾雅妮
+    'w-trend-143': "Tanya Chua", // 蔡健雅
+    'w-kitchen-163': "rice bin", // 米桶
+    'w-kitchen-164': "grill rack", // 烤架
+    'w-kitchen-165': "gas cylinder", // 瓦斯桶
+    'w-outdoor-106': "fishing line", // 釣魚線
+    'w-idiom-180': "with relish", // 津津有味
+    'w-idiom-181': "listless", // 無精打采
+    'w-idiom-182': "fully focused", // 全神貫注
+    'w-idiom-183': "fearful and anxious", // 提心吊膽
+    'w-idiom-184': "beaming with joy", // 眉開眼笑
+    'w-idiom-185': "doubled over laughing", // 捧腹大笑
+    'w-idiom-186': "vie to be first", // 爭先恐後
+    'w-idiom-187': "burning with anxiety", // 心急如焚
+    'w-idiom-188': "in unison", // 異口同聲
+    'w-idiom-189': "all directions", // 四面八方
+    'w-animal-238': "grizzly bear", // 灰熊
+    'w-animal-239': "lioness", // 母獅
+    'w-animal-240': "male lion", // 公獅
+    'w-food-341': "beef jerky", // 牛肉乾
+    'w-food-342': "flour", // 麵粉
+    'w-food-343': "sugar", // 白糖
+    'w-food-344': "soy sauce", // 醬油
+    'w-food-345': "chili sauce", // 辣醬
+    'w-food-346': "ketchup", // 番茄醬
+    'w-food-347': "mayonnaise", // 美乃滋
+    'w-food-348': "peanut butter", // 花生醬
+    'w-food-349': "condensed milk", // 煉乳
+    'w-food-350': "chicken breast", // 雞胸肉
+    'w-home-278': "laundry powder", // 洗衣粉
+    'w-home-279': "bleach", // 漂白水
+    'w-home-280': "curtain rod", // 窗簾桿
+    'w-home-281': "paper bag", // 紙袋
+    'w-home-282': "paper cup", // 紙杯
+    'w-home-283': "paper plate", // 紙盤
+    'w-home-284': "menu", // 菜單
+    'w-home-285': "bill", // 帳單
+    'w-place-194': "exit", // 出口
+    'w-place-195': "entrance", // 入口
+    'w-place-196': "counter", // 櫃檯
+    'w-place-197': "backstage", // 後台
+    'w-place-198': "lobby", // 大廳
+    'w-place-199': "aisle", // 走道
   };
 }));

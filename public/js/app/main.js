@@ -1,22 +1,22 @@
 /* ===== app/main.js — 啟動 ===== */
 
-import { $, Cfg, D, S, Sound, Store, app, paintIcons, show } from './core.js?v=8f46673fb4';
-import { askLeaveGame, modals, setupConfirm, setupReference } from './modal.js?v=8f46673fb4';
-import { applyDisplaySettings, setupSettings, syncSettingsUI } from './settings.js?v=8f46673fb4';
-import { renderSoloOptions, renderStats, renderTutorial, setupSoloScreen, setupTutorial, tut } from './menus.js?v=8f46673fb4';
-import { layoutAside, relayoutFeed, renderRecent, setAsideOpen } from './feed.js?v=8f46673fb4';
-import { buildToolbar, ensurePaint, layoutStage, syncToolbar } from './canvas.js?v=8f46673fb4';
-import { setupGuessbar } from './guess.js?v=8f46673fb4';
-import { render } from './render.js?v=8f46673fb4';
-import { placeCanvasTop, placeGuessFeed, placeSoloActions, renderRoomCreateOptions, setupOverlayEvents, setupRoomCreate, syncGuessbarSpace } from './overlay.js?v=8f46673fb4';
-import { renderGameSettings, setupGameSettings } from './game-settings.js?v=8f46673fb4';
-import { connectOnline, leaveGame, renderRoomList, savedRoom, setLobbyState, setupLobby } from './lobby.js?v=8f46673fb4';
-import { renderOnlineCount, setupOnlineEvents } from './online-events.js?v=8f46673fb4';
-import { setupHistory } from './history.js?v=8f46673fb4';
-import { setupGallery } from './gallery.js?v=8f46673fb4';
-import { setupKeys, setupRuleMenuClose } from './keys.js?v=8f46673fb4';
-import { setupRelayControls } from './relay.js?v=8f46673fb4';
-import { setupTelephoneControls } from './telephone.js?v=8f46673fb4';
+import { $, Cfg, D, S, Sound, Store, app, paintIcons, show } from './core.js?v=70bf0efa14';
+import { askLeaveGame, modals, setupConfirm, setupReference } from './modal.js?v=70bf0efa14';
+import { applyDisplaySettings, setupSettings, syncSettingsUI } from './settings.js?v=70bf0efa14';
+import { renderSoloOptions, renderStats, renderTutorial, setupSoloScreen, setupTutorial, tut } from './menus.js?v=70bf0efa14';
+import { layoutAside, relayoutFeed, renderRecent, setAsideOpen } from './feed.js?v=70bf0efa14';
+import { buildToolbar, ensurePaint, layoutStage, syncToolbar } from './canvas.js?v=70bf0efa14';
+import { setupGuessbar } from './guess.js?v=70bf0efa14';
+import { render } from './render.js?v=70bf0efa14';
+import { placeCanvasTop, placeGuessFeed, placeSoloActions, renderRoomCreateOptions, setupOverlayEvents, setupRoomCreate, syncGuessbarSpace } from './overlay.js?v=70bf0efa14';
+import { renderGameSettings, setupGameSettings } from './game-settings.js?v=70bf0efa14';
+import { connectOnline, leaveGame, renderRoomList, savedRoom, setLobbyState, setupLobby } from './lobby.js?v=70bf0efa14';
+import { renderOnlineCount, setupOnlineEvents } from './online-events.js?v=70bf0efa14';
+import { setupHistory } from './history.js?v=70bf0efa14';
+import { setupGallery } from './gallery.js?v=70bf0efa14';
+import { setupKeys, setupRuleMenuClose } from './keys.js?v=70bf0efa14';
+import { setupRelayControls } from './relay.js?v=70bf0efa14';
+import { setupTelephoneControls } from './telephone.js?v=70bf0efa14';
 
 var w = window;
 
