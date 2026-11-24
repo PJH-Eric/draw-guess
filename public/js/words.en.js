@@ -6695,5 +6695,332 @@
     'w-nature-157': "blue sky", // 藍天
     'w-action-181': "say hello", // 打招呼
     'w-action-182': "wash feet", // 洗腳
+    'w-animal-241': "fox cub", // 小狐狸
+    'w-animal-242': "tiger cub", // 小老虎
+    'w-animal-243': "lion cub", // 小獅子
+    'w-animal-244': "baby turtle", // 小烏龜
+    'w-animal-245': "little frog", // 小青蛙
+    'w-animal-246': "dog bone", // 狗骨頭
+    'w-animal-247': "bear paw", // 熊掌
+    'w-animal-248': "pig snout", // 豬鼻子
+    'w-animal-249': "elephant trunk", // 大象鼻子
+    'w-animal-250': "zebra stripes", // 斑馬紋
+    'w-animal-251': "spotted dog", // 斑點狗
+    'w-animal-252': "dog tail", // 狗尾巴
+    'w-animal-253': "cat tail", // 貓尾巴
+    'w-animal-254': "bunny ears", // 兔耳朵
+    'w-fruitveg-126': "watermelon rind", // 西瓜皮
+    'w-fruitveg-127': "apple slices", // 蘋果片
+    'w-fruitveg-128': "yellow pepper", // 黃椒
+    'w-fruitveg-129': "small chili", // 小辣椒
+    'w-fruitveg-130': "broccoli florets", // 綠花椰
+    'w-fruitveg-131': "salad greens", // 生菜
+    'w-fruitveg-132': "corn silk", // 玉米鬚
+    'w-food-351': "shrimp roll", // 蝦捲
+    'w-food-352': "beef soup", // 牛肉湯
+    'w-food-353': "chicken soup", // 雞湯
+    'w-food-354': "fish soup", // 魚湯
+    'w-food-355': "strawberry milk", // 草莓牛奶
+    'w-food-356': "iced black tea", // 冰紅茶
+    'w-food-357': "hot coffee", // 熱咖啡
+    'w-food-358': "rice milk", // 米漿
+    'w-food-359': "cookie tin", // 餅乾盒
+    'w-food-360': "candy wrapper", // 糖果紙
+    'w-food-361': "chocolate chips", // 巧克力片
+    'w-food-362': "cheese slice", // 起司片
+    'w-food-363': "jam toast", // 果醬吐司
+    'w-food-364': "scallion omelette", // 蔥花蛋
+    'w-food-365': "tomato egg stir-fry", // 番茄炒蛋
+    'w-home-286': "laundry bag", // 洗衣袋
+    'w-home-287': "door lock", // 門鎖
+    'w-home-288': "keyhole", // 鑰匙孔
+    'w-home-289': "door peephole", // 貓眼
+    'w-home-290': "house number plate", // 門牌
+    'w-home-291': "letter mail", // 信件
+    'w-home-292': "parcel", // 包裹
+    'w-home-293': "filing cabinet", // 檔案櫃
+    'w-home-294': "white glue", // 白膠
+    'w-home-295': "pen cap", // 筆蓋
+    'w-home-296': "pencil lead", // 筆芯
+    'w-home-297': "notepad", // 便條紙
+    'w-home-298': "scrapbook", // 剪貼簿
+    'w-home-299': "photograph", // 相片
+    'w-place-204': "ticket window", // 售票口
+    'w-place-205': "checkout counter", // 收銀台
+    'w-place-206': "fitting room", // 試衣間
+    'w-place-207': "locker room", // 更衣室
+    'w-place-208': "lounge", // 休息室
+    'w-place-209': "courtyard", // 庭院
+    'w-job-185': "bus driver", // 公車司機
+    'w-job-186': "intern", // 實習生
+    'w-job-187': "boss lady", // 老闆娘
+    'w-job-188': "building manager", // 管理員
+    'w-job-189': "sports fan", // 球迷
+    'w-fun-165': "read comics", // 看漫畫
+    'w-fun-166': "play harmonica", // 吹口琴
+    'w-vehicle-155': "pedal", // 腳踏板
+    'w-vehicle-156': "car seat", // 安全座椅
+    'w-vehicle-157': "turn signal", // 方向燈
+    'w-vehicle-158': "brake light", // 煞車燈
+    'w-vehicle-159': "gas pedal", // 油門
+    'w-vehicle-160': "gear shift", // 排檔
+    'w-vehicle-161': "train ticket", // 車票
+    'w-nature-158': "sunshower", // 太陽雨
+    'w-nature-159': "morning sun", // 朝陽
+    'w-action-183': "turn on light", // 開燈
+    'w-action-184': "turn off light", // 關燈
+    'w-action-185': "close door", // 關門
+    'w-action-186': "open window", // 開窗
+    'w-action-187': "look in mirror", // 照鏡子
+    'w-action-188': "blow nose", // 擤鼻涕
+    'w-action-189': "tickle", // 搔癢
+    'w-action-190': "fold quilt", // 摺被子
+    'w-action-191': "scrub toilet", // 刷馬桶
+    'w-action-192': "vacuum floor", // 吸地
+    'w-action-193': "write diary", // 寫日記
+    'w-action-194': "typing", // 打字
+    'w-action-195': "check watch", // 看手錶
+    'w-action-196': "put on glasses", // 戴眼鏡
+    'w-action-197': "take off shoes", // 脫鞋
+    'w-action-198': "put on socks", // 穿襪子
+    'w-action-199': "wear mask", // 戴口罩
+    'w-clothes-188': "thermal underwear", // 衛生衣
+    'w-kitchen-166': "small bowl", // 小碗
+    'w-kitchen-167': "rice measuring cup", // 量米杯
+    'w-kitchen-168': "bowl and chopsticks", // 碗筷
+    'w-kitchen-169': "lunch bag", // 便當袋
+    'w-tech-181': "keycap", // 鍵帽
+    'w-plant-136': "sunflower field", // 向日葵田
+    'w-insect-87': "ants moving", // 螞蟻搬家
+    'w-insect-88': "red ant", // 紅螞蟻
+    'w-festival-180': "birthday present", // 生日禮物
+    'w-festival-181': "pray at temple", // 拜拜
+    'w-sport-97': "basketball shoes", // 籃球鞋
+    'w-sport-98': "ping pong paddle", // 桌球拍
+    'w-sport-99': "shoot at goal", // 射門
+    'w-sport-100': "hit the ball", // 擊球
+    'w-sport-101': "start of race", // 起跑
+    'w-sport-102': "cross the finish line", // 衝線
+    'w-sport-103': "award ceremony", // 頒獎
+    'w-body-103': "long hair", // 長髮
+    'w-body-104': "short hair", // 短髮
+    'w-body-105': "bangs", // 瀏海
+    'w-body-106': "stubble", // 鬍渣
+    'w-body-107': "headache", // 頭痛
+    'w-body-108': "stomachache", // 肚子痛
+    'w-body-109': "fever", // 發燒
+    'w-body-110': "cold flu", // 感冒
+    'w-body-111': "fracture", // 骨折
+    'w-animal-255': "litter box", // 貓砂盆
+    'w-animal-256': "dog bowl", // 狗碗
+    'w-animal-257': "cat scratcher", // 貓抓板
+    'w-animal-258': "fish food", // 魚飼料
+    'w-animal-259': "dog leash", // 狗繩
+    'w-animal-260': "pet cage", // 寵物籠
+    'w-animal-261': "seal pup", // 小海豹
+    'w-animal-262': "baby zebra", // 小斑馬
+    'w-food-366': "breakfast", // 早餐
+    'w-food-367': "lunch", // 午餐
+    'w-food-368': "dinner", // 晚餐
+    'w-food-369': "midnight snack", // 宵夜
+    'w-food-370': "snack", // 點心
+    'w-food-371': "junk food", // 零食
+    'w-food-372': "toast slice", // 吐司片
+    'w-food-373': "egg yolk", // 蛋黃
+    'w-food-374': "egg white", // 蛋白
+    'w-food-375': "milk powder", // 奶粉
+    'w-home-300': "slipper rack", // 拖鞋架
+    'w-home-301': "window pane", // 窗戶玻璃
+    'w-home-302': "bottle lid", // 瓶蓋
+    'w-home-303': "battery box", // 電池盒
+    'w-place-210': "bakery shop", // 麵包坊
+    'w-place-211': "principal's office", // 校長室
+    'w-place-212': "music room", // 音樂教室
+    'w-place-213': "art room", // 美術教室
+    'w-place-214': "computer lab", // 電腦教室
+    'w-place-215': "bus terminal", // 公車總站
+    'w-job-190': "neighbor auntie", // 鄰居阿姨
+    'w-job-191': "homeroom teacher", // 班導師
+    'w-job-192': "PE teacher", // 體育老師
+    'w-job-193': "music teacher", // 音樂老師
+    'w-job-194': "art teacher", // 美術老師
+    'w-fun-167': "play in mud", // 玩泥巴
+    'w-fun-168': "fold paper crane", // 折紙鶴
+    'w-fun-169': "play tag", // 玩捉人
+    'w-fun-170': "cup stacking", // 疊杯子
+    'w-fun-171': "toss beanbags", // 丟沙包
+    'w-fun-172': "play dodgeball", // 玩躲避球
+    'w-nature-160': "rainbow after rain", // 雨後彩虹
+    'w-nature-161': "sea surface", // 海面
+    'w-nature-162': "lake surface", // 湖面
+    'w-nature-163': "rainy night", // 雨夜
+    'w-nature-164': "snowy night", // 雪夜
+    'w-vehicle-162': "back seat", // 後座
+    'w-vehicle-163': "front seat", // 前座
+    'w-vehicle-164': "bike lock", // 車鎖
+    'w-vehicle-165': "airbag", // 安全氣囊
+    'w-vehicle-166': "scooter pillion", // 機車後座
+    'w-vehicle-167': "park the car", // 停車
+    'w-action-200': "wash handkerchief", // 洗手帕
+    'w-action-201': "wipe tears", // 擦眼淚
+    'w-action-202': "draw curtains", // 拉窗簾
+    'w-action-203': "press elevator button", // 按電梯
+    'w-action-204': "hold umbrella", // 拿雨傘
+    'w-action-205': "walk with crutch", // 撐拐杖
+    'w-action-206': "carry boxes", // 搬箱子
+    'w-action-207': "push door", // 推門
+    'w-action-208': "pull door", // 拉門
+    'w-action-209': "sit down", // 坐下
+    'w-action-210': "stand up", // 站起來
+    'w-action-211': "lie down", // 躺下
+    'w-action-212': "jump up", // 跳起來
+    'w-action-213': "fall down", // 跌倒
+    'w-action-214': "run over", // 跑過來
+    'w-action-215': "drink milk", // 喝牛奶
+    'w-action-216': "eat apple", // 吃蘋果
+    'w-action-217': "eat noodles", // 吃麵
+    'w-action-218': "drink coffee", // 喝咖啡
+    'w-action-219': "eat watermelon", // 吃西瓜
+    'w-body-112': "toenail", // 腳指甲
+    'w-body-113': "toothache", // 牙齒痛
+    'w-body-114': "sore finger", // 手指痛
+    'w-animal-263': "beluga whale", // 白鯨
+    'w-animal-264': "howling wolf", // 狼嚎
+    'w-animal-265': "lion roar", // 獅吼
+    'w-bird-95': "peacock display", // 孔雀開屏
+    'w-bird-96': "rooster crowing", // 公雞啼
+    'w-food-376': "grape juice", // 葡萄汁
+    'w-food-377': "yakiniku", // 燒肉
+    'w-food-378': "matcha", // 抹茶
+    'w-food-379': "spicy hot pot", // 麻辣鍋
+    'w-home-304': "sofa bed", // 沙發床
+    'w-home-305': "high chair", // 高腳椅
+    'w-home-306': "double-sided tape", // 雙面膠
+    'w-home-307': "staples", // 訂書針
+    'w-home-308': "letter paper", // 信紙
+    'w-home-309': "postcard", // 明信片
+    'w-home-310': "pencil shavings", // 鉛筆屑
+    'w-home-311': "bath pouf", // 沐浴球
+    'w-home-312': "toothbrush holder", // 牙刷架
+    'w-home-313': "full-length mirror", // 全身鏡
+    'w-place-216': "snack shop", // 小吃店
+    'w-place-217': "bento shop", // 便當店
+    'w-place-218': "clothing store", // 服飾店
+    'w-place-219': "phone shop", // 手機店
+    'w-place-220': "appliance store", // 電器行
+    'w-place-221': "pediatric clinic", // 小兒科
+    'w-place-222': "after-school class", // 安親班
+    'w-place-223': "talent class", // 才藝班
+    'w-place-224': "claw machine shop", // 夾娃娃店
+    'w-place-225': "food court", // 美食街
+    'w-job-195': "truck driver", // 卡車司機
+    'w-job-196': "train driver", // 火車司機
+    'w-job-197': "paperboy", // 送報生
+    'w-job-198': "policewoman", // 女警
+    'w-job-199': "new student", // 新生
+    'w-job-200': "student on duty", // 值日生
+    'w-job-201': "senior student", // 學長
+    'w-vehicle-168': "ladder truck", // 雲梯車
+    'w-vehicle-169': "delivery scooter", // 外送機車
+    'w-vehicle-170': "bike rack", // 腳踏車架
+    'w-vehicle-171': "luggage rack", // 行李架
+    'w-vehicle-172': "bus strap", // 公車吊環
+    'w-vehicle-173': "ticket machine", // 售票機
+    'w-vehicle-174': "ticket gate", // 閘門
+    'w-nature-165': "scorching sun", // 烈日
+    'w-nature-166': "cold wind", // 寒風
+    'w-nature-167': "spring rain", // 春雨
+    'w-nature-168': "creekside", // 溪邊
+    'w-action-220': "eat breakfast", // 吃早餐
+    'w-action-221': "eat bento", // 吃便當
+    'w-action-222': "drink juice", // 喝果汁
+    'w-action-223': "blow bubble gum", // 吹泡泡糖
+    'w-action-224': "turn off TV", // 關電視
+    'w-action-225': "read newspaper", // 看報紙
+    'w-action-226': "clean up", // 打掃
+    'w-action-227': "measure height", // 量身高
+    'w-action-228': "weigh oneself", // 量體重
+    'w-action-229': "cut nails", // 剪指甲
+    'w-action-230': "apply ointment", // 擦藥
+    'w-action-231': "honk the horn", // 按喇叭
+    'w-action-232': "pinch nose", // 捏鼻子
+    'w-action-233': "stroke chin", // 摸下巴
+    'w-action-234': "cover ears", // 捂耳朵
+    'w-action-235': "tuck in blanket", // 蓋被子
+    'w-action-236': "sit cross-legged", // 盤腿
+    'w-clothes-189': "plaid shirt", // 格子襯衫
+    'w-clothes-190': "floral shirt", // 花襯衫
+    'w-clothes-191': "leather gloves", // 皮手套
+    'w-clothes-192': "tie clip", // 領帶夾
+    'w-clothes-193': "suspenders", // 吊帶
+    'w-kitchen-170': "steaming rack", // 蒸架
+    'w-kitchen-171': "salt", // 鹽巴
+    'w-kitchen-172': "pots and pans", // 鍋碗瓢盆
+    'w-tech-182': "RC airplane", // 遙控飛機
+    'w-tech-183': "RC boat", // 遙控船
+    'w-tech-184': "phone screen", // 手機螢幕
+    'w-tech-185': "night vision goggles", // 夜視鏡
+    'w-tech-186': "speed camera", // 測速照相
+    'w-plant-137': "ginkgo leaf", // 銀杏葉
+    'w-plant-138': "cactus flower", // 仙人掌花
+    'w-plant-139': "rose thorn", // 玫瑰刺
+    'w-insect-89': "bee collecting nectar", // 蜜蜂採蜜
+    'w-insect-90': "spider spinning web", // 蜘蛛結網
+    'w-festival-182': "new year's wish", // 新年願望
+    'w-festival-183': "thank-you banquet", // 謝師宴
+    'w-sport-104': "jumping jacks", // 開合跳
+    'w-sport-105': "hop on one foot", // 單腳跳
+    'w-outdoor-107': "gather leaves", // 撿落葉
+    'w-outdoor-108': "chase butterflies", // 追蝴蝶
+    'w-outdoor-109': "catch cicadas", // 抓蟬
+    'w-outdoor-110': "catch crickets", // 捉蟋蟀
+    'w-outdoor-111': "watch fireflies", // 看螢火蟲
+    'w-outdoor-112': "sunbathe", // 曬太陽
+    'w-outdoor-113': "float paper boats", // 放紙船
+    'w-body-115': "earwax", // 耳屎
+    'w-body-116': "saliva", // 口水
+    'w-body-117': "dandruff", // 頭皮屑
+    'w-body-118': "sunburn", // 曬傷
+    'w-body-119': "bruise", // 瘀青
+    'w-body-120': "blister", // 水泡
+    'w-body-121': "heartbeat", // 心跳
+    'w-food-380': "rice crust", // 鍋巴
+    'w-food-381': "thick meat soup", // 肉羹
+    'w-food-382': "century egg tofu", // 皮蛋豆腐
+    'w-home-314': "shoe polish", // 鞋油
+    'w-home-315': "storage rack", // 置物架
+    'w-home-316': "mop bucket", // 拖把桶
+    'w-place-226': "nail salon", // 美甲店
+    'w-place-227': "shaved ice shop", // 冰店
+    'w-job-202': "manicurist", // 美甲師
+    'w-job-203': "real estate agent", // 房仲
+    'w-job-204': "piano teacher", // 鋼琴老師
+    'w-job-205': "swim coach", // 游泳教練
+    'w-job-206': "fitness coach", // 健身教練
+    'w-vehicle-175': "scooter seat", // 機車坐墊
+    'w-nature-169': "rainwater", // 雨水
+    'w-action-237': "open the fridge", // 打開冰箱
+    'w-action-238': "tear off calendar page", // 撕日曆
+    'w-action-239': "swat a mosquito", // 拍蚊子
+    'w-action-240': "pick up litter", // 撿垃圾
+    'w-action-241': "peel a banana", // 剝香蕉
+    'w-action-242': "fan oneself", // 搖扇子
+    'w-action-243': "wring a towel", // 擰毛巾
+    'w-action-244': "insert a coin", // 投硬幣
+    'w-action-245': "write on blackboard", // 寫黑板
+    'w-clothes-194': "safety pin", // 安全別針
+    'w-kitchen-173': "food cover", // 菜罩
+    'w-kitchen-174': "fridge magnet", // 冰箱磁鐵
+    'w-festival-184': "wedding photo", // 婚紗照
+    'w-festival-185': "full-month party", // 滿月酒
+    'w-sport-106': "breaststroke", // 蛙式
+    'w-outdoor-114': "watch meteors", // 看流星
+    'w-outdoor-115': "sketch outdoors", // 寫生
+    'w-body-122': "thirsty", // 口渴
+    'w-body-123': "dizzy", // 頭暈
+    'w-animal-266': "barking dog", // 狗吠
+    'w-tech-187': "digital signage", // 電子看板
+    'w-festival-186': "zhuazhou ceremony", // 抓周
+    'w-action-246': "dust off", // 拍灰塵
   };
 }));

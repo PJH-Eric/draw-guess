@@ -1,9 +1,9 @@
 /* ===== app/keys.js — 鍵盤快捷鍵 ===== */
 
-import { D, app } from './core.js?v=b8c91791b2';
-import { modals } from './modal.js?v=b8c91791b2';
-import { chooseTool, doRedo, doUndo } from './canvas.js?v=b8c91791b2';
-import { renderOverlay } from './overlay.js?v=b8c91791b2';
+import { D, app } from './core.js?v=7244f4cdef';
+import { modals } from './modal.js?v=7244f4cdef';
+import { chooseTool, doRedo, doUndo } from './canvas.js?v=7244f4cdef';
+import { renderOverlay } from './overlay.js?v=7244f4cdef';
 
 var w = window;
 
