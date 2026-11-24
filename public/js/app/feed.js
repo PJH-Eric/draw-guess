@@ -1,7 +1,7 @@
 /* ===== app/feed.js — 猜題紀錄與左側摘要欄 ===== */
 
-import { $, RECENT_MAX, app, esc } from './core.js?v=7244f4cdef';
-import { layoutStage } from './canvas.js?v=7244f4cdef';
+import { $, RECENT_MAX, app, esc } from './core.js?v=a8ac91c20e';
+import { layoutStage } from './canvas.js?v=a8ac91c20e';
 
 var w = window;
 
