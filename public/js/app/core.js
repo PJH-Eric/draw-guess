@@ -9,9 +9,9 @@
  */
 /* 原本是單一檔案 app.js，依功能拆成 js/app/ 底下的 ES module；入口是 main.js。 */
 
-import { modals } from './modal.js?v=70bf0efa14';
-import { renderRecentWorks } from './menus.js?v=70bf0efa14';
-import { layoutStage } from './canvas.js?v=70bf0efa14';
+import { modals } from './modal.js?v=b8c91791b2';
+import { renderRecentWorks } from './menus.js?v=b8c91791b2';
+import { layoutStage } from './canvas.js?v=b8c91791b2';
 
 var w = window;
 

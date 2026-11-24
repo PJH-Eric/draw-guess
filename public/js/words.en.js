@@ -6663,5 +6663,37 @@
     'w-place-197': "backstage", // 後台
     'w-place-198': "lobby", // 大廳
     'w-place-199': "aisle", // 走道
+    'w-place-200': "dormitory", // 宿舍
+    'w-place-201': "auditorium", // 禮堂
+    'w-place-202': "countryside", // 鄉村
+    'w-place-203': "city", // 城市
+    'w-job-182': "master craftsman", // 師傅
+    'w-job-183': "store manager", // 店長
+    'w-job-184': "manager", // 經理
+    'w-fun-161': "toy", // 玩具
+    'w-fun-162': "joke", // 笑話
+    'w-fun-163': "riddle", // 謎語
+    'w-fun-164': "song", // 歌曲
+    'w-vehicle-145': "car door", // 車門
+    'w-vehicle-146': "car window", // 車窗
+    'w-vehicle-147': "headlight", // 車燈
+    'w-vehicle-148': "license plate", // 車牌
+    'w-vehicle-149': "car roof", // 車頂
+    'w-vehicle-150': "engine", // 引擎
+    'w-vehicle-151': "brake", // 剎車
+    'w-vehicle-152': "dashboard", // 儀表板
+    'w-vehicle-153': "fuel tank", // 油箱
+    'w-vehicle-154': "car trunk", // 後車廂
+    'w-nature-149': "early morning", // 清晨
+    'w-nature-150': "afternoon", // 午後
+    'w-nature-151': "night", // 夜晚
+    'w-nature-152': "daytime", // 白天
+    'w-nature-153': "moonlit night", // 月夜
+    'w-nature-154': "starlight", // 星光
+    'w-nature-155': "ripple", // 水波
+    'w-nature-156': "clear sky", // 晴空
+    'w-nature-157': "blue sky", // 藍天
+    'w-action-181': "say hello", // 打招呼
+    'w-action-182': "wash feet", // 洗腳
   };
 }));

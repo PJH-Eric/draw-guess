@@ -71,7 +71,7 @@ section('題庫（words.js）');
   check('每個分類至少 10 題', Object.values(cats).every((n) => n >= 10), JSON.stringify(cats));
   check('每個種類至少 100 題', Words.CATEGORY_KEYS.every((cat) => cats[cat] >= 100), JSON.stringify(cats));
   /* 不出題的題目仍留在原位，範本檔的分檔位置不能因為刪題而位移 */
-  check('範本排序位置包含不出題的題目', Words.slots().length === 6648 && Words.slotOf('w-outdoor-0') === 5256, Words.slots().length);
+  check('範本排序位置包含不出題的題目', Words.slots().length === 6680 && Words.slotOf('w-outdoor-0') === 5256, Words.slots().length);
   check('不出題的題目不會出現在題庫或被抽到', !Words.LIST.some((w) => w.text === '民主') && Words.byId(Words.slots().find((w) => w.text === '民主').id) === null);
   check('每一題都有分組，種類也都是有效的', Words.LIST.every((w) => w.group && !!Words.CATEGORIES[w.cat]));
 
