@@ -1045,18 +1045,18 @@ if (I18N.packReady) I18N.packReady("zh-Hant");
 /* 伺服器暫停服務的提示文字（js/server-outage.js 用；三個語系都很短，一起放在預設檔） */
 window.ServerOutageMessages = {
   "zh-Hant": [
-    "線上暫時無法連線",
-    "免費伺服器額度將於 {date} 月 1 日重置，期間可繼續遊玩單機版。",
+    "目前伺服器過載休息中",
+    "歡迎贊助升級",
     "知道了"
   ],
   "zh-Hans": [
-    "线上暂时无法连线",
-    "免费服务器额度将于 {date} 月 1 日重置，期间可继续游玩单机版。",
+    "目前服务器过载休息中",
+    "欢迎赞助升级",
     "知道了"
   ],
   "en": [
-    "Online unavailable",
-    "Free server quota resets on {date}. You can keep playing offline.",
+    "The server is overloaded and resting",
+    "Sponsorships to help us upgrade are welcome",
     "Got it"
   ]
 };
