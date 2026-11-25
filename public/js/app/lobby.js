@@ -1,11 +1,11 @@
 /* ===== app/lobby.js — 線上大廳 ===== */
 
-import { $, Cfg, D, S, Sound, Store, Words, app, esc, paintIcons, show, toast } from './core.js?v=e0d947f3dc';
-import { WORD_LANGS, categoryChoices, wordLangLabel } from './menus.js?v=e0d947f3dc';
-import { startLoop, stopLoop } from './solo.js?v=e0d947f3dc';
-import { ensurePaint } from './canvas.js?v=e0d947f3dc';
-import { render } from './render.js?v=e0d947f3dc';
-import { DIFF_CHOICES, morphChildren, openRoomCreate } from './overlay.js?v=e0d947f3dc';
+import { $, Cfg, D, S, Sound, Store, Words, app, esc, paintIcons, show, toast } from './core.js?v=7a777b7980';
+import { WORD_LANGS, categoryChoices, wordLangLabel } from './menus.js?v=7a777b7980';
+import { startLoop, stopLoop } from './solo.js?v=7a777b7980';
+import { ensurePaint } from './canvas.js?v=7a777b7980';
+import { render } from './render.js?v=7a777b7980';
+import { DIFF_CHOICES, morphChildren, openRoomCreate } from './overlay.js?v=7a777b7980';
 
 var w = window;
 
