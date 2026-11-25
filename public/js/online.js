@@ -94,7 +94,7 @@
       s.onerror = function () {
         loading = null;
         s.remove();
-        reject(new Error((globalThis.I18N ? globalThis.I18N.t("text.310") : "連不到遊戲伺服器（") + Config.describe() + (globalThis.I18N ? globalThis.I18N.t("text.309") : "），請確認伺服器有開著。")));
+        reject(new Error((globalThis.I18N ? globalThis.I18N.t("text.310") : "連不到遊戲伺服器") + (globalThis.I18N ? globalThis.I18N.t("text.309") : "，請確認伺服器有開著。")));
       };
       document.head.appendChild(s);
     });

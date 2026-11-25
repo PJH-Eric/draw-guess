@@ -72,5 +72,4 @@ export function syncSettingsUI() {
   $('settings-motion').checked = Store.reduceMotion();
   $('settings-bigtools').checked = Store.bigTools();
   $('settings-nick').value = Store.nick();
-  $('settings-server-url').textContent = Cfg.describe();
 }

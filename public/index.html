@@ -159,15 +159,6 @@
         <div class="state-face" aria-hidden="true"><span class="ico" data-ico="plug"></span></div>
         <h3 id="lobby-off-title"><span data-i18n="text.348">目前連不到遊戲伺服器</span></h3>
         <p id="lobby-off-note"><span data-i18n="text.019">線上對戰需要一台開著的伺服器。單機練習完全不受影響，可以直接玩。</span></p>
-        <details class="lobby-help">
-          <summary><span data-i18n="text.349">要怎麼開啟線上對戰？</span></summary>
-          <div>
-            <p><span data-i18n="text.350">1. 自己跑一台：在電腦上執行</span> <code>npm start</code><span data-i18n="text.351">（或雙擊「啟動遊戲.bat」），畫面會印出這台電腦的區網網址，例如</span> <code>http://192.168.1.20:3030</code><span data-i18n="text.352">。同一個 Wi-Fi 的另一台裝置直接用瀏覽器開那個網址就能一起玩。</span></p>
-            <p><span data-i18n="text.353">2. 部署到雲端：把整個專案推到 Git，用 Render 之類的免費方案部署，兩台不同網路的裝置就都能連。</span></p>
-            <p><span data-i18n="text.354">3. 前端和伺服器不在同一台時，用</span> <code><span data-i18n="text.355">?server=（伺服器網址）</span></code> <span data-i18n="text.356">指定，例如</span> <code><span data-i18n="text.357">index.html?server=https://你的服務網址</span></code>。</p>
-            <p><span data-i18n="text.358">詳細步驟寫在專案的 README。</span></p>
-          </div>
-        </details>
         <div class="state-btns">
           <button class="btn3d" data-color="mint" id="b-lobby-retry"><span class="ico" data-ico="refresh"></span><span data-i18n="text.359">再試一次</span></button>
           <button class="btn3d" data-color="cream" data-back="s-home"><span class="ico" data-ico="home"></span><span data-i18n="text.360">回主選單</span></button>
@@ -608,10 +599,9 @@
             <input id="settings-nick" type="text" maxlength="12" autocomplete="off" spellcheck="false" placeholder="留空會自動配一個" data-i18n-attr="placeholder=text.478">
           </label>
           <div class="setting-static">
-            <span><b><span data-i18n="text.430">遊戲伺服器</span></b><small id="settings-server-url">—</small></span>
+            <span><b><span data-i18n="text.430">遊戲伺服器</span></b></span>
             <span class="server-pill" id="settings-server-pill" data-state="unset"><span data-i18n="text.431">尚未連線</span></span>
           </div>
-          <p class="settings-note"><span data-i18n="text.433">伺服器位址只能從網址參數</span> <code>?server=</code> <span data-i18n="text.434">或部署時注入的設定取得，程式裡沒有寫死任何網域。</span></p>
         </div>
       </div>
 
