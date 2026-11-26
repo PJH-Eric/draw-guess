@@ -1,8 +1,8 @@
 /* ===== app/guess.js — 猜題列 ===== */
 
-import { $, ME, Rules, Sound, app, toast } from './core.js?v=24a743ba5e';
-import { soloRefresh } from './solo.js?v=24a743ba5e';
-import { pushFeed } from './feed.js?v=24a743ba5e';
+import { $, ME, Rules, Sound, app, toast } from './core.js?v=8eacb84698';
+import { soloRefresh } from './solo.js?v=8eacb84698';
+import { pushFeed } from './feed.js?v=8eacb84698';
 
 var w = window;
 
