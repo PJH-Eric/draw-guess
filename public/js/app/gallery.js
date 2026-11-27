@@ -5,9 +5,9 @@
  * 縮圖在本機用同一套畫布引擎（Paint.drawStroke，固定 1400×1400，油漆桶才會跟原圖一致）重畫後縮小。
  */
 
-import { $, D, app, esc, toast } from './core.js?v=8eacb84698';
-import { makeModal, modals } from './modal.js?v=8eacb84698';
-import { renderOverlay } from './overlay.js?v=8eacb84698';
+import { $, D, app, esc, toast } from './core.js?v=646a052379';
+import { makeModal, modals } from './modal.js?v=646a052379';
+import { renderOverlay } from './overlay.js?v=646a052379';
 
 var w = window;
 var THUMB = 240;
